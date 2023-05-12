@@ -14,9 +14,18 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-// clang-format off
-#define MINT_VERSION_MAJOR @Mint_VERSION_MAJOR@
-#define MINT_VERSION_MINOR @Mint_VERSION_MINOR@
-#define MINT_VERSION_PATCH @Mint_VERSION_PATCH@
-#define MINT_GIT_REVISION "@Mint_GIT_REVISION@"
-// clang-format on
+#pragma once
+#include <ostream> // std::ostream
+
+#include "utility/Config.hpp"
+
+namespace mint
+{
+inline void
+version (std::ostream &out)
+{
+  out << "mint version " << MINT_VERSION_MAJOR << "." << MINT_VERSION_MINOR
+      << "." << MINT_VERSION_PATCH << "\n git revision [" << MINT_GIT_REVISION
+      << "]\n Compiled: " << __DATE__ << " at " << __TIME__ << "\n";
+}
+} // namespace mint

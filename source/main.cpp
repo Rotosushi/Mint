@@ -18,9 +18,11 @@
 
 #include "utility/Assert.hpp"
 
+#include "utility/Version.hpp"
+
 auto
 main (int argc, char **argv) -> int
 {
-  
+  mint::version();
   return EXIT_SUCCESS;
 }
