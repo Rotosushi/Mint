@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# User-specific folders
+.vscode/
+
 # User-specific files
 *.rsuser
 *.suo
@@ -17,6 +20,7 @@
 mono_crash.*
 
 # Build results
+[Bb]uild/
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
