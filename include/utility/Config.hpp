@@ -14,9 +14,10 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+#pragma once
 // clang-format off
 #define MINT_VERSION_MAJOR 0
 #define MINT_VERSION_MINOR 0
 #define MINT_VERSION_PATCH 1
-#define MINT_GIT_REVISION "ba04196f2f02b4b4d98731f51d1c53eeb945934d"
+#define MINT_GIT_REVISION "049ab66ee9734885f5d4c5677838b7cd0d8c675e"
 // clang-format on

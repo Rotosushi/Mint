@@ -15,17 +15,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <ostream> // std::ostream
+#include <memory> // std::shared_ptr
 
-#include "utility/Config.hpp"
+namespace mint {
+namespace detail {
+template <class T>
+concept HasPtrMethod = requires(T a) {
+  { a->ptr() } -> std::convertible_to<std::shared_ptr<T>>;
+};
+} // namespace detail
 
-namespace mint
-{
-inline void
-version (std::ostream &out)
-{
-  out << "mint version " << MINT_VERSION_MAJOR << "." << MINT_VERSION_MINOR
-      << "." << MINT_VERSION_PATCH << "\n git revision [" << MINT_GIT_REVISION
-      << "]\n Compiled: " << __DATE__ << " at " << __TIME__ << "\n";
-}
+template <detail::HasPtrMethod T>
+class UseCreateUnique : public std::enable_shared_from_this<T> {
+protected:
+  struct use_create_method {
+    explicit use_create_method() = default;
+  };
+
+public:
+  template <typename... Args> static auto create(Args &&...args) noexcept {
+    return std::make_shared<T>(use_create_method{},
+                               std::forward<Args>(args)...);
+  }
+};
 } // namespace mint

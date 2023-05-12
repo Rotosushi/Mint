@@ -15,16 +15,38 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <ostream>         // std::ostream
-#include <source_location> // std::source_location
-#include <string_view>     // std::string_view
+#include <string_view>
+#include <unordered_set>
 
 namespace mint {
-inline void
-log(std::ostream &out, std::string_view message,
-    std::source_location location = std::source_location::current()) noexcept {
-  out << "file: " << location.file_name() << "(" << location.line() << ":"
-      << location.column() << ")"
-      << " `" << location.function_name() << "`: " << message << "\n";
-}
+class InternedString {
+private:
+  std::string_view view;
+
+public:
+  InternedString(std::string_view view) noexcept : view{view} {}
+
+  operator std::string_view() noexcept { return view; }
+  auto get() const noexcept -> std::string_view { return view; }
+
+  auto operator==(const InternedString &other) const noexcept -> bool {
+    return view.data() == other.view.data();
+  }
+};
+
+class StringSet {
+private:
+  std::unordered_set<std::string_view> set;
+
+public:
+  [[nodiscard]] auto emplace(std::string_view view) noexcept -> InternedString {
+    auto found = set.find(view);
+    if (found != set.end()) {
+      return *found;
+    }
+
+    auto pair = set.emplace(view);
+    return *pair.first;
+  }
+};
 } // namespace mint

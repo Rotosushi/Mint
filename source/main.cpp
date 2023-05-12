@@ -17,12 +17,33 @@
 #include <cstdlib>
 
 #include "utility/Assert.hpp"
+#include "utility/OptionsParser.hpp"
 
-#include "utility/Version.hpp"
+#include "type/Type.hpp"
 
-auto
-main (int argc, char **argv) -> int
-{
-  mint::version();
+#include "ast/Ast.hpp"
+
+auto main(int argc, char **argv) -> int {
+  mint::OptionsParser options_parser{argc, argv};
+  options_parser.parse();
+
+  mint::TypeInterner interner;
+  auto t0 = interner.getBooleanType();
+  auto t1 = interner.getIntegerType();
+  auto t2 = interner.getIntegerType();
+  auto t3 = interner.getNilType();
+
+  MINT_ASSERT(t0 != t1);
+  MINT_ASSERT(t1 == t2);
+  MINT_ASSERT(t0 != t3);
+  MINT_ASSERT(t1 != t3);
+
+  MINT_ASSERT(!mint::equals(t0, t1));
+  MINT_ASSERT(mint::equals(t1, t2));
+  MINT_ASSERT(!mint::equals(t0, t3));
+  MINT_ASSERT(!mint::equals(t1, t3));
+
+  std::cout << t0 << "\n" << t1 << "\n" << t2 << "\n" << t3 << "\n";
+
   return EXIT_SUCCESS;
 }

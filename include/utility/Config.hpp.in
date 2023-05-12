@@ -14,6 +14,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+#pragma once
 // clang-format off
 #define MINT_VERSION_MAJOR @Mint_VERSION_MAJOR@
 #define MINT_VERSION_MINOR @Mint_VERSION_MINOR@
