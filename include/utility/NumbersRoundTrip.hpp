@@ -14,24 +14,3 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include <cstdlib>
-#include <iostream>
-
-#include "utility/Assert.hpp"
-#include "utility/OptionsParser.hpp"
-
-#include "type/Print.hpp"
-#include "type/Type.hpp"
-
-#include "ast/Ast.hpp"
-#include "ast/Print.hpp"
-
-#include "scan/Parser.hpp"
-
-auto main(int argc, char **argv) -> int {
-  mint::OptionsParser options_parser{argc, argv};
-
-  mint::Parser parser{&std::cin};
-
-  return EXIT_SUCCESS;
-}

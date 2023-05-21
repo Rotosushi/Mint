@@ -15,40 +15,46 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <ostream>
-#include <string_view>
-#include <unordered_set>
+#include "type/Type.hpp"
 
 namespace mint {
-class Identifier {
-private:
-  std::string_view view;
+
+/*
+
+*/
+class TypePrintVisitor {
+  std::ostream *out;
+  Type::Pointer type;
 
 public:
-  Identifier(std::string_view view) noexcept : view{view} {}
+  TypePrintVisitor(std::ostream *out, Type::Pointer type) noexcept
+      : out{out}, type{type} {
+    MINT_ASSERT(out != nullptr);
+  }
 
-  operator std::string_view() noexcept { return view; }
-  auto get() const noexcept -> std::string_view { return view; }
+  void operator()() noexcept { std::visit(*this, type->data); }
 
-  auto operator==(const Identifier &other) const noexcept -> bool {
-    return view.data() == other.view.data();
+  void operator()([[maybe_unused]] Type::Boolean const &type) noexcept {
+    *out << "Boolean";
+  }
+
+  void operator()([[maybe_unused]] Type::Integer const &type) noexcept {
+    *out << "Integer";
+  }
+
+  void operator()([[maybe_unused]] Type::Nil const &type) noexcept {
+    *out << "Nil";
   }
 };
 
-inline auto operator<<(std::ostream &out, Identifier id) noexcept
-    -> std::ostream & {
-  out << id.get();
-  return out;
+void print(std::ostream &out, Type::Pointer type) noexcept {
+  TypePrintVisitor visitor{&out, type};
+  visitor();
 }
 
-class IdentifierSet {
-private:
-  std::unordered_set<std::string_view> set;
-
-public:
-  [[nodiscard]] auto emplace(std::string_view view) noexcept -> Identifier {
-    auto pair = set.emplace(view);
-    return *pair.first;
-  }
-};
+inline auto operator<<(std::ostream &out, Type::Pointer type) noexcept
+    -> std::ostream & {
+  print(out, type);
+  return out;
+}
 } // namespace mint

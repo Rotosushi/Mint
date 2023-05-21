@@ -1,17 +1,58 @@
 cmake_minimum_required(VERSION 3.20)
 
-message(STATUS "cmake c++ flags: ${CMAKE_CXX_FLAGS}")
-
 set(WARNINGS -Wall -Wdeprecated -Wextra -Wpedantic -Wconversion -Werror)
 set(CXX_OPTIONS ${WARNINGS})
 
-#add_library(mint_common STATIC 
-#)
+function(re2c_generate_scanner input output)
+add_custom_command(
+  OUTPUT ${output}
+  COMMAND re2c ${input} -o ${output}
+  DEPENDS ${input}
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  COMMENT "Generating ${output}"
+)
+endfunction()
 
-#target_compile_options(mint_common PUBLIC ${CXX_OPTIONS})
-#target_include_directories(mint_common PUBLIC ../include)
+re2c_generate_scanner(
+  ${MINT_SOURCE_DIR}/scan/Scanner.re
+  ${MINT_SOURCE_DIR}/scan/Scanner.cpp
+)
+
+add_library(mint_common STATIC 
+  ${MINT_INCLUDE_DIR}/adt/StringSet.hpp
+
+  ${MINT_INCLUDE_DIR}/ast/Print.hpp
+  ${MINT_INCLUDE_DIR}/ast/Ast.hpp 
+
+  ${MINT_INCLUDE_DIR}/error/Error.hpp
+  ${MINT_SOURCE_DIR}/error/Error.cpp
+
+  ${MINT_INCLUDE_DIR}/scan/Token.hpp
+  ${MINT_INCLUDE_DIR}/scan/Location.hpp
+  ${MINT_INCLUDE_DIR}/scan/Parser.hpp
+  ${MINT_SOURCE_DIR}/scan/Parser.cpp
+  ${MINT_INCLUDE_DIR}/scan/Scanner.hpp
+  ${MINT_SOURCE_DIR}/scan/Scanner.cpp
+
+  ${MINT_INCLUDE_DIR}/type/Print.hpp
+  ${MINT_INCLUDE_DIR}/type/Type.hpp 
+
+  ${MINT_INCLUDE_DIR}/utility/Assert.hpp 
+  ${MINT_INCLUDE_DIR}/utility/Config.hpp
+  ${MINT_INCLUDE_DIR}/utility/FatalError.hpp 
+  ${MINT_INCLUDE_DIR}/utility/Log.hpp 
+  ${MINT_INCLUDE_DIR}/utility/OptionsParser.hpp
+)
+
+target_compile_options(mint_common PUBLIC ${CXX_OPTIONS})
+target_include_directories(mint_common PUBLIC ../include)
 
 add_executable(mint main.cpp)
 target_include_directories(mint PUBLIC ../include)
 target_compile_options(mint PUBLIC ${CXX_OPTIONS})
-#target_link_libraries(mint mint_common)
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  target_compile_definitions(mint PUBLIC MINT_DEBUG)
+endif()
+
+target_link_libraries(mint mint_common)

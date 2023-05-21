@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <memory>
 #include <optional>
 #include <string_view>
 #include <variant>
@@ -23,91 +24,127 @@
 
 #include "type/Type.hpp"
 
+#include "scan/Location.hpp"
+#include "scan/Token.hpp"
+
 namespace mint {
-class Ast {
-public:
-  using Pointer = Ast *;
+struct Ast {
+  using Pointer = std::unique_ptr<Ast>;
 
-  class Bind {
-  private:
-    InternedString id;
-    std::optional<Type::Pointer> type_annotation;
-    Pointer term;
-
-  public:
-    Bind(InternedString id, std::optional<Type::Pointer> type_anno,
-         Pointer term) noexcept
-        : id{id}, type_annotation{type_anno}, term{term} {}
-
-    [[nodiscard]] auto Name() noexcept -> InternedString & { return id; }
-    [[nodiscard]] auto Name() const noexcept -> InternedString const & {
-      return id;
-    }
-    [[nodiscard]] auto Anno() noexcept -> std::optional<Type::Pointer> & {
-      return type_annotation;
-    }
-    [[nodiscard]] auto Anno() const noexcept
-        -> std::optional<Type::Pointer> const & {
-      return type_annotation;
-    }
-    [[nodiscard]] auto Term() noexcept -> Pointer { return term; }
-    [[nodiscard]] auto Term() const noexcept -> Pointer { return term; }
+  struct Type {
+    mint::Type type;
+    Type(mint::Type type) noexcept : type(type) {}
   };
 
-  class Binop {};
+  struct Let {
+    Identifier id;
+    std::optional<Type> type_annotation;
+    Pointer term;
 
-  class Unop {};
+    Let(Identifier id, std::optional<Type> type_anno, Pointer term) noexcept
+        : id{id}, type_annotation{type_anno}, term{std::move(term)} {}
+  };
 
-  class Value {
-  public:
-    class Boolean {
+  struct Binop {
+    Token op;
+    Pointer left;
+    Pointer right;
+
+    Binop(Token op, Pointer left, Pointer right) noexcept
+        : op(op), left(std::move(left)), right(std::move(right)) {}
+  };
+
+  struct Unop {
+    Token op;
+    Pointer right;
+
+    Unop(Token op, Pointer right) noexcept : op(op), right(std::move(right)) {}
+  };
+
+  struct Value {
+    struct Boolean {
       bool value;
 
-    public:
       Boolean(bool value) noexcept : value{value} {}
-
-      operator bool() const noexcept { return value; }
-      auto get() const noexcept { return value; }
     };
 
-    class Integer {
+    struct Integer {
       int value;
 
-    public:
       Integer(int value) noexcept : value{value} {}
-
-      operator int() const noexcept { return value; }
-      auto get() const noexcept { return value; }
     };
 
-    class Nil {
-    public:
-      operator bool() const noexcept { return false; }
-      auto get() const noexcept { return false; }
+    struct Nil {
+      bool value = false;
     };
 
     using Data = std::variant<Boolean, Integer, Nil>;
-
-  private:
     Data data;
 
-  public:
     template <class T, class... Args>
     constexpr explicit Value(std::in_place_type_t<T> type, Args &&...args)
         : data(type, std::forward<Args>(args)...) {}
-
-    [[nodiscard]] auto variant() noexcept -> Data & { return data; }
-    [[nodiscard]] auto variant() const noexcept -> Data const & { return data; }
   };
 
-  class Variable {
-  private:
-    InternedString id;
+  struct Variable {
+    Identifier name;
 
-  public:
-    Variable(InternedString name) noexcept : id{name} {}
-
-    [[nodiscard]] auto name() noexcept -> InternedString { return id; }
+    Variable(Identifier name) noexcept : name{name} {}
   };
+
+  using Data = std::variant<Type, Let, Binop, Unop, Value, Variable>;
+  Data data;
+  Location location;
+
+  template <class T, class... Args>
+  constexpr explicit Ast(Location location, std::in_place_type_t<T> type,
+                         Args &&...args)
+      : data(type, std::forward<Args>(args)...), location(location) {}
+
+  [[nodiscard]] static auto createType(Location location, Type type) noexcept {
+    return std::make_unique<Ast>(location, std::in_place_type<Ast::Type>, type);
+  }
+
+  [[nodiscard]] static auto createLet(Location location, Identifier name,
+                                      std::optional<Type> annotation,
+                                      Ast::Pointer term) noexcept {
+    return std::make_unique<Ast>(location, std::in_place_type<Let>, name,
+                                 annotation, std::move(term));
+  }
+
+  [[nodiscard]] static auto createBinop(Location location, Token op,
+                                        Pointer left, Pointer right) noexcept {
+    return std::make_unique<Ast>(location, std::in_place_type<Binop>, op,
+                                 std::move(left), std::move(right));
+  }
+
+  [[nodiscard]] static auto createUnop(Location location, Token op,
+                                       Pointer right) noexcept {
+    return std::make_unique<Ast>(location, std::in_place_type<Unop>, op,
+                                 std::move(right));
+  }
+
+  [[nodiscard]] static auto createBoolean(Location location,
+                                          bool value) noexcept {
+    return std::make_unique<Ast>(location, std::in_place_type<Value>,
+                                 std::in_place_type<Value::Boolean>, value);
+  }
+
+  [[nodiscard]] static auto createInteger(Location location,
+                                          int value) noexcept {
+    return std::make_unique<Ast>(location, std::in_place_type<Value>,
+                                 std::in_place_type<Value::Integer>, value);
+  }
+
+  [[nodiscard]] static auto createNil(Location location) noexcept {
+    return std::make_unique<Ast>(location, std::in_place_type<Value>,
+                                 std::in_place_type<Value::Nil>);
+  }
+
+  [[nodiscard]] static auto createVariable(Location location,
+                                           Identifier name) noexcept {
+    return std::make_unique<Ast>(location, std::in_place_type<Variable>, name);
+  }
 };
+
 } // namespace mint

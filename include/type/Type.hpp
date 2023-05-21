@@ -40,36 +40,22 @@ namespace mint {
   type equality even when considering within the
   context of the interner itself.
 */
-class Type {
-public:
+struct Type {
   using Pointer = Type const *;
 
-  class Boolean {};
-  class Integer {};
-  class Nil {};
+  struct Boolean {};
+  struct Integer {};
+  struct Nil {};
 
   using Data = std::variant<Boolean, Integer, Nil>;
-
-private:
   Data data;
 
   template <class T, class... Args>
   constexpr explicit Type(std::in_place_type_t<T> type, Args &&...args)
       : data(type, std::forward<Args>(args)...) {}
-
-  [[nodiscard]] constexpr auto variant() const noexcept -> Data const & {
-    return data;
-  }
-
-  friend class TypeInterner;
-  friend class PrintVisitor;
-  friend class IsScalarTypeVisitor;
-  friend class EqualsVisitor;
 };
 
 class TypeInterner {
-  // if the langauge had support for use-before-definition
-  // then TypeInterner could be a local class
   Type boolean_type;
   Type integer_type;
   Type nil_type;
@@ -88,49 +74,10 @@ public:
 /*
 
 */
-class PrintVisitor {
-  std::ostream *out;
-  Type::Pointer type;
-
-public:
-  PrintVisitor(std::ostream *out, Type::Pointer type) noexcept
-      : out{out}, type{type} {
-    MINT_ASSERT(out != nullptr);
-  }
-
-  void operator()() noexcept { std::visit(*this, type->variant()); }
-
-  void operator()([[maybe_unused]] Type::Boolean const &type) noexcept {
-    *out << "Boolean";
-  }
-
-  void operator()([[maybe_unused]] Type::Integer const &type) noexcept {
-    *out << "Integer";
-  }
-
-  void operator()([[maybe_unused]] Type::Nil const &type) noexcept {
-    *out << "Nil";
-  }
-};
-
-void print(std::ostream &out, Type::Pointer type) noexcept {
-  PrintVisitor visitor{&out, type};
-  visitor();
-}
-
-inline auto operator<<(std::ostream &out, Type::Pointer type) noexcept
-    -> std::ostream & {
-  print(out, type);
-  return out;
-}
-
-/*
-
-*/
 class IsScalarTypeVisitor {
 public:
   constexpr auto operator()(Type::Pointer type) const noexcept -> bool {
-    return std::visit(*this, type->variant());
+    return std::visit(*this, type->data);
   }
 
   constexpr auto
@@ -171,10 +118,6 @@ public:
 */
 inline constexpr IsScalarTypeVisitor isScalarType{};
 
-/*
-
-  \note we can rely on pointer equality within composite types.
-*/
 class EqualsVisitor {
   Type::Pointer left;
   Type::Pointer right;
@@ -183,21 +126,21 @@ public:
   EqualsVisitor(Type::Pointer left, Type::Pointer right)
       : left{left}, right{right} {}
 
-  auto operator()() { return std::visit(*this, right->variant()); }
+  auto operator()() { return std::visit(*this, right->data); }
 
-  auto operator()([[maybe_unused]] Type::Boolean const &type) const noexcept
+  auto operator()([[maybe_unused]] Type::Boolean const &right) const noexcept
       -> bool {
-    return left == right;
+    return std::holds_alternative<Type::Boolean>(left->data);
   }
 
-  auto operator()([[maybe_unused]] Type::Integer const &type) const noexcept
+  auto operator()([[maybe_unused]] Type::Integer const &right) const noexcept
       -> bool {
-    return left == right;
+    return std::holds_alternative<Type::Integer>(left->data);
   }
 
-  auto operator()([[maybe_unused]] Type::Nil const &type) const noexcept
+  auto operator()([[maybe_unused]] Type::Nil const &right) const noexcept
       -> bool {
-    return left == right;
+    return std::holds_alternative<Type::Nil>(left->data);
   }
 };
 
