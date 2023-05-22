@@ -15,50 +15,55 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <memory>
-#include <optional>
-#include <string_view>
 #include <variant>
 
-#include "adt/StringSet.hpp"
-
-#include "type/Type.hpp"
+#include "adt/Identifier.hpp"
 
 #include "scan/Location.hpp"
 #include "scan/Token.hpp"
 
+#include "type/Type.hpp"
+
 namespace mint {
 struct Ast {
-  using Pointer = std::unique_ptr<Ast>;
-
   struct Type {
-    mint::Type type;
-    Type(mint::Type type) noexcept : type(type) {}
+    mint::Type::Pointer type;
+    Type(mint::Type::Pointer type) noexcept : type(type) {}
   };
 
   struct Let {
     Identifier id;
-    std::optional<Type> type_annotation;
-    Pointer term;
+    Ast *term;
 
-    Let(Identifier id, std::optional<Type> type_anno, Pointer term) noexcept
-        : id{id}, type_annotation{type_anno}, term{std::move(term)} {}
+    Let(Identifier id, Ast *term) noexcept : id(id), term(term) {}
   };
 
   struct Binop {
     Token op;
-    Pointer left;
-    Pointer right;
+    Ast *left;
+    Ast *right;
 
-    Binop(Token op, Pointer left, Pointer right) noexcept
-        : op(op), left(std::move(left)), right(std::move(right)) {}
+    Binop(Token op, Ast *left, Ast *right) noexcept
+        : op(op), left(left), right(right) {}
   };
 
   struct Unop {
     Token op;
-    Pointer right;
+    Ast *right;
 
-    Unop(Token op, Pointer right) noexcept : op(op), right(std::move(right)) {}
+    Unop(Token op, Ast *right) noexcept : op(op), right(right) {}
+  };
+
+  struct Parens {
+    Ast *ast;
+
+    Parens(Ast *ast) noexcept : ast{ast} {}
+  };
+
+  struct Variable {
+    Identifier name;
+
+    Variable(Identifier name) noexcept : name{name} {}
   };
 
   struct Value {
@@ -80,71 +85,31 @@ struct Ast {
 
     using Data = std::variant<Boolean, Integer, Nil>;
     Data data;
+    Location location;
 
     template <class T, class... Args>
     constexpr explicit Value(std::in_place_type_t<T> type, Args &&...args)
         : data(type, std::forward<Args>(args)...) {}
   };
 
-  struct Variable {
-    Identifier name;
-
-    Variable(Identifier name) noexcept : name{name} {}
-  };
-
-  using Data = std::variant<Type, Let, Binop, Unop, Value, Variable>;
+  using Data = std::variant<Type, Let, Binop, Unop, Variable, Parens, Value>;
   Data data;
   Location location;
 
+private:
   template <class T, class... Args>
   constexpr explicit Ast(Location location, std::in_place_type_t<T> type,
                          Args &&...args)
       : data(type, std::forward<Args>(args)...), location(location) {}
 
-  [[nodiscard]] static auto createType(Location location, Type type) noexcept {
-    return std::make_unique<Ast>(location, std::in_place_type<Ast::Type>, type);
-  }
-
-  [[nodiscard]] static auto createLet(Location location, Identifier name,
-                                      std::optional<Type> annotation,
-                                      Ast::Pointer term) noexcept {
-    return std::make_unique<Ast>(location, std::in_place_type<Let>, name,
-                                 annotation, std::move(term));
-  }
-
-  [[nodiscard]] static auto createBinop(Location location, Token op,
-                                        Pointer left, Pointer right) noexcept {
-    return std::make_unique<Ast>(location, std::in_place_type<Binop>, op,
-                                 std::move(left), std::move(right));
-  }
-
-  [[nodiscard]] static auto createUnop(Location location, Token op,
-                                       Pointer right) noexcept {
-    return std::make_unique<Ast>(location, std::in_place_type<Unop>, op,
-                                 std::move(right));
-  }
-
-  [[nodiscard]] static auto createBoolean(Location location,
-                                          bool value) noexcept {
-    return std::make_unique<Ast>(location, std::in_place_type<Value>,
-                                 std::in_place_type<Value::Boolean>, value);
-  }
-
-  [[nodiscard]] static auto createInteger(Location location,
-                                          int value) noexcept {
-    return std::make_unique<Ast>(location, std::in_place_type<Value>,
-                                 std::in_place_type<Value::Integer>, value);
-  }
-
-  [[nodiscard]] static auto createNil(Location location) noexcept {
-    return std::make_unique<Ast>(location, std::in_place_type<Value>,
-                                 std::in_place_type<Value::Nil>);
-  }
-
-  [[nodiscard]] static auto createVariable(Location location,
-                                           Identifier name) noexcept {
-    return std::make_unique<Ast>(location, std::in_place_type<Variable>, name);
-  }
+  friend class AstAllocator;
 };
+
+/*
+  #TODO: isValueVisitor
+  #TODO: Ast no longer holds a location, so now there must be a new
+  class which holds an ast and a location together. (because ast's
+  are going to be interned via structural equality.)
+*/
 
 } // namespace mint

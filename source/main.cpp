@@ -20,18 +20,12 @@
 #include "utility/Assert.hpp"
 #include "utility/OptionsParser.hpp"
 
-#include "type/Print.hpp"
-#include "type/Type.hpp"
-
-#include "ast/Ast.hpp"
-#include "ast/Print.hpp"
-
-#include "scan/Parser.hpp"
+#include "adt/Environment.hpp"
 
 auto main(int argc, char **argv) -> int {
   mint::OptionsParser options_parser{argc, argv};
 
-  mint::Parser parser{&std::cin};
+  mint::Environment env{&std::cin};
 
-  return EXIT_SUCCESS;
+  return env.repl();
 }

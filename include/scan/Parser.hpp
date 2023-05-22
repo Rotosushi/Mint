@@ -17,7 +17,6 @@
 #pragma once
 #include <istream>
 
-#include "adt/StringSet.hpp"
 #include "ast/Ast.hpp"
 #include "error/Error.hpp"
 #include "scan/Scanner.hpp"
@@ -48,9 +47,14 @@ identifier = [a-zA-Z_]{a-zA-Z0-9_}
 */
 
 namespace mint {
+class Environment;
+
 class Parser {
+public:
+  using ParseResult = Result<Ast *>;
+
 private:
-  IdentifierSet *set;
+  Environment *env;
   Scanner scanner;
   Token current;
 
@@ -66,18 +70,20 @@ private:
     return false;
   }
 
-  auto parseTop() noexcept -> expected<Ast::Pointer>;
-  auto parseLet() noexcept -> expected<Ast::Pointer>;
-  auto parseAffix() noexcept -> expected<Ast::Pointer>;
-  auto parseInfix(Ast::Pointer left, BinopPrecedence prec) noexcept
-      -> expected<Ast::Pointer>;
-  auto parseBasic() noexcept -> expected<Ast::Pointer>;
+  auto parseTop() noexcept -> ParseResult;
+  auto parseLet() noexcept -> ParseResult;
+  auto parseAffix() noexcept -> ParseResult;
+  auto parseInfix(Ast *left, BinopPrecedence prec) noexcept -> ParseResult;
+  auto parseBasic() noexcept -> ParseResult;
 
 public:
-  Parser(IdentifierSet *set) : set(set) { MINT_ASSERT(set != nullptr); }
+  Parser(Environment *env) : env(env) { MINT_ASSERT(env != nullptr); }
+
+  [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
+      -> std::string_view;
 
   auto append(std::string_view text) noexcept { scanner.append(text); }
 
-  auto parse() -> expected<Ast::Pointer> { return parseTop(); }
+  auto parse() -> ParseResult { return parseTop(); }
 };
 } // namespace mint

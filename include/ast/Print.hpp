@@ -45,7 +45,7 @@ public:
   }
 };
 
-void print(std::ostream &out, Ast::Value const &value) noexcept {
+inline void print(std::ostream &out, Ast::Value const &value) noexcept {
   AstValuePrintVisitor visitor{&out};
   std::visit(visitor, value.data);
 }
@@ -73,13 +73,19 @@ public:
 
   void operator()(Ast::Binop const &binop) noexcept {
     std::visit(*this, binop.left->data);
-    *out << " " << ToString(binop.op) << " ";
+    *out << " " << toString(binop.op) << " ";
     std::visit(*this, binop.right->data);
   }
 
   void operator()(Ast::Unop const &unop) noexcept {
-    *out << ToString(unop.op) << " ";
+    *out << toString(unop.op) << " ";
     std::visit(*this, unop.right->data);
+  }
+
+  void operator()(Ast::Parens const &parens) noexcept {
+    *out << "(";
+    std::visit(*this, parens.ast->data);
+    *out << ")";
   }
 
   void operator()(Ast::Value const &value) noexcept { *out << value; }
@@ -87,12 +93,12 @@ public:
   void operator()(Ast::Variable const &var) noexcept { *out << var.name; }
 };
 
-void print(std::ostream &out, Ast::Pointer const &ast) noexcept {
+inline void print(std::ostream &out, Ast const *ast) noexcept {
   AstPrintVisitor visitor{&out};
   std::visit(visitor, ast->data);
 }
 
-inline auto operator<<(std::ostream &out, Ast::Pointer const &ast) noexcept
+inline auto operator<<(std::ostream &out, Ast const *ast) noexcept
     -> std::ostream & {
   print(out, ast);
   return out;

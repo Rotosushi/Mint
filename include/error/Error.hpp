@@ -33,6 +33,7 @@ public:
     ExpectedAnEquals,
     ExpectedASemicolon,
     ExpectedAnIdentifier,
+    ExpectedAClosingParen,
   };
 
 private:
@@ -48,7 +49,24 @@ public:
   Error(Kind kind, Location location, std::string_view message) noexcept
       : kind(kind), location(location), message(message) {}
 
-  void print(std::ostream &out) const noexcept {
+  void underline(std::ostream &out,
+                 std::string_view bad_source) const noexcept {
+    if (!location.has_value()) {
+      return;
+    }
+    auto loc = location.value();
+
+    for (std::size_t i = 0; i <= bad_source.size(); ++i) {
+      if ((i < loc.fcolumn) || (i >= loc.lcolumn))
+        out << " ";
+      else
+        out << "^";
+    }
+    out << "\n";
+  }
+
+  void print(std::ostream &out,
+             std::string_view bad_source = "") const noexcept {
     out << KindToSV(kind);
 
     if (location.has_value()) {
@@ -59,6 +77,19 @@ public:
     if (message.has_value()) {
       out << " --  " << message.value() << "\n";
     }
+
+    if (!bad_source.empty()) {
+      out << bad_source << "\n";
+      underline(out, bad_source);
+    }
+  }
+
+  auto getLocation() const noexcept { return location; }
+  auto getMessage() const noexcept -> std::optional<std::string_view> {
+    if (message.has_value())
+      return static_cast<std::string_view>(message.value());
+    else
+      return {};
   }
 };
 
@@ -67,6 +98,6 @@ inline auto operator<<(std::ostream &out, Error &error) -> std::ostream & {
   return out;
 }
 
-template <class T> using expected = std::expected<T, Error>;
+template <class T> using Result = std::expected<T, Error>;
 
 } // namespace mint

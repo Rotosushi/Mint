@@ -15,26 +15,29 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <cstdint>
+#include <ostream>
+#include <string_view>
 
 namespace mint {
-struct Location {
-  std::size_t fline;
-  std::size_t fcolumn;
-  std::size_t lline;
-  std::size_t lcolumn;
+class Identifier {
+private:
+  std::string_view view;
 
-  Location() noexcept = default;
-  Location(const Location &other) noexcept = default;
-  Location(Location &&other) noexcept = default;
-  Location(std::size_t fl, std::size_t fc, std::size_t ll,
-           std::size_t lc) noexcept
-      : fline(fl), fcolumn(fc), lline(ll), lcolumn(lc) {}
-  Location(Location &lhs, Location &rhs) noexcept
-      : fline(lhs.fline), fcolumn(lhs.fcolumn), lline(rhs.fline),
-        lcolumn(rhs.lcolumn) {}
+public:
+  Identifier(std::string_view view) noexcept : view{view} {}
 
-  auto operator=(const Location &other) noexcept -> Location & = default;
-  auto operator=(Location &&other) noexcept -> Location & = default;
+  operator std::string_view() noexcept { return view; }
+  auto get() const noexcept -> std::string_view { return view; }
+
+  auto operator==(const Identifier &other) const noexcept -> bool {
+    return view.data() == other.view.data();
+  }
 };
+
+inline auto operator<<(std::ostream &out, Identifier id) noexcept
+    -> std::ostream & {
+  out << id.get();
+  return out;
+}
+
 } // namespace mint

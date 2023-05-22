@@ -19,8 +19,14 @@ re2c_generate_scanner(
 )
 
 add_library(mint_common STATIC 
-  ${MINT_INCLUDE_DIR}/adt/StringSet.hpp
+  ${MINT_INCLUDE_DIR}/adt/AstInterner.hpp 
+  ${MINT_INCLUDE_DIR}/adt/Environment.hpp
+  ${MINT_SOURCE_DIR}/adt/Environment.cpp
+  ${MINT_INCLUDE_DIR}/adt/IdentifierSet.hpp
+  ${MINT_INCLUDE_DIR}/adt/Identifier.hpp 
+  ${MINT_INCLUDE_DIR}/adt/TypeInterner.hpp 
 
+  ${MINT_INCLUDE_DIR}/ast/Equals.hpp
   ${MINT_INCLUDE_DIR}/ast/Print.hpp
   ${MINT_INCLUDE_DIR}/ast/Ast.hpp 
 
@@ -41,6 +47,7 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/utility/Config.hpp
   ${MINT_INCLUDE_DIR}/utility/FatalError.hpp 
   ${MINT_INCLUDE_DIR}/utility/Log.hpp 
+  ${MINT_INCLUDE_DIR}/utility/NumbersRoundTrip.hpp
   ${MINT_INCLUDE_DIR}/utility/OptionsParser.hpp
 )
 

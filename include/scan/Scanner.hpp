@@ -60,6 +60,10 @@ public:
     marker = token = cursor = buffer.begin();
   }
 
+  auto view() const noexcept -> std::string_view {
+    return {buffer.begin(), buffer.end()};
+  }
+
   void reset() noexcept {
     location = {1, 0, 1, 0};
     buffer.clear();

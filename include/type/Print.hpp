@@ -47,7 +47,7 @@ public:
   }
 };
 
-void print(std::ostream &out, Type::Pointer type) noexcept {
+inline void print(std::ostream &out, Type::Pointer type) noexcept {
   TypePrintVisitor visitor{&out, type};
   visitor();
 }

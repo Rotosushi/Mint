@@ -15,40 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <ostream>
-#include <string_view>
+#include <string>
 #include <unordered_set>
 
+#include "adt/Identifier.hpp"
+
 namespace mint {
-class Identifier {
-private:
-  std::string_view view;
-
-public:
-  Identifier(std::string_view view) noexcept : view{view} {}
-
-  operator std::string_view() noexcept { return view; }
-  auto get() const noexcept -> std::string_view { return view; }
-
-  auto operator==(const Identifier &other) const noexcept -> bool {
-    return view.data() == other.view.data();
-  }
-};
-
-inline auto operator<<(std::ostream &out, Identifier id) noexcept
-    -> std::ostream & {
-  out << id.get();
-  return out;
-}
-
 class IdentifierSet {
 private:
-  std::unordered_set<std::string_view> set;
+  std::unordered_set<std::string> set;
 
 public:
   [[nodiscard]] auto emplace(std::string_view view) noexcept -> Identifier {
     auto pair = set.emplace(view);
-    return *pair.first;
+    return static_cast<std::string_view>(*pair.first);
   }
 };
 } // namespace mint

@@ -14,27 +14,32 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-#include <cstdint>
+#include "adt/Environment.hpp"
+
+#include "ast/Print.hpp"
 
 namespace mint {
-struct Location {
-  std::size_t fline;
-  std::size_t fcolumn;
-  std::size_t lline;
-  std::size_t lcolumn;
+auto Environment::repl() noexcept -> int {
+  bool run = true;
 
-  Location() noexcept = default;
-  Location(const Location &other) noexcept = default;
-  Location(Location &&other) noexcept = default;
-  Location(std::size_t fl, std::size_t fc, std::size_t ll,
-           std::size_t lc) noexcept
-      : fline(fl), fcolumn(fc), lline(ll), lcolumn(lc) {}
-  Location(Location &lhs, Location &rhs) noexcept
-      : fline(lhs.fline), fcolumn(lhs.fcolumn), lline(rhs.fline),
-        lcolumn(rhs.lcolumn) {}
+  auto read = [&]() {
+    std::string line;
+    std::getline(*in, line);
+    line.push_back('\n'); // getline doesn't append the newline
+    return line;
+  };
 
-  auto operator=(const Location &other) noexcept -> Location & = default;
-  auto operator=(Location &&other) noexcept -> Location & = default;
-};
+  while (run) {
+    std::cout << "# ";
+    parser.append(read());
+
+    auto parse_result = parser.parse();
+    if (!parse_result)
+      printErrorWithSource(parse_result.error());
+    else
+      std::cout << "> " << parse_result.value() << "\n";
+  }
+
+  return EXIT_SUCCESS;
+}
 } // namespace mint

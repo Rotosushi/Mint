@@ -50,25 +50,12 @@ struct Type {
   using Data = std::variant<Boolean, Integer, Nil>;
   Data data;
 
+private:
   template <class T, class... Args>
   constexpr explicit Type(std::in_place_type_t<T> type, Args &&...args)
       : data(type, std::forward<Args>(args)...) {}
-};
 
-class TypeInterner {
-  Type boolean_type;
-  Type integer_type;
-  Type nil_type;
-
-public:
-  TypeInterner() noexcept
-      : boolean_type{std::in_place_type<Type::Boolean>},
-        integer_type{std::in_place_type<Type::Integer>},
-        nil_type{std::in_place_type<Type::Nil>} {}
-
-  auto getBooleanType() const noexcept { return &boolean_type; }
-  auto getIntegerType() const noexcept { return &integer_type; }
-  auto getNilType() const noexcept { return &nil_type; }
+  friend class TypeInterner;
 };
 
 /*
@@ -117,36 +104,4 @@ public:
     as a runtime value.)
 */
 inline constexpr IsScalarTypeVisitor isScalarType{};
-
-class EqualsVisitor {
-  Type::Pointer left;
-  Type::Pointer right;
-
-public:
-  EqualsVisitor(Type::Pointer left, Type::Pointer right)
-      : left{left}, right{right} {}
-
-  auto operator()() { return std::visit(*this, right->data); }
-
-  auto operator()([[maybe_unused]] Type::Boolean const &right) const noexcept
-      -> bool {
-    return std::holds_alternative<Type::Boolean>(left->data);
-  }
-
-  auto operator()([[maybe_unused]] Type::Integer const &right) const noexcept
-      -> bool {
-    return std::holds_alternative<Type::Integer>(left->data);
-  }
-
-  auto operator()([[maybe_unused]] Type::Nil const &right) const noexcept
-      -> bool {
-    return std::holds_alternative<Type::Nil>(left->data);
-  }
-};
-
-auto equals(Type::Pointer left, Type::Pointer right) noexcept -> bool {
-  EqualsVisitor visitor{left, right};
-  return visitor();
-}
-
 } // namespace mint

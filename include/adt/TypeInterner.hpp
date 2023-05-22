@@ -15,26 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <cstdint>
+#include "type/Type.hpp"
 
 namespace mint {
-struct Location {
-  std::size_t fline;
-  std::size_t fcolumn;
-  std::size_t lline;
-  std::size_t lcolumn;
+class TypeInterner {
+  Type boolean_type;
+  Type integer_type;
+  Type nil_type;
 
-  Location() noexcept = default;
-  Location(const Location &other) noexcept = default;
-  Location(Location &&other) noexcept = default;
-  Location(std::size_t fl, std::size_t fc, std::size_t ll,
-           std::size_t lc) noexcept
-      : fline(fl), fcolumn(fc), lline(ll), lcolumn(lc) {}
-  Location(Location &lhs, Location &rhs) noexcept
-      : fline(lhs.fline), fcolumn(lhs.fcolumn), lline(rhs.fline),
-        lcolumn(rhs.lcolumn) {}
+public:
+  TypeInterner() noexcept
+      : boolean_type{std::in_place_type<Type::Boolean>},
+        integer_type{std::in_place_type<Type::Integer>},
+        nil_type{std::in_place_type<Type::Nil>} {}
 
-  auto operator=(const Location &other) noexcept -> Location & = default;
-  auto operator=(Location &&other) noexcept -> Location & = default;
+  auto getBooleanType() const noexcept { return &boolean_type; }
+  auto getIntegerType() const noexcept { return &integer_type; }
+  auto getNilType() const noexcept { return &nil_type; }
 };
 } // namespace mint

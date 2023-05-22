@@ -34,6 +34,8 @@ auto Error::KindToSV(Error::Kind kind) noexcept -> std::string_view {
     return "Expected a ';'";
   case Error::ExpectedAnIdentifier:
     return "Expected an identifier";
+  case Error::ExpectedAClosingParen:
+    return "Expected a ')'";
 
   default:
     fatalError("Unknown Error::Kind");
