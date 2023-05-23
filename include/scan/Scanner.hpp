@@ -73,18 +73,24 @@ public:
   auto endOfInput() const noexcept -> bool { return cursor == end; }
 
   void append(std::string_view text) noexcept {
-    auto begin = buffer.begin();
-    auto cursor_offset = std::distance(begin, cursor);
-    auto marker_offset = std::distance(begin, marker);
-    auto token_offset = std::distance(begin, token);
+    if (buffer.empty()) {
+      buffer.append(text);
+      end = buffer.end();
+      marker = token = cursor = buffer.begin();
+    } else {
+      auto begin = buffer.begin();
+      auto cursor_offset = std::distance(begin, cursor);
+      auto marker_offset = std::distance(begin, marker);
+      auto token_offset = std::distance(begin, token);
 
-    buffer.append(text);
+      buffer.append(text);
 
-    begin = buffer.begin();
-    end = buffer.end();
-    cursor = begin + cursor_offset;
-    marker = begin + marker_offset;
-    token = begin + token_offset;
+      begin = buffer.begin();
+      end = buffer.end();
+      cursor = begin + cursor_offset;
+      marker = begin + marker_offset;
+      token = begin + token_offset;
+    }
   }
 
   auto getText() const noexcept -> std::string_view { return {token, cursor}; }

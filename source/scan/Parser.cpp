@@ -105,20 +105,28 @@ auto Parser::parseLet() noexcept -> ParseResult {
 }
 
 auto Parser::parseAffix() noexcept -> ParseResult {
+  auto binop = parseInfix();
+  if (!binop)
+    return binop;
+
+  return {env->getAffixAst(binop.value()->location, binop.value())};
+}
+
+auto Parser::parseInfix() noexcept -> ParseResult {
   auto basic = parseBasic();
   if (!basic) {
     return basic;
   }
 
   if (isBinop(current)) {
-    return parseInfix(std::move(basic.value()), 0);
+    return precedenceParser(std::move(basic.value()), 0);
   }
 
   return basic;
 }
 
-// #TODO: I'm fairly sure that location tracking in binop
-// expressions has a bug in it.
+// #TODO: I'm fairly sure that location tracking in
+// precedence parsing has a bug in it.
 // ... a + b ...
 // has location information such that we will highlight
 // ... a + b ...
@@ -126,7 +134,7 @@ auto Parser::parseAffix() noexcept -> ParseResult {
 // instead of the (probably) expected
 // ... a + b ...
 // ...-^^^^^-...
-auto Parser::parseInfix(Ast *left, BinopPrecedence prec) noexcept
+auto Parser::precedenceParser(Ast *left, BinopPrecedence prec) noexcept
     -> ParseResult {
   ParseResult result = left;
   Location op_loc;
@@ -164,7 +172,7 @@ auto Parser::parseInfix(Ast *left, BinopPrecedence prec) noexcept
       return right;
 
     while (predictsHigherPrecedenceOrRightAssociativeBinop()) {
-      auto temp = parseInfix(right.value(), precedence(op));
+      auto temp = precedenceParser(right.value(), precedence(op));
       if (!temp)
         return temp;
 

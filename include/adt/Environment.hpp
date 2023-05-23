@@ -62,6 +62,10 @@ public:
   auto getIntegerType() noexcept { return type_interner.getIntegerType(); }
   auto getNilType() noexcept { return type_interner.getNilType(); }
 
+  auto getAffixAst(Location location, Ast *affix) noexcept {
+    return ast_allocator.getAffix(location, affix);
+  }
+
   auto getTypeAst(Location location, mint::Type::Pointer type) noexcept {
     return ast_allocator.getType(location, type);
   }

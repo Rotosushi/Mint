@@ -44,6 +44,7 @@ private:
     }
   };
 
+  Set affixes;
   Set types;
   Set lets;
   Set binops;
@@ -55,6 +56,10 @@ private:
   Set variables;
 
 public:
+  auto getAffix(Location location, Ast *affix) noexcept {
+    return affixes.get(location, std::in_place_type<Ast::Affix>, affix);
+  }
+
   auto getType(Location location, mint::Type::Pointer type) noexcept {
     return types.get(location, std::in_place_type<Ast::Type>, type);
   }

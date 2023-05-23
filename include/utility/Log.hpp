@@ -28,3 +28,9 @@ log(std::ostream &out, std::string_view message,
       << " `" << location.function_name() << "`: " << message << "\n";
 }
 } // namespace mint
+
+#if !defined(NDEBUG)
+#  define DEBUG_LOG(stream, message) mint::log((stream), (message))
+#else
+#  define DEBUG_LOG(message)
+#endif

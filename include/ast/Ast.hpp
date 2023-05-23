@@ -26,6 +26,11 @@
 
 namespace mint {
 struct Ast {
+  struct Affix {
+    Ast *affix;
+    Affix(Ast *affix) noexcept : affix(affix) {}
+  };
+
   struct Type {
     mint::Type::Pointer type;
     Type(mint::Type::Pointer type) noexcept : type(type) {}
@@ -92,7 +97,8 @@ struct Ast {
         : data(type, std::forward<Args>(args)...) {}
   };
 
-  using Data = std::variant<Type, Let, Binop, Unop, Variable, Parens, Value>;
+  using Data =
+      std::variant<Affix, Type, Let, Binop, Unop, Variable, Parens, Value>;
   Data data;
   Location location;
 

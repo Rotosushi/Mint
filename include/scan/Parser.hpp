@@ -73,17 +73,26 @@ private:
   auto parseTop() noexcept -> ParseResult;
   auto parseLet() noexcept -> ParseResult;
   auto parseAffix() noexcept -> ParseResult;
-  auto parseInfix(Ast *left, BinopPrecedence prec) noexcept -> ParseResult;
+  auto parseInfix() noexcept -> ParseResult;
+  auto precedenceParser(Ast *left, BinopPrecedence prec) noexcept
+      -> ParseResult;
   auto parseBasic() noexcept -> ParseResult;
 
 public:
-  Parser(Environment *env) : env(env) { MINT_ASSERT(env != nullptr); }
+  Parser(Environment *env) : env(env), current(Token::End) {
+    MINT_ASSERT(env != nullptr);
+  }
 
   [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
       -> std::string_view;
 
   auto append(std::string_view text) noexcept { scanner.append(text); }
 
-  auto parse() -> ParseResult { return parseTop(); }
+  auto parse() -> ParseResult {
+    if ((current == Token::End) && (!scanner.endOfInput())) {
+      next(); // prime the parser with the first token
+    }
+    return parseTop();
+  }
 };
 } // namespace mint

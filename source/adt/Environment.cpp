@@ -31,7 +31,8 @@ auto Environment::repl() noexcept -> int {
 
   while (run) {
     std::cout << "# ";
-    parser.append(read());
+    auto line = read();
+    parser.append(line);
 
     auto parse_result = parser.parse();
     if (!parse_result)

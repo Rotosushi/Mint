@@ -57,7 +57,7 @@ public:
     auto loc = location.value();
 
     for (std::size_t i = 0; i <= bad_source.size(); ++i) {
-      if ((i < loc.fcolumn) || (i >= loc.lcolumn))
+      if ((i < loc.fcolumn) || (i > loc.lcolumn))
         out << " ";
       else
         out << "^";
