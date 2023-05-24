@@ -26,7 +26,7 @@ private:
 public:
   Identifier(std::string_view view) noexcept : view{view} {}
 
-  operator std::string_view() noexcept { return view; }
+  operator std::string_view() const noexcept { return view; }
   auto get() const noexcept -> std::string_view { return view; }
 
   auto operator==(const Identifier &other) const noexcept -> bool {
@@ -41,3 +41,16 @@ inline auto operator<<(std::ostream &out, Identifier id) noexcept
 }
 
 } // namespace mint
+
+namespace std {
+/*
+  specialize std::hash to work with identifiers,
+  so we can use identifiers directly in maps and sets
+*/
+template <> class hash<mint::Identifier> {
+public:
+  auto operator()(const mint::Identifier &id) const -> std::size_t {
+    return std::hash<std::string_view>{}(id);
+  }
+};
+} // namespace std

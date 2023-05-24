@@ -24,11 +24,13 @@ add_library(mint_common STATIC
   ${MINT_SOURCE_DIR}/adt/Environment.cpp
   ${MINT_INCLUDE_DIR}/adt/IdentifierSet.hpp
   ${MINT_INCLUDE_DIR}/adt/Identifier.hpp 
+  ${MINT_INCLUDE_DIR}/adt/Scope.hpp
   ${MINT_INCLUDE_DIR}/adt/TypeInterner.hpp 
 
+  ${MINT_INCLUDE_DIR}/ast/Ast.hpp 
   ${MINT_INCLUDE_DIR}/ast/Equals.hpp
   ${MINT_INCLUDE_DIR}/ast/Print.hpp
-  ${MINT_INCLUDE_DIR}/ast/Ast.hpp 
+  ${MINT_INCLUDE_DIR}/ast/Typecheck.hpp
 
   ${MINT_INCLUDE_DIR}/error/Error.hpp
   ${MINT_SOURCE_DIR}/error/Error.cpp

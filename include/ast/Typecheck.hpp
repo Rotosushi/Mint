@@ -15,9 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 1
-#define MINT_GIT_REVISION "1e36882d56874331712cdb03c0c4c00fbc96753e"
-// clang-format on
+#include "ast/Ast.hpp"
+
+#include "adt/Environment.hpp"
+
+namespace mint
+{
+  class AstTypecheckVisitor {
+
+  };
+} // namespace mint
