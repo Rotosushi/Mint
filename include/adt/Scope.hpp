@@ -24,7 +24,7 @@ namespace mint {
 class Scope {
 public:
   using Key = Identifier;
-  using Value = std::pair<Type::Pointer, Ast::Value *>;
+  using Value = std::pair<Type::Pointer, Ast *>;
   using Table = std::unordered_map<Key, Value>;
   using iterator = typename Table::iterator;
 
@@ -41,7 +41,7 @@ public:
     [[nodiscard]] auto type() const noexcept -> Type::Pointer {
       return binding->second.first;
     }
-    [[nodiscard]] auto value() const noexcept -> Ast::Value * {
+    [[nodiscard]] auto value() const noexcept -> Ast * {
       return binding->second.second;
     }
   };
@@ -57,12 +57,12 @@ public:
     return pair.first;
   }
 
-  auto lookup(Key key) const noexcept -> std::optional<Binding> {
+  auto lookup(Key key) noexcept -> std::optional<Binding> {
     auto found = table.find(key);
     if (found == table.end()) {
       return std::nullopt;
     }
-    return found;
+    return {found};
   }
-}
+};
 } // namespace mint

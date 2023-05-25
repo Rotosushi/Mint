@@ -37,6 +37,14 @@ auto Error::KindToSV(Error::Kind kind) noexcept -> std::string_view {
   case Error::ExpectedAClosingParen:
     return "Expected a ')'";
 
+  case Error::NameUnboundInScope:
+    return "Name not bound in scope";
+  case Error::NameAlreadyBoundInScope:
+    return "Name already bound in scope";
+
+  case Error::UnopTypeMismatch:
+    return "Unop argument type mismatch";
+
   default:
     fatalError("Unknown Error::Kind");
   }

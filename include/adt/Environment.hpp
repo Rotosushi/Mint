@@ -17,9 +17,12 @@
 #pragma once
 #include <iostream>
 
-#include "adt/AstInterner.hpp"
+#include "adt/AstAllocator.hpp"
+#include "adt/BinopTable.hpp"
 #include "adt/IdentifierSet.hpp"
+#include "adt/Scope.hpp"
 #include "adt/TypeInterner.hpp"
+#include "adt/UnopTable.hpp"
 
 #include "scan/Parser.hpp"
 
@@ -28,6 +31,9 @@ class Environment {
   AstAllocator ast_allocator;
   TypeInterner type_interner;
   IdentifierSet identifier_set;
+  BinopTable binop_table;
+  UnopTable unop_table;
+  Scope scope;
   Parser parser;
 
   std::istream *in;
@@ -41,6 +47,9 @@ public:
     MINT_ASSERT(in != nullptr);
     MINT_ASSERT(out != nullptr);
     MINT_ASSERT(errout != nullptr);
+
+    InitializeBuiltinBinops(this);
+    InitializeBuiltinUnops(this);
   }
 
   void printErrorWithSource(Error &error) const noexcept {
@@ -54,9 +63,21 @@ public:
 
   auto repl() noexcept -> int;
 
+  auto bind(Identifier name, Type::Pointer type, Ast *value) noexcept {
+    return scope.bind(name, std::make_pair(type, value));
+  }
+
+  auto lookup(Identifier name) { return scope.lookup(name); }
+
   auto getIdentifier(std::string_view text) noexcept {
     return identifier_set.emplace(text);
   }
+
+  auto createBinop(Token op) { return binop_table.emplace(op); }
+  auto lookupBinop(Token op) { return binop_table.lookup(op); }
+
+  auto createUnop(Token op) { return unop_table.emplace(op); }
+  auto lookupUnop(Token op) { return unop_table.lookup(op); }
 
   auto getBooleanType() noexcept { return type_interner.getBooleanType(); }
   auto getIntegerType() noexcept { return type_interner.getIntegerType(); }
@@ -83,6 +104,14 @@ public:
     return ast_allocator.getUnop(location, op, right);
   }
 
+  auto getParensAst(Location location, Ast *ast) noexcept {
+    return ast_allocator.getParens(location, ast);
+  }
+
+  auto getVariableAst(Location location, Identifier name) noexcept {
+    return ast_allocator.getVariable(location, name);
+  }
+
   auto getBooleanAst(Location location, bool value) noexcept {
     return ast_allocator.getBoolean(location, value);
   }
@@ -93,14 +122,6 @@ public:
 
   auto getNilAst(Location location) noexcept {
     return ast_allocator.getNil(location);
-  }
-
-  auto getParensAst(Location location, Ast *ast) noexcept {
-    return ast_allocator.getParens(location, ast);
-  }
-
-  auto getVariableAst(Location location, Identifier name) noexcept {
-    return ast_allocator.getVariable(location, name);
   }
 };
 } // namespace mint

@@ -77,6 +77,14 @@ public:
     return unops.get(location, std::in_place_type<Ast::Unop>, op, right);
   }
 
+  auto getParens(Location location, Ast *ast) noexcept {
+    return parens.get(location, std::in_place_type<Ast::Parens>, ast);
+  }
+
+  auto getVariable(Location location, Identifier name) noexcept {
+    return variables.get(location, std::in_place_type<Ast::Variable>, name);
+  }
+
   auto getBoolean(Location location, bool value) noexcept {
     return booleans.get(location, std::in_place_type<Ast::Value>,
                         std::in_place_type<Ast::Value::Boolean>, value);
@@ -90,14 +98,6 @@ public:
   auto getNil(Location location) noexcept {
     return nils.get(location, std::in_place_type<Ast::Value>,
                     std::in_place_type<Ast::Value::Nil>);
-  }
-
-  auto getParens(Location location, Ast *ast) noexcept {
-    return parens.get(location, std::in_place_type<Ast::Parens>, ast);
-  }
-
-  auto getVariable(Location location, Identifier name) noexcept {
-    return variables.get(location, std::in_place_type<Ast::Variable>, name);
   }
 };
 } // namespace mint

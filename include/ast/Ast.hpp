@@ -111,11 +111,27 @@ private:
   friend class AstAllocator;
 };
 
+template <typename T> auto isa(Ast *ast) -> bool {
+  return std::holds_alternative<T>(ast->data);
+}
+
+template <typename T> auto isa(Ast::Value *value) -> bool {
+  return std::holds_alternative<T>(value->data);
+}
+
 /*
-  #TODO: isValueVisitor
-  #TODO: Ast no longer holds a location, so now there must be a new
-  class which holds an ast and a location together. (because ast's
-  are going to be interned via structural equality.)
+  it is a bit idisyncratic to return a pointer
+  when we are asserting that the get needs to succeed.
+  when we could return a nullptr.
 */
+template <typename T> auto get(Ast *ast) -> T * {
+  MINT_ASSERT(isa<T>(ast));
+  return std::get_if<T>(&ast->data);
+}
+
+template <typename T> auto get(Ast::Value *value) -> T * {
+  MINT_ASSERT(isa<T>(value));
+  return std::get_if<T>(&value->data);
+}
 
 } // namespace mint

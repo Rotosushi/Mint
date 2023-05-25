@@ -19,13 +19,17 @@ re2c_generate_scanner(
 )
 
 add_library(mint_common STATIC 
-  ${MINT_INCLUDE_DIR}/adt/AstInterner.hpp 
+  ${MINT_INCLUDE_DIR}/adt/AstAllocator.hpp 
+  ${MINT_INCLUDE_DIR}/adt/BinopTable.hpp
+  ${MINT_SOURCE_DIR}/adt/BinopTable.cpp
   ${MINT_INCLUDE_DIR}/adt/Environment.hpp
   ${MINT_SOURCE_DIR}/adt/Environment.cpp
   ${MINT_INCLUDE_DIR}/adt/IdentifierSet.hpp
   ${MINT_INCLUDE_DIR}/adt/Identifier.hpp 
   ${MINT_INCLUDE_DIR}/adt/Scope.hpp
   ${MINT_INCLUDE_DIR}/adt/TypeInterner.hpp 
+  ${MINT_INCLUDE_DIR}/adt/UnopTable.hpp
+  ${MINT_SOURCE_DIR}/adt/UnopTable.cpp
 
   ${MINT_INCLUDE_DIR}/ast/Ast.hpp 
   ${MINT_INCLUDE_DIR}/ast/Equals.hpp

@@ -28,12 +28,18 @@ public:
   enum Kind {
     UnknownToken,
     UnknownBinop,
+    UnknownUnop,
 
     ExpectedABasicTerm,
     ExpectedAnEquals,
     ExpectedASemicolon,
     ExpectedAnIdentifier,
     ExpectedAClosingParen,
+
+    NameUnboundInScope,
+    NameAlreadyBoundInScope,
+
+    UnopTypeMismatch,
   };
 
 private:

@@ -80,7 +80,7 @@ auto Parser::parseLet() noexcept -> ParseResult {
                        text()};
   }
 
-  auto id = text();
+  auto id = env->getIdentifier(text());
 
   next(); // eat identifier
 
@@ -251,6 +251,7 @@ auto Parser::parseBasic() noexcept -> ParseResult {
     Location unop_loc{lhs_loc, rhs_loc};
 
     return env->getUnopAst(unop_loc, op, right.value());
+    break;
   }
 
   case Token::LParen: {

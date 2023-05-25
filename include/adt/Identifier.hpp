@@ -23,8 +23,13 @@ class Identifier {
 private:
   std::string_view view;
 
-public:
   Identifier(std::string_view view) noexcept : view{view} {}
+
+public:
+  Identifier(const Identifier &id) noexcept = default;
+  Identifier(Identifier &&id) noexcept = default;
+  auto operator=(const Identifier &id) noexcept -> Identifier & = default;
+  auto operator=(Identifier &&id) noexcept -> Identifier & = default;
 
   operator std::string_view() const noexcept { return view; }
   auto get() const noexcept -> std::string_view { return view; }
@@ -32,6 +37,8 @@ public:
   auto operator==(const Identifier &other) const noexcept -> bool {
     return view.data() == other.view.data();
   }
+
+  friend class IdentifierSet;
 };
 
 inline auto operator<<(std::ostream &out, Identifier id) noexcept
