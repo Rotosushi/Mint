@@ -112,7 +112,7 @@ public:
       return found;
     }
 
-    return table.emplace(op, BinopOverloads{}).first;
+    return table.emplace(std::make_pair(op, BinopOverloads{})).first;
   }
 };
 

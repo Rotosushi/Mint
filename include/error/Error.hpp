@@ -40,6 +40,7 @@ public:
     NameAlreadyBoundInScope,
 
     UnopTypeMismatch,
+    BinopTypeMismatch,
   };
 
 private:

@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <sstream>
+
 #include "ast/Ast.hpp"
 
 #include "adt/Environment.hpp"
@@ -77,12 +79,56 @@ public:
   }
 
   auto operator()(Ast::Let const &let) noexcept -> Result<Type::Pointer> {
-    
+    return std::visit(*this, let.term->data);
   }
 
-  auto operator()(Ast::Binop const &binop) noexcept -> Result<Type::Pointer> {}
+  auto operator()(Ast::Binop const &binop) noexcept -> Result<Type::Pointer> {
+    auto overloads = env->lookupBinop(binop.op);
+    if (!overloads) {
+      return Result<Type::Pointer>(std::unexpect, Error::UnknownBinop,
+                                   Location{}, toString(binop.op));
+    }
 
-  auto operator()(Ast::Unop const &unop) noexcept -> Result<Type::Pointer> {}
+    auto left_type = std::visit(*this, binop.left->data);
+    if (!left_type)
+      return left_type;
+
+    auto right_type = std::visit(*this, binop.right->data);
+    if (!right_type)
+      return right_type;
+
+    auto instance = overloads->lookup(left_type.value(), right_type.value());
+    if (!instance) {
+      std::stringstream ss;
+      ss << "[" << left_type.value() << ", " << right_type.value() << "]";
+      return Result<Type::Pointer>(std::unexpect, Error::BinopTypeMismatch,
+                                   Location{}, ss.view());
+    }
+
+    return instance->result_type;
+  }
+
+  auto operator()(Ast::Unop const &unop) noexcept -> Result<Type::Pointer> {
+    auto overloads = env->lookupUnop(unop.op);
+    if (!overloads) {
+      return Result<Type::Pointer>(std::unexpect, Error::UnknownUnop,
+                                   Location{}, toString(unop.op));
+    }
+
+    auto right_type = std::visit(*this, unop.right->data);
+    if (!right_type)
+      return right_type;
+
+    auto instance = overloads->lookup(right_type.value());
+    if (!instance) {
+      std::stringstream ss;
+      ss << "[" << right_type.value() << "]";
+      return Result<Type::Pointer>(std::unexpect, Error::UnknownUnop,
+                                   Location{}, toString(unop.op));
+    }
+
+    return instance->result_type;
+  }
 
   auto operator()(Ast::Parens const &parens) noexcept -> Result<Type::Pointer> {
     return std::visit(*this, parens.ast->data);
@@ -93,7 +139,19 @@ public:
   }
 
   auto operator()(Ast::Variable &variable) noexcept -> Result<Type::Pointer> {
+    auto binding = env->lookup(variable.name);
+    if (!binding) {
+      return Result<Type::Pointer>(std::unexpect, Error::NameUnboundInScope,
+                                   Location{}, variable.name);
+    }
 
+    return binding->type();
   }
 };
+
+[[nodiscard]] auto Typecheck(Ast *ast, Environment *env)
+    -> Result<Type::Pointer> {
+  AstTypecheckVisitor visitor{env};
+  return visitor(ast);
+}
 } // namespace mint

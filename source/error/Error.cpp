@@ -44,6 +44,8 @@ auto Error::KindToSV(Error::Kind kind) noexcept -> std::string_view {
 
   case Error::UnopTypeMismatch:
     return "Unop argument type mismatch";
+  case Error::BinopTypeMismatch:
+    return "Binop argument types mismatch";
 
   default:
     fatalError("Unknown Error::Kind");

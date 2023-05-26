@@ -17,6 +17,7 @@
 #include "adt/Environment.hpp"
 
 #include "ast/Print.hpp"
+#include "ast/Typecheck.hpp"
 
 namespace mint {
 auto Environment::repl() noexcept -> int {
@@ -35,10 +36,21 @@ auto Environment::repl() noexcept -> int {
     parser.append(line);
 
     auto parse_result = parser.parse();
-    if (!parse_result)
+    if (!parse_result) {
       printErrorWithSource(parse_result.error());
-    else
-      std::cout << "> " << parse_result.value() << "\n";
+      continue;
+    }
+
+    auto ast = parse_result.value();
+    auto typecheck_result = Typecheck(ast, this);
+
+    if (!typecheck_result) {
+      printErrorWithSource(typecheck_result.error());
+      continue;
+    }
+
+    std::cout << "> " << parse_result.value() << ":" << typecheck_result.value()
+              << "\n";
   }
 
   return EXIT_SUCCESS;

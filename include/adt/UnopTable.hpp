@@ -42,6 +42,9 @@ class UnopOverloads {
   std::vector<UnopOverload> overloads;
 
 public:
+  UnopOverloads() noexcept = default;
+  ~UnopOverloads() noexcept = default;
+
   auto lookup(Type::Pointer right_type) noexcept
       -> std::optional<UnopOverload> {
     for (auto &overload : overloads) {

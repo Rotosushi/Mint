@@ -90,7 +90,6 @@ struct Ast {
 
     using Data = std::variant<Boolean, Integer, Nil>;
     Data data;
-    Location location;
 
     template <class T, class... Args>
     constexpr explicit Value(std::in_place_type_t<T> type, Args &&...args)
@@ -120,7 +119,7 @@ template <typename T> auto isa(Ast::Value *value) -> bool {
 }
 
 /*
-  it is a bit idisyncratic to return a pointer
+  it is a bit idiosyncratic to return a pointer
   when we are asserting that the get needs to succeed.
   when we could return a nullptr.
 */
