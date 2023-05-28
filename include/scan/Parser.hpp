@@ -50,9 +50,6 @@ namespace mint {
 class Environment;
 
 class Parser {
-public:
-  using ParseResult = Result<Ast *>;
-
 private:
   Environment *env;
   Scanner scanner;
@@ -70,13 +67,32 @@ private:
     return false;
   }
 
-  auto parseTop() noexcept -> ParseResult;
-  auto parseLet() noexcept -> ParseResult;
-  auto parseAffix() noexcept -> ParseResult;
-  auto parseInfix() noexcept -> ParseResult;
+  // we just encountered a syntax error,
+  // so we want to walk the parser past the
+  // line of source text which produced the
+  // error. we require expressions to end with ';'
+  // so advance the scanner through the
+  // input it has buffered until we see ';'
+  // or the eof.
+  void recover() noexcept {
+    while ((current != Token::Semicolon) && (current != Token::End)) {
+      next();
+    }
+  }
+
+  auto handle_error(Error::Kind kind, Location location,
+                    std::string_view message) noexcept -> Result<Ast *> {
+    recover();
+    return {kind, location, message};
+  }
+
+  auto parseTop() noexcept -> Result<Ast *>;
+  auto parseLet() noexcept -> Result<Ast *>;
+  auto parseAffix() noexcept -> Result<Ast *>;
+  auto parseInfix() noexcept -> Result<Ast *>;
   auto precedenceParser(Ast *left, BinopPrecedence prec) noexcept
-      -> ParseResult;
-  auto parseBasic() noexcept -> ParseResult;
+      -> Result<Ast *>;
+  auto parseBasic() noexcept -> Result<Ast *>;
 
 public:
   Parser(Environment *env) : env(env), current(Token::End) {
@@ -88,10 +104,17 @@ public:
 
   auto append(std::string_view text) noexcept { scanner.append(text); }
 
-  auto parse() -> ParseResult {
+  auto parse() -> Result<Ast *> {
     if ((current == Token::End) && (!scanner.endOfInput())) {
       next(); // prime the parser with the first token
     }
+
+    // NOT A DUPLICATE CHECK
+    // if, after we prime the parser, we are still at eof,
+    // then don't attempt to parse
+    if (current == Token::End) {
+    }
+
     return parseTop();
   }
 };

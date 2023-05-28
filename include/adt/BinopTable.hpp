@@ -46,6 +46,8 @@ class BinopOverloads {
   std::vector<BinopOverload> overloads;
 
 public:
+  BinopOverloads() noexcept { overloads.reserve(2); }
+
   auto lookup(Type::Pointer left_type, Type::Pointer right_type) noexcept
       -> std::optional<BinopOverload> {
     for (auto &overload : overloads) {
@@ -100,7 +102,7 @@ private:
 public:
   auto lookup(Token op) noexcept -> std::optional<Binop> {
     auto found = table.find(op);
-    if (found == table.end()) {
+    if (found != table.end()) {
       return found;
     }
     return std::nullopt;
@@ -108,7 +110,7 @@ public:
 
   auto emplace(Token op) -> Binop {
     auto found = table.find(op);
-    if (found == table.end()) {
+    if (found != table.end()) {
       return found;
     }
 

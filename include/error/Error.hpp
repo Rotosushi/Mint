@@ -26,6 +26,8 @@ namespace mint {
 class Error {
 public:
   enum Kind {
+    EndOfInput,
+
     UnknownToken,
     UnknownBinop,
     UnknownUnop,
@@ -105,6 +107,30 @@ inline auto operator<<(std::ostream &out, Error &error) -> std::ostream & {
   return out;
 }
 
-template <class T> using Result = std::expected<T, Error>;
+template <class T> class Result {
+  std::expected<T, Error> data;
+
+public:
+  Result(T t) noexcept : data(std::move(t)) {}
+  Result(Error e) noexcept : data(std::move(e)) {}
+  Result(Error::Kind kind) noexcept : data(std::unexpect, kind) {}
+  Result(Error::Kind kind, Location location, std::string_view message) noexcept
+      : data(std::unexpect, kind, location, message) {}
+
+  operator bool() const noexcept { return data.has_value(); }
+
+  [[nodiscard]] auto has_value() const noexcept -> bool {
+    return data.has_value();
+  }
+
+  [[nodiscard]] auto value() noexcept -> T & {
+    MINT_ASSERT(data.has_value());
+    return data.value();
+  }
+  [[nodiscard]] auto error() noexcept -> Error & {
+    MINT_ASSERT(!data.has_value());
+    return data.error();
+  }
+};
 
 } // namespace mint

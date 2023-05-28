@@ -49,8 +49,8 @@ auto Environment::repl() noexcept -> int {
       continue;
     }
 
-    std::cout << "> " << parse_result.value() << ":" << typecheck_result.value()
-              << "\n";
+    std::cout << "> " << parse_result.value() << " :"
+              << typecheck_result.value() << "\n";
   }
 
   return EXIT_SUCCESS;

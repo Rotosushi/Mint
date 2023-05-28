@@ -21,6 +21,9 @@
 namespace mint {
 auto Error::KindToSV(Error::Kind kind) noexcept -> std::string_view {
   switch (kind) {
+  case Error::EndOfInput:
+    return "End of input";
+
   case Error::UnknownToken:
     return "Unknown Token";
   case Error::UnknownBinop:

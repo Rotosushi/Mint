@@ -42,9 +42,6 @@ class UnopOverloads {
   std::vector<UnopOverload> overloads;
 
 public:
-  UnopOverloads() noexcept = default;
-  ~UnopOverloads() noexcept = default;
-
   auto lookup(Type::Pointer right_type) noexcept
       -> std::optional<UnopOverload> {
     for (auto &overload : overloads) {
@@ -95,7 +92,7 @@ private:
 public:
   auto lookup(Token op) noexcept -> std::optional<Unop> {
     auto found = table.find(op);
-    if (found == table.end()) {
+    if (found != table.end()) {
       return found;
     }
     return std::nullopt;
@@ -103,7 +100,7 @@ public:
 
   auto emplace(Token op) noexcept -> Unop {
     auto found = table.find(op);
-    if (found == table.end()) {
+    if (found != table.end()) {
       return found;
     }
 

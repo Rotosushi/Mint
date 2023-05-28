@@ -85,8 +85,7 @@ public:
   auto operator()(Ast::Binop const &binop) noexcept -> Result<Type::Pointer> {
     auto overloads = env->lookupBinop(binop.op);
     if (!overloads) {
-      return Result<Type::Pointer>(std::unexpect, Error::UnknownBinop,
-                                   Location{}, toString(binop.op));
+      return {Error::UnknownBinop, Location{}, toString(binop.op)};
     }
 
     auto left_type = std::visit(*this, binop.left->data);
@@ -101,8 +100,7 @@ public:
     if (!instance) {
       std::stringstream ss;
       ss << "[" << left_type.value() << ", " << right_type.value() << "]";
-      return Result<Type::Pointer>(std::unexpect, Error::BinopTypeMismatch,
-                                   Location{}, ss.view());
+      return {Error::BinopTypeMismatch, Location{}, ss.view()};
     }
 
     return instance->result_type;
@@ -111,8 +109,7 @@ public:
   auto operator()(Ast::Unop const &unop) noexcept -> Result<Type::Pointer> {
     auto overloads = env->lookupUnop(unop.op);
     if (!overloads) {
-      return Result<Type::Pointer>(std::unexpect, Error::UnknownUnop,
-                                   Location{}, toString(unop.op));
+      return {Error::UnknownUnop, Location{}, toString(unop.op)};
     }
 
     auto right_type = std::visit(*this, unop.right->data);
@@ -123,8 +120,7 @@ public:
     if (!instance) {
       std::stringstream ss;
       ss << "[" << right_type.value() << "]";
-      return Result<Type::Pointer>(std::unexpect, Error::UnknownUnop,
-                                   Location{}, toString(unop.op));
+      return {Error::UnknownUnop, Location{}, toString(unop.op)};
     }
 
     return instance->result_type;
@@ -141,8 +137,7 @@ public:
   auto operator()(Ast::Variable &variable) noexcept -> Result<Type::Pointer> {
     auto binding = env->lookup(variable.name);
     if (!binding) {
-      return Result<Type::Pointer>(std::unexpect, Error::NameUnboundInScope,
-                                   Location{}, variable.name);
+      return {Error::NameUnboundInScope, Location{}, variable.name};
     }
 
     return binding->type();

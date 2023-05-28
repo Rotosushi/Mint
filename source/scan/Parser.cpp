@@ -21,6 +21,7 @@
 #include "adt/Environment.hpp"
 
 namespace mint {
+
 auto Parser::extractSourceLine(Location const &location) const noexcept
     -> std::string_view {
   auto view = scanner.view();
@@ -50,7 +51,7 @@ auto Parser::extractSourceLine(Location const &location) const noexcept
   term = let
     | affix ";"
 */
-auto Parser::parseTop() noexcept -> ParseResult {
+auto Parser::parseTop() noexcept -> Result<Ast *> {
   if (current == Token::Let)
     return parseLet();
   else {
@@ -60,8 +61,7 @@ auto Parser::parseTop() noexcept -> ParseResult {
     }
 
     if (!expect(Token::Semicolon)) {
-      return ParseResult{std::unexpect, Error::ExpectedASemicolon, location(),
-                         text()};
+      return handle_error(Error::ExpectedASemicolon, location(), text());
     }
 
     return affix;
@@ -71,13 +71,12 @@ auto Parser::parseTop() noexcept -> ParseResult {
 /*
   let = "let" identifier "=" affix ";"
 */
-auto Parser::parseLet() noexcept -> ParseResult {
+auto Parser::parseLet() noexcept -> Result<Ast *> {
   auto left_loc = location();
   next(); // eat 'let'
 
   if (current != Token::Identifier) {
-    return ParseResult{std::unexpect, Error::ExpectedAnIdentifier, location(),
-                       text()};
+    return handle_error(Error::ExpectedAnIdentifier, location(), text());
   }
 
   auto id = env->getIdentifier(text());
@@ -85,8 +84,7 @@ auto Parser::parseLet() noexcept -> ParseResult {
   next(); // eat identifier
 
   if (!expect(Token::Equal)) {
-    return ParseResult{std::unexpect, Error::ExpectedAnEquals, location(),
-                       text()};
+    return handle_error(Error::ExpectedAnEquals, location(), text());
   }
 
   auto affix = parseAffix();
@@ -95,8 +93,7 @@ auto Parser::parseLet() noexcept -> ParseResult {
   }
 
   if (!expect(Token::Semicolon)) {
-    return ParseResult{std::unexpect, Error::ExpectedASemicolon, location(),
-                       text()};
+    return handle_error(Error::ExpectedASemicolon, location(), text());
   }
 
   auto right_loc = location();
@@ -104,7 +101,7 @@ auto Parser::parseLet() noexcept -> ParseResult {
   return {env->getLetAst(let_loc, id, affix.value())};
 }
 
-auto Parser::parseAffix() noexcept -> ParseResult {
+auto Parser::parseAffix() noexcept -> Result<Ast *> {
   auto binop = parseInfix();
   if (!binop)
     return binop;
@@ -112,7 +109,7 @@ auto Parser::parseAffix() noexcept -> ParseResult {
   return {env->getAffixAst(binop.value()->location, binop.value())};
 }
 
-auto Parser::parseInfix() noexcept -> ParseResult {
+auto Parser::parseInfix() noexcept -> Result<Ast *> {
   auto basic = parseBasic();
   if (!basic) {
     return basic;
@@ -135,8 +132,8 @@ auto Parser::parseInfix() noexcept -> ParseResult {
 // ... a + b ...
 // ...-^^^^^-...
 auto Parser::precedenceParser(Ast *left, BinopPrecedence prec) noexcept
-    -> ParseResult {
-  ParseResult result = left;
+    -> Result<Ast *> {
+  Result<Ast *> result = left;
   Location op_loc;
   Token op{Token::Error};
 
@@ -196,7 +193,7 @@ basic = "nil"
       | unop basic
       | "(" affix ")"
 */
-auto Parser::parseBasic() noexcept -> ParseResult {
+auto Parser::parseBasic() noexcept -> Result<Ast *> {
   switch (current) {
   case Token::Nil: {
     auto loc = location();
@@ -262,8 +259,7 @@ auto Parser::parseBasic() noexcept -> ParseResult {
       return affix;
 
     if (!expect(Token::RParen)) {
-      return ParseResult{std::unexpect, Error::ExpectedAClosingParen,
-                         location(), text()};
+      return handle_error(Error::ExpectedAClosingParen, location(), text());
     }
 
     return env->getParensAst(affix.value()->location, affix.value());
@@ -271,8 +267,7 @@ auto Parser::parseBasic() noexcept -> ParseResult {
   }
 
   default:
-    return ParseResult{std::unexpect, Error::ExpectedABasicTerm, location(),
-                       text()};
+    return handle_error(Error::ExpectedABasicTerm, location(), text());
     break;
   }
 }
