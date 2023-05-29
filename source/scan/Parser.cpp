@@ -106,7 +106,7 @@ auto Parser::parseAffix() noexcept -> Result<Ast *> {
   if (!binop)
     return binop;
 
-  return {env->getAffixAst(binop.value()->location, binop.value())};
+  return {env->getAffixAst(ast_location(binop.value()), binop.value())};
 }
 
 auto Parser::parseInfix() noexcept -> Result<Ast *> {
@@ -262,7 +262,7 @@ auto Parser::parseBasic() noexcept -> Result<Ast *> {
       return handle_error(Error::ExpectedAClosingParen, location(), text());
     }
 
-    return env->getParensAst(affix.value()->location, affix.value());
+    return env->getParensAst(ast_location(affix.value()), affix.value());
     break;
   }
 

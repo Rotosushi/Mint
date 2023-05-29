@@ -52,8 +52,8 @@ private:
 public:
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
-  auto bind(Key key, Value value) noexcept -> Binding {
-    auto pair = table.try_emplace(key, value);
+  auto bind(Key key, Type::Pointer type, Ast *value) noexcept -> Binding {
+    auto pair = table.try_emplace(key, type, value);
     return pair.first;
   }
 

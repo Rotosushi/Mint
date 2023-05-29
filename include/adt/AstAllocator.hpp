@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <memory> // std::unique_ptr
+
 #include "ast/Ast.hpp"
 #include "ast/Equals.hpp"
 
@@ -23,81 +25,58 @@
 namespace mint {
 class AstAllocator {
 private:
-  // at some point we can be clever about allocating Asts
-  class Set {
-    std::vector<std::unique_ptr<Ast>> set;
+  std::vector<std::unique_ptr<Ast>> resource;
 
-  public:
-    template <class... Args>
-    auto get(Location location, Args &&...args) noexcept -> Ast * {
-      Ast possible{location, std::forward<Args>(args)...};
-
-      for (auto &ast : set) {
-        if (equals(ast.get(), &possible)) {
-          return ast.get();
-        }
-      }
-
-      auto &new_element =
-          set.emplace_back(std::unique_ptr<Ast>(new Ast(std::move(possible))));
-      return new_element.get();
-    }
-  };
-
-  Set affixes;
-  Set types;
-  Set lets;
-  Set binops;
-  Set unops;
-  Set integers;
-  Set booleans;
-  Set nils;
-  Set parens;
-  Set variables;
+  template <class... Args>
+  [[nodiscard]] auto get(Args &&...args) noexcept -> Ast * {
+    return resource
+        .emplace_back(
+            std::unique_ptr<Ast>(new Ast(std::forward<Args>(args)...)))
+        .get();
+  }
 
 public:
   auto getAffix(Location location, Ast *affix) noexcept {
-    return affixes.get(location, std::in_place_type<Ast::Affix>, affix);
+    return get(std::in_place_type<Ast::Affix>, location, affix);
   }
 
   auto getType(Location location, mint::Type::Pointer type) noexcept {
-    return types.get(location, std::in_place_type<Ast::Type>, type);
+    return get(std::in_place_type<Ast::Type>, location, type);
   }
 
   auto getLet(Location location, Identifier name, Ast *term) noexcept {
-    return lets.get(location, std::in_place_type<Ast::Let>, name, term);
+    return get(std::in_place_type<Ast::Let>, location, name, term);
   }
 
   auto getBinop(Location location, Token op, Ast *left, Ast *right) noexcept {
-    return binops.get(location, std::in_place_type<Ast::Binop>, op, left,
-                      right);
+    return get(std::in_place_type<Ast::Binop>, location, op, left, right);
   }
 
   auto getUnop(Location location, Token op, Ast *right) noexcept {
-    return unops.get(location, std::in_place_type<Ast::Unop>, op, right);
+    return get(std::in_place_type<Ast::Unop>, location, op, right);
   }
 
   auto getParens(Location location, Ast *ast) noexcept {
-    return parens.get(location, std::in_place_type<Ast::Parens>, ast);
+    return get(std::in_place_type<Ast::Parens>, location, ast);
   }
 
   auto getVariable(Location location, Identifier name) noexcept {
-    return variables.get(location, std::in_place_type<Ast::Variable>, name);
+    return get(std::in_place_type<Ast::Variable>, location, name);
   }
 
   auto getBoolean(Location location, bool value) noexcept {
-    return booleans.get(location, std::in_place_type<Ast::Value>,
-                        std::in_place_type<Ast::Value::Boolean>, value);
+    return get(std::in_place_type<Ast::Value>,
+               std::in_place_type<Ast::Value::Boolean>, location, value);
   }
 
   auto getInteger(Location location, int value) noexcept {
-    return integers.get(location, std::in_place_type<Ast::Value>,
-                        std::in_place_type<Ast::Value::Integer>, value);
+    return get(std::in_place_type<Ast::Value>,
+               std::in_place_type<Ast::Value::Integer>, location, value);
   }
 
   auto getNil(Location location) noexcept {
-    return nils.get(location, std::in_place_type<Ast::Value>,
-                    std::in_place_type<Ast::Value::Nil>);
+    return get(std::in_place_type<Ast::Value>,
+               std::in_place_type<Ast::Value::Nil>, location);
   }
 };
 } // namespace mint

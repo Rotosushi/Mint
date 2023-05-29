@@ -27,65 +27,85 @@
 namespace mint {
 struct Ast {
   struct Affix {
+    Location location;
     Ast *affix;
-    Affix(Ast *affix) noexcept : affix(affix) {}
+    Affix(Location location, Ast *affix) noexcept
+        : location(location), affix(affix) {}
   };
 
   struct Type {
+    Location location;
     mint::Type::Pointer type;
-    Type(mint::Type::Pointer type) noexcept : type(type) {}
+    Type(Location location, mint::Type::Pointer type) noexcept
+        : location(location), type(type) {}
   };
 
   struct Let {
+    Location location;
     Identifier id;
     Ast *term;
 
-    Let(Identifier id, Ast *term) noexcept : id(id), term(term) {}
+    Let(Location location, Identifier id, Ast *term) noexcept
+        : location(location), id(id), term(term) {}
   };
 
   struct Binop {
+    Location location;
     Token op;
     Ast *left;
     Ast *right;
 
-    Binop(Token op, Ast *left, Ast *right) noexcept
-        : op(op), left(left), right(right) {}
+    Binop(Location location, Token op, Ast *left, Ast *right) noexcept
+        : location(location), op(op), left(left), right(right) {}
   };
 
   struct Unop {
+    Location location;
     Token op;
     Ast *right;
 
-    Unop(Token op, Ast *right) noexcept : op(op), right(right) {}
+    Unop(Location location, Token op, Ast *right) noexcept
+        : location(location), op(op), right(right) {}
   };
 
   struct Parens {
+    Location location;
     Ast *ast;
 
-    Parens(Ast *ast) noexcept : ast{ast} {}
+    Parens(Location location, Ast *ast) noexcept
+        : location(location), ast{ast} {}
   };
 
   struct Variable {
+    Location location;
     Identifier name;
 
-    Variable(Identifier name) noexcept : name{name} {}
+    Variable(Location location, Identifier name) noexcept
+        : location(location), name{name} {}
   };
 
   struct Value {
     struct Boolean {
+      Location location;
       bool value;
 
-      Boolean(bool value) noexcept : value{value} {}
+      Boolean(Location location, bool value) noexcept
+          : location(location), value{value} {}
     };
 
     struct Integer {
+      Location location;
       int value;
 
-      Integer(int value) noexcept : value{value} {}
+      Integer(Location location, int value) noexcept
+          : location(location), value{value} {}
     };
 
     struct Nil {
+      Location location;
       bool value = false;
+
+      Nil(Location location) noexcept : location(location) {}
     };
 
     using Data = std::variant<Boolean, Integer, Nil>;
@@ -99,13 +119,11 @@ struct Ast {
   using Data =
       std::variant<Affix, Type, Let, Binop, Unop, Variable, Parens, Value>;
   Data data;
-  Location location;
 
 private:
   template <class T, class... Args>
-  constexpr explicit Ast(Location location, std::in_place_type_t<T> type,
-                         Args &&...args)
-      : data(type, std::forward<Args>(args)...), location(location) {}
+  constexpr explicit Ast(std::in_place_type_t<T> type, Args &&...args)
+      : data(type, std::forward<Args>(args)...) {}
 
   friend class AstAllocator;
 };
@@ -132,5 +150,76 @@ template <typename T> auto get(Ast::Value *value) -> T * {
   MINT_ASSERT(isa<T>(value));
   return std::get_if<T>(&value->data);
 }
+
+class AstValueLocationVisitor {
+public:
+  constexpr auto operator()(Ast::Value const &value) const noexcept
+      -> Location {
+    return std::visit(*this, value.data);
+  }
+
+  constexpr auto operator()(Ast::Value::Boolean const &boolean) const noexcept
+      -> Location {
+    return boolean.location;
+  }
+
+  constexpr auto operator()(Ast::Value::Integer const &integer) const noexcept
+      -> Location {
+    return integer.location;
+  }
+
+  constexpr auto operator()(Ast::Value::Nil const &nil) const noexcept
+      -> Location {
+    return nil.location;
+  }
+};
+
+inline constexpr AstValueLocationVisitor ast_value_location{};
+
+class AstLocationVisitor {
+public:
+  constexpr auto operator()(Ast const *ast) const noexcept -> Location {
+    return std::visit(*this, ast->data);
+  }
+
+  constexpr auto operator()(Ast::Affix const &affix) const noexcept
+      -> Location {
+    return affix.location;
+  }
+
+  constexpr auto operator()(Ast::Type const &type) const noexcept -> Location {
+    return type.location;
+  }
+
+  constexpr auto operator()(Ast::Let const &let) const noexcept -> Location {
+    return let.location;
+  }
+
+  constexpr auto operator()(Ast::Binop const &binop) const noexcept
+      -> Location {
+    return binop.location;
+  }
+
+  constexpr auto operator()(Ast::Unop const &unop) const noexcept -> Location {
+    return unop.location;
+  }
+
+  constexpr auto operator()(Ast::Parens const &parens) const noexcept
+      -> Location {
+    return parens.location;
+  }
+
+  constexpr auto operator()(Ast::Variable const &variable) const noexcept
+      -> Location {
+    return variable.location;
+  }
+
+  constexpr auto operator()(Ast::Value const &value) const noexcept
+      -> Location {
+    return ast_value_location(value);
+  }
+};
+
+inline constexpr AstLocationVisitor ast_location{};
 
 } // namespace mint

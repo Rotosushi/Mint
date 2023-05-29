@@ -85,7 +85,7 @@ public:
   auto operator()(Ast::Binop const &binop) noexcept -> Result<Type::Pointer> {
     auto overloads = env->lookupBinop(binop.op);
     if (!overloads) {
-      return {Error::UnknownBinop, Location{}, toString(binop.op)};
+      return {Error::UnknownBinop, binop.location, toString(binop.op)};
     }
 
     auto left_type = std::visit(*this, binop.left->data);
@@ -100,7 +100,7 @@ public:
     if (!instance) {
       std::stringstream ss;
       ss << "[" << left_type.value() << ", " << right_type.value() << "]";
-      return {Error::BinopTypeMismatch, Location{}, ss.view()};
+      return {Error::BinopTypeMismatch, binop.location, ss.view()};
     }
 
     return instance->result_type;
@@ -109,7 +109,7 @@ public:
   auto operator()(Ast::Unop const &unop) noexcept -> Result<Type::Pointer> {
     auto overloads = env->lookupUnop(unop.op);
     if (!overloads) {
-      return {Error::UnknownUnop, Location{}, toString(unop.op)};
+      return {Error::UnknownUnop, unop.location, toString(unop.op)};
     }
 
     auto right_type = std::visit(*this, unop.right->data);
@@ -120,7 +120,7 @@ public:
     if (!instance) {
       std::stringstream ss;
       ss << "[" << right_type.value() << "]";
-      return {Error::UnknownUnop, Location{}, toString(unop.op)};
+      return {Error::UnknownUnop, ast_location(unop.right), toString(unop.op)};
     }
 
     return instance->result_type;
@@ -137,13 +137,17 @@ public:
   auto operator()(Ast::Variable &variable) noexcept -> Result<Type::Pointer> {
     auto binding = env->lookup(variable.name);
     if (!binding) {
-      return {Error::NameUnboundInScope, Location{}, variable.name};
+      return {Error::NameUnboundInScope, variable.location, variable.name};
     }
 
     return binding->type();
   }
 };
 
+/*
+  #TODO: typecheck doesn't record variables type for typing
+  expressions including those variables later in the same scope.
+*/
 [[nodiscard]] auto Typecheck(Ast *ast, Environment *env)
     -> Result<Type::Pointer> {
   AstTypecheckVisitor visitor{env};

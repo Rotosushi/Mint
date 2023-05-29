@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <memory>  // std::unique_ptr
 #include <variant> // std::variant
 #include <vector>  // std::vector
 
