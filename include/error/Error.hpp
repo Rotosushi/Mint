@@ -112,7 +112,7 @@ template <class T> class Result {
 
 public:
   Result(T t) noexcept : data(std::move(t)) {}
-  Result(Error e) noexcept : data(std::move(e)) {}
+  Result(Error &&e) noexcept : data(std::unexpect, std::move(e)) {}
   Result(Error::Kind kind) noexcept : data(std::unexpect, kind) {}
   Result(Error::Kind kind, Location location, std::string_view message) noexcept
       : data(std::unexpect, kind, location, message) {}

@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/Environment.hpp"
 
+#include "ast/Evaluate.hpp"
 #include "ast/Print.hpp"
 #include "ast/Typecheck.hpp"
 
@@ -42,15 +43,20 @@ auto Environment::repl() noexcept -> int {
     }
 
     auto ast = parse_result.value();
-    auto typecheck_result = Typecheck(ast, this);
+    auto typecheck_result = typecheck(ast, this);
 
     if (!typecheck_result) {
       printErrorWithSource(typecheck_result.error());
       continue;
     }
 
-    std::cout << "> " << parse_result.value() << " :"
-              << typecheck_result.value() << "\n";
+    auto evaluate_result = evaluate(ast, this);
+    if (!evaluate_result) {
+      printErrorWithSource(evaluate_result.error());
+      continue;
+    }
+
+    std::cout << "> " << evaluate_result.value() << "\n";
   }
 
   return EXIT_SUCCESS;

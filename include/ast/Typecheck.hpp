@@ -52,7 +52,7 @@ public:
   }
 };
 
-[[nodiscard]] auto Typecheck(Ast::Value const &value, Environment &env) noexcept
+[[nodiscard]] auto typecheck(Ast::Value const &value, Environment &env) noexcept
     -> Result<Type::Pointer> {
   AstValueTypecheckVisitor visitor{&env};
   return visitor(value);
@@ -120,7 +120,7 @@ public:
     if (!instance) {
       std::stringstream ss;
       ss << "[" << right_type.value() << "]";
-      return {Error::UnknownUnop, ast_location(unop.right), toString(unop.op)};
+      return {Error::UnopTypeMismatch, ast_location(unop.right), toString(unop.op)};
     }
 
     return instance->result_type;
@@ -131,7 +131,7 @@ public:
   }
 
   auto operator()(Ast::Value const &value) noexcept -> Result<Type::Pointer> {
-    return Typecheck(value, *env);
+    return typecheck(value, *env);
   }
 
   auto operator()(Ast::Variable &variable) noexcept -> Result<Type::Pointer> {
@@ -148,8 +148,13 @@ public:
   #TODO: typecheck doesn't record variables type for typing
   expressions including those variables later in the same scope.
 */
-[[nodiscard]] auto Typecheck(Ast *ast, Environment *env)
+[[nodiscard]] auto typecheck(Ast *ast, Environment *env)
     -> Result<Type::Pointer> {
+  auto cache = ast->cached_type();
+  if (cache) {
+    return cache.value();
+  }
+
   AstTypecheckVisitor visitor{env};
   return visitor(ast);
 }

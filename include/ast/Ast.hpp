@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <optional>
 #include <variant>
 
 #include "adt/Identifier.hpp"
@@ -121,11 +122,21 @@ struct Ast {
   Data data;
 
 private:
+  mint::Type::Pointer type_cache;
+
   template <class T, class... Args>
   constexpr explicit Ast(std::in_place_type_t<T> type, Args &&...args)
       : data(type, std::forward<Args>(args)...) {}
 
   friend class AstAllocator;
+
+public:
+  std::optional<mint::Type::Pointer> cached_type() noexcept {
+    if (type_cache == nullptr) {
+      return std::nullopt;
+    }
+    return type_cache;
+  }
 };
 
 template <typename T> auto isa(Ast *ast) -> bool {
@@ -149,6 +160,11 @@ template <typename T> auto get(Ast *ast) -> T * {
 template <typename T> auto get(Ast::Value *value) -> T * {
   MINT_ASSERT(isa<T>(value));
   return std::get_if<T>(&value->data);
+}
+
+template <typename T> auto get_value(Ast *ast) -> T * {
+  auto value = get<Ast::Value>(ast);
+  return get<T>(value);
 }
 
 class AstValueLocationVisitor {

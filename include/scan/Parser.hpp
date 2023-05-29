@@ -113,6 +113,7 @@ public:
     // if, after we prime the parser, we are still at eof,
     // then don't attempt to parse
     if (current == Token::End) {
+      return {Error::EndOfInput, location(), ""};
     }
 
     return parseTop();

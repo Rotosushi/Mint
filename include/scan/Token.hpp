@@ -45,7 +45,7 @@ enum struct Token : int {
   Or,
   LessThan,
   LessThanOrEqual,
-  QuestionEqual,
+  EqualEqual,
   NotEqual,
   GreaterThan,
   GreaterThanOrEqual,
@@ -78,7 +78,7 @@ using BinopPrecedence = int8_t;
 */
 inline auto precedence(Token token) noexcept -> BinopPrecedence {
   switch (token) {
-  case Token::QuestionEqual:
+  case Token::EqualEqual:
   case Token::NotEqual:
     return 1;
 
@@ -114,7 +114,7 @@ enum struct BinopAssociativity {
 
 inline auto associativity(Token token) noexcept -> BinopAssociativity {
   switch (token) {
-  case Token::QuestionEqual:
+  case Token::EqualEqual:
   case Token::NotEqual:
   case Token::LessThan:
   case Token::LessThanOrEqual:
@@ -135,7 +135,7 @@ inline auto associativity(Token token) noexcept -> BinopAssociativity {
 
 inline auto isBinop(Token token) noexcept -> bool {
   switch (token) {
-  case Token::QuestionEqual:
+  case Token::EqualEqual:
   case Token::NotEqual:
   case Token::LessThan:
   case Token::LessThanOrEqual:
@@ -201,7 +201,7 @@ inline auto toString(Token token) noexcept -> std::string_view {
     return "<";
   case Token::LessThanOrEqual:
     return "<=";
-  case Token::QuestionEqual:
+  case Token::EqualEqual:
     return "?=";
   case Token::NotEqual:
     return "!=";

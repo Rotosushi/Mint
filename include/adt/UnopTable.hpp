@@ -26,7 +26,7 @@
 namespace mint {
 class Environment;
 
-using UnopEvalFn = Result<Ast::Value *> (*)(Ast *right, Environment *env);
+using UnopEvalFn = Result<Ast *> (*)(Ast *right, Environment *env);
 
 struct UnopOverload {
   Type::Pointer right_type;

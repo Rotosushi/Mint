@@ -52,7 +52,7 @@ public:
     InitializeBuiltinUnops(this);
   }
 
-  void printErrorWithSource(Error &error) const noexcept {
+  void printErrorWithSource(Error const &error) const noexcept {
     auto optional_location = error.getLocation();
     std::string_view bad_source;
     if (optional_location.has_value())
@@ -64,7 +64,7 @@ public:
   auto repl() noexcept -> int;
 
   auto bind(Identifier name, Type::Pointer type, Ast *value) noexcept {
-    return scope.bind(name, std::make_pair(type, value));
+    return scope.bind(name, type, value);
   }
 
   auto lookup(Identifier name) { return scope.lookup(name); }

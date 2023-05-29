@@ -33,6 +33,7 @@ add_library(mint_common STATIC
 
   ${MINT_INCLUDE_DIR}/ast/Ast.hpp 
   ${MINT_INCLUDE_DIR}/ast/Equals.hpp
+  ${MINT_INCLUDE_DIR}/ast/Evaluate.hpp
   ${MINT_INCLUDE_DIR}/ast/Print.hpp
   ${MINT_INCLUDE_DIR}/ast/Typecheck.hpp
 
