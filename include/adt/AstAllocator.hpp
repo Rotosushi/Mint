@@ -37,7 +37,7 @@ private:
 
 public:
   auto getAffix(Location location, Ast *affix) noexcept {
-    return get(std::in_place_type<Ast::Affix>, location, affix);
+    return get(std::in_place_type<Ast::Term>, location, affix);
   }
 
   auto getType(Location location, mint::Type::Pointer type) noexcept {

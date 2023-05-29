@@ -43,7 +43,7 @@ public:
     return std::visit(*this, ast->data);
   }
 
-  auto operator()(Ast::Affix &affix) noexcept -> EvaluateResult {
+  auto operator()(Ast::Term &affix) noexcept -> EvaluateResult {
     return evaluate(affix.affix, env);
   }
 

@@ -70,7 +70,7 @@ public:
     return std::visit(*this, ast->data);
   }
 
-  auto operator()(Ast::Affix const &affix) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Term const &affix) noexcept -> Result<Type::Pointer> {
     return std::visit(*this, affix.affix->data);
   }
 
@@ -120,7 +120,8 @@ public:
     if (!instance) {
       std::stringstream ss;
       ss << "[" << right_type.value() << "]";
-      return {Error::UnopTypeMismatch, ast_location(unop.right), toString(unop.op)};
+      return {Error::UnopTypeMismatch, ast_location(unop.right),
+              toString(unop.op)};
     }
 
     return instance->result_type;

@@ -24,11 +24,13 @@
 /*
 
 top = let
-    | affix ";"
+    | term
 
-let = "let" identifier "=" affix ";"
+let = "let" identifier "=" term
 
-affix = basic binop infix-parser
+term = affix ";"
+
+affix = basic [binop precedence-parser]
 
 binop = "+" |"-" | "*" | "/" | "%" | "!" | "&" | "|"
         "<" | "<=" | "?=" | "!=" | "=>" | ">"
@@ -88,8 +90,8 @@ private:
 
   auto parseTop() noexcept -> Result<Ast *>;
   auto parseLet() noexcept -> Result<Ast *>;
+  auto parseTerm() noexcept -> Result<Ast *>;
   auto parseAffix() noexcept -> Result<Ast *>;
-  auto parseInfix() noexcept -> Result<Ast *>;
   auto precedenceParser(Ast *left, BinopPrecedence prec) noexcept
       -> Result<Ast *>;
   auto parseBasic() noexcept -> Result<Ast *>;

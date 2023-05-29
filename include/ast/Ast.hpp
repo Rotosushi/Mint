@@ -27,10 +27,10 @@
 
 namespace mint {
 struct Ast {
-  struct Affix {
+  struct Term {
     Location location;
     Ast *affix;
-    Affix(Location location, Ast *affix) noexcept
+    Term(Location location, Ast *affix) noexcept
         : location(location), affix(affix) {}
   };
 
@@ -118,7 +118,7 @@ struct Ast {
   };
 
   using Data =
-      std::variant<Affix, Type, Let, Binop, Unop, Variable, Parens, Value>;
+      std::variant<Term, Type, Let, Binop, Unop, Variable, Parens, Value>;
   Data data;
 
 private:
@@ -198,8 +198,7 @@ public:
     return std::visit(*this, ast->data);
   }
 
-  constexpr auto operator()(Ast::Affix const &affix) const noexcept
-      -> Location {
+  constexpr auto operator()(Ast::Term const &affix) const noexcept -> Location {
     return affix.location;
   }
 

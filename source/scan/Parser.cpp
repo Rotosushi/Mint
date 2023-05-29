@@ -49,27 +49,23 @@ auto Parser::extractSourceLine(Location const &location) const noexcept
 
 /*
   term = let
-    | affix ";"
+    | term
 */
 auto Parser::parseTop() noexcept -> Result<Ast *> {
   if (current == Token::Let)
     return parseLet();
   else {
-    auto affix = parseAffix();
-    if (!affix) {
-      return affix;
+    auto term = parseTerm();
+    if (!term) {
+      return term;
     }
 
-    if (!expect(Token::Semicolon)) {
-      return handle_error(Error::ExpectedASemicolon, location(), text());
-    }
-
-    return affix;
+    return term;
   }
 }
 
 /*
-  let = "let" identifier "=" affix ";"
+  let = "let" identifier "=" term
 */
 auto Parser::parseLet() noexcept -> Result<Ast *> {
   auto left_loc = location();
@@ -87,29 +83,32 @@ auto Parser::parseLet() noexcept -> Result<Ast *> {
     return handle_error(Error::ExpectedAnEquals, location(), text());
   }
 
-  auto affix = parseAffix();
-  if (!affix) {
-    return affix;
+  auto term = parseTerm();
+  if (!term) {
+    return term;
   }
+
+  auto right_loc = location();
+  Location let_loc = {left_loc, right_loc};
+  return {env->getLetAst(let_loc, id, term.value())};
+}
+
+/*
+  term = affix ';'
+*/
+auto Parser::parseTerm() noexcept -> Result<Ast *> {
+  auto affix = parseAffix();
+  if (!affix)
+    return affix;
 
   if (!expect(Token::Semicolon)) {
     return handle_error(Error::ExpectedASemicolon, location(), text());
   }
 
-  auto right_loc = location();
-  Location let_loc = {left_loc, right_loc};
-  return {env->getLetAst(let_loc, id, affix.value())};
+  return {env->getTermAst(ast_location(affix.value()), affix.value())};
 }
 
 auto Parser::parseAffix() noexcept -> Result<Ast *> {
-  auto binop = parseInfix();
-  if (!binop)
-    return binop;
-
-  return {env->getAffixAst(ast_location(binop.value()), binop.value())};
-}
-
-auto Parser::parseInfix() noexcept -> Result<Ast *> {
   auto basic = parseBasic();
   if (!basic) {
     return basic;
@@ -131,6 +130,7 @@ auto Parser::parseInfix() noexcept -> Result<Ast *> {
 // instead of the (probably) expected
 // ... a + b ...
 // ...-^^^^^-...
+
 auto Parser::precedenceParser(Ast *left, BinopPrecedence prec) noexcept
     -> Result<Ast *> {
   Result<Ast *> result = left;
@@ -151,11 +151,18 @@ auto Parser::precedenceParser(Ast *left, BinopPrecedence prec) noexcept
     if (precedence(current) > precedence(op))
       return true;
 
-    if ((associativity(current) == BinopAssociativity::Right) &&
+    if ((associativity(op) == BinopAssociativity::Right) &&
         (precedence(current) == precedence(op)))
       return true;
 
     return false;
+  };
+
+  auto new_prec = [&]() -> BinopPrecedence {
+    if (precedence(op) > precedence(current))
+      return precedence(op) + 1;
+    else
+      return precedence(op);
   };
 
   while (predicts_binop()) {
@@ -169,16 +176,18 @@ auto Parser::precedenceParser(Ast *left, BinopPrecedence prec) noexcept
       return right;
 
     while (predictsHigherPrecedenceOrRightAssociativeBinop()) {
-      auto temp = precedenceParser(right.value(), precedence(op));
+      auto temp = precedenceParser(right.value(), new_prec());
       if (!temp)
         return temp;
 
-      result = temp;
+      right = temp;
     }
 
-    auto rhs_loc = location();
+    auto rhs_loc = ast_location(right.value());
     Location binop_loc = {op_loc, rhs_loc};
-    result = env->getBinopAst(binop_loc, op, result.value(), right.value());
+    Ast *lhs = result.value();
+    Ast *rhs = right.value();
+    result = env->getBinopAst(binop_loc, op, lhs, rhs);
   }
 
   return result;

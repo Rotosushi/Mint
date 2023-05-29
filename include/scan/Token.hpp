@@ -202,7 +202,7 @@ inline auto toString(Token token) noexcept -> std::string_view {
   case Token::LessThanOrEqual:
     return "<=";
   case Token::EqualEqual:
-    return "?=";
+    return "==";
   case Token::NotEqual:
     return "!=";
   case Token::GreaterThan:

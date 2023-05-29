@@ -73,8 +73,8 @@ struct AstEqualsVisitor {
 
   auto operator()() noexcept -> bool { return std::visit(*this, left->data); }
 
-  auto operator()(Ast::Affix const &left_affix) noexcept -> bool {
-    auto right_affix = std::get_if<Ast::Affix>(&right->data);
+  auto operator()(Ast::Term const &left_affix) noexcept -> bool {
+    auto right_affix = std::get_if<Ast::Term>(&right->data);
     if (right_affix == nullptr)
       return false;
 

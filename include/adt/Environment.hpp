@@ -83,7 +83,7 @@ public:
   auto getIntegerType() noexcept { return type_interner.getIntegerType(); }
   auto getNilType() noexcept { return type_interner.getNilType(); }
 
-  auto getAffixAst(Location location, Ast *affix) noexcept {
+  auto getTermAst(Location location, Ast *affix) noexcept {
     return ast_allocator.getAffix(location, affix);
   }
 

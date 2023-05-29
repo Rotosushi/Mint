@@ -64,7 +64,7 @@ public:
     MINT_ASSERT(out != nullptr);
   }
 
-  void operator()(Ast::Affix const &affix) noexcept {
+  void operator()(Ast::Term const &affix) noexcept {
     std::visit(*this, affix.affix->data);
     *out << ";";
   }
