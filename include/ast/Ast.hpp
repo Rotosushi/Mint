@@ -124,11 +124,13 @@ struct Ast {
 private:
   mint::Type::Pointer type_cache;
 
-public:
   template <class T, class... Args>
   constexpr explicit Ast(std::in_place_type_t<T> type, Args &&...args)
       : data(type, std::forward<Args>(args)...) {}
 
+  friend class AstAllocator;
+
+public:
   std::optional<mint::Type::Pointer> cached_type() noexcept {
     if (type_cache == nullptr) {
       return std::nullopt;

@@ -22,7 +22,7 @@
 
 namespace mint {
 
-auto Parser::viewSourceLine(Location const &location) const noexcept
+auto Parser::extractSourceLine(Location const &location) const noexcept
     -> std::string_view {
   auto view = scanner.view();
   auto cursor = view.begin();

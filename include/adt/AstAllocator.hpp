@@ -18,40 +18,24 @@
 #include <memory> // std::unique_ptr
 
 #include "ast/Ast.hpp"
+#include "ast/Equals.hpp"
 
-#include "utility/Allocator.hpp"
+#include "type/Equals.hpp"
 
 namespace mint {
-/*
-  do we enforce uniqueness?
-
-  pros:
-    ) we gain memory efficiency by not allocating
-      an ast if we already have one allocated.
-    ) we can implement ast equality via pointer equality.
-  cons:
-    ) we lose time efficiency by checking if we have already
-      allocated this particular ast each time we construct
-      a new ast.
-*/
-
 class AstAllocator {
-public:
-  Allocator *allocator;
-  std::vector<ManagedPointer<Ast>> buffer;
+private:
+  std::vector<std::unique_ptr<Ast>> resource;
 
   template <class... Args>
   [[nodiscard]] auto get(Args &&...args) noexcept -> Ast * {
-    return buffer
-        .emplace_back(allocator->construct<Ast>(std::forward<Args>(args)...))
+    return resource
+        .emplace_back(
+            std::unique_ptr<Ast>(new Ast(std::forward<Args>(args)...)))
         .get();
   }
 
 public:
-  AstAllocator(Allocator *allocator) noexcept : allocator(allocator) {
-    MINT_ASSERT(allocator != nullptr);
-  }
-
   auto getAffix(Location location, Ast *affix) noexcept {
     return get(std::in_place_type<Ast::Term>, location, affix);
   }

@@ -18,6 +18,7 @@
 #include "type/Type.hpp"
 
 namespace mint {
+// #TODO use an allocator to perform allocations.
 class TypeInterner {
   Type boolean_type;
   Type integer_type;
