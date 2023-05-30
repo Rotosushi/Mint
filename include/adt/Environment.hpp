@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <iostream>
+#include <memory_resource>
 
 #include "adt/AstAllocator.hpp"
 #include "adt/BinopTable.hpp"
@@ -28,6 +29,7 @@
 
 namespace mint {
 class Environment {
+  Allocator allocator;
   AstAllocator ast_allocator;
   TypeInterner type_interner;
   IdentifierSet identifier_set;
@@ -39,11 +41,16 @@ class Environment {
   std::istream *in;
   std::ostream *out;
   std::ostream *errout;
+  std::pmr::memory_resource *resource;
 
 public:
   Environment(std::istream *in = &std::cin, std::ostream *out = &std::cout,
-              std::ostream *errout = &std::cerr) noexcept
-      : parser(this), in(in), out(out), errout(errout) {
+              std::ostream *errout = &std::cerr,
+              std::pmr::memory_resource *resource =
+                  std::pmr::get_default_resource()) noexcept
+      : allocator(resource), ast_allocator(&allocator), parser(this), in(in),
+        out(out), errout(errout), resource(resource) {
+    MINT_ASSERT(resource != nullptr);
     MINT_ASSERT(in != nullptr);
     MINT_ASSERT(out != nullptr);
     MINT_ASSERT(errout != nullptr);
@@ -56,7 +63,7 @@ public:
     auto optional_location = error.getLocation();
     std::string_view bad_source;
     if (optional_location.has_value())
-      bad_source = parser.extractSourceLine(optional_location.value());
+      bad_source = parser.viewSourceLine(optional_location.value());
 
     error.print(*errout, bad_source);
   }

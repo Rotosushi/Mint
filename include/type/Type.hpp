@@ -49,12 +49,9 @@ struct Type {
   using Data = std::variant<Boolean, Integer, Nil>;
   Data data;
 
-private:
   template <class T, class... Args>
   constexpr explicit Type(std::in_place_type_t<T> type, Args &&...args)
       : data(type, std::forward<Args>(args)...) {}
-
-  friend class TypeInterner;
 };
 
 /*

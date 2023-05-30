@@ -15,9 +15,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 1
-#define MINT_GIT_REVISION "d3e679aef19a242d5e3fd4e269ffc290dc434775"
-// clang-format on
+#include "utility/ManagedPointer.hpp"
+
+namespace mint {
+class Allocator {
+public:
+  using Resource = std::pmr::memory_resource;
+
+private:
+  Resource *resource;
+
+public:
+  Allocator(Resource *resource) noexcept : resource(resource) {
+    MINT_ASSERT(resource != nullptr);
+  }
+
+  template <class T, class... Args>
+  [[nodiscard]] auto construct(Args &&...args) noexcept -> ManagedPointer<T> {
+    auto *alloc = resource->allocate(sizeof(T));
+    T *t = std::construct_at<T>(static_cast<T *>(alloc),
+                                std::forward<Args>(args)...);
+    return {t, resource};
+  }
+};
+} // namespace mint

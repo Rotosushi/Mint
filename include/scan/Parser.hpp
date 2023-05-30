@@ -101,7 +101,7 @@ public:
     MINT_ASSERT(env != nullptr);
   }
 
-  [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
+  [[nodiscard]] auto viewSourceLine(Location const &location) const noexcept
       -> std::string_view;
 
   auto append(std::string_view text) noexcept { scanner.append(text); }
