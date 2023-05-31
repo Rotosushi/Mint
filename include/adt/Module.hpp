@@ -15,9 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 1
-#define MINT_GIT_REVISION "1ab377325f298a00a6969fb7f74544843efa2d07"
-// clang-format on
+#include <list>
+
+#include "adt/Scope.hpp"
+
+namespace mint
+{
+  /*
+    a module manages a named scope.
+
+    it ensures that lookup of names works
+    using qualified names.
+  */
+  class Module {
+
+  };
+} // namespace mint

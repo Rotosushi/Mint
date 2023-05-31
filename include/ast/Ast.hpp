@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <memory>
 #include <optional>
 #include <variant>
 
@@ -27,10 +28,12 @@
 
 namespace mint {
 struct Ast {
+  using Pointer = std::shared_ptr<Ast>;
+
   struct Term {
     Location location;
-    Ast *affix;
-    Term(Location location, Ast *affix) noexcept
+    Ast::Pointer affix;
+    Term(Location location, Ast::Pointer affix) noexcept
         : location(location), affix(affix) {}
   };
 
@@ -44,36 +47,37 @@ struct Ast {
   struct Let {
     Location location;
     Identifier id;
-    Ast *term;
+    Ast::Pointer term;
 
-    Let(Location location, Identifier id, Ast *term) noexcept
+    Let(Location location, Identifier id, Ast::Pointer term) noexcept
         : location(location), id(id), term(term) {}
   };
 
   struct Binop {
     Location location;
     Token op;
-    Ast *left;
-    Ast *right;
+    Ast::Pointer left;
+    Ast::Pointer right;
 
-    Binop(Location location, Token op, Ast *left, Ast *right) noexcept
+    Binop(Location location, Token op, Ast::Pointer left,
+          Ast::Pointer right) noexcept
         : location(location), op(op), left(left), right(right) {}
   };
 
   struct Unop {
     Location location;
     Token op;
-    Ast *right;
+    Ast::Pointer right;
 
-    Unop(Location location, Token op, Ast *right) noexcept
+    Unop(Location location, Token op, Ast::Pointer right) noexcept
         : location(location), op(op), right(right) {}
   };
 
   struct Parens {
     Location location;
-    Ast *ast;
+    Ast::Pointer ast;
 
-    Parens(Location location, Ast *ast) noexcept
+    Parens(Location location, Ast::Pointer ast) noexcept
         : location(location), ast{ast} {}
   };
 
@@ -124,13 +128,11 @@ struct Ast {
 private:
   mint::Type::Pointer type_cache;
 
+public:
   template <class T, class... Args>
   constexpr explicit Ast(std::in_place_type_t<T> type, Args &&...args)
       : data(type, std::forward<Args>(args)...) {}
 
-  friend class AstAllocator;
-
-public:
   std::optional<mint::Type::Pointer> cached_type() noexcept {
     if (type_cache == nullptr) {
       return std::nullopt;
@@ -139,11 +141,13 @@ public:
   }
 };
 
-template <typename T> auto isa(Ast *ast) -> bool {
+template <typename T> auto isa(Ast const *ast) -> bool {
+  MINT_ASSERT(ast != nullptr);
   return std::holds_alternative<T>(ast->data);
 }
 
-template <typename T> auto isa(Ast::Value *value) -> bool {
+template <typename T> auto isa(Ast::Value const *value) -> bool {
+  MINT_ASSERT(value != nullptr);
   return std::holds_alternative<T>(value->data);
 }
 
@@ -151,8 +155,15 @@ template <typename T> auto isa(Ast::Value *value) -> bool {
   it is a bit idiosyncratic to return a pointer
   when we are asserting that the get needs to succeed.
   when we could return a nullptr.
+  however, I like this usage of pointers more, as
+  we aren't creating nullptrs to unintentionally deref later.
 */
 template <typename T> auto get(Ast *ast) -> T * {
+  MINT_ASSERT(isa<T>(ast));
+  return std::get_if<T>(&ast->data);
+}
+
+template <typename T> auto get(Ast const *ast) -> T const * {
   MINT_ASSERT(isa<T>(ast));
   return std::get_if<T>(&ast->data);
 }
@@ -162,7 +173,17 @@ template <typename T> auto get(Ast::Value *value) -> T * {
   return std::get_if<T>(&value->data);
 }
 
+template <typename T> auto get(Ast::Value const *value) -> T const * {
+  MINT_ASSERT(isa<T>(value));
+  return std::get_if<T>(&value->data);
+}
+
 template <typename T> auto get_value(Ast *ast) -> T * {
+  auto value = get<Ast::Value>(ast);
+  return get<T>(value);
+}
+
+template <typename T> auto get_value(Ast const *ast) -> T const * {
   auto value = get<Ast::Value>(ast);
   return get<T>(value);
 }
@@ -194,7 +215,8 @@ inline constexpr AstValueLocationVisitor ast_value_location{};
 
 class AstLocationVisitor {
 public:
-  constexpr auto operator()(Ast const *ast) const noexcept -> Location {
+  constexpr auto operator()(Ast::Pointer const &ast) const noexcept
+      -> Location {
     return std::visit(*this, ast->data);
   }
 

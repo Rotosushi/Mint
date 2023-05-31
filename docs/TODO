@@ -1,0 +1,59 @@
+// Copyright (C) 2023 Cade Weinberg
+// 
+// This file is part of Mint.
+// 
+// Mint is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Mint is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+
+What do we want to accomplish next?
+
+well, I have two goals for the language,
+one is to learn more about PL's and PL features.
+  the what, how, why, and the fitting together.
+
+two is to have something to play around with.
+
+for point one, I am currently interested in:
+memory allocators,
+compile time evaluation,
+modules,
+namespaces,
+use-before-definition,
+lambdas,
+algebraic data types (and/or tagged unions and structs/tuples),
+pattern matching,
+macros,
+embedding the language interpreter itself into executables as a 
+scripting language, i.e. the language is c and lua.
+at comptime the compiler can interpret nearly all expressions,
+(other than runtime dependent expressions)
+and then from the interpreted input an executable is generated.
+
+
+in accomplishing any of these features I have some ideas,
+
+I think tackling modules first seems like a smart move.
+due to their foundational nature to the kind of code you 
+can write in the language, and because they is the basis 
+of writing a standard library.
+the standard library is necessary for a few reasons,
+  - it is a code-base written in the language
+  - it is the place to implement the less fundamental,
+    and still essential features of the programming language.
+    such as:
+    - memory allocators
+    - strings
+    - containers
+
+we will decide what to add to the language next, once modules 
+are implemented. (or maybe during, idrk)

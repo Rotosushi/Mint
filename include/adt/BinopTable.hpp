@@ -28,7 +28,7 @@ class Environment;
 /*
 
 */
-using BinopEvalFn = Result<Ast *> (*)(Ast *left, Ast *right, Environment *env);
+using BinopEvalFn = Result<Ast::Pointer> (*)(Ast *left, Ast *right, Environment *env);
 
 struct BinopOverload {
   Type::Pointer left_type;

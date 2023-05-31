@@ -1,0 +1,128 @@
+// Copyright (C) 2023 Cade Weinberg
+// 
+// This file is part of Mint.
+// 
+// Mint is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Mint is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+
+Modules are from my perspective about safely combining the definitions 
+from multiple files into a single namespace.
+
+so, they are composed of a few essential features,
+  - the ability to read in other modules (import)
+  - choice of names to be exported (export)
+  - some kind of name conflict resolution. (namespaces)
+
+import is essentially reading another module and understanding 
+it enough to inject the exported names (type information and 
+runtime information) into the current namespace.
+
+export allows the programmer choice of which names are 
+local to the module, and which are available for import.
+
+namespaces allow for names in one module to be independent 
+from the names in another module. This allows for programmers
+of one module complete freedom of naming local to the module 
+being implemented. And allows anyone importing a module to 
+disambiguate between identical names which are defined in 
+two distinct modules.
+
+this is accomplished if we prepend the module name to any name 
+defined within that module. we can use '.' as the module 'accessor'
+even though technically the module is defining the name 
+"x" as "module.x" 
+lookup can then find the identifier "x" even in a namespace 
+with two modules exporting an "x", assuming that the modules 
+names themselves are unique, it is because the names are truly
+"module0.x" and "module1.x".
+
+to accomplish this we have to make scopes more complex,
+in so far as they need to understand which namespace they are 
+in. and we have to keep all namespaces alive during compile time.
+additionally, with fully qualified names we must be able to 
+start searching from the global namespace, as well as the current 
+namespace.
+
+to me, the implies a tree like structure to the namespace of a given 
+program. the global namespace is always the starting point,
+and any modules imported into the global namespace become 
+'children' of the global namespace.
+
+in a compiled program, we have a starting point with the main function,
+it would make sense to mirror that, by requiring there to be a main file,
+which defines the concrete starting point for a given programs namespace.
+we could even invert the implication, and define the difference between a 
+library and a program is that a library does not define a main file with 
+a main subroutine, and a program does.
+
+so the one form of an import mechanism would be:
+  - read in the imported file, constructing it's definitions.
+  - take those definitions in their namespace, and add the namespace as 
+    a child of the current namespace.
+
+some sticky points
+  - how do we get the data from the new file into the environment 
+    we are currently compiling?
+
+    - if we construct a new environment to parse the new file,
+      (presumably such that we can call this routine on another thread)
+      how to do we handle the fact that interned types and identifiers 
+      no longer compare correctly?
+        - we could simply not intern types and identifiers
+        - we could fall back onto reinterning when necessary.
+        - we could define a merge routine on two environments
+          or an import method on one environment taking the other.
+      how do we transport the data that one thread reads in and parses 
+      back to the calling environment?
+      well, one observation is that we only need to construct one or more 
+      modules from the file and pass that information back.
+      presumably we can create a module on another thread then
+      insert that module into the current scope.
+
+    - if we read in the file into the current environment, how to we set/reset 
+      the parser to parse some other file, then later come back and parse 
+      the same file picking up where we left off?
+      - if we use this method it's no longer obvious how we scale compilation 
+        up across threads. As we cannot compile multiple files in parallel,
+        when we are using one thread to start compilation of the main file,
+        which is then the environment which is used to construct the 
+        definitions within which compilation takes place.
+        if we no longer intern types, then we can, though this seems more 
+        difficult as we need to share the environment struct itself between
+        threads. if we construct a manifest file, then we still have a 
+        single thread reading in all of the manifest files at some point.
+        though, if we construct a manifest file as in, a llvm bytecode file,
+        then we can use that as a library for the linker, when the linker 
+        combines the two modules.
+        on the subject of parallel compilation, it might be easier to 
+        not use interning, so there is no issue of incorrect lookup.
+    
+  - versioning? 
+  - deprecation?
+
+  
+TODO:
+  - add names to scopes
+    - modify scope lookup to handle the prepended name
+  - add a tree of scopes.
+    - lookup a fully qualified name
+    - lookup a 'local' name.
+    - what is the 'local' scope.
+    - how do we start searching from the global scope from 
+      within a 'local' scope.
+
+
+
+
+
+

@@ -51,7 +51,7 @@ auto Parser::extractSourceLine(Location const &location) const noexcept
   term = let
     | term
 */
-auto Parser::parseTop() noexcept -> Result<Ast *> {
+auto Parser::parseTop() noexcept -> Result<Ast::Pointer> {
   if (current == Token::Let)
     return parseLet();
   else {
@@ -67,7 +67,7 @@ auto Parser::parseTop() noexcept -> Result<Ast *> {
 /*
   let = "let" identifier "=" term
 */
-auto Parser::parseLet() noexcept -> Result<Ast *> {
+auto Parser::parseLet() noexcept -> Result<Ast::Pointer> {
   auto left_loc = location();
   next(); // eat 'let'
 
@@ -96,7 +96,7 @@ auto Parser::parseLet() noexcept -> Result<Ast *> {
 /*
   term = affix ';'
 */
-auto Parser::parseTerm() noexcept -> Result<Ast *> {
+auto Parser::parseTerm() noexcept -> Result<Ast::Pointer> {
   auto affix = parseAffix();
   if (!affix)
     return affix;
@@ -108,7 +108,7 @@ auto Parser::parseTerm() noexcept -> Result<Ast *> {
   return {env->getTermAst(ast_location(affix.value()), affix.value())};
 }
 
-auto Parser::parseAffix() noexcept -> Result<Ast *> {
+auto Parser::parseAffix() noexcept -> Result<Ast::Pointer> {
   auto basic = parseBasic();
   if (!basic) {
     return basic;
@@ -131,9 +131,9 @@ auto Parser::parseAffix() noexcept -> Result<Ast *> {
 // ... a + b ...
 // ...-^^^^^-...
 
-auto Parser::precedenceParser(Ast *left, BinopPrecedence prec) noexcept
-    -> Result<Ast *> {
-  Result<Ast *> result = left;
+auto Parser::precedenceParser(Ast::Pointer left, BinopPrecedence prec) noexcept
+    -> Result<Ast::Pointer> {
+  Result<Ast::Pointer> result = left;
   Location op_loc;
   Token op{Token::Error};
 
@@ -185,8 +185,8 @@ auto Parser::precedenceParser(Ast *left, BinopPrecedence prec) noexcept
 
     auto rhs_loc = ast_location(right.value());
     Location binop_loc = {op_loc, rhs_loc};
-    Ast *lhs = result.value();
-    Ast *rhs = right.value();
+    Ast::Pointer lhs = result.value();
+    Ast::Pointer rhs = right.value();
     result = env->getBinopAst(binop_loc, op, lhs, rhs);
   }
 
@@ -202,7 +202,7 @@ basic = "nil"
       | unop basic
       | "(" affix ")"
 */
-auto Parser::parseBasic() noexcept -> Result<Ast *> {
+auto Parser::parseBasic() noexcept -> Result<Ast::Pointer> {
   switch (current) {
   case Token::Nil: {
     auto loc = location();

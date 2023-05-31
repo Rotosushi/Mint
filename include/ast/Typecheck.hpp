@@ -66,7 +66,7 @@ public:
     MINT_ASSERT(env != nullptr);
   }
 
-  auto operator()(Ast *ast) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Pointer const &ast) noexcept -> Result<Type::Pointer> {
     return std::visit(*this, ast->data);
   }
 
@@ -149,7 +149,7 @@ public:
   #TODO: typecheck doesn't record variables type for typing
   expressions including those variables later in the same scope.
 */
-[[nodiscard]] auto typecheck(Ast *ast, Environment *env)
+[[nodiscard]] auto typecheck(Ast::Pointer const &ast, Environment *env)
     -> Result<Type::Pointer> {
   auto cache = ast->cached_type();
   if (cache) {

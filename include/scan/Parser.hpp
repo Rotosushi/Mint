@@ -83,18 +83,18 @@ private:
   }
 
   auto handle_error(Error::Kind kind, Location location,
-                    std::string_view message) noexcept -> Result<Ast *> {
+                    std::string_view message) noexcept -> Result<Ast::Pointer> {
     recover();
     return {kind, location, message};
   }
 
-  auto parseTop() noexcept -> Result<Ast *>;
-  auto parseLet() noexcept -> Result<Ast *>;
-  auto parseTerm() noexcept -> Result<Ast *>;
-  auto parseAffix() noexcept -> Result<Ast *>;
-  auto precedenceParser(Ast *left, BinopPrecedence prec) noexcept
-      -> Result<Ast *>;
-  auto parseBasic() noexcept -> Result<Ast *>;
+  auto parseTop() noexcept -> Result<Ast::Pointer>;
+  auto parseLet() noexcept -> Result<Ast::Pointer>;
+  auto parseTerm() noexcept -> Result<Ast::Pointer>;
+  auto parseAffix() noexcept -> Result<Ast::Pointer>;
+  auto precedenceParser(Ast::Pointer left, BinopPrecedence prec) noexcept
+      -> Result<Ast::Pointer>;
+  auto parseBasic() noexcept -> Result<Ast::Pointer>;
 
 public:
   Parser(Environment *env) : env(env), current(Token::End) {
@@ -106,7 +106,7 @@ public:
 
   auto append(std::string_view text) noexcept { scanner.append(text); }
 
-  auto parse() -> Result<Ast *> {
+  auto parse() -> Result<Ast::Pointer> {
     if ((current == Token::End) && (!scanner.endOfInput())) {
       next(); // prime the parser with the first token
     }

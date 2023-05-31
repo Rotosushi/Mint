@@ -25,18 +25,20 @@
 #include "error/Error.hpp"
 
 namespace mint {
-using EvaluateResult = Result<Ast *>;
+using EvaluateResult = Result<Ast::Pointer>;
 
-[[nodiscard]] auto evaluate(Ast *ast, Environment *env) -> EvaluateResult;
+[[nodiscard]] auto evaluate(Ast::Pointer const &ast, Environment *env)
+    -> EvaluateResult;
 
 class AstEvaluateVisitor {
-  Ast *ast;
+  Ast::Pointer ast;
   Environment *env;
 
 public:
-  AstEvaluateVisitor(Ast *ast, Environment *env) noexcept : ast(ast), env(env) {
-    MINT_ASSERT(ast != nullptr);
-    MINT_ASSERT(env != nullptr);
+  AstEvaluateVisitor(Ast::Pointer ast, Environment *env) noexcept
+      : ast(ast), env(env) {
+    MINT_ASSERT(this->ast != nullptr);
+    MINT_ASSERT(this->env != nullptr);
   }
 
   auto operator()() noexcept -> EvaluateResult {
@@ -97,7 +99,8 @@ public:
       return {Error::BinopTypeMismatch, binop.location, ss.view()};
     }
 
-    return instance.value()(left_value.value(), right_value.value(), env);
+    return instance.value()(left_value.value().get(), right_value.value().get(),
+                            env);
   }
 
   auto operator()(Ast::Unop &unop) noexcept -> EvaluateResult {
@@ -124,7 +127,7 @@ public:
               toString(unop.op)};
     }
 
-    return instance.value()(right_value.value(), env);
+    return instance.value()(right_value.value().get(), env);
   }
 
   auto operator()(Ast::Parens &parens) noexcept -> EvaluateResult {
@@ -146,7 +149,8 @@ public:
   }
 };
 
-[[nodiscard]] auto evaluate(Ast *ast, Environment *env) -> EvaluateResult {
+[[nodiscard]] auto evaluate(Ast::Pointer const &ast, Environment *env)
+    -> EvaluateResult {
   AstEvaluateVisitor visitor{ast, env};
   return visitor();
 }

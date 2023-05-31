@@ -17,7 +17,6 @@
 #pragma once
 #include <iostream>
 
-#include "adt/AstAllocator.hpp"
 #include "adt/BinopTable.hpp"
 #include "adt/IdentifierSet.hpp"
 #include "adt/Scope.hpp"
@@ -28,12 +27,11 @@
 
 namespace mint {
 class Environment {
-  AstAllocator ast_allocator;
   TypeInterner type_interner;
   IdentifierSet identifier_set;
   BinopTable binop_table;
   UnopTable unop_table;
-  Scope scope;
+  Bindings scope;
   Parser parser;
 
   std::istream *in;
@@ -63,7 +61,7 @@ public:
 
   auto repl() noexcept -> int;
 
-  auto bind(Identifier name, Type::Pointer type, Ast *value) noexcept {
+  auto bind(Identifier name, Type::Pointer type, Ast::Pointer value) noexcept {
     return scope.bind(name, type, value);
   }
 
@@ -83,45 +81,57 @@ public:
   auto getIntegerType() noexcept { return type_interner.getIntegerType(); }
   auto getNilType() noexcept { return type_interner.getNilType(); }
 
-  auto getTermAst(Location location, Ast *affix) noexcept {
-    return ast_allocator.getAffix(location, affix);
+  auto getTermAst(Location location, Ast::Pointer affix) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Term>, location,
+                                 affix);
   }
 
   auto getTypeAst(Location location, mint::Type::Pointer type) noexcept {
-    return ast_allocator.getType(location, type);
+    return std::make_shared<Ast>(std::in_place_type<Ast::Type>, location, type);
   }
 
-  auto getLetAst(Location location, Identifier name, Ast *term) noexcept {
-    return ast_allocator.getLet(location, name, term);
+  auto getLetAst(Location location, Identifier name,
+                 Ast::Pointer term) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Let>, location, name,
+                                 term);
   }
 
-  auto getBinopAst(Location location, Token op, Ast *left,
-                   Ast *right) noexcept {
-    return ast_allocator.getBinop(location, op, left, right);
+  auto getBinopAst(Location location, Token op, Ast::Pointer left,
+                   Ast::Pointer right) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Binop>, location, op,
+                                 left, right);
   }
 
-  auto getUnopAst(Location location, Token op, Ast *right) noexcept {
-    return ast_allocator.getUnop(location, op, right);
+  auto getUnopAst(Location location, Token op, Ast::Pointer right) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Unop>, location, op,
+                                 right);
   }
 
-  auto getParensAst(Location location, Ast *ast) noexcept {
-    return ast_allocator.getParens(location, ast);
+  auto getParensAst(Location location, Ast::Pointer ast) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Parens>, location,
+                                 ast);
   }
 
   auto getVariableAst(Location location, Identifier name) noexcept {
-    return ast_allocator.getVariable(location, name);
+    return std::make_shared<Ast>(std::in_place_type<Ast::Variable>, location,
+                                 name);
   }
 
   auto getBooleanAst(Location location, bool value) noexcept {
-    return ast_allocator.getBoolean(location, value);
+    return std::make_shared<Ast>(std::in_place_type<Ast::Value>,
+                                 std::in_place_type<Ast::Value::Boolean>,
+                                 location, value);
   }
 
   auto getIntegerAst(Location location, int value) noexcept {
-    return ast_allocator.getInteger(location, value);
+    return std::make_shared<Ast>(std::in_place_type<Ast::Value>,
+                                 std::in_place_type<Ast::Value::Integer>,
+                                 location, value);
   }
 
   auto getNilAst(Location location) noexcept {
-    return ast_allocator.getNil(location);
+    return std::make_shared<Ast>(std::in_place_type<Ast::Value>,
+                                 std::in_place_type<Ast::Value::Nil>, location);
   }
 };
 } // namespace mint

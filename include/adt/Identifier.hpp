@@ -26,6 +26,7 @@ private:
   Identifier(std::string_view view) noexcept : view{view} {}
 
 public:
+  Identifier() noexcept : view("") {}
   Identifier(const Identifier &id) noexcept = default;
   Identifier(Identifier &&id) noexcept = default;
   auto operator=(const Identifier &id) noexcept -> Identifier & = default;
