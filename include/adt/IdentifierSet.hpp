@@ -26,8 +26,9 @@ private:
   std::unordered_set<std::string> set;
 
 public:
-  [[nodiscard]] auto emplace(std::string_view view) noexcept -> Identifier {
-    auto pair = set.emplace(view);
+  template <class... Args>
+  [[nodiscard]] auto emplace(Args &&...args) noexcept -> Identifier {
+    auto pair = set.emplace(std::forward<Args>(args)...);
     return static_cast<std::string_view>(*pair.first);
   }
 };

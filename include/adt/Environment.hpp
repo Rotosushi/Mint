@@ -18,7 +18,6 @@
 #include <iostream>
 
 #include "adt/BinopTable.hpp"
-#include "adt/IdentifierSet.hpp"
 #include "adt/Scope.hpp"
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
@@ -28,7 +27,6 @@
 namespace mint {
 class Environment {
   TypeInterner type_interner;
-  IdentifierSet identifier_set;
   BinopTable binop_table;
   UnopTable unop_table;
   Bindings scope;
@@ -66,10 +64,6 @@ public:
   }
 
   auto lookup(Identifier name) { return scope.lookup(name); }
-
-  auto getIdentifier(std::string_view text) noexcept {
-    return identifier_set.emplace(text);
-  }
 
   auto createBinop(Token op) { return binop_table.emplace(op); }
   auto lookupBinop(Token op) { return binop_table.lookup(op); }

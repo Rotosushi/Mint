@@ -131,17 +131,21 @@ public:
   of the name.
 */
 
-class Scope {
+class Scope : public std::enable_shared_from_this<Scope> {
 public:
 private:
   std::optional<Identifier> name;
   std::weak_ptr<Scope> parent;
+  std::weak_ptr<Scope> global;
   Bindings bindings;
   ScopeTable scopes;
 
   Scope() noexcept = default;
   Scope(Identifier name, std::weak_ptr<Scope> parent) noexcept
-      : name(name), parent(parent) {}
+      : name(name), parent(parent) {
+    auto ptr = parent.lock();
+    global = ptr->global;
+  }
 
 public:
   [[nodiscard]] auto createGlobalScope() -> std::shared_ptr<Scope> {
@@ -163,7 +167,35 @@ public:
     return scopes.emplace(name);
   }
 
-  auto lookup(Identifier name) -> std::optional<Bindings::Binding>;
+  /*
+    lookup a name of the form 'a::b::c::d::...::w::x::y::z'
+
+    where 'a::b::c::d::...::w::x::y' are all considered to be
+    scopes, due to their being prefixes to a name.
+    and 'z' is the name bound to some value, due to it
+    being a suffix to some value.
+
+    "a"
+    "a" is treated as a local variable
+
+    "::a"
+    "a" is treated as a global variable.
+
+    "a::b"
+    "a" is considered a scope,
+    "b" is considered a variable local to scope "a"
+
+    "a0::a1::...::aN::x"
+    "a0,a1,...,aN" are all considered scopes,
+    "x" is considered a variable local to scope "aN"
+
+    both scope lookup, and variable lookup first search
+    the local scope, and if the variable is not found,
+    lookup one scope higher. if we are at global scope
+    and we fail to find the binding then lookup fails.
+  */
+  auto lookup(Identifier name) -> std::optional<Bindings::Binding> { 
+  }
 };
 
 } // namespace mint
