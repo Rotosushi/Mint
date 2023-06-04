@@ -84,7 +84,9 @@ public:
   public:
     Entry(Table::iterator iter) noexcept : iter(iter) {}
 
-    [[nodiscard]] auto empty() const noexcept -> bool;
+    [[nodiscard]] auto namesEmpty() const noexcept -> bool;
+
+    [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
 
     auto bind(Identifier name, Type::Pointer type, Ast::Pointer value) noexcept
         -> Bindings::Binding;
@@ -94,12 +96,14 @@ public:
   };
 
 private:
+  Scope *scope;
   Table table;
 
 public:
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
-  auto emplace(Identifier name) noexcept -> Entry;
+  auto emplace(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
+      -> Entry;
 
   [[nodiscard]] auto lookup(Identifier name) noexcept -> std::optional<Entry> {
     auto found = table.find(name);
@@ -135,27 +139,52 @@ class Scope : public std::enable_shared_from_this<Scope> {
 public:
 private:
   std::optional<Identifier> name;
-  std::weak_ptr<Scope> parent;
+  std::weak_ptr<Scope> prev_scope;
   std::weak_ptr<Scope> global;
   Bindings bindings;
   ScopeTable scopes;
 
   Scope() noexcept = default;
-  Scope(Identifier name, std::weak_ptr<Scope> parent) noexcept
-      : name(name), parent(parent) {
-    auto ptr = parent.lock();
+  Scope(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
+      : name(std::move(name)), prev_scope(prev_scope) {
+    auto ptr = prev_scope.lock();
     global = ptr->global;
   }
 
+  [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept
+      -> std::optional<Bindings::Binding>;
+
 public:
-  [[nodiscard]] auto createGlobalScope() -> std::shared_ptr<Scope> {
-    return std::shared_ptr<Scope>(new Scope());
+  [[nodiscard]] static auto createGlobalScope() -> std::shared_ptr<Scope> {
+    auto global = std::shared_ptr<Scope>(new Scope());
+    global->global = global->weak_from_this();
+    return global;
   }
 
   [[nodiscard]] auto createChildScope(Identifier name,
-                                      std::weak_ptr<Scope> parent)
+                                      std::weak_ptr<Scope> prev_scope)
       -> std::shared_ptr<Scope> {
-    return std::shared_ptr<Scope>(new Scope(name, parent));
+    return std::shared_ptr<Scope>(new Scope(name, prev_scope));
+  }
+
+  [[nodiscard]] auto isGlobal() const noexcept -> bool {
+    return prev_scope.expired();
+  }
+
+  [[nodiscard]] auto scopeName() const noexcept
+      -> std::optional<std::string_view> {
+    if (name) {
+      return name->view();
+    }
+    return std::nullopt;
+  }
+
+  [[nodiscard]] auto namesEmpty() const noexcept -> bool {
+    return bindings.empty();
+  }
+
+  [[nodiscard]] auto scopesEmpty() const noexcept -> bool {
+    return scopes.empty();
   }
 
   auto bindName(Identifier name, Type::Pointer type, Ast::Pointer value)
@@ -165,6 +194,11 @@ public:
 
   auto bindScope(Identifier name) -> ScopeTable::Entry {
     return scopes.emplace(name);
+  }
+
+  [[nodiscard]] auto lookupLocal(Identifier name) noexcept
+      -> std::optional<Bindings::Binding> {
+    return bindings.lookup(name);
   }
 
   /*
@@ -194,8 +228,8 @@ public:
     lookup one scope higher. if we are at global scope
     and we fail to find the binding then lookup fails.
   */
-  auto lookup(Identifier name) -> std::optional<Bindings::Binding> { 
-  }
+  [[nodiscard]] auto lookup(Identifier name) noexcept
+      -> std::optional<Bindings::Binding>;
 };
 
 } // namespace mint

@@ -33,7 +33,7 @@ namespace mint {
   re2c:define:YYRESTORE = "(cursor = marker);";
   re2c:define:YYLESSTHAN = "(end > (end - cursor));";
 
-  start = [a-zA-Z_];
+  start = "::"?[a-zA-Z_];
   continue = [a-zA-Z0-9_];
   separator = "::";
   id= start continue* (separator continue+)*;

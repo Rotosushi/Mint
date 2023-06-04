@@ -24,10 +24,11 @@ add_library(mint_common STATIC
   ${MINT_SOURCE_DIR}/adt/BinopTable.cpp
   ${MINT_INCLUDE_DIR}/adt/Environment.hpp
   ${MINT_SOURCE_DIR}/adt/Environment.cpp
-  ${MINT_INCLUDE_DIR}/adt/IdentifierSet.hpp
   ${MINT_INCLUDE_DIR}/adt/Identifier.hpp 
+  ${MINT_SOURCE_DIR}/adt/Identifier.cpp 
   ${MINT_INCLUDE_DIR}/adt/Module.hpp
   ${MINT_INCLUDE_DIR}/adt/Scope.hpp
+  ${MINT_SOURCE_DIR}/adt/Scope.cpp
   ${MINT_INCLUDE_DIR}/adt/TypeInterner.hpp 
   ${MINT_INCLUDE_DIR}/adt/UnopTable.hpp
   ${MINT_SOURCE_DIR}/adt/UnopTable.cpp

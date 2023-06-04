@@ -17,8 +17,21 @@
 #pragma once
 #include <ostream>
 #include <string>
+#include <unordered_set>
+
+#include "utility/Assert.hpp"
 
 namespace mint {
+class Identifier;
+
+class IdentifierSet {
+private:
+  std::unordered_set<std::string> set;
+
+public:
+  template <class... Args>
+  [[nodiscard]] auto emplace(Args &&...args) noexcept -> Identifier;
+};
 
 /*
   start = [a-zA-Z_];
@@ -28,21 +41,30 @@ namespace mint {
 */
 class Identifier {
 private:
-  std::string data;
+  IdentifierSet *set;
+  std::string_view data;
+
+  Identifier(IdentifierSet *set, std::string_view data) noexcept
+      : set(set), data(data) {
+    MINT_ASSERT(set != nullptr);
+  }
+
+  friend class IdentifierSet;
 
 public:
-  template <class... Args>
-  Identifier(Args &&...args) noexcept : data{std::forward<Args>(args)} {}
-
-  Identifier() noexcept {}
   Identifier(const Identifier &id) noexcept = default;
   Identifier(Identifier &&id) noexcept = default;
   auto operator=(const Identifier &id) noexcept -> Identifier & = default;
   auto operator=(Identifier &&id) noexcept -> Identifier & = default;
 
+  auto operator==(const Identifier &other) const noexcept -> bool {
+    return data.begin() == other.data.begin();
+  }
+
+  operator std::string_view() const noexcept { return data; }
   auto view() const noexcept -> std::string_view { return data; }
-  auto str() const noexcept -> std::string const & { return data; }
   auto empty() const noexcept -> bool { return data.empty(); }
+  auto get(std::string_view data) noexcept -> Identifier;
 
   /*
   does this identifier begin with a scope?
@@ -51,11 +73,26 @@ public:
   "::x"            -> true
   "a::x"           -> true
   "a0::...::aN::x" -> true
-*/
+  */
   [[nodiscard]] auto isScoped() const noexcept -> bool {
     for (auto c : data) {
       if (c == ':')
         return true;
+    }
+    return false;
+  }
+
+  /*
+  does this identifier begin with global scope?
+
+  "x"              -> false
+  "::x"            -> true
+  "a::x"           -> false
+  "a0::...::aN::x" -> false
+  */
+  [[nodiscard]] auto globallyQualified() const noexcept -> bool {
+    if (*data.begin() == ':') {
+      return true;
     }
     return false;
   }
@@ -66,19 +103,7 @@ public:
   "a::x"           -> "a"
   "a0::...::aN::x" -> "a0"
 */
-  [[nodiscard]] auto first_scope() noexcept -> std::string_view {
-    auto cursor = data.begin();
-    auto end = data.end();
-    while (cursor != end) {
-      if (*cursor == ':') {
-        return {data.data(), std::distance(data.begin(), cursor)};
-      }
-
-      cursor++;
-    }
-
-    return {""};
-  }
+  [[nodiscard]] auto first_scope() noexcept -> Identifier;
 
   /*
     "x"              -> ""
@@ -86,26 +111,7 @@ public:
     "a::x"           -> ""
     "a0::...::aN::x" -> "a1::...::aN::x"
   */
-  [[nodiscard]] auto rest_scope() noexcept -> std::string_view {
-    // walk from the beginning of the view until the end,
-    // if we see a "::" then walk just past the "::" and
-    // return an identifier from there until the end of
-    // the view, if we see no ':' then we simply return
-    // a view from the cursor to the end. ("")
-    auto cursor = data.begin();
-    auto end = data.end();
-    while (cursor != end) {
-      if (*cursor == ':') {
-        ++cursor; // eat ':'
-        ++cursor; // eat ':'
-        return {cursor.base(), std::distance(cursor, end)};
-      }
-
-      cursor++;
-    }
-
-    return {""};
-  }
+  [[nodiscard]] auto rest_scope() noexcept -> Identifier;
 
   /*
     "x"              -> "x"
@@ -113,24 +119,7 @@ public:
     "a::x"           -> "x"
     "a0::...::aN::x" -> "x"
   */
-  [[nodiscard]] auto variable() noexcept -> std::string_view {
-    // walk from the end of the identifier until
-    // we see the first ':' character, then
-    // return a view to the identifier one back
-    // from ':'. if there is never a ':' simply
-    // return the entire identifier.
-    auto cursor = data.rbegin();
-    auto end = data.rend();
-    while (cursor != end) {
-      if (*cursor == ':') {
-        --cursor;
-        return {cursor.base().base(), std::distance(cursor.base(), data.end())};
-      }
-      ++cursor;
-    }
-
-    return data;
-  }
+  [[nodiscard]] auto variable() noexcept -> Identifier;
 };
 
 inline auto operator<<(std::ostream &out, Identifier const &id) noexcept
@@ -138,7 +127,6 @@ inline auto operator<<(std::ostream &out, Identifier const &id) noexcept
   out << id.view();
   return out;
 }
-
 } // namespace mint
 
 namespace std {
@@ -149,7 +137,7 @@ namespace std {
 template <> class hash<mint::Identifier> {
 public:
   auto operator()(mint::Identifier const &id) const -> std::size_t {
-    return std::hash<std::string>{}(id.str());
+    return std::hash<std::string_view>{}(id.view());
   }
 };
 } // namespace std

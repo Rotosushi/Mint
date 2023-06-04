@@ -57,3 +57,16 @@ the standard library is necessary for a few reasons,
 
 we will decide what to add to the language next, once modules 
 are implemented. (or maybe during, idrk)
+
+
+crazy ideas:
+functions can have their return type deduced right?
+well, what if we computed that deduction as a union
+(or tagged union, or algebraic data type) of all types 
+being used as return values.
+
+similarly, struct access and tuple access can only be 
+resolved at compiletime, however, we could extend it's 
+definition to runtime if we conpute the return type 
+as a union, or tagged union, or ADT of all struct members.
+

@@ -138,7 +138,7 @@ public:
   auto operator()(Ast::Variable &variable) noexcept -> Result<Type::Pointer> {
     auto binding = env->lookup(variable.name);
     if (!binding) {
-      return {Error::NameUnboundInScope, variable.location, variable.name};
+      return {Error::NameUnboundInScope, variable.location, variable.name.view()};
     }
 
     return binding->type();

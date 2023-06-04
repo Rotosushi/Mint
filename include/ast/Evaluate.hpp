@@ -137,7 +137,7 @@ public:
   auto operator()(Ast::Variable &variable) noexcept -> EvaluateResult {
     auto bound = env->lookup(variable.name);
     if (!bound) {
-      return {Error::NameUnboundInScope, variable.location, variable.name};
+      return {Error::NameUnboundInScope, variable.location, variable.name.view()};
     }
 
     return bound->value();
