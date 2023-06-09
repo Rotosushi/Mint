@@ -260,14 +260,14 @@ auto Parser::parseBasic() noexcept -> Result<Ast::Pointer> {
     break;
   }
 
-  case Token::LParen: {
+  case Token::BeginParen: {
     next(); // eat '('
 
     auto affix = parseAffix();
     if (!affix)
       return affix;
 
-    if (!expect(Token::RParen)) {
+    if (!expect(Token::EndParen)) {
       return handle_error(Error::ExpectedAClosingParen, location(), text());
     }
 

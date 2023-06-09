@@ -89,6 +89,14 @@ struct Ast {
         : location(location), name{name} {}
   };
 
+  struct Module {
+    Location location;
+    std::vector<Ast::Pointer> expressions;
+
+    Module(Location location, std::vector<Ast::Pointer> expressions) noexcept
+        : location(location), expressions(std::move(expressions)) {}
+  };
+
   struct Value {
     struct Boolean {
       Location location;

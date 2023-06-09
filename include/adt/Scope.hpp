@@ -16,12 +16,22 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <optional>
+#include <tuple>
 #include <unordered_map>
 
 #include "ast/Ast.hpp"
+/*
+  #TODO:
+    ) implement a field in bindings to
+      allow for public/private visibility.
+    ) refactor lookup to return Result<T>
+      and construct errors within lookup,
+      such that we can distinguish between
+      lookup failing due to visibility vs
+      name existance.
+*/
 
 namespace mint {
-
 class Bindings {
 public:
   using Key = Identifier;
@@ -96,7 +106,6 @@ public:
   };
 
 private:
-  Scope *scope;
   Table table;
 
 public:
@@ -113,27 +122,6 @@ public:
     return found;
   }
 };
-
-/*
-  a scope represents global scope,
-  and any scope within global scope.
-
-  a scope is-a map of identifiers to bindings.
-  so a qualified name like "a.b" is resolved
-  by looking up "b" within scope "a"
-
-  if an identifier begins with '.' such as '.a'
-  this implies lookup starting from the global
-  scope.
-
-  what about "a.b.c.d.etc."?
-  well the natural way of resolving that would be
-  to allow scopes to be bound to names. then we
-  can treat each name appearing before a '.' to
-  name a scope, which is looked up, and then we
-  can delegate lookup to that scope, of the rest
-  of the name.
-*/
 
 class Scope : public std::enable_shared_from_this<Scope> {
 public:
@@ -154,15 +142,17 @@ private:
   [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept
       -> std::optional<Bindings::Binding>;
 
+  void setGlobal(std::weak_ptr<Scope> scope) noexcept { global = scope; }
+
 public:
   [[nodiscard]] static auto createGlobalScope() -> std::shared_ptr<Scope> {
     auto global = std::shared_ptr<Scope>(new Scope());
-    global->global = global->weak_from_this();
+    global->setGlobal(global->weak_from_this());
     return global;
   }
 
-  [[nodiscard]] auto createChildScope(Identifier name,
-                                      std::weak_ptr<Scope> prev_scope)
+  [[nodiscard]] static auto createScope(Identifier name,
+                                        std::weak_ptr<Scope> prev_scope)
       -> std::shared_ptr<Scope> {
     return std::shared_ptr<Scope>(new Scope(name, prev_scope));
   }
@@ -187,13 +177,23 @@ public:
     return scopes.empty();
   }
 
+  // #TODO: maybe enforce uniqueness here?
+  // as opposed to keeping it a precondition
+  // to using this class
   auto bindName(Identifier name, Type::Pointer type, Ast::Pointer value)
       -> Bindings::Binding {
     return bindings.bind(name, type, value);
   }
 
+  // #TODO: maybe enforce uniqueness here?
+  // as opposed to keeping it a precondition
+  // to using this class
   auto bindScope(Identifier name) -> ScopeTable::Entry {
-    return scopes.emplace(name);
+    return scopes.emplace(name, weak_from_this());
+  }
+
+  [[nodiscard]] auto lookupScope(Identifier name) noexcept {
+    return scopes.lookup(name);
   }
 
   [[nodiscard]] auto lookupLocal(Identifier name) noexcept

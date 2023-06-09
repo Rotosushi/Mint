@@ -37,11 +37,12 @@ auto ScopeTable::Entry::bind(Identifier name, Type::Pointer type,
 
 auto ScopeTable::emplace(Identifier name,
                          std::weak_ptr<Scope> prev_scope) noexcept -> Entry {
-  auto iter = table.emplace();
+  auto pair = table.emplace(name, Scope::createScope(name, prev_scope));
+  return pair.first;
 }
 
 /*
-  name is guaranteed to be of the form
+  lookup name of the form
   "a0::...::aN::x"
 */
 [[nodiscard]] auto Scope::qualifiedLookup(Identifier name) noexcept
@@ -80,18 +81,23 @@ auto ScopeTable::emplace(Identifier name,
     -> std::optional<Bindings::Binding> {
   // if name is of the form "x"
   if (!name.isScoped()) {
+    // lookup "x" in local scope
     auto found = bindings.lookup(name);
     if (found) {
       return found;
     }
 
+    // since we didn't find "x" in local
+    // scope, try and search the prev_scope.
     if (!isGlobal()) {
       auto p = prev_scope.lock();
       return p->lookup(name);
     }
+    // "x" isn't in scope.
     return std::nullopt;
   }
 
+  // name is of the form "a0::...::aN::x"
   return qualifiedLookup(name);
 }
 } // namespace mint

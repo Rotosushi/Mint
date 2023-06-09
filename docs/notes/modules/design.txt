@@ -110,16 +110,61 @@ some sticky points
   - versioning? 
   - deprecation?
 
-  
+
+
+
+we need definitions in order to typecheck or evaluate terms using 
+said definition.
+in this case, we would like the import expression to evaluate before 
+the usage of an imported name. 
+
+in an eager, top to bottom, left to right evaluation order,
+all names must be defined in order to use them in an expression.
+
+this is what we are going to live with for now.
+
+fn a() { b(); }
+fn b() { a(); }
+
+there are only two ways I can think of to allow for recursive definitions.
+1) forward declarations
+2) allow names to be used in a definition of another term, before that name 
+  is defined. still disallow using a name as a value before it is defined.
+
+1) is simple to implement, and is more complex to use.
+2) is complex to implement, and makes using the language simpler.
+
+notice also that 2 is in essence 'lazy' definitions.
+much like 'lazy' evaluation. we are not requiring
+the name to be defined before we need the value 
+defined by the name.
+
+
+how are names imported and exported?
+
+importing:
+) "import x;" "import x from y;"
+
+exporting:
+) "public let ..." "public fn ..."
+) "public:
+   let ...;
+   fn ...
+  "
+
+
 TODO:
-  - add names to scopes
+ (testing) - add names to scopes
     - modify scope lookup to handle the prepended name
-  - add a tree of scopes.
+ (testing) - add a tree of scopes.
     - lookup a fully qualified name
     - lookup a 'local' name.
     - what is the 'local' scope.
-    - how do we start searching from the global scope from 
-      within a 'local' scope.
+    - lookup from the global scope
+
+  - add modules
+  - add an import statement
+
 
 
 

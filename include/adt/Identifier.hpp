@@ -127,6 +127,14 @@ inline auto operator<<(std::ostream &out, Identifier const &id) noexcept
   out << id.view();
   return out;
 }
+
+template <class... Args>
+[[nodiscard]] inline auto IdentifierSet::emplace(Args &&...args) noexcept
+    -> Identifier {
+  auto pair = set.emplace(std::forward<Args>(args)...);
+  return Identifier(this, *pair.first);
+}
+
 } // namespace mint
 
 namespace std {

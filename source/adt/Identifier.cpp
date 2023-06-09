@@ -17,14 +17,6 @@
 #include "adt/Identifier.hpp"
 
 namespace mint {
-
-template <class... Args>
-[[nodiscard]] auto IdentifierSet::emplace(Args &&...args) noexcept
-    -> Identifier {
-  auto pair = set.emplace(std::forward<Args>(args)...);
-  return Identifier(this, *pair.first);
-}
-
 [[nodiscard]] auto Identifier::first_scope() noexcept -> Identifier {
   auto cursor = data.begin();
   auto end = data.end();

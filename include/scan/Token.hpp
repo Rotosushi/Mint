@@ -27,12 +27,15 @@ enum struct Token : int {
 
   // keywords
   Let,
+  Module,
 
   // symbols
   Equal,
   Semicolon,
-  LParen,
-  RParen,
+  BeginParen,
+  EndParen,
+  BeginBrace,
+  EndBrace,
 
   // operators
   Plus,
@@ -173,14 +176,22 @@ inline auto toString(Token token) noexcept -> std::string_view {
 
   case Token::Let:
     return "let";
+  case Token::Module:
+    return "module";
+
   case Token::Equal:
     return "=";
   case Token::Semicolon:
     return ";";
-  case Token::LParen:
+  case Token::BeginParen:
     return "(";
-  case Token::RParen:
+  case Token::EndParen:
     return ")";
+  case Token::BeginBrace:
+    return "{";
+  case Token::EndBrace:
+    return "}";
+
   case Token::Plus:
     return "+";
   case Token::Minus:

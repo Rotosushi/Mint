@@ -22,15 +22,15 @@
 #include "scan/Scanner.hpp"
 
 /*
-
 top = let
-    | term
+    | module
+    | affix
 
-let = "let" identifier "=" term
+let = "let" identifier "=" affix
 
-term = affix ";"
+module = "module" identifier "{" top (";" top)* "}"
 
-affix = basic [binop precedence-parser]
+affix = basic (binop precedence-parser)?
 
 binop = "+" |"-" | "*" | "/" | "%" | "!" | "&" | "|"
         "<" | "<=" | "?=" | "!=" | "=>" | ">"
@@ -43,8 +43,13 @@ basic = "nil"
       | unop basic
       | "(" affix ")"
 
-integer = [0-9]{0-9}
-identifier = [a-zA-Z_]{a-zA-Z0-9_}
+
+integer = [0-9]+
+
+start      = "::"?[a-zA-Z_]
+continue   = [a-zA-Z0-9_];
+separator  = "::";
+identifier = start continue* (separator continue+)*
 
 */
 
@@ -88,6 +93,7 @@ private:
     return {kind, location, message};
   }
 
+  auto parseModule() noexcept -> Result<Ast::Pointer>;
   auto parseTop() noexcept -> Result<Ast::Pointer>;
   auto parseLet() noexcept -> Result<Ast::Pointer>;
   auto parseTerm() noexcept -> Result<Ast::Pointer>;
