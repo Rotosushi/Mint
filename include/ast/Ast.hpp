@@ -19,6 +19,7 @@
 #include <optional>
 #include <variant>
 
+#include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
 
 #include "scan/Location.hpp"
@@ -31,94 +32,112 @@ struct Ast {
   using Pointer = std::shared_ptr<Ast>;
 
   struct Term {
+    Attributes attributes;
     Location location;
     Ast::Pointer affix;
-    Term(Location location, Ast::Pointer affix) noexcept
-        : location(location), affix(affix) {}
+    Term(Attributes attributes, Location location, Ast::Pointer affix) noexcept
+        : attributes(attributes), location(location), affix(affix) {}
   };
 
   struct Type {
+    Attributes attributes;
     Location location;
     mint::Type::Pointer type;
-    Type(Location location, mint::Type::Pointer type) noexcept
-        : location(location), type(type) {}
+    Type(Attributes attributes, Location location,
+         mint::Type::Pointer type) noexcept
+        : attributes(attributes), location(location), type(type) {}
   };
 
   struct Let {
+    Attributes attributes;
     Location location;
     Identifier id;
     Ast::Pointer term;
 
-    Let(Location location, Identifier id, Ast::Pointer term) noexcept
-        : location(location), id(id), term(term) {}
+    Let(Attributes attributes, Location location, Identifier id,
+        Ast::Pointer term) noexcept
+        : attributes(attributes), location(location), id(id), term(term) {}
   };
 
   struct Binop {
+    Attributes attributes;
     Location location;
     Token op;
     Ast::Pointer left;
     Ast::Pointer right;
 
-    Binop(Location location, Token op, Ast::Pointer left,
+    Binop(Attributes attributes, Location location, Token op, Ast::Pointer left,
           Ast::Pointer right) noexcept
-        : location(location), op(op), left(left), right(right) {}
+        : attributes(attributes), location(location), op(op), left(left),
+          right(right) {}
   };
 
   struct Unop {
+    Attributes attributes;
     Location location;
     Token op;
     Ast::Pointer right;
 
-    Unop(Location location, Token op, Ast::Pointer right) noexcept
-        : location(location), op(op), right(right) {}
+    Unop(Attributes attributes, Location location, Token op,
+         Ast::Pointer right) noexcept
+        : attributes(attributes), location(location), op(op), right(right) {}
   };
 
   struct Parens {
+    Attributes attributes;
     Location location;
     Ast::Pointer ast;
 
-    Parens(Location location, Ast::Pointer ast) noexcept
-        : location(location), ast{ast} {}
+    Parens(Attributes attributes, Location location, Ast::Pointer ast) noexcept
+        : attributes(attributes), location(location), ast{ast} {}
   };
 
   struct Variable {
+    Attributes attributes;
     Location location;
     Identifier name;
 
-    Variable(Location location, Identifier name) noexcept
-        : location(location), name{name} {}
+    Variable(Attributes attributes, Location location, Identifier name) noexcept
+        : attributes(attributes), location(location), name{name} {}
   };
 
   struct Module {
+    Attributes attributes;
     Location location;
     std::vector<Ast::Pointer> expressions;
 
-    Module(Location location, std::vector<Ast::Pointer> expressions) noexcept
-        : location(location), expressions(std::move(expressions)) {}
+    Module(Attributes attributes, Location location,
+           std::vector<Ast::Pointer> expressions) noexcept
+        : attributes(attributes), location(location),
+          expressions(std::move(expressions)) {}
   };
 
   struct Value {
     struct Boolean {
+      Attributes attributes;
       Location location;
       bool value;
 
-      Boolean(Location location, bool value) noexcept
-          : location(location), value{value} {}
+      Boolean(Attributes attributes, Location location, bool value) noexcept
+          : attributes(attributes), location(location), value{value} {}
     };
 
     struct Integer {
+      Attributes attributes;
       Location location;
       int value;
 
-      Integer(Location location, int value) noexcept
-          : location(location), value{value} {}
+      Integer(Attributes attributes, Location location, int value) noexcept
+          : attributes(attributes), location(location), value{value} {}
     };
 
     struct Nil {
+      Attributes attributes;
       Location location;
       bool value = false;
 
-      Nil(Location location) noexcept : location(location) {}
+      Nil(Attributes attributes, Location location) noexcept
+          : attributes(attributes), location(location) {}
     };
 
     using Data = std::variant<Boolean, Integer, Nil>;
@@ -226,6 +245,10 @@ public:
   constexpr auto operator()(Ast::Pointer const &ast) const noexcept
       -> Location {
     return std::visit(*this, ast->data);
+  }
+
+  constexpr auto operator()(Ast const &ast) const noexcept -> Location {
+    return std::visit(*this, ast.data);
   }
 
   constexpr auto operator()(Ast::Term const &affix) const noexcept -> Location {

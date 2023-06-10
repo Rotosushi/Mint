@@ -18,13 +18,17 @@
 #include <istream>
 
 #include "ast/Ast.hpp"
+
 #include "error/Error.hpp"
+
 #include "scan/Scanner.hpp"
 
 /*
-top = let
-    | module
-    | affix
+top = visibility? declaration
+    | affix // this supports the interactive repl
+
+declaration = let
+            | module
 
 let = "let" identifier "=" affix
 
@@ -43,6 +47,8 @@ basic = "nil"
       | unop basic
       | "(" affix ")"
 
+visibility = "public"
+           | "private"
 
 integer = [0-9]+
 
@@ -61,17 +67,29 @@ private:
   Environment *env;
   Scanner scanner;
   Token current;
+  Attributes default_attributes;
 
   auto text() const noexcept { return scanner.getText(); }
   auto location() const noexcept { return scanner.getLocation(); }
   void next() noexcept { current = scanner.scan(); }
 
+  auto peek(Token token) const noexcept -> bool { return current == token; }
   auto expect(Token token) noexcept -> bool {
     if (current == token) {
       next();
       return true;
     }
     return false;
+  }
+
+  auto predictsDeclaration(Token token) const noexcept -> bool {
+    switch (token) {
+    case Token::Let:
+    case Token::Module:
+      return true;
+    default:
+      return false;
+    }
   }
 
   // we just encountered a syntax error,
@@ -93,9 +111,10 @@ private:
     return {kind, location, message};
   }
 
-  auto parseModule() noexcept -> Result<Ast::Pointer>;
   auto parseTop() noexcept -> Result<Ast::Pointer>;
-  auto parseLet() noexcept -> Result<Ast::Pointer>;
+  auto parseDeclaration(bool is_public) noexcept -> Result<Ast::Pointer>;
+  auto parseModule(bool is_public) noexcept -> Result<Ast::Pointer>;
+  auto parseLet(bool is_public) noexcept -> Result<Ast::Pointer>;
   auto parseTerm() noexcept -> Result<Ast::Pointer>;
   auto parseAffix() noexcept -> Result<Ast::Pointer>;
   auto precedenceParser(Ast::Pointer left, BinopPrecedence prec) noexcept

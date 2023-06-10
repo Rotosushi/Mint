@@ -141,7 +141,7 @@ public:
       return {Error::NameUnboundInScope, variable.location, variable.name.view()};
     }
 
-    return binding->type();
+    return binding.value().type();
   }
 };
 

@@ -15,9 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 1
-#define MINT_GIT_REVISION "4e3330d5ba974d5acaa7cf4891dea117b24dc34e"
-// clang-format on
+#include <bitset>
+
+namespace mint {
+class Attributes {
+private:
+  enum {
+    Public,
+
+    SIZE, // SIZE must be at end, no enumeration may have an assigned value.
+  };
+  using Set = std::bitset<SIZE>;
+  Set set;
+
+public:
+  [[nodiscard]] auto isPublic() const noexcept -> bool { return set[Public]; }
+  auto isPublic(bool state) noexcept -> bool { return set[Public] = state; }
+  [[nodiscard]] auto isPrivate() const noexcept -> bool { return !isPublic(); }
+  auto isPrivate(bool state) noexcept -> bool { return isPublic(!state); }
+};
+} // namespace mint

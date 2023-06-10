@@ -37,9 +37,12 @@ public:
     ExpectedASemicolon,
     ExpectedAnIdentifier,
     ExpectedAClosingParen,
+    ExpectedABeginBrace,
+    ExpectedAEndBrace,
 
     NameUnboundInScope,
     NameAlreadyBoundInScope,
+    NameIsPrivateInScope,
 
     UnopTypeMismatch,
     BinopTypeMismatch,

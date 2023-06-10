@@ -62,7 +62,7 @@ public:
     if (!type)
       return std::move(type.error());
 
-    env->bind(let.id, type.value(), value.value());
+    env->bind(let.id, let.attributes, type.value(), value.value());
     return value.value();
   }
 
@@ -137,10 +137,11 @@ public:
   auto operator()(Ast::Variable &variable) noexcept -> EvaluateResult {
     auto bound = env->lookup(variable.name);
     if (!bound) {
-      return {Error::NameUnboundInScope, variable.location, variable.name.view()};
+      return {Error::NameUnboundInScope, variable.location,
+              variable.name.view()};
     }
 
-    return bound->value();
+    return {bound.value().value()};
   }
 
   auto operator()([[maybe_unused]] Ast::Value &value) noexcept

@@ -65,8 +65,9 @@ public:
     return id_interner.emplace(name);
   }
 
-  auto bind(Identifier name, Type::Pointer type, Ast::Pointer value) noexcept {
-    return scope.bind(name, type, value);
+  auto bind(Identifier name, Attributes attributes, Type::Pointer type,
+            Ast::Pointer value) noexcept {
+    return scope.bind(name, attributes, type, value);
   }
 
   auto lookup(Identifier name) { return scope.lookup(name); }
@@ -81,57 +82,72 @@ public:
   auto getIntegerType() noexcept { return type_interner.getIntegerType(); }
   auto getNilType() noexcept { return type_interner.getNilType(); }
 
-  auto getTermAst(Location location, Ast::Pointer affix) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Term>, location,
-                                 affix);
+  auto getTermAst(Attributes attributes, Location location,
+                  Ast::Pointer affix) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Term>, attributes,
+                                 location, affix);
   }
 
-  auto getTypeAst(Location location, mint::Type::Pointer type) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Type>, location, type);
+  auto getTypeAst(Attributes attributes, Location location,
+                  mint::Type::Pointer type) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Type>, attributes,
+                                 location, type);
   }
 
-  auto getLetAst(Location location, Identifier name,
+  auto getModuleAst(Attributes attributes, Location location,
+                    std::vector<Ast::Pointer> expressions) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Module>, attributes,
+                                 location, std::move(expressions));
+  }
+
+  auto getLetAst(Attributes attributes, Location location, Identifier name,
                  Ast::Pointer term) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Let>, location, name,
-                                 term);
+    return std::make_shared<Ast>(std::in_place_type<Ast::Let>, attributes,
+                                 location, name, term);
   }
 
-  auto getBinopAst(Location location, Token op, Ast::Pointer left,
-                   Ast::Pointer right) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Binop>, location, op,
-                                 left, right);
+  auto getBinopAst(Attributes attributes, Location location, Token op,
+                   Ast::Pointer left, Ast::Pointer right) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Binop>, attributes,
+                                 location, op, left, right);
   }
 
-  auto getUnopAst(Location location, Token op, Ast::Pointer right) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Unop>, location, op,
-                                 right);
+  auto getUnopAst(Attributes attributes, Location location, Token op,
+                  Ast::Pointer right) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Unop>, attributes,
+                                 location, op, right);
   }
 
-  auto getParensAst(Location location, Ast::Pointer ast) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Parens>, location,
-                                 ast);
+  auto getParensAst(Attributes attributes, Location location,
+                    Ast::Pointer ast) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Parens>, attributes,
+                                 location, ast);
   }
 
-  auto getVariableAst(Location location, Identifier name) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Variable>, location,
-                                 name);
+  auto getVariableAst(Attributes attributes, Location location,
+                      Identifier name) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Variable>, attributes,
+                                 location, name);
   }
 
-  auto getBooleanAst(Location location, bool value) noexcept {
+  auto getBooleanAst(Attributes attributes, Location location,
+                     bool value) noexcept {
     return std::make_shared<Ast>(std::in_place_type<Ast::Value>,
                                  std::in_place_type<Ast::Value::Boolean>,
-                                 location, value);
+                                 attributes, location, value);
   }
 
-  auto getIntegerAst(Location location, int value) noexcept {
+  auto getIntegerAst(Attributes attributes, Location location,
+                     int value) noexcept {
     return std::make_shared<Ast>(std::in_place_type<Ast::Value>,
                                  std::in_place_type<Ast::Value::Integer>,
-                                 location, value);
+                                 attributes, location, value);
   }
 
-  auto getNilAst(Location location) noexcept {
+  auto getNilAst(Attributes attributes, Location location) noexcept {
     return std::make_shared<Ast>(std::in_place_type<Ast::Value>,
-                                 std::in_place_type<Ast::Value::Nil>, location);
+                                 std::in_place_type<Ast::Value::Nil>,
+                                 attributes, location);
   }
 };
 } // namespace mint

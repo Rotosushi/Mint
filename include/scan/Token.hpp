@@ -28,6 +28,8 @@ enum struct Token : int {
   // keywords
   Let,
   Module,
+  Public,
+  Private,
 
   // symbols
   Equal,
@@ -178,6 +180,10 @@ inline auto toString(Token token) noexcept -> std::string_view {
     return "let";
   case Token::Module:
     return "module";
+  case Token::Public:
+    return "public";
+  case Token::Private:
+    return "private";
 
   case Token::Equal:
     return "=";

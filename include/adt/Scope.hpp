@@ -19,7 +19,11 @@
 #include <tuple>
 #include <unordered_map>
 
+#include "adt/Attributes.hpp"
+
 #include "ast/Ast.hpp"
+
+#include "error/Error.hpp"
 /*
   #TODO:
     ) implement a field in bindings to
@@ -29,13 +33,18 @@
       such that we can distinguish between
       lookup failing due to visibility vs
       name existance.
+    ) lookup can only return a private variable
+      from it's local scope.
 */
 
 namespace mint {
+/* Bindings are a map from Identifiers to (Attributes, Type::Pointer,
+  Ast::Pointer) with a more convenient interface.
+*/
 class Bindings {
 public:
   using Key = Identifier;
-  using Value = std::pair<Type::Pointer, Ast::Pointer>;
+  using Value = std::tuple<Attributes, Type::Pointer, Ast::Pointer>;
   using Table = std::unordered_map<Key, Value>;
   using iterator = typename Table::iterator;
 
@@ -43,17 +52,34 @@ public:
   private:
     iterator binding;
 
+    [[nodiscard]] auto attributes() const noexcept -> Attributes & {
+      return std::get<0>(binding->second);
+    }
+
   public:
     Binding(iterator binding) noexcept : binding(binding) {}
 
     [[nodiscard]] auto name() const noexcept -> const Key & {
       return binding->first;
     }
-    [[nodiscard]] auto type() const noexcept -> Type::Pointer {
-      return binding->second.first;
+    [[nodiscard]] auto isPublic() const noexcept -> bool {
+      return attributes().isPublic();
     }
+    [[nodiscard]] auto isPrivate() const noexcept -> bool {
+      return attributes().isPrivate();
+    }
+    [[nodiscard]] auto type() const noexcept -> Type::Pointer {
+      return std::get<1>(binding->second);
+    }
+    /*
+      note: it might be good to return an Ast* here, as it saves
+      copying a shared ptr, and anything manipulating an Ast is
+      usually only reading it. and in the cases where the code
+      isn't Ast inherits from std::shared_from_this, so we can
+      call ast->shared_from_this();
+    */
     [[nodiscard]] auto value() const noexcept -> Ast::Pointer {
-      return binding->second.second;
+      return std::get<2>(binding->second);
     }
   };
 
@@ -63,18 +89,18 @@ private:
 public:
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
-  auto bind(Key key, Type::Pointer type, Ast::Pointer value) noexcept
-      -> Binding {
+  auto bind(Key key, Attributes attributes, Type::Pointer type,
+            Ast::Pointer value) noexcept -> Binding {
     // use insert or assign to allow the caller to update
     // the values being kept track of within the table.
-    auto pair = table.insert_or_assign(key, Value{type, value});
+    auto pair = table.insert_or_assign(key, Value{attributes, type, value});
     return pair.first;
   }
 
-  [[nodiscard]] auto lookup(Key key) noexcept -> std::optional<Binding> {
+  [[nodiscard]] auto lookup(Key key) noexcept -> Result<Binding> {
     auto found = table.find(key);
     if (found == table.end()) {
-      return std::nullopt;
+      return Error{Error::NameUnboundInScope, Location{}, key.view()};
     }
     return {found};
   }
@@ -98,11 +124,11 @@ public:
 
     [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
 
-    auto bind(Identifier name, Type::Pointer type, Ast::Pointer value) noexcept
-        -> Bindings::Binding;
+    auto bind(Identifier name, Attributes attributes, Type::Pointer type,
+              Ast::Pointer value) noexcept -> Bindings::Binding;
 
     [[nodiscard]] auto lookup(Identifier name) noexcept
-        -> std::optional<Bindings::Binding>;
+        -> Result<Bindings::Binding>;
   };
 
 private:
@@ -114,17 +140,16 @@ public:
   auto emplace(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
       -> Entry;
 
-  [[nodiscard]] auto lookup(Identifier name) noexcept -> std::optional<Entry> {
+  [[nodiscard]] auto lookup(Identifier name) noexcept -> Result<Entry> {
     auto found = table.find(name);
     if (found == table.end()) {
-      return std::nullopt;
+      return Error{Error::NameUnboundInScope, Location{}, name.view()};
     }
-    return found;
+    return Entry{found};
   }
 };
 
 class Scope : public std::enable_shared_from_this<Scope> {
-public:
 private:
   std::optional<Identifier> name;
   std::weak_ptr<Scope> prev_scope;
@@ -139,8 +164,10 @@ private:
     global = ptr->global;
   }
 
+  [[nodiscard]] auto qualifiedScopeLookup(Identifier name) noexcept
+      -> Result<Bindings::Binding>;
   [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept
-      -> std::optional<Bindings::Binding>;
+      -> Result<Bindings::Binding>;
 
   void setGlobal(std::weak_ptr<Scope> scope) noexcept { global = scope; }
 
@@ -163,13 +190,10 @@ public:
 
   [[nodiscard]] auto scopeName() const noexcept
       -> std::optional<std::string_view> {
-    if (name) {
-      return name->view();
-    }
-    return std::nullopt;
+    return name;
   }
 
-  [[nodiscard]] auto namesEmpty() const noexcept -> bool {
+  [[nodiscard]] auto bindingsEmpty() const noexcept -> bool {
     return bindings.empty();
   }
 
@@ -180,9 +204,9 @@ public:
   // #TODO: maybe enforce uniqueness here?
   // as opposed to keeping it a precondition
   // to using this class
-  auto bindName(Identifier name, Type::Pointer type, Ast::Pointer value)
-      -> Bindings::Binding {
-    return bindings.bind(name, type, value);
+  auto bindName(Identifier name, Attributes attributes, Type::Pointer type,
+                Ast::Pointer value) -> Bindings::Binding {
+    return bindings.bind(name, attributes, type, value);
   }
 
   // #TODO: maybe enforce uniqueness here?
@@ -197,7 +221,7 @@ public:
   }
 
   [[nodiscard]] auto lookupLocal(Identifier name) noexcept
-      -> std::optional<Bindings::Binding> {
+      -> Result<Bindings::Binding> {
     return bindings.lookup(name);
   }
 
@@ -229,7 +253,17 @@ public:
     and we fail to find the binding then lookup fails.
   */
   [[nodiscard]] auto lookup(Identifier name) noexcept
-      -> std::optional<Bindings::Binding>;
+      -> Result<Bindings::Binding> {
+    auto found = lookupLocal(name);
+    if (!found) {
+      if (isGlobal()) {
+        return {std::move(found.error())};
+      }
+      auto prev = prev_scope.lock();
+      return prev->qualifiedLookup(name);
+    }
+    return found;
+  }
 };
 
 } // namespace mint

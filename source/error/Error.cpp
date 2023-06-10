@@ -39,11 +39,17 @@ auto Error::KindToSV(Error::Kind kind) noexcept -> std::string_view {
     return "Expected an identifier";
   case Error::ExpectedAClosingParen:
     return "Expected a ')'";
+  case Error::ExpectedABeginBrace:
+    return "Expected a '{'";
+  case Error::ExpectedAEndBrace:
+    return "Expected a '}'";
 
   case Error::NameUnboundInScope:
     return "Name not bound in scope";
   case Error::NameAlreadyBoundInScope:
     return "Name already bound in scope";
+  case Error::NameIsPrivateInScope:
+    return "Name is private and unaccessable from this scope";
 
   case Error::UnopTypeMismatch:
     return "Unop argument type mismatch";

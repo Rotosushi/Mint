@@ -48,13 +48,19 @@ auto Parser::extractSourceLine(Location const &location) const noexcept
 }
 
 /*
-  term = let
-    | term
+top = visibility? declaration
+    | affix
 */
 auto Parser::parseTop() noexcept -> Result<Ast::Pointer> {
-  if (current == Token::Let)
-    return parseLet();
-  else {
+  if (peek(Token::Public)) {
+    next();
+    return parseDeclaration(/* is_public = */ true);
+  } else if (peek(Token::Private)) {
+    next();
+    return parseDeclaration(/* is_public = */ false);
+  } else if (predictsDeclaration(current)) {
+    return parseDeclaration(/* is_public = */ false);
+  } else {
     auto term = parseTerm();
     if (!term) {
       return term;
@@ -65,18 +71,35 @@ auto Parser::parseTop() noexcept -> Result<Ast::Pointer> {
 }
 
 /*
+  declaration = let
+              | module
+*/
+auto Parser::parseDeclaration(bool is_public) noexcept -> Result<Ast::Pointer> {
+  if (peek(Token::Let)) {
+    return parseLet(is_public);
+  } else if (peek(Token::Module)) {
+    return parseModule(is_public);
+  } else {
+    fatalError(
+        "parseDeclaration called when current did not predictDeclaration.");
+  }
+}
+
+/*
   let = "let" identifier "=" term
 */
-auto Parser::parseLet() noexcept -> Result<Ast::Pointer> {
+auto Parser::parseLet(bool is_public) noexcept -> Result<Ast::Pointer> {
+  Attributes attributes;
+  attributes.isPublic(is_public);
   auto left_loc = location();
+  MINT_ASSERT(peek(Token::Let));
   next(); // eat 'let'
 
-  if (current != Token::Identifier) {
+  if (!peek(Token::Identifier)) {
     return handle_error(Error::ExpectedAnIdentifier, location(), text());
   }
 
   auto id = env->getIdentifier(text());
-
   next(); // eat identifier
 
   if (!expect(Token::Equal)) {
@@ -90,7 +113,31 @@ auto Parser::parseLet() noexcept -> Result<Ast::Pointer> {
 
   auto right_loc = location();
   Location let_loc = {left_loc, right_loc};
-  return {env->getLetAst(let_loc, id, term.value())};
+  return {env->getLetAst(attributes, let_loc, id, term.value())};
+}
+
+/*
+  module = "module" identifier "{" top (";" top)* "}"
+*/
+auto Parser::parseModule(bool is_public) noexcept -> Result<Ast::Pointer> {
+  Attributes attributes;
+  attributes.isPublic(is_public);
+  auto left_loc = location();
+  MINT_ASSERT(peek(Token::Module));
+  next(); // eat 'module'
+
+  if (!peek(Token::Identifier)) {
+    return handle_error(Error::ExpectedAnIdentifier, location(), text());
+  }
+
+  auto id = env->getIdentifier(text());
+  next();
+
+  if (!expect(Token::BeginBrace)) {
+    return handle_error(Error::ExpectedABeginBrace, location(), text());
+  }
+
+  
 }
 
 /*
@@ -105,7 +152,8 @@ auto Parser::parseTerm() noexcept -> Result<Ast::Pointer> {
     return handle_error(Error::ExpectedASemicolon, location(), text());
   }
 
-  return {env->getTermAst(ast_location(affix.value()), affix.value())};
+  return {env->getTermAst(default_attributes, ast_location(affix.value()),
+                          affix.value())};
 }
 
 auto Parser::parseAffix() noexcept -> Result<Ast::Pointer> {
@@ -187,7 +235,7 @@ auto Parser::precedenceParser(Ast::Pointer left, BinopPrecedence prec) noexcept
     Location binop_loc = {op_loc, rhs_loc};
     Ast::Pointer lhs = result.value();
     Ast::Pointer rhs = right.value();
-    result = env->getBinopAst(binop_loc, op, lhs, rhs);
+    result = env->getBinopAst(default_attributes, binop_loc, op, lhs, rhs);
   }
 
   return result;
@@ -207,21 +255,21 @@ auto Parser::parseBasic() noexcept -> Result<Ast::Pointer> {
   case Token::Nil: {
     auto loc = location();
     next();
-    return env->getNilAst(loc);
+    return env->getNilAst(default_attributes, loc);
     break;
   }
 
   case Token::True: {
     auto loc = location();
     next();
-    return env->getBooleanAst(loc, true);
+    return env->getBooleanAst(default_attributes, loc, true);
     break;
   }
 
   case Token::False: {
     auto loc = location();
     next();
-    return env->getBooleanAst(loc, false);
+    return env->getBooleanAst(default_attributes, loc, false);
     break;
   }
 
@@ -230,7 +278,7 @@ auto Parser::parseBasic() noexcept -> Result<Ast::Pointer> {
     auto loc = location();
     next();
 
-    return env->getIntegerAst(loc, value);
+    return env->getIntegerAst(default_attributes, loc, value);
     break;
   }
 
@@ -239,7 +287,7 @@ auto Parser::parseBasic() noexcept -> Result<Ast::Pointer> {
     auto loc = location();
     next(); // eat 'id'
 
-    return env->getVariableAst(loc, name);
+    return env->getVariableAst(default_attributes, loc, name);
     break;
   }
 
@@ -256,7 +304,7 @@ auto Parser::parseBasic() noexcept -> Result<Ast::Pointer> {
     auto rhs_loc = location();
     Location unop_loc{lhs_loc, rhs_loc};
 
-    return env->getUnopAst(unop_loc, op, right.value());
+    return env->getUnopAst(default_attributes, unop_loc, op, right.value());
     break;
   }
 
@@ -271,7 +319,8 @@ auto Parser::parseBasic() noexcept -> Result<Ast::Pointer> {
       return handle_error(Error::ExpectedAClosingParen, location(), text());
     }
 
-    return env->getParensAst(ast_location(affix.value()), affix.value());
+    return env->getParensAst(default_attributes, ast_location(affix.value()),
+                             affix.value());
     break;
   }
 
