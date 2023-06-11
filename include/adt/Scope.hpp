@@ -120,6 +120,8 @@ public:
   public:
     Entry(Table::iterator iter) noexcept : iter(iter) {}
 
+    [[nodiscard]] auto ptr() const noexcept -> std::shared_ptr<Scope>;
+
     [[nodiscard]] auto namesEmpty() const noexcept -> bool;
 
     [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
@@ -158,6 +160,9 @@ private:
   ScopeTable scopes;
 
   Scope() noexcept = default;
+  Scope(std::optional<Identifier> name,
+        std::weak_ptr<Scope> prev_scope) noexcept
+      : name(name), prev_scope(prev_scope) {}
   Scope(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
       : name(std::move(name)), prev_scope(prev_scope) {
     auto ptr = prev_scope.lock();
@@ -178,7 +183,7 @@ public:
     return global;
   }
 
-  [[nodiscard]] static auto createScope(Identifier name,
+  [[nodiscard]] static auto createScope(std::optional<Identifier> name,
                                         std::weak_ptr<Scope> prev_scope)
       -> std::shared_ptr<Scope> {
     return std::shared_ptr<Scope>(new Scope(name, prev_scope));
@@ -186,6 +191,12 @@ public:
 
   [[nodiscard]] auto isGlobal() const noexcept -> bool {
     return prev_scope.expired();
+  }
+
+  [[nodiscard]] auto getPrevScope() const noexcept -> std::shared_ptr<Scope> {
+    // #QUESTION is asserting the precondition the best solution?
+    MINT_ASSERT(!prev_scope.expired());
+    return prev_scope.lock();
   }
 
   [[nodiscard]] auto scopeName() const noexcept
@@ -201,17 +212,11 @@ public:
     return scopes.empty();
   }
 
-  // #TODO: maybe enforce uniqueness here?
-  // as opposed to keeping it a precondition
-  // to using this class
   auto bindName(Identifier name, Attributes attributes, Type::Pointer type,
                 Ast::Pointer value) -> Bindings::Binding {
     return bindings.bind(name, attributes, type, value);
   }
 
-  // #TODO: maybe enforce uniqueness here?
-  // as opposed to keeping it a precondition
-  // to using this class
   auto bindScope(Identifier name) -> ScopeTable::Entry {
     return scopes.emplace(name, weak_from_this());
   }

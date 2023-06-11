@@ -56,6 +56,9 @@ inline auto operator<<(std::ostream &out, Ast::Value const &value) noexcept
   return out;
 }
 
+/*
+  #TODO: pretty code formating
+*/
 class AstPrintVisitor {
   std::ostream *out;
 
@@ -64,16 +67,21 @@ public:
     MINT_ASSERT(out != nullptr);
   }
 
-  void operator()(Ast::Term const &affix) noexcept {
-    std::visit(*this, affix.affix->data);
-    *out << ";";
-  }
-
   void operator()(Ast::Type const &type) noexcept { *out << &type.type; }
 
   void operator()(Ast::Let const &let) noexcept {
     *out << "let " << let.id << " = ";
     std::visit(*this, let.term->data);
+  }
+
+  void operator()(Ast::Module const &m) noexcept {
+    *out << "module " << m.name << "{\n";
+
+    for (auto &expr : m.expressions) {
+      std::visit(*this, expr->data);
+    }
+
+    *out << "}";
   }
 
   void operator()(Ast::Binop const &binop) noexcept {
@@ -85,6 +93,13 @@ public:
   void operator()(Ast::Unop const &unop) noexcept {
     *out << toString(unop.op) << " ";
     std::visit(*this, unop.right->data);
+  }
+
+  void operator()(Ast::Term const &term) noexcept {
+    if (term.ast.has_value())
+      std::visit(*this, term.ast.value()->data);
+
+    *out << ";";
   }
 
   void operator()(Ast::Parens const &parens) noexcept {

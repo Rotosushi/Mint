@@ -49,7 +49,7 @@ auto Parser::extractSourceLine(Location const &location) const noexcept
 
 /*
 top = visibility? declaration
-    | affix
+    | term
 */
 auto Parser::parseTop() noexcept -> Result<Ast::Pointer> {
   if (peek(Token::Public)) {
@@ -61,12 +61,7 @@ auto Parser::parseTop() noexcept -> Result<Ast::Pointer> {
   } else if (predictsDeclaration(current)) {
     return parseDeclaration(/* is_public = */ false);
   } else {
-    auto term = parseTerm();
-    if (!term) {
-      return term;
-    }
-
-    return term;
+    return parseTerm();
   }
 }
 
@@ -80,8 +75,7 @@ auto Parser::parseDeclaration(bool is_public) noexcept -> Result<Ast::Pointer> {
   } else if (peek(Token::Module)) {
     return parseModule(is_public);
   } else {
-    fatalError(
-        "parseDeclaration called when current did not predictDeclaration.");
+    MINT_ASSERT(false);
   }
 }
 
@@ -106,23 +100,24 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<Ast::Pointer> {
     return handle_error(Error::ExpectedAnEquals, location(), text());
   }
 
-  auto term = parseTerm();
-  if (!term) {
-    return term;
+  auto affix = parseTerm();
+  if (!affix) {
+    return affix;
   }
 
   auto right_loc = location();
   Location let_loc = {left_loc, right_loc};
-  return {env->getLetAst(attributes, let_loc, id, term.value())};
+  return {env->getLetAst(attributes, let_loc, id, affix.value())};
 }
 
 /*
-  module = "module" identifier "{" top (";" top)* "}"
+  module = "module" identifier "{" top* "}"
 */
 auto Parser::parseModule(bool is_public) noexcept -> Result<Ast::Pointer> {
   Attributes attributes;
   attributes.isPublic(is_public);
   auto left_loc = location();
+  /* "module" identifier "{" */
   MINT_ASSERT(peek(Token::Module));
   next(); // eat 'module'
 
@@ -137,23 +132,42 @@ auto Parser::parseModule(bool is_public) noexcept -> Result<Ast::Pointer> {
     return handle_error(Error::ExpectedABeginBrace, location(), text());
   }
 
-  
-}
-
-/*
-  term = affix ';'
-*/
-auto Parser::parseTerm() noexcept -> Result<Ast::Pointer> {
-  auto affix = parseAffix();
-  if (!affix)
-    return affix;
-
-  if (!expect(Token::Semicolon)) {
-    return handle_error(Error::ExpectedASemicolon, location(), text());
+  std::vector<Ast::Pointer> expressions;
+  /* top* '}' */
+  while (!expect(Token::EndBrace)) {
+    auto expr = parseTop();
+    if (!expr) {
+      return expr;
+    }
+    expressions.emplace_back(std::move(expr.value()));
   }
 
-  return {env->getTermAst(default_attributes, ast_location(affix.value()),
-                          affix.value())};
+  auto right_loc = location();
+  Location module_loc = {left_loc, right_loc};
+  return {
+      env->getModuleAst(attributes, module_loc, id, std::move(expressions))};
+}
+
+/* term = affix? ";" */
+auto Parser::parseTerm() noexcept -> Result<Ast::Pointer> {
+  auto left_loc = location();
+
+  std::optional<Ast::Pointer> affix;
+  if (!expect(Token::Semicolon)) {
+    auto result = parseAffix();
+    if (!result) {
+      return result;
+    }
+    affix = result.value();
+
+    if (!expect(Token::Semicolon)) {
+      return handle_error(Error::ExpectedASemicolon, location(), text());
+    }
+  }
+
+  auto right_loc = location();
+  Location term_loc = {left_loc, right_loc};
+  return env->getTermAst(default_attributes, term_loc, affix);
 }
 
 auto Parser::parseAffix() noexcept -> Result<Ast::Pointer> {

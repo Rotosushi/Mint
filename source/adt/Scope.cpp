@@ -17,6 +17,11 @@
 #include "adt/Scope.hpp"
 
 namespace mint {
+[[nodiscard]] auto ScopeTable::Entry::ptr() const noexcept
+    -> std::shared_ptr<Scope> {
+  return iter->second->shared_from_this();
+}
+
 [[nodiscard]] auto ScopeTable::Entry::namesEmpty() const noexcept -> bool {
   return iter->second->bindingsEmpty();
 }

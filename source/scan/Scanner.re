@@ -61,8 +61,8 @@ auto Scanner::scan() noexcept -> Token {
       ";" { UpdateLocation(); return Token::Semicolon; }
       "(" { UpdateLocation(); return Token::BeginParen; }
       ")" { UpdateLocation(); return Token::EndParen; }
-      "{" { UpdateLocation(); return Token::BeginParen; }
-      "}" { UpdateLocation(); return Token::EndParen; }
+      "{" { UpdateLocation(); return Token::BeginBrace; }
+      "}" { UpdateLocation(); return Token::EndBrace; }
 
       "+" { UpdateLocation(); return Token::Plus; }
       "-" { UpdateLocation(); return Token::Minus; }

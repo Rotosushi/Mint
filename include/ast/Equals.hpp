@@ -19,6 +19,16 @@
 
 #include "type/Equals.hpp"
 
+/*
+  #NOTE: equals(Ast, Ast) -> bool models structural equality.
+  that is, two Ast are equal if they are equal without
+  considering Attribute or Location equality.
+
+  #QUESTION: with no real reason to intern Ast's, due to the
+  need for location information being present within a given
+  visitor, what exactly is the use case for equals(Ast, Ast) -> bool?
+*/
+
 namespace mint {
 struct AstValueEqualsVisitor {
   Ast::Value const *left;
@@ -64,6 +74,11 @@ struct AstValueEqualsVisitor {
 [[nodiscard]] inline auto equals(Ast const *left, Ast const *right) noexcept
     -> bool;
 
+[[nodiscard]] inline auto equals(Ast::Pointer const &left,
+                                 Ast::Pointer const &right) noexcept -> bool {
+  return equals(left.get(), right.get());
+}
+
 struct AstEqualsVisitor {
   Ast const *left;
   Ast const *right;
@@ -72,14 +87,6 @@ struct AstEqualsVisitor {
       : left(left), right(right) {}
 
   auto operator()() noexcept -> bool { return std::visit(*this, left->data); }
-
-  auto operator()(Ast::Term const &left_affix) noexcept -> bool {
-    auto right_affix = std::get_if<Ast::Term>(&right->data);
-    if (right_affix == nullptr)
-      return false;
-
-    return equals(left_affix.affix, right_affix->affix);
-  }
 
   auto operator()(Ast::Type const &left_type) noexcept -> bool {
     auto right_type = std::get_if<Ast::Type>(&right->data);
@@ -98,6 +105,31 @@ struct AstEqualsVisitor {
       return false;
 
     return equals(left_let.term, right_let->term);
+  }
+
+  auto operator()(Ast::Module const &left_module) noexcept -> bool {
+    auto right_module = std::get_if<Ast::Module>(&right->data);
+    if (right_module == nullptr)
+      return false;
+
+    if (left_module.expressions.size() != right_module->expressions.size()) {
+      return false;
+    }
+
+    auto left_cursor = left_module.expressions.begin();
+    auto left_end = left_module.expressions.end();
+    auto right_cursor = right_module->expressions.begin();
+    auto right_end = right_module->expressions.end();
+    while ((left_cursor != left_end) && (right_cursor != right_end)) {
+      if (!equals(*left_cursor, *right_cursor)) {
+        return false;
+      }
+
+      ++left_cursor;
+      ++right_cursor;
+    }
+
+    return true;
   }
 
   auto operator()(Ast::Binop const &left_binop) noexcept -> bool {
@@ -125,12 +157,19 @@ struct AstEqualsVisitor {
     return equals(left_unop.right, right_unop->right);
   }
 
-  auto operator()(Ast::Value const &left_value) noexcept -> bool {
-    auto right_value = std::get_if<Ast::Value>(&right->data);
-    if (right_value == nullptr)
+  auto operator()(Ast::Term const &left_term) noexcept -> bool {
+    auto right_term = std::get_if<Ast::Term>(&right->data);
+    if (right_term == nullptr)
       return false;
 
-    return equals(&left_value, right_value);
+    auto have_left_term = left_term.ast.has_value();
+    auto have_right_term = right_term->ast.has_value();
+    if (have_left_term && have_right_term)
+      return equals(left_term.ast.value(), right_term->ast.value());
+    else if (!have_left_term && !have_right_term)
+      return true;
+    else
+      return false;
   }
 
   auto operator()(Ast::Parens const &left_parens) noexcept -> bool {
@@ -147,6 +186,14 @@ struct AstEqualsVisitor {
       return false;
 
     return left_variable.name == right_variable->name;
+  }
+
+  auto operator()(Ast::Value const &left_value) noexcept -> bool {
+    auto right_value = std::get_if<Ast::Value>(&right->data);
+    if (right_value == nullptr)
+      return false;
+
+    return equals(&left_value, right_value);
   }
 };
 

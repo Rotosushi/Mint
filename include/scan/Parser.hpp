@@ -25,14 +25,16 @@
 
 /*
 top = visibility? declaration
-    | affix // this supports the interactive repl
+    | term
+
+term = affix? ";"
 
 declaration = let
             | module
 
-let = "let" identifier "=" affix
+let = "let" identifier "=" term
 
-module = "module" identifier "{" top (";" top)* "}"
+module = "module" identifier "{" top* "}"
 
 affix = basic (binop precedence-parser)?
 
@@ -95,12 +97,15 @@ private:
   // we just encountered a syntax error,
   // so we want to walk the parser past the
   // line of source text which produced the
-  // error. we require expressions to end with ';'
-  // so advance the scanner through the
-  // input it has buffered until we see ';'
-  // or the eof.
+  // error.
+  // so advance the scanner until we see ';'
+  // or the End of the buffer.
   void recover() noexcept {
-    while ((current != Token::Semicolon) && (current != Token::End)) {
+    while (!peek(Token::Semicolon) && !peek(Token::End)) {
+      next();
+    }
+
+    if (peek(Token::Semicolon)) {
       next();
     }
   }

@@ -67,11 +67,11 @@ public:
   }
 
   auto operator()(Ast::Pointer const &ast) noexcept -> Result<Type::Pointer> {
-    return std::visit(*this, ast->data);
-  }
+    auto result = std::visit(*this, ast->data);
+    if (result)
+      ast->setCachedType(result.value());
 
-  auto operator()(Ast::Term const &affix) noexcept -> Result<Type::Pointer> {
-    return std::visit(*this, affix.affix->data);
+    return result;
   }
 
   auto operator()(Ast::Type const &type) noexcept -> Result<Type::Pointer> {
@@ -80,6 +80,20 @@ public:
 
   auto operator()(Ast::Let const &let) noexcept -> Result<Type::Pointer> {
     return std::visit(*this, let.term->data);
+  }
+
+  auto operator()(Ast::Module const &m) noexcept -> Result<Type::Pointer> {
+    env->pushScope();
+
+    for (auto &expr : m.expressions) {
+      auto type = std::visit(*this, expr->data);
+      if (!type)
+        return type;
+    }
+
+    env->popScope();
+
+    return env->getNilType();
   }
 
   auto operator()(Ast::Binop const &binop) noexcept -> Result<Type::Pointer> {
@@ -127,6 +141,13 @@ public:
     return instance->result_type;
   }
 
+  auto operator()(Ast::Term const &term) noexcept -> Result<Type::Pointer> {
+    if (term.ast.has_value())
+      return std::visit(*this, term.ast.value()->data);
+
+    return env->getNilType();
+  }
+
   auto operator()(Ast::Parens const &parens) noexcept -> Result<Type::Pointer> {
     return std::visit(*this, parens.ast->data);
   }
@@ -138,7 +159,8 @@ public:
   auto operator()(Ast::Variable &variable) noexcept -> Result<Type::Pointer> {
     auto binding = env->lookup(variable.name);
     if (!binding) {
-      return {Error::NameUnboundInScope, variable.location, variable.name.view()};
+      return {Error::NameUnboundInScope, variable.location,
+              variable.name.view()};
     }
 
     return binding.value().type();

@@ -45,11 +45,8 @@ public:
     return std::visit(*this, ast->data);
   }
 
-  auto operator()(Ast::Term &affix) noexcept -> EvaluateResult {
-    return evaluate(affix.affix, env);
-  }
-
   auto operator()([[maybe_unused]] Ast::Type &type) noexcept -> EvaluateResult {
+    // the Type itself is the result 'value' of the Type 'expression'
     return ast;
   }
 
@@ -58,12 +55,27 @@ public:
     if (!value)
       return value;
 
-    auto type = typecheck(let.term, env);
-    if (!type)
-      return std::move(type.error());
+    // #FIXME why do we assert here?
+    auto cached_type = let.term->cached_type();
+    MINT_ASSERT(cached_type.has_value());
+    auto type = cached_type.value();
 
-    env->bind(let.id, let.attributes, type.value(), value.value());
-    return value.value();
+    env->bindName(let.id, let.attributes, type, value.value());
+    return env->getNilAst({}, let.location);
+  }
+
+  auto operator()(Ast::Module &m) noexcept -> EvaluateResult {
+    env->pushScope(m.name);
+
+    for (auto &expr : m.expressions) {
+      auto result = evaluate(expr, env);
+      if (!result)
+        return result;
+    }
+
+    env->popScope();
+
+    return env->getNilAst({}, m.location);
   }
 
   auto operator()(Ast::Binop &binop) noexcept -> EvaluateResult {
@@ -128,6 +140,13 @@ public:
     }
 
     return instance.value()(right_value.value().get(), env);
+  }
+
+  auto operator()(Ast::Term &term) noexcept -> EvaluateResult {
+    if (term.ast.has_value()) {
+      return evaluate(term.ast.value(), env);
+    }
+    return env->getNilAst({}, {});
   }
 
   auto operator()(Ast::Parens &parens) noexcept -> EvaluateResult {

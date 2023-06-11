@@ -163,6 +163,12 @@ TODO:
     - lookup from the global scope
 
   - add modules
+    - module ast 
+    - parse modules
+      - we need to add in a yyfill routine,
+        such that the programmer can type in a module 
+        into the repl line by line.
+    - parse visibility specifiers
   - add an import statement
 
 

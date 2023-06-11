@@ -31,14 +31,6 @@ namespace mint {
 struct Ast {
   using Pointer = std::shared_ptr<Ast>;
 
-  struct Term {
-    Attributes attributes;
-    Location location;
-    Ast::Pointer affix;
-    Term(Attributes attributes, Location location, Ast::Pointer affix) noexcept
-        : attributes(attributes), location(location), affix(affix) {}
-  };
-
   struct Type {
     Attributes attributes;
     Location location;
@@ -83,6 +75,16 @@ struct Ast {
         : attributes(attributes), location(location), op(op), right(right) {}
   };
 
+  struct Term {
+    Attributes attributes;
+    Location location;
+    std::optional<Ast::Pointer> ast;
+
+    Term(Attributes attributes, Location location,
+         std::optional<Ast::Pointer> ast) noexcept
+        : attributes(attributes), location(location), ast{ast} {}
+  };
+
   struct Parens {
     Attributes attributes;
     Location location;
@@ -104,11 +106,12 @@ struct Ast {
   struct Module {
     Attributes attributes;
     Location location;
+    Identifier name;
     std::vector<Ast::Pointer> expressions;
 
-    Module(Attributes attributes, Location location,
+    Module(Attributes attributes, Location location, Identifier name,
            std::vector<Ast::Pointer> expressions) noexcept
-        : attributes(attributes), location(location),
+        : attributes(attributes), location(location), name(name),
           expressions(std::move(expressions)) {}
   };
 
@@ -148,18 +151,22 @@ struct Ast {
         : data(type, std::forward<Args>(args)...) {}
   };
 
-  using Data =
-      std::variant<Term, Type, Let, Binop, Unop, Variable, Parens, Value>;
+  using Data = std::variant<Type, Let, Module, Binop, Unop, Term, Parens,
+                            Variable, Value>;
   Data data;
 
 private:
-  mint::Type::Pointer type_cache;
+  mutable mint::Type::Pointer type_cache;
 
 public:
   template <class T, class... Args>
   constexpr explicit Ast(std::in_place_type_t<T> type, Args &&...args)
       : data(type, std::forward<Args>(args)...) {}
 
+  void setCachedType(mint::Type::Pointer type) const noexcept {
+    MINT_ASSERT(type != nullptr);
+    type_cache = type;
+  }
   std::optional<mint::Type::Pointer> cached_type() noexcept {
     if (type_cache == nullptr) {
       return std::nullopt;
@@ -251,16 +258,16 @@ public:
     return std::visit(*this, ast.data);
   }
 
-  constexpr auto operator()(Ast::Term const &affix) const noexcept -> Location {
-    return affix.location;
-  }
-
   constexpr auto operator()(Ast::Type const &type) const noexcept -> Location {
     return type.location;
   }
 
   constexpr auto operator()(Ast::Let const &let) const noexcept -> Location {
     return let.location;
+  }
+
+  constexpr auto operator()(Ast::Module const &m) const noexcept -> Location {
+    return m.location;
   }
 
   constexpr auto operator()(Ast::Binop const &binop) const noexcept
@@ -270,6 +277,10 @@ public:
 
   constexpr auto operator()(Ast::Unop const &unop) const noexcept -> Location {
     return unop.location;
+  }
+
+  constexpr auto operator()(Ast::Term const &term) const noexcept -> Location {
+    return term.location;
   }
 
   constexpr auto operator()(Ast::Parens const &parens) const noexcept
