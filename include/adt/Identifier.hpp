@@ -57,6 +57,8 @@ public:
   auto operator=(const Identifier &id) noexcept -> Identifier & = default;
   auto operator=(Identifier &&id) noexcept -> Identifier & = default;
 
+  // since identifiers are interned, comparison can
+  // be done via pointer comparison.
   auto operator==(const Identifier &other) const noexcept -> bool {
     return data.begin() == other.data.begin();
   }
@@ -64,7 +66,7 @@ public:
   operator std::string_view() const noexcept { return data; }
   auto view() const noexcept -> std::string_view { return data; }
   auto empty() const noexcept -> bool { return data.empty(); }
-  auto get(std::string_view data) noexcept -> Identifier;
+  //auto get(std::string_view data) noexcept -> Identifier;
 
   /*
   does this identifier begin with a scope?

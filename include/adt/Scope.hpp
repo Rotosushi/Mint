@@ -253,7 +253,7 @@ public:
     "x" is considered a variable local to scope "aN"
 
     both scope lookup, and variable lookup first search
-    the local scope, and if the variable is not found,
+    the local scope, and if the variable/scope is not found,
     lookup one scope higher. if we are at global scope
     and we fail to find the binding then lookup fails.
   */
@@ -262,7 +262,7 @@ public:
     auto found = lookupLocal(name);
     if (!found) {
       if (isGlobal()) {
-        return {std::move(found.error())};
+        return qualifiedLookup(name);
       }
       auto prev = prev_scope.lock();
       return prev->qualifiedLookup(name);

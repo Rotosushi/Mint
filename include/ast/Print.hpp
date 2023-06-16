@@ -75,13 +75,13 @@ public:
   }
 
   void operator()(Ast::Module const &m) noexcept {
-    *out << "module " << m.name << "{\n";
+    *out << "module " << m.name << "{ ";
 
     for (auto &expr : m.expressions) {
       std::visit(*this, expr->data);
     }
 
-    *out << "}";
+    *out << " }";
   }
 
   void operator()(Ast::Binop const &binop) noexcept {

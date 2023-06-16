@@ -156,23 +156,25 @@ struct Ast {
   Data data;
 
 private:
-  mutable mint::Type::Pointer type_cache;
+  //  mutable mint::Type::Pointer type_cache;
 
 public:
   template <class T, class... Args>
   constexpr explicit Ast(std::in_place_type_t<T> type, Args &&...args)
       : data(type, std::forward<Args>(args)...) {}
 
-  void setCachedType(mint::Type::Pointer type) const noexcept {
-    MINT_ASSERT(type != nullptr);
-    type_cache = type;
-  }
-  std::optional<mint::Type::Pointer> cached_type() noexcept {
-    if (type_cache == nullptr) {
-      return std::nullopt;
+  /*
+    void setCachedType(mint::Type::Pointer type) const noexcept {
+      MINT_ASSERT(type != nullptr);
+      type_cache = type;
     }
-    return type_cache;
-  }
+    std::optional<mint::Type::Pointer> cached_type() noexcept {
+      if (type_cache == nullptr) {
+        return std::nullopt;
+      }
+      return type_cache;
+    }
+  */
 };
 
 template <typename T> auto isa(Ast const *ast) -> bool {

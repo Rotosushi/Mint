@@ -68,8 +68,11 @@ public:
 
   auto operator()(Ast::Pointer const &ast) noexcept -> Result<Type::Pointer> {
     auto result = std::visit(*this, ast->data);
+
+    /*
     if (result)
       ast->setCachedType(result.value());
+    */
 
     return result;
   }
@@ -83,7 +86,7 @@ public:
   }
 
   auto operator()(Ast::Module const &m) noexcept -> Result<Type::Pointer> {
-    env->pushScope();
+    env->pushScope(m.name);
 
     for (auto &expr : m.expressions) {
       auto type = std::visit(*this, expr->data);
@@ -167,16 +170,14 @@ public:
   }
 };
 
-/*
-  #TODO: typecheck doesn't record variables type for typing
-  expressions including those variables later in the same scope.
-*/
 [[nodiscard]] auto typecheck(Ast::Pointer const &ast, Environment *env)
     -> Result<Type::Pointer> {
+  /*
   auto cache = ast->cached_type();
   if (cache) {
     return cache.value();
   }
+  */
 
   AstTypecheckVisitor visitor{env};
   return visitor(ast);

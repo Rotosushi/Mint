@@ -64,6 +64,11 @@ identifier = start continue* (separator continue+)*
 namespace mint {
 class Environment;
 
+/*
+  #TODO: parser/scanner needs to get more input from
+  the source when it is out of buffer and
+  the source is not empty.
+*/
 class Parser {
 private:
   Environment *env;

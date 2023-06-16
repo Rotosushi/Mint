@@ -87,7 +87,7 @@ public:
     }
 
     if (message.has_value()) {
-      out << " --  " << message.value() << "\n";
+      out << " -- " << message.value() << "\n";
     }
 
     if (!bad_source.empty()) {
@@ -96,6 +96,7 @@ public:
     }
   }
 
+  auto getKind() const noexcept { return kind; }
   auto getLocation() const noexcept { return location; }
   auto getMessage() const noexcept -> std::optional<std::string_view> {
     if (message.has_value())
@@ -109,7 +110,7 @@ inline auto operator<<(std::ostream &out, Error &error) -> std::ostream & {
   error.print(out);
   return out;
 }
-
+// TODO: factor Result into it's own file
 template <class T> class Result {
   std::expected<T, Error> data;
 

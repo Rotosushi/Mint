@@ -42,6 +42,11 @@ auto Environment::repl() noexcept -> int {
       continue;
     }
 
+    /*
+      #TODO: typechecking a qualified name does not return
+      the intended type. it seems to return the intended value
+      however.
+    */
     auto ast = parse_result.value();
     auto typecheck_result = typecheck(ast, this);
 

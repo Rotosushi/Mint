@@ -97,6 +97,7 @@ public:
     auto found = local_scope->lookupScope(name);
     if (found) {
       local_scope = found.value().ptr();
+      return;
     }
 
     auto new_scope = local_scope->bindScope(name);

@@ -24,18 +24,8 @@
 
 namespace mint {
 /*
-  I think, since we are performing interpretation,
-  we want to clean up unused Ast's more than we want
-  to keep everything the user types around for
-  the lifetime of the interpreter.
-  thus I think it might be a better choice to
-  have Ast's be composed out of std::shared_ptrs.
-  this allows them to be cleaned up (mostly), when
-  they are constructed and not bound in a scope.
-
-  it does raise the question, "when does a
-  link in the Ast need to be a weak_ptr?"
-  and I don't know the exact answer.
+  #TODO: rewrite this class such that it can be used as
+    an allocator in standard containers.
 */
 class AstAllocator {
 private:
