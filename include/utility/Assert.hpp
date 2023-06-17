@@ -27,7 +27,6 @@
 #endif
 
 #if !defined(NDEBUG)
-// only include files if we are in debug mode
 #  include "utility/Log.hpp" // mint::log
 #  include <iostream>        // std::cerr
 #  define MINT_ASSERT(condition)                                               \

@@ -135,6 +135,10 @@ public:
                                  location, type);
   }
 
+  // eventually all ast's are going to be constructed via custom
+  // allocators. such that an environment can be allocated entirely
+  // within a custom allocator. (Types, Asts, Binops, and Unops
+  // are all considered "part of" a given Environment.)
   auto getModuleAst(Attributes attributes, Location location, Identifier name,
                     std::vector<Ast::Pointer> expressions) noexcept {
     auto alloc = new Ast(std::in_place_type<Ast::Module>, attributes, location,
@@ -146,6 +150,12 @@ public:
                  Ast::Pointer term) noexcept {
     return std::make_shared<Ast>(std::in_place_type<Ast::Let>, attributes,
                                  location, name, term);
+  }
+
+  auto getImportAst(Attributes attributes, Location location, Identifier first,
+                    std::optional<Identifier> second = std::nullopt) noexcept {
+    return std::make_shared<Ast>(std::in_place_type<Ast::Import>, attributes,
+                                 location, first, second);
   }
 
   auto getBinopAst(Attributes attributes, Location location, Token op,

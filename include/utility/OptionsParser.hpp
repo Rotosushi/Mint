@@ -24,8 +24,10 @@
 namespace mint {
 class OptionsParser {
 private:
+  // #TODO: implement behavior for Optional, Required, and Positional.
   enum ArgumentStyle { None, Optional, Required, Positional };
 
+  // #NOTE:
   // the text which is matched when looking for the option.
   // the tag returned by the argument matcher
   // a description of the option for help
@@ -34,7 +36,7 @@ private:
     std::string_view text;
     char tag;
     std::string_view description;
-    ArgumentStyle takes_argument;
+    ArgumentStyle argument_style;
   };
 
   std::vector<Option> options = {
@@ -80,7 +82,7 @@ private:
   void printVersion(std::ostream &out) noexcept {
     out << "mint version " << MINT_VERSION_MAJOR << "." << MINT_VERSION_MINOR
         << "." << MINT_VERSION_PATCH << "\n git revision [" << MINT_GIT_REVISION
-        << "]\n Compiled: " << __DATE__ << " at " << __TIME__ << "\n";
+        << "]\n Compiled on " << __DATE__ << " at " << __TIME__ << "\n";
   }
 
   void printUnknownOption(std::ostream &out, std::string_view option) {

@@ -115,6 +115,18 @@ struct Ast {
           expressions(std::move(expressions)) {}
   };
 
+  struct Import {
+    Attributes attributes;
+    Location location;
+    Identifier first;
+    std::optional<Identifier> second;
+
+    Import(Attributes attributes, Location location, Identifier first,
+           std::optional<Identifier> second = std::nullopt) noexcept
+        : attributes(attributes), location(location), first(first),
+          second(second) {}
+  };
+
   struct Value {
     struct Boolean {
       Attributes attributes;
@@ -151,8 +163,8 @@ struct Ast {
         : data(type, std::forward<Args>(args)...) {}
   };
 
-  using Data = std::variant<Type, Let, Module, Binop, Unop, Term, Parens,
-                            Variable, Value>;
+  using Data = std::variant<Type, Let, Module, Import, Binop, Unop, Term,
+                            Parens, Variable, Value>;
   Data data;
 
 private:
@@ -270,6 +282,10 @@ public:
 
   constexpr auto operator()(Ast::Module const &m) const noexcept -> Location {
     return m.location;
+  }
+
+  constexpr auto operator()(Ast::Import const &i) const noexcept -> Location {
+    return i.location;
   }
 
   constexpr auto operator()(Ast::Binop const &binop) const noexcept

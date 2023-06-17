@@ -30,6 +30,8 @@ enum struct Token : int {
   Module,
   Public,
   Private,
+  Import,
+  From,
 
   // symbols
   Equal,
@@ -55,12 +57,12 @@ enum struct Token : int {
   GreaterThan,
   GreaterThanOrEqual,
 
-  // literals
+  // literal values
   Nil,
   True,
   False,
 
-  // Types
+  // types
   BooleanType,
   IntegerType,
   NilType,
@@ -74,7 +76,7 @@ using BinopPrecedence = int8_t;
 
 /*
 
-  != ?=     -> 1
+  != ==     -> 1
   < <= >= > -> 2
   & |       -> 3
   + -       -> 4
@@ -184,6 +186,10 @@ inline auto toString(Token token) noexcept -> std::string_view {
     return "public";
   case Token::Private:
     return "private";
+  case Token::Import:
+    return "import";
+  case Token::From:
+    return "from";
 
   case Token::Equal:
     return "=";

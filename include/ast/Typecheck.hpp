@@ -99,6 +99,11 @@ public:
     return env->getNilType();
   }
 
+  auto operator()([[maybe_unused]] Ast::Import const &i) noexcept
+      -> Result<Type::Pointer> {
+    return env->getNilType();
+  }
+
   auto operator()(Ast::Binop const &binop) noexcept -> Result<Type::Pointer> {
     auto overloads = env->lookupBinop(binop.op);
     if (!overloads) {

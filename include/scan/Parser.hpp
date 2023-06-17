@@ -25,12 +25,18 @@
 
 /*
 top = visibility? declaration
+    | import
     | term
 
-term = affix? ";"
+visibility = "public"
+           | "private"
 
 declaration = let
             | module
+
+import = "import" identifier ("from" identifier)? ";"
+
+term = affix? ";"
 
 let = "let" identifier "=" term
 
@@ -49,9 +55,6 @@ basic = "nil"
       | unop basic
       | "(" affix ")"
 
-visibility = "public"
-           | "private"
-
 integer = [0-9]+
 
 start      = "::"?[a-zA-Z_]
@@ -64,11 +67,6 @@ identifier = start continue* (separator continue+)*
 namespace mint {
 class Environment;
 
-/*
-  #TODO: parser/scanner needs to get more input from
-  the source when it is out of buffer and
-  the source is not empty.
-*/
 class Parser {
 private:
   Environment *env;
@@ -86,7 +84,8 @@ private:
   void fill() noexcept {
     auto at_end = current == Token::End;
     auto more_source = !in->eof();
-    if (at_end && more_source) {
+    auto in_good = in->good();
+    if (at_end && more_source && in_good) {
       std::string line;
       std::getline(*in, line, '\n');
       line.push_back('\n');
@@ -96,35 +95,13 @@ private:
     }
   }
 
-  /*
-    We need to call the "fill the buffer with more source routine"
-    aka fill at some point during parsing.
-    it cannot simply be "when the buffer is empty, and the source
-    is not." because we might be parsing Ast's for the REPL, and
-    in that case, we need some way to stop parsing, and return a
-    single Ast for typecheck and evaluation.
-    so we cannot call fill within next(), because next is called
-    after we finish parsing a complete Ast, to position the parser
-    to parse the next bit of input. and if we just parsed a complete
-    Ast, then we don't want to ask the user for the next line of input,
-    before we have typecheck and evaluate what we just parsed.
-    if we did, the programmer would never be able to see the evaluation
-    of what they just parsed. that is, the program would act more like
-    a text editor, where you input all of you text first, before any
-    evaluation. such a strategy worked when we knew a priori that
-    we were processing files into executables. because we could make
-    assumptions about the source.
-    however now we want a single parser class which can parse for the
-    REPL and for importing a file into the REPL (which is one step
-    away from importing a file into the compilation process of another
-    file.)
-    this means all we can assume about the input is that it is a stream.
-    where we may ask for more input.
-    I think therefore that we need to call fill when we call peek.
-    as this is explicitly when any given parse routine is asking
-    to see a particular token. iff in this case the token is EOF
-    then we turn to the source to ask for more input.
-  */
+  // NOTE: we need to call fill before we
+  // check the state of the current token.
+  // to ensure that we have all of the available
+  // source before we check the state.
+  // otherwise the end of the buffer could
+  // be reached and parsing stopped when the
+  // term itself is merely separated accross lines.
   auto peek(Token token) noexcept -> bool {
     fill();
     return current == token;
@@ -139,7 +116,8 @@ private:
     return false;
   }
 
-  auto predictsDeclaration(Token token) const noexcept -> bool {
+  auto predictsDeclaration(Token token) noexcept -> bool {
+    fill();
     switch (token) {
     case Token::Let:
     case Token::Module:
@@ -175,6 +153,7 @@ private:
   auto parseDeclaration(bool is_public) noexcept -> Result<Ast::Pointer>;
   auto parseModule(bool is_public) noexcept -> Result<Ast::Pointer>;
   auto parseLet(bool is_public) noexcept -> Result<Ast::Pointer>;
+  auto parseImport() noexcept -> Result<Ast::Pointer>;
   auto parseTerm() noexcept -> Result<Ast::Pointer>;
   auto parseAffix() noexcept -> Result<Ast::Pointer>;
   auto precedenceParser(Ast::Pointer left, BinopPrecedence prec) noexcept
@@ -191,19 +170,6 @@ public:
   [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
       -> std::string_view;
 
-  auto parse() -> Result<Ast::Pointer> {
-    /*
-    if ((current == Token::End) && (!scanner.endOfInput())) {
-      next(); // prime the parser with the first token
-    }
-
-    // NOT A DUPLICATE CHECK
-    if (peek(Token::End)) {
-      return {Error::EndOfInput, location(), ""};
-    }
-    */
-
-    return parseTop();
-  }
+  auto parse() -> Result<Ast::Pointer> { return parseTop(); }
 };
 } // namespace mint

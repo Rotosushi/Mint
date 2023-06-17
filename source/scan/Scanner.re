@@ -55,10 +55,12 @@ auto Scanner::scan() noexcept -> Token {
       "false"   { UpdateLocation(); return Token::False; }
       "Boolean" { UpdateLocation(); return Token::BooleanType; }
 
-      "let"    { UpdateLocation(); return Token::Let; }
-      "module" { UpdateLocation(); return Token::Module; }
-      "public" { UpdateLocation(); return Token::Public; }
+      "let"     { UpdateLocation(); return Token::Let; }
+      "module"  { UpdateLocation(); return Token::Module; }
+      "public"  { UpdateLocation(); return Token::Public; }
       "private" { UpdateLocation(); return Token::Private; }
+      "import"  { UpdateLocation(); return Token::Import; }
+      "from"    { UpdateLocation(); return Token::From; }
 
       "=" { UpdateLocation(); return Token::Equal; }
       ";" { UpdateLocation(); return Token::Semicolon; }

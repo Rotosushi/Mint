@@ -84,6 +84,11 @@ public:
     return env->getNilAst({}, m.location);
   }
 
+  auto operator()(Ast::Import &i) noexcept -> EvaluateResult {
+
+    return env->getNilAst({}, i.location);
+  }
+
   auto operator()(Ast::Binop &binop) noexcept -> EvaluateResult {
     auto overloads = env->lookupBinop(binop.op);
     if (!overloads) {

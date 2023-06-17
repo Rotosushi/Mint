@@ -52,20 +52,22 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/type/Print.hpp
   ${MINT_INCLUDE_DIR}/type/Type.hpp 
 
-  ${MINT_INCLUDE_DIR}/utility/Assert.hpp 
+  ${MINT_INCLUDE_DIR}/utility/Assert.hpp
   ${MINT_INCLUDE_DIR}/utility/Config.hpp
-  ${MINT_INCLUDE_DIR}/utility/FatalError.hpp 
+  ${MINT_INCLUDE_DIR}/utility/FatalError.hpp
   ${MINT_INCLUDE_DIR}/utility/Log.hpp 
   ${MINT_INCLUDE_DIR}/utility/NumbersRoundTrip.hpp
   ${MINT_INCLUDE_DIR}/utility/OptionsParser.hpp
 )
 
 target_compile_options(mint_common PUBLIC ${CXX_OPTIONS})
+target_compile_features(mint_common PUBLIC cxx_std_23)
 target_include_directories(mint_common PUBLIC ../include)
 
 add_executable(mint main.cpp)
-target_include_directories(mint PUBLIC ../include)
 target_compile_options(mint PUBLIC ${CXX_OPTIONS})
+target_compile_features(mint PUBLIC cxx_std_23)
+target_include_directories(mint PUBLIC ../include)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_compile_definitions(mint PUBLIC MINT_DEBUG)

@@ -32,5 +32,5 @@ log(std::ostream &out, std::string_view message,
 #if !defined(NDEBUG)
 #  define DEBUG_LOG(stream, message) mint::log((stream), (message))
 #else
-#  define DEBUG_LOG(message)
+#  define DEBUG_LOG(stream, message)
 #endif

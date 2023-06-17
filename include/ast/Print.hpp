@@ -84,6 +84,16 @@ public:
     *out << " }";
   }
 
+  void operator()(Ast::Import const &i) noexcept {
+    *out << "import " << i.first;
+
+    if (i.second.has_value()) {
+      *out << " from " << i.second.value();
+    }
+
+    *out << ";";
+  }
+
   void operator()(Ast::Binop const &binop) noexcept {
     std::visit(*this, binop.left->data);
     *out << " " << toString(binop.op) << " ";

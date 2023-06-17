@@ -60,6 +60,8 @@ auto Parser::parseTop() noexcept -> Result<Ast::Pointer> {
     return parseDeclaration(/* is_public = */ false);
   } else if (predictsDeclaration(current)) {
     return parseDeclaration(/* is_public = */ false);
+  } else if (peek(Token::Import)) {
+    return parseImport();
   } else {
     return parseTerm();
   }
@@ -83,7 +85,7 @@ auto Parser::parseDeclaration(bool is_public) noexcept -> Result<Ast::Pointer> {
   let = "let" identifier "=" term
 */
 auto Parser::parseLet(bool is_public) noexcept -> Result<Ast::Pointer> {
-  Attributes attributes;
+  Attributes attributes = default_attributes;
   attributes.isPublic(is_public);
   auto left_loc = location();
   MINT_ASSERT(peek(Token::Let));
@@ -114,7 +116,7 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<Ast::Pointer> {
   module = "module" identifier "{" top* "}"
 */
 auto Parser::parseModule(bool is_public) noexcept -> Result<Ast::Pointer> {
-  Attributes attributes;
+  Attributes attributes = default_attributes;
   attributes.isPublic(is_public);
   auto left_loc = location();
   /* "module" identifier "{" */
@@ -146,6 +148,20 @@ auto Parser::parseModule(bool is_public) noexcept -> Result<Ast::Pointer> {
   Location module_loc = {left_loc, right_loc};
   return {
       env->getModuleAst(attributes, module_loc, id, std::move(expressions))};
+}
+
+/*
+  import = "import" identifier ("from" identifier)? ";"
+*/
+auto Parser::parseImport() noexcept -> Result<Ast::Pointer> {
+  auto left_loc = location();
+  MINT_ASSERT(peek(Token::Import));
+  next(); // eat "import"
+
+
+  auto right_loc = location();
+  Location import_loc = {left_loc, right_loc};
+
 }
 
 /* term = affix? ";" */

@@ -170,27 +170,15 @@ TODO:
 
   - add modules
     - module ast (check)
+    - parse modules line by line (check)
+    - parse visibility specifiers (check)
     - module namespace (check)
-    - import a module from a file 
-      - parse modules
-        - we need to add in a yyfill routine,
-          such that the programmer can type in a module
-          into the repl line by line. then, to import a 
-          module we can simply open that file and read it 
-          into the parser line by line.
-          - note: this is a pain point when considering
-            parallelizing compilation
-        - when is this routine called? 
-          when we need more input obviously, yet
-          how do we then distingush the case 
-          of "the parser is out of buffer and needs 
-          more from the associated source." from 
-          the case of "the user finished entering 
-          a line of input into the repl and we want 
-          to typecheck and evaluate the input up 
-          to this point."
-      - parse visibility specifiers
+
   - add an import statement
+    - import ast (check)
+    - parse import
+    - import a module from a file 
+
 
 
 
