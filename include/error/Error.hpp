@@ -32,6 +32,7 @@ public:
     UnknownBinop,
     UnknownUnop,
 
+    ExpectedADeclaration,
     ExpectedABasicTerm,
     ExpectedAnEquals,
     ExpectedASemicolon,

@@ -30,7 +30,9 @@ auto Error::KindToSV(Error::Kind kind) noexcept -> std::string_view {
     return "Unknown Binop";
 
   case Error::ExpectedABasicTerm:
-    return "Expected a basic term";
+    return "Expected a basic term [nil, true, false, [0-9]+, ...]";
+  case Error::ExpectedADeclaration:
+    return "Expected a declaration [module, let]";
   case Error::ExpectedAnEquals:
     return "Expected a '='";
   case Error::ExpectedASemicolon:

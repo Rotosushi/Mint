@@ -43,6 +43,7 @@ namespace mint {
 // #REASON: re2c uses gotos to implement the lexer and as all of the
 // gotos are from generated code we are trusting re2c to
 // use gotos in a safe and sane way here.
+
 auto Scanner::scan() noexcept -> Token {
   while (true) {
     token = cursor;
@@ -56,6 +57,8 @@ auto Scanner::scan() noexcept -> Token {
 
       "let"    { UpdateLocation(); return Token::Let; }
       "module" { UpdateLocation(); return Token::Module; }
+      "public" { UpdateLocation(); return Token::Public; }
+      "private" { UpdateLocation(); return Token::Private; }
 
       "=" { UpdateLocation(); return Token::Equal; }
       ";" { UpdateLocation(); return Token::Semicolon; }

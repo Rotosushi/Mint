@@ -49,7 +49,7 @@ public:
   Environment(std::istream *in = &std::cin, std::ostream *out = &std::cout,
               std::ostream *errout = &std::cerr) noexcept
       : global_scope(Scope::createGlobalScope()), local_scope(global_scope),
-        parser(this), in(in), out(out), errout(errout) {
+        parser(this, in), in(in), out(out), errout(errout) {
     MINT_ASSERT(in != nullptr);
     MINT_ASSERT(out != nullptr);
     MINT_ASSERT(errout != nullptr);
@@ -57,6 +57,8 @@ public:
     InitializeBuiltinBinops(this);
     InitializeBuiltinUnops(this);
   }
+
+  auto repl() noexcept -> int;
 
   void printErrorWithSource(Error const &error) const noexcept {
     auto optional_location = error.getLocation();
@@ -66,8 +68,6 @@ public:
 
     error.print(*errout, bad_source);
   }
-
-  auto repl() noexcept -> int;
 
   auto getIdentifier(std::string_view name) noexcept {
     return id_interner.emplace(name);

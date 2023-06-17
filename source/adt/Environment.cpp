@@ -24,45 +24,31 @@ namespace mint {
 auto Environment::repl() noexcept -> int {
   bool run = true;
 
-  auto read = [&]() {
-    std::string line;
-    std::getline(*in, line);
-    line.push_back('\n'); // getline doesn't append the newline
-    return line;
-  };
-
   while (run) {
-    std::cout << "# ";
-    auto line = read();
-    parser.append(line);
+    *out << "# ";
 
     auto parse_result = parser.parse();
     if (!parse_result) {
       printErrorWithSource(parse_result.error());
       continue;
     }
+    auto &ast = parse_result.value();
 
-    /*
-      #TODO: typechecking a qualified name does not return
-      the intended type. it seems to return the intended value
-      however.
-    */
-    auto ast = parse_result.value();
     auto typecheck_result = typecheck(ast, this);
-
     if (!typecheck_result) {
       printErrorWithSource(typecheck_result.error());
       continue;
     }
+    auto &type = typecheck_result.value();
 
     auto evaluate_result = evaluate(ast, this);
     if (!evaluate_result) {
       printErrorWithSource(evaluate_result.error());
       continue;
     }
+    auto &value = evaluate_result.value();
 
-    std::cout << parse_result.value() << ": " << typecheck_result.value()
-              << " > " << evaluate_result.value() << "\n";
+    std::cout << ast << " : " << type << " => " << value << "\n";
   }
 
   return EXIT_SUCCESS;

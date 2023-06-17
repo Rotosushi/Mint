@@ -75,7 +75,7 @@ auto Parser::parseDeclaration(bool is_public) noexcept -> Result<Ast::Pointer> {
   } else if (peek(Token::Module)) {
     return parseModule(is_public);
   } else {
-    MINT_ASSERT(false);
+    return {Error::ExpectedADeclaration, location(), text()};
   }
 }
 
@@ -265,6 +265,8 @@ basic = "nil"
       | "(" affix ")"
 */
 auto Parser::parseBasic() noexcept -> Result<Ast::Pointer> {
+  fill();
+
   switch (current) {
   case Token::Nil: {
     auto loc = location();

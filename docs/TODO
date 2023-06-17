@@ -9,7 +9,7 @@
 // 
 // Mint is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
@@ -40,6 +40,7 @@ at comptime the compiler can interpret nearly all expressions,
 and then from the interpreted input an executable is generated.
 
 
+
 in accomplishing any of these features I have some ideas,
 
 I think tackling modules first seems like a smart move.
@@ -56,14 +57,21 @@ the standard library is necessary for a few reasons,
     - containers
 
 we will decide what to add to the language next, once modules 
-are implemented. (or maybe during, idrk)
+are implemented and tested!
 
 
 crazy ideas:
 functions can have their return type deduced right?
 well, what if we computed that deduction as a union
 (or tagged union, or algebraic data type) of all types 
-being used as return values.
+being used as return values. Thus, the common success path 
+error path of the function could be deduced by what 
+error types and success types the function body returns.
+then since the return type of the function is now a composite 
+type, just as if the programmer specified the composite type,
+the compiler now deduces it.
+(this makes more sense with ADTs. however this hasn't been thought
+through at all.)
 
 similarly, struct access and tuple access can only be 
 resolved at compiletime, however, we could extend it's 
