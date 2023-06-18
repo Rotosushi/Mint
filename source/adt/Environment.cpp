@@ -29,7 +29,11 @@ auto Environment::repl() noexcept -> int {
 
     auto parse_result = parser.parse();
     if (!parse_result) {
-      printErrorWithSource(parse_result.error());
+      auto &error = parse_result.error();
+      if (error.getKind() == Error::EndOfInput)
+        break;
+        
+      printErrorWithSource(error);
       continue;
     }
     auto &ast = parse_result.value();

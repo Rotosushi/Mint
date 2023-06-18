@@ -118,13 +118,18 @@ struct Ast {
   struct Import {
     Attributes attributes;
     Location location;
-    Identifier first;
-    std::optional<Identifier> second;
+    std::string file;
+    // #NOTE: #FUTURE: the 'from' mechanism seems like a
+    // great candidate to implement pattern matching
+    // in order to make the expression more expressive.
+    // otherwise the basic functionality of an import
+    // mechanism is what we are implementing currently.
+    // std::optional<Identifier> second;
 
-    Import(Attributes attributes, Location location, Identifier first,
-           std::optional<Identifier> second = std::nullopt) noexcept
-        : attributes(attributes), location(location), first(first),
-          second(second) {}
+    Import(Attributes attributes, Location location, std::string_view file
+           /*,std::optional<Identifier> second = std::nullopt*/) noexcept
+        : attributes(attributes), location(location), file(file)
+    /*,second(second)*/ {}
   };
 
   struct Value {

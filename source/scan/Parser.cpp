@@ -52,6 +52,11 @@ top = visibility? declaration
     | term
 */
 auto Parser::parseTop() noexcept -> Result<Ast::Pointer> {
+  fill();
+  if (endOfInput()) {
+    return handle_error(Error::EndOfInput);
+  }
+
   if (peek(Token::Public)) {
     next();
     return parseDeclaration(/* is_public = */ true);
@@ -77,7 +82,7 @@ auto Parser::parseDeclaration(bool is_public) noexcept -> Result<Ast::Pointer> {
   } else if (peek(Token::Module)) {
     return parseModule(is_public);
   } else {
-    return {Error::ExpectedADeclaration, location(), text()};
+    return handle_error(Error::ExpectedADeclaration);
   }
 }
 
@@ -92,14 +97,14 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<Ast::Pointer> {
   next(); // eat 'let'
 
   if (!peek(Token::Identifier)) {
-    return handle_error(Error::ExpectedAnIdentifier, location(), text());
+    return handle_error(Error::ExpectedAnIdentifier);
   }
 
   auto id = env->getIdentifier(text());
   next(); // eat identifier
 
   if (!expect(Token::Equal)) {
-    return handle_error(Error::ExpectedAnEquals, location(), text());
+    return handle_error(Error::ExpectedAnEquals);
   }
 
   auto affix = parseTerm();
@@ -124,14 +129,14 @@ auto Parser::parseModule(bool is_public) noexcept -> Result<Ast::Pointer> {
   next(); // eat 'module'
 
   if (!peek(Token::Identifier)) {
-    return handle_error(Error::ExpectedAnIdentifier, location(), text());
+    return handle_error(Error::ExpectedAnIdentifier);
   }
 
   auto id = env->getIdentifier(text());
   next();
 
   if (!expect(Token::BeginBrace)) {
-    return handle_error(Error::ExpectedABeginBrace, location(), text());
+    return handle_error(Error::ExpectedABeginBrace);
   }
 
   std::vector<Ast::Pointer> expressions;
@@ -151,17 +156,27 @@ auto Parser::parseModule(bool is_public) noexcept -> Result<Ast::Pointer> {
 }
 
 /*
-  import = "import" identifier ("from" identifier)? ";"
+  import = "import" string ";"
 */
 auto Parser::parseImport() noexcept -> Result<Ast::Pointer> {
   auto left_loc = location();
   MINT_ASSERT(peek(Token::Import));
   next(); // eat "import"
 
+  if (!peek(Token::String)) {
+    return handle_error(Error::ExpectedAString);
+  }
+
+  auto file = env->getString(text());
+  next(); // eat string
+
+  if (!expect(Token::Semicolon)) {
+    return handle_error(Error::ExpectedASemicolon);
+  }
 
   auto right_loc = location();
   Location import_loc = {left_loc, right_loc};
-
+  return env->getImportAst(default_attributes, import_loc, file);
 }
 
 /* term = affix? ";" */
@@ -177,7 +192,7 @@ auto Parser::parseTerm() noexcept -> Result<Ast::Pointer> {
     affix = result.value();
 
     if (!expect(Token::Semicolon)) {
-      return handle_error(Error::ExpectedASemicolon, location(), text());
+      return handle_error(Error::ExpectedASemicolon);
     }
   }
 
@@ -348,7 +363,7 @@ auto Parser::parseBasic() noexcept -> Result<Ast::Pointer> {
       return affix;
 
     if (!expect(Token::EndParen)) {
-      return handle_error(Error::ExpectedAClosingParen, location(), text());
+      return handle_error(Error::ExpectedAClosingParen);
     }
 
     return env->getParensAst(default_attributes, ast_location(affix.value()),
@@ -357,7 +372,7 @@ auto Parser::parseBasic() noexcept -> Result<Ast::Pointer> {
   }
 
   default:
-    return handle_error(Error::ExpectedABasicTerm, location(), text());
+    return handle_error(Error::ExpectedABasicTerm);
     break;
   }
 }

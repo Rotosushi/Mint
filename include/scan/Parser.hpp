@@ -34,7 +34,7 @@ visibility = "public"
 declaration = let
             | module
 
-import = "import" identifier ("from" identifier)? ";"
+import = "import" string-literal ";"
 
 term = affix? ";"
 
@@ -62,6 +62,8 @@ continue   = [a-zA-Z0-9_];
 separator  = "::";
 identifier = start continue* (separator continue+)*
 
+string-literal = "\"" [.]* "\""
+// text is a string literal.
 */
 
 namespace mint {
@@ -143,6 +145,10 @@ private:
     }
   }
 
+  auto handle_error(Error::Kind kind) noexcept -> Result<Ast::Pointer> {
+    recover();
+    return {kind, location(), text()};
+  }
   auto handle_error(Error::Kind kind, Location location,
                     std::string_view message) noexcept -> Result<Ast::Pointer> {
     recover();
@@ -166,6 +172,8 @@ public:
     MINT_ASSERT(env != nullptr);
     MINT_ASSERT(in != nullptr);
   }
+
+  auto endOfInput() const noexcept { return scanner.endOfInput() && in->eof(); }
 
   [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
       -> std::string_view;

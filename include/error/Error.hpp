@@ -19,6 +19,7 @@
 #include <optional>
 #include <ostream>
 #include <string>
+#include <system_error>
 
 #include "scan/Location.hpp"
 
@@ -27,6 +28,9 @@ class Error {
 public:
   enum Kind {
     EndOfInput,
+
+    FileNotFound,
+    ImportFailed,
 
     UnknownToken,
     UnknownBinop,
@@ -40,6 +44,7 @@ public:
     ExpectedAClosingParen,
     ExpectedABeginBrace,
     ExpectedAEndBrace,
+    ExpectedAString,
 
     NameUnboundInScope,
     NameAlreadyBoundInScope,
@@ -54,7 +59,7 @@ private:
   std::optional<Location> location;
   std::optional<std::string> message;
 
-  static auto KindToSV(Kind kind) noexcept -> std::string_view;
+  static auto KindToView(Kind kind) noexcept -> std::string_view;
 
 public:
   Error(Kind kind) noexcept
@@ -80,7 +85,7 @@ public:
 
   void print(std::ostream &out,
              std::string_view bad_source = "") const noexcept {
-    out << KindToSV(kind);
+    out << KindToView(kind);
 
     if (location.has_value()) {
       auto &loc = location.value();

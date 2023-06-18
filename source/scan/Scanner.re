@@ -36,8 +36,12 @@ namespace mint {
   start = "::"?[a-zA-Z_];
   continue = [a-zA-Z0-9_];
   separator = "::";
-  id= start continue* (separator continue+)*;
-  int=[0-9]+;
+  id = start continue* (separator continue+)*;
+
+  int = [0-9]+;
+
+  any = ([a-zA-Z0-9~`!@#$%&*_-+=':;?/.,<>|\\\^{}()\[\]] | "\n");
+  string = ["] any* ["];
 */
 // NOLINTBEGIN(cppcoreguidelines-avoid-goto)
 // #REASON: re2c uses gotos to implement the lexer and as all of the
@@ -84,8 +88,9 @@ auto Scanner::scan() noexcept -> Token {
       ">"  { UpdateLocation(); return Token::GreaterThan; }
       ">=" { UpdateLocation(); return Token::GreaterThanOrEqual; }
 
-      id  { UpdateLocation(); return Token::Identifier; }
-      int { UpdateLocation(); return Token::Integer; }
+      id     { UpdateLocation(); return Token::Identifier; }
+      int    { UpdateLocation(); return Token::Integer; }
+      string { UpdateLocation(); return Token::String; }
 
       [ \t\n]+ { UpdateLocation(); continue; } // whitespace
       *        { UpdateLocation(); return Token::Error; } // unknown token

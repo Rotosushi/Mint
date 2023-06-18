@@ -137,24 +137,7 @@ struct AstEqualsVisitor {
     if (right_import == nullptr)
       return false;
 
-    if (left_import.first != right_import->first)
-      return false;
-
-    // #NOTE:
-    // it is only possible to compare the second identifier
-    // in the import expression if both expressions have
-    // a second identifier.
-    auto left_import_from = left_import.second.has_value();
-    auto right_import_from = right_import->second.has_value();
-    if (left_import_from == right_import_from) {
-      if (left_import_from) {
-        return left_import.second.value() == right_import->second.value();
-      }
-
-      return true;
-    }
-
-    return false;
+    return left_import.file == right_import->file;
   }
 
   auto operator()(Ast::Binop const &left_binop) noexcept -> bool {

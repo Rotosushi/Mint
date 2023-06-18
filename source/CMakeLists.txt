@@ -25,6 +25,7 @@ add_library(mint_common STATIC
   ${MINT_SOURCE_DIR}/adt/BinopTable.cpp
   ${MINT_INCLUDE_DIR}/adt/Environment.hpp
   ${MINT_SOURCE_DIR}/adt/Environment.cpp
+  ${MINT_INCLUDE_DIR}/adt/DirectorySearch.hpp 
   ${MINT_INCLUDE_DIR}/adt/Identifier.hpp 
   ${MINT_SOURCE_DIR}/adt/Identifier.cpp 
   ${MINT_INCLUDE_DIR}/adt/Scope.hpp

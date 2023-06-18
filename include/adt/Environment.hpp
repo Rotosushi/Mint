@@ -18,6 +18,7 @@
 #include <iostream>
 
 #include "adt/BinopTable.hpp"
+#include "adt/DirectorySearch.hpp"
 #include "adt/Identifier.hpp"
 #include "adt/Scope.hpp"
 #include "adt/TypeInterner.hpp"
@@ -27,6 +28,7 @@
 
 namespace mint {
 class Environment {
+  DirectorySearcher directory_searcher;
   IdentifierSet id_interner;
   TypeInterner type_interner;
   BinopTable binop_table;
@@ -69,6 +71,37 @@ public:
     error.print(*errout, bad_source);
   }
 
+  void printErrorWithSource(Error const &error,
+                            Parser const &parser) const noexcept {
+    auto optional_location = error.getLocation();
+    std::string_view bad_source;
+    if (optional_location.has_value())
+      bad_source = parser.extractSourceLine(optional_location.value());
+
+    error.print(*errout, bad_source);
+  }
+
+  auto getString(std::string_view string) noexcept -> std::string_view {
+    auto cursor = std::next(string.begin());
+    auto end = std::prev(string.end());
+
+    // #TODO: replace escape sequences with character literals here.
+
+    return {cursor, static_cast<std::size_t>(std::distance(cursor, end))};
+  }
+
+  void appendDirectory(fs::path file) noexcept {
+    return directory_searcher.append(std::move(file));
+  }
+
+  auto fileExists(fs::path file) noexcept {
+    return directory_searcher.exists(std::move(file));
+  }
+
+  auto fileSearch(fs::path file) noexcept {
+    return directory_searcher.search(std::move(file));
+  }
+
   auto getIdentifier(std::string_view name) noexcept {
     return id_interner.emplace(name);
   }
@@ -103,6 +136,8 @@ public:
     auto new_scope = local_scope->bindScope(name);
     local_scope = new_scope.ptr();
   }
+
+  void unbindScope(Identifier name) noexcept { local_scope->unbindScope(name); }
 
   void popScope() noexcept {
     if (local_scope->isGlobal()) {
@@ -152,10 +187,10 @@ public:
                                  location, name, term);
   }
 
-  auto getImportAst(Attributes attributes, Location location, Identifier first,
-                    std::optional<Identifier> second = std::nullopt) noexcept {
+  auto getImportAst(Attributes attributes, Location location,
+                    std::string_view file) noexcept {
     return std::make_shared<Ast>(std::in_place_type<Ast::Import>, attributes,
-                                 location, first, second);
+                                 location, file);
   }
 
   auto getBinopAst(Attributes attributes, Location location, Token op,

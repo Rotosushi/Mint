@@ -19,10 +19,15 @@
 #include "utility/FatalError.hpp"
 
 namespace mint {
-auto Error::KindToSV(Error::Kind kind) noexcept -> std::string_view {
+auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
   switch (kind) {
   case Error::EndOfInput:
     return "End of input";
+
+  case Error::FileNotFound:
+    return "File not found";
+  case Error::ImportFailed:
+    return "Import failed";
 
   case Error::UnknownToken:
     return "Unknown Token";
@@ -45,6 +50,8 @@ auto Error::KindToSV(Error::Kind kind) noexcept -> std::string_view {
     return "Expected a '{'";
   case Error::ExpectedAEndBrace:
     return "Expected a '}'";
+  case Error::ExpectedAString:
+    return "Expected a string [\"...\"]";
 
   case Error::NameUnboundInScope:
     return "Name not bound in scope";

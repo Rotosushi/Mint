@@ -18,14 +18,21 @@
 #include <iostream>
 
 #include "utility/Assert.hpp"
+#include "utility/FatalError.hpp"
 #include "utility/OptionsParser.hpp"
 
 #include "adt/Environment.hpp"
 
 auto main(int argc, char **argv) -> int {
-  mint::OptionsParser options_parser{argc, argv};
+  try {
+    mint::OptionsParser options_parser{argc, argv};
 
-  mint::Environment env{&std::cin};
+    options_parser.parse();
 
-  return env.repl();
+    mint::Environment env;
+
+    return env.repl();
+  } catch (const std::exception &e) {
+    mint::fatalError(e.what());
+  }
 }

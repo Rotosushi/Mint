@@ -68,12 +68,6 @@ public:
 
   auto operator()(Ast::Pointer const &ast) noexcept -> Result<Type::Pointer> {
     auto result = std::visit(*this, ast->data);
-
-    /*
-    if (result)
-      ast->setCachedType(result.value());
-    */
-
     return result;
   }
 
@@ -99,8 +93,16 @@ public:
     return env->getNilType();
   }
 
-  auto operator()([[maybe_unused]] Ast::Import const &i) noexcept
-      -> Result<Type::Pointer> {
+  /*
+    the type of an import expression is Nil iff the
+    identifier refers to an existing file.
+  */
+  auto operator()(Ast::Import const &i) noexcept -> Result<Type::Pointer> {
+    auto found = env->fileExists(i.file);
+    if (!found) {
+      return {Error::FileNotFound, i.location, i.file};
+    }
+
     return env->getNilType();
   }
 

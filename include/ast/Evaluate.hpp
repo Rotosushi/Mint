@@ -25,10 +25,8 @@
 #include "error/Error.hpp"
 
 namespace mint {
-using EvaluateResult = Result<Ast::Pointer>;
-
 [[nodiscard]] auto evaluate(Ast::Pointer const &ast, Environment *env)
-    -> EvaluateResult;
+    -> Result<Ast::Pointer>;
 
 class AstEvaluateVisitor {
   Ast::Pointer ast;
@@ -41,16 +39,17 @@ public:
     MINT_ASSERT(this->env != nullptr);
   }
 
-  auto operator()() noexcept -> EvaluateResult {
+  auto operator()() noexcept -> Result<Ast::Pointer> {
     return std::visit(*this, ast->data);
   }
 
-  auto operator()([[maybe_unused]] Ast::Type &type) noexcept -> EvaluateResult {
+  auto operator()([[maybe_unused]] Ast::Type &type) noexcept
+      -> Result<Ast::Pointer> {
     // the Type itself is the result 'value' of the Type 'expression'
     return ast;
   }
 
-  auto operator()(Ast::Let &let) noexcept -> EvaluateResult {
+  auto operator()(Ast::Let &let) noexcept -> Result<Ast::Pointer> {
     auto value = evaluate(let.term, env);
     if (!value)
       return value;
@@ -70,13 +69,16 @@ public:
     return env->getNilAst({}, let.location);
   }
 
-  auto operator()(Ast::Module &m) noexcept -> EvaluateResult {
+  auto operator()(Ast::Module &m) noexcept -> Result<Ast::Pointer> {
     env->pushScope(m.name);
 
     for (auto &expr : m.expressions) {
       auto result = evaluate(expr, env);
-      if (!result)
+      if (!result) {
+        env->unbindScope(m.name);
+        env->popScope();
         return result;
+      }
     }
 
     env->popScope();
@@ -84,12 +86,42 @@ public:
     return env->getNilAst({}, m.location);
   }
 
-  auto operator()(Ast::Import &i) noexcept -> EvaluateResult {
+  auto operator()(Ast::Import &i) noexcept -> Result<Ast::Pointer> {
+    auto file_found = env->fileSearch(i.file);
+    if (!file_found) {
+      return {Error::FileNotFound, i.location, i.file};
+    }
+    auto &file = file_found.value();
+    Parser parser{env, &file};
+
+    while (!parser.endOfInput()) {
+      auto parse_result = parser.parse();
+      if (!parse_result) {
+        auto &error = parse_result.error();
+        if (error.getKind() == Error::EndOfInput)
+          break;
+        env->printErrorWithSource(error, parser);
+        return {Error::ImportFailed, i.location, i.file};
+      }
+      auto &ast = parse_result.value();
+
+      auto typecheck_result = typecheck(ast, env);
+      if (!typecheck_result) {
+        env->printErrorWithSource(typecheck_result.error(), parser);
+        return {Error::ImportFailed, i.location, i.file};
+      }
+
+      auto evaluate_result = evaluate(ast, env);
+      if (!evaluate_result) {
+        env->printErrorWithSource(evaluate_result.error(), parser);
+        return {Error::ImportFailed, i.location, i.file};
+      }
+    }
 
     return env->getNilAst({}, i.location);
   }
 
-  auto operator()(Ast::Binop &binop) noexcept -> EvaluateResult {
+  auto operator()(Ast::Binop &binop) noexcept -> Result<Ast::Pointer> {
     auto overloads = env->lookupBinop(binop.op);
     if (!overloads) {
       return {Error::UnknownBinop, binop.location, toString(binop.op)};
@@ -126,7 +158,7 @@ public:
                             env);
   }
 
-  auto operator()(Ast::Unop &unop) noexcept -> EvaluateResult {
+  auto operator()(Ast::Unop &unop) noexcept -> Result<Ast::Pointer> {
     auto overloads = env->lookupUnop(unop.op);
     if (!overloads) {
       return {Error::UnknownUnop, unop.location, toString(unop.op)};
@@ -153,18 +185,18 @@ public:
     return instance.value()(right_value.value().get(), env);
   }
 
-  auto operator()(Ast::Term &term) noexcept -> EvaluateResult {
+  auto operator()(Ast::Term &term) noexcept -> Result<Ast::Pointer> {
     if (term.ast.has_value()) {
       return evaluate(term.ast.value(), env);
     }
     return env->getNilAst({}, {});
   }
 
-  auto operator()(Ast::Parens &parens) noexcept -> EvaluateResult {
+  auto operator()(Ast::Parens &parens) noexcept -> Result<Ast::Pointer> {
     return evaluate(parens.ast, env);
   }
 
-  auto operator()(Ast::Variable &variable) noexcept -> EvaluateResult {
+  auto operator()(Ast::Variable &variable) noexcept -> Result<Ast::Pointer> {
     auto bound = env->lookup(variable.name);
     if (!bound) {
       return {bound.error().getKind(), variable.location, variable.name.view()};
@@ -174,13 +206,13 @@ public:
   }
 
   auto operator()([[maybe_unused]] Ast::Value &value) noexcept
-      -> EvaluateResult {
+      -> Result<Ast::Pointer> {
     return ast;
   }
 };
 
 [[nodiscard]] auto evaluate(Ast::Pointer const &ast, Environment *env)
-    -> EvaluateResult {
+    -> Result<Ast::Pointer> {
   AstEvaluateVisitor visitor{ast, env};
   return visitor();
 }

@@ -142,6 +142,13 @@ public:
   auto emplace(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
       -> Entry;
 
+  void unbind(Identifier name) noexcept {
+    auto found = table.find(name);
+    if (found != table.end()) {
+      table.erase(found);
+    }
+  }
+
   [[nodiscard]] auto lookup(Identifier name) noexcept -> Result<Entry> {
     auto found = table.find(name);
     if (found == table.end()) {
@@ -220,6 +227,8 @@ public:
   auto bindScope(Identifier name) -> ScopeTable::Entry {
     return scopes.emplace(name, weak_from_this());
   }
+
+  void unbindScope(Identifier name) { return scopes.unbind(name); }
 
   [[nodiscard]] auto lookupScope(Identifier name) noexcept {
     return scopes.lookup(name);

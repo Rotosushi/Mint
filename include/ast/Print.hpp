@@ -85,13 +85,7 @@ public:
   }
 
   void operator()(Ast::Import const &i) noexcept {
-    *out << "import " << i.first;
-
-    if (i.second.has_value()) {
-      *out << " from " << i.second.value();
-    }
-
-    *out << ";";
+    *out << "import " << i.file << ";";
   }
 
   void operator()(Ast::Binop const &binop) noexcept {

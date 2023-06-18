@@ -31,4 +31,10 @@ fatalError(std::string_view message,
 
   std::exit(EXIT_FAILURE);
 }
+
+[[noreturn]] inline void fatalError(
+    std::error_code error_code,
+    std::source_location location = std::source_location::current()) noexcept {
+  fatalError(error_code.message(), location);
+}
 } // namespace mint

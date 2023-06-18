@@ -172,12 +172,63 @@ TODO:
     - module ast (check)
     - parse modules line by line (check)
     - parse visibility specifiers (check)
+    - typecheck module (check)
+    - evaluate module (check)
     - module namespace (check)
 
   - add an import statement
     - import ast (check)
-    - parse import
-    - import a module from a file 
+    - parse import (check)
+    - typecheck import 
+      - in order to typecheck an import statement, 
+        we must perform the import semantics.
+        well, not entirely. as due to the structure 
+        of the REPL we will evaluate the import statement 
+        as well. we could choose to split the semantics 
+        of import accross the two procedures. yet what 
+        does that gain? regardless, the steps to import 
+        are as follows:
+          1) open the associated file 
+            - note: we need some form of standard places to 
+              look for files, and ways to add places to look.
+          2) create a new parser with reference to the current 
+             environment, and the file.
+          3) drive a parse->typecheck->evaluate loop until 
+             the file is empty. reporting any errors as the 
+             result of the import expression.
+             -) note that since the new parser is connected to 
+                the current environment any Asts or Types the 
+                parser constructs will be valid to use within 
+                the current environment.
+          4) close the file.
+        -) are there any issues that arise when considering 
+            evaluating the terms being imported during typechecking?
+            I cannot think of any, there only way I could see an issue 
+            is if the file being imported was making assumptions about 
+            the environment it was being imported into. that is, in order 
+            to type or evaluate a term within the module being imported,
+            we needed a name defined within the current environment.
+            this seems like a fragile assumption to be making when 
+            writing a module. if you want to have a name available 
+            within a module and it is defined elsewhere, that is what 
+            the import mechanism is for. 
+            Unless it's for configuration information? 
+            like, say there was some conditional compilation mechanism,
+            like the #if #endif mechanism in C, this mechanism relies 
+            upon the environment the file is being imported into having 
+            some state, and behaving differently based upon that state.
+            as of right now, that is all I can see. idk what issue would 
+            particularly arise if we perform the semantics of importing at 
+            typecheck time vs. evaluate time. One thing to note is that 
+            the driver is performing the entire loop one Ast at a time.
+            thus any terms appearing above an import statement must have 
+            already been evaluated, regardless of if we import during typechecking 
+            or evaluation. 
+            Thus my final verdict is to perform some basic checks during typechecking 
+            and actually import names during evaluation, simply because that 
+            makes sense given the implied meaning of 'typecheck' and 'evaluate.' 
+    - evaluate import 
+    - import a module from a File 
 
 
 

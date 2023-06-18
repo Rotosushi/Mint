@@ -70,6 +70,7 @@ enum struct Token : int {
   // regular-expressions
   Identifier,
   Integer,
+  String,
 };
 
 using BinopPrecedence = int8_t;
@@ -174,9 +175,9 @@ inline auto isUnop(Token token) noexcept -> bool {
 inline auto toString(Token token) noexcept -> std::string_view {
   switch (token) {
   case Token::Error:
-    fatalError("Token::Error");
+    return "Token::Error";
   case Token::End:
-    fatalError("Token::End");
+    return "Token::End";
 
   case Token::Let:
     return "let";
@@ -232,12 +233,27 @@ inline auto toString(Token token) noexcept -> std::string_view {
     return "<";
   case Token::GreaterThanOrEqual:
     return "<=";
+
   case Token::Nil:
     return "nil";
   case Token::True:
     return "true";
   case Token::False:
     return "false";
+
+  case Token::NilType:
+    return "Nil";
+  case Token::BooleanType:
+    return "Boolean";
+  case Token::IntegerType:
+    return "Integer";
+
+  case Token::Identifier:
+    return "Token::Identifier";
+  case Token::Integer:
+    return "Token::Integer";
+  case Token::String:
+    return "Token::String";
 
   default:
     fatalError("Unknown Token");
