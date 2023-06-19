@@ -74,8 +74,8 @@ struct AstValueEqualsVisitor {
 [[nodiscard]] inline auto equals(Ast const *left, Ast const *right) noexcept
     -> bool;
 
-[[nodiscard]] inline auto equals(Ast::Pointer const &left,
-                                 Ast::Pointer const &right) noexcept -> bool {
+[[nodiscard]] inline auto equals(Ast::Ptr const &left,
+                                 Ast::Ptr const &right) noexcept -> bool {
   return equals(left.get(), right.get());
 }
 

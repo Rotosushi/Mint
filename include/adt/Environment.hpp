@@ -148,7 +148,7 @@ public:
   }
 
   auto bindName(Identifier name, Attributes attributes, Type::Pointer type,
-                Ast::Pointer value) noexcept {
+                Ast::Ptr value) noexcept {
     return local_scope->bindName(name, attributes, type, value);
   }
 
@@ -175,14 +175,14 @@ public:
   // within a custom allocator. (Types, Asts, Binops, and Unops
   // are all considered "part of" a given Environment.)
   auto getModuleAst(Attributes attributes, Location location, Identifier name,
-                    std::vector<Ast::Pointer> expressions) noexcept {
+                    std::vector<Ast::Ptr> expressions) noexcept {
     auto alloc = new Ast(std::in_place_type<Ast::Module>, attributes, location,
                          name, std::move(expressions));
     return std::shared_ptr<Ast>(alloc);
   }
 
   auto getLetAst(Attributes attributes, Location location, Identifier name,
-                 Ast::Pointer term) noexcept {
+                 Ast::Ptr term) noexcept {
     return std::make_shared<Ast>(std::in_place_type<Ast::Let>, attributes,
                                  location, name, term);
   }
@@ -194,26 +194,26 @@ public:
   }
 
   auto getBinopAst(Attributes attributes, Location location, Token op,
-                   Ast::Pointer left, Ast::Pointer right) noexcept {
+                   Ast::Ptr left, Ast::Ptr right) noexcept {
     return std::make_shared<Ast>(std::in_place_type<Ast::Binop>, attributes,
                                  location, op, left, right);
   }
 
   auto getUnopAst(Attributes attributes, Location location, Token op,
-                  Ast::Pointer right) noexcept {
+                  Ast::Ptr right) noexcept {
     return std::make_shared<Ast>(std::in_place_type<Ast::Unop>, attributes,
                                  location, op, right);
   }
 
   auto getTermAst(Attributes attributes, Location location,
-                  std::optional<Ast::Pointer> ast) noexcept {
+                  std::optional<Ast::Ptr> ast) noexcept {
     auto alloc =
         new Ast(std::in_place_type<Ast::Term>, attributes, location, ast);
     return std::shared_ptr<Ast>(alloc);
   }
 
   auto getParensAst(Attributes attributes, Location location,
-                    Ast::Pointer ast) noexcept {
+                    Ast::Ptr ast) noexcept {
     return std::make_shared<Ast>(std::in_place_type<Ast::Parens>, attributes,
                                  location, ast);
   }

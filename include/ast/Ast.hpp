@@ -29,7 +29,7 @@
 
 namespace mint {
 struct Ast {
-  using Pointer = std::shared_ptr<Ast>;
+  using Ptr = std::shared_ptr<Ast>;
 
   struct Type {
     Attributes attributes;
@@ -44,10 +44,10 @@ struct Ast {
     Attributes attributes;
     Location location;
     Identifier id;
-    Ast::Pointer term;
+    Ast::Ptr term;
 
     Let(Attributes attributes, Location location, Identifier id,
-        Ast::Pointer term) noexcept
+        Ast::Ptr term) noexcept
         : attributes(attributes), location(location), id(id), term(term) {}
   };
 
@@ -55,11 +55,11 @@ struct Ast {
     Attributes attributes;
     Location location;
     Token op;
-    Ast::Pointer left;
-    Ast::Pointer right;
+    Ast::Ptr left;
+    Ast::Ptr right;
 
-    Binop(Attributes attributes, Location location, Token op, Ast::Pointer left,
-          Ast::Pointer right) noexcept
+    Binop(Attributes attributes, Location location, Token op, Ast::Ptr left,
+          Ast::Ptr right) noexcept
         : attributes(attributes), location(location), op(op), left(left),
           right(right) {}
   };
@@ -68,29 +68,29 @@ struct Ast {
     Attributes attributes;
     Location location;
     Token op;
-    Ast::Pointer right;
+    Ast::Ptr right;
 
     Unop(Attributes attributes, Location location, Token op,
-         Ast::Pointer right) noexcept
+         Ast::Ptr right) noexcept
         : attributes(attributes), location(location), op(op), right(right) {}
   };
 
   struct Term {
     Attributes attributes;
     Location location;
-    std::optional<Ast::Pointer> ast;
+    std::optional<Ast::Ptr> ast;
 
     Term(Attributes attributes, Location location,
-         std::optional<Ast::Pointer> ast) noexcept
+         std::optional<Ast::Ptr> ast) noexcept
         : attributes(attributes), location(location), ast{ast} {}
   };
 
   struct Parens {
     Attributes attributes;
     Location location;
-    Ast::Pointer ast;
+    Ast::Ptr ast;
 
-    Parens(Attributes attributes, Location location, Ast::Pointer ast) noexcept
+    Parens(Attributes attributes, Location location, Ast::Ptr ast) noexcept
         : attributes(attributes), location(location), ast{ast} {}
   };
 
@@ -107,10 +107,10 @@ struct Ast {
     Attributes attributes;
     Location location;
     Identifier name;
-    std::vector<Ast::Pointer> expressions;
+    std::vector<Ast::Ptr> expressions;
 
     Module(Attributes attributes, Location location, Identifier name,
-           std::vector<Ast::Pointer> expressions) noexcept
+           std::vector<Ast::Ptr> expressions) noexcept
         : attributes(attributes), location(location), name(name),
           expressions(std::move(expressions)) {}
   };
@@ -121,9 +121,7 @@ struct Ast {
     std::string file;
     // #NOTE: #FUTURE: the 'from' mechanism seems like a
     // great candidate to implement pattern matching
-    // in order to make the expression more expressive.
-    // otherwise the basic functionality of an import
-    // mechanism is what we are implementing currently.
+    // in order to make import more expressive.
     // std::optional<Identifier> second;
 
     Import(Attributes attributes, Location location, std::string_view file
@@ -177,8 +175,14 @@ private:
 
 public:
   template <class T, class... Args>
-  constexpr explicit Ast(std::in_place_type_t<T> type, Args &&...args)
+  constexpr explicit Ast(std::in_place_type_t<T> type, Args &&...args) noexcept
       : data(type, std::forward<Args>(args)...) {}
+
+  template <class T, class Alloc, class... Args>
+  static auto create(Alloc const &allocator, Args &&...args) noexcept {
+    return std::allocate_shared<Ast, Alloc>(allocator, std::in_place_type<T>,
+                                            std::forward<Args>(args)...);
+  }
 
   /*
     void setCachedType(mint::Type::Pointer type) const noexcept {
@@ -268,8 +272,7 @@ inline constexpr AstValueLocationVisitor ast_value_location{};
 
 class AstLocationVisitor {
 public:
-  constexpr auto operator()(Ast::Pointer const &ast) const noexcept
-      -> Location {
+  constexpr auto operator()(Ast::Ptr const &ast) const noexcept -> Location {
     return std::visit(*this, ast->data);
   }
 
@@ -323,5 +326,26 @@ public:
 };
 
 inline constexpr AstLocationVisitor ast_location{};
+
+struct AstValueCloneVisitor {
+public:
+  auto operator()(Ast::Value const &value) const noexcept -> Ast::Ptr {
+    return std::visit(*this, value.data);
+  }
+
+  auto operator()(Ast::Value::Boolean const &boolean) const noexcept
+      -> Ast::Ptr {
+    return;
+  }
+
+  auto operator()(Ast::Value::Integer const &integer) const noexcept
+      -> Ast::Ptr {
+    return;
+  }
+
+  auto operator()(Ast::Value::Nil const &nil) const noexcept -> Ast::Ptr {
+    return;
+  }
+};
 
 } // namespace mint

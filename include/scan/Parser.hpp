@@ -145,26 +145,26 @@ private:
     }
   }
 
-  auto handle_error(Error::Kind kind) noexcept -> Result<Ast::Pointer> {
+  auto handle_error(Error::Kind kind) noexcept -> Result<Ast::Ptr> {
     recover();
     return {kind, location(), text()};
   }
   auto handle_error(Error::Kind kind, Location location,
-                    std::string_view message) noexcept -> Result<Ast::Pointer> {
+                    std::string_view message) noexcept -> Result<Ast::Ptr> {
     recover();
     return {kind, location, message};
   }
 
-  auto parseTop() noexcept -> Result<Ast::Pointer>;
-  auto parseDeclaration(bool is_public) noexcept -> Result<Ast::Pointer>;
-  auto parseModule(bool is_public) noexcept -> Result<Ast::Pointer>;
-  auto parseLet(bool is_public) noexcept -> Result<Ast::Pointer>;
-  auto parseImport() noexcept -> Result<Ast::Pointer>;
-  auto parseTerm() noexcept -> Result<Ast::Pointer>;
-  auto parseAffix() noexcept -> Result<Ast::Pointer>;
-  auto precedenceParser(Ast::Pointer left, BinopPrecedence prec) noexcept
-      -> Result<Ast::Pointer>;
-  auto parseBasic() noexcept -> Result<Ast::Pointer>;
+  auto parseTop() noexcept -> Result<Ast::Ptr>;
+  auto parseDeclaration(bool is_public) noexcept -> Result<Ast::Ptr>;
+  auto parseModule(bool is_public) noexcept -> Result<Ast::Ptr>;
+  auto parseLet(bool is_public) noexcept -> Result<Ast::Ptr>;
+  auto parseImport() noexcept -> Result<Ast::Ptr>;
+  auto parseTerm() noexcept -> Result<Ast::Ptr>;
+  auto parseAffix() noexcept -> Result<Ast::Ptr>;
+  auto precedenceParser(Ast::Ptr left, BinopPrecedence prec) noexcept
+      -> Result<Ast::Ptr>;
+  auto parseBasic() noexcept -> Result<Ast::Ptr>;
 
 public:
   Parser(Environment *env, std::istream *in)
@@ -178,6 +178,6 @@ public:
   [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
       -> std::string_view;
 
-  auto parse() -> Result<Ast::Pointer> { return parseTop(); }
+  auto parse() -> Result<Ast::Ptr> { return parseTop(); }
 };
 } // namespace mint

@@ -66,7 +66,7 @@ public:
     MINT_ASSERT(env != nullptr);
   }
 
-  auto operator()(Ast::Pointer const &ast) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Ptr const &ast) noexcept -> Result<Type::Pointer> {
     auto result = std::visit(*this, ast->data);
     return result;
   }
@@ -177,7 +177,7 @@ public:
   }
 };
 
-[[nodiscard]] auto typecheck(Ast::Pointer const &ast, Environment *env)
+[[nodiscard]] auto typecheck(Ast::Ptr const &ast, Environment *env)
     -> Result<Type::Pointer> {
   /*
   auto cache = ast->cached_type();

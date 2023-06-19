@@ -25,31 +25,31 @@
 #include "error/Error.hpp"
 
 namespace mint {
-[[nodiscard]] auto evaluate(Ast::Pointer const &ast, Environment *env)
-    -> Result<Ast::Pointer>;
+[[nodiscard]] auto evaluate(Ast::Ptr const &ast, Environment *env)
+    -> Result<Ast::Ptr>;
 
 class AstEvaluateVisitor {
-  Ast::Pointer ast;
+  Ast::Ptr ast;
   Environment *env;
 
 public:
-  AstEvaluateVisitor(Ast::Pointer ast, Environment *env) noexcept
+  AstEvaluateVisitor(Ast::Ptr ast, Environment *env) noexcept
       : ast(ast), env(env) {
     MINT_ASSERT(this->ast != nullptr);
     MINT_ASSERT(this->env != nullptr);
   }
 
-  auto operator()() noexcept -> Result<Ast::Pointer> {
+  auto operator()() noexcept -> Result<Ast::Ptr> {
     return std::visit(*this, ast->data);
   }
 
   auto operator()([[maybe_unused]] Ast::Type &type) noexcept
-      -> Result<Ast::Pointer> {
+      -> Result<Ast::Ptr> {
     // the Type itself is the result 'value' of the Type 'expression'
     return ast;
   }
 
-  auto operator()(Ast::Let &let) noexcept -> Result<Ast::Pointer> {
+  auto operator()(Ast::Let &let) noexcept -> Result<Ast::Ptr> {
     auto value = evaluate(let.term, env);
     if (!value)
       return value;
@@ -69,7 +69,7 @@ public:
     return env->getNilAst({}, let.location);
   }
 
-  auto operator()(Ast::Module &m) noexcept -> Result<Ast::Pointer> {
+  auto operator()(Ast::Module &m) noexcept -> Result<Ast::Ptr> {
     env->pushScope(m.name);
 
     for (auto &expr : m.expressions) {
@@ -86,7 +86,7 @@ public:
     return env->getNilAst({}, m.location);
   }
 
-  auto operator()(Ast::Import &i) noexcept -> Result<Ast::Pointer> {
+  auto operator()(Ast::Import &i) noexcept -> Result<Ast::Ptr> {
     auto file_found = env->fileSearch(i.file);
     if (!file_found) {
       return {Error::FileNotFound, i.location, i.file};
@@ -121,7 +121,7 @@ public:
     return env->getNilAst({}, i.location);
   }
 
-  auto operator()(Ast::Binop &binop) noexcept -> Result<Ast::Pointer> {
+  auto operator()(Ast::Binop &binop) noexcept -> Result<Ast::Ptr> {
     auto overloads = env->lookupBinop(binop.op);
     if (!overloads) {
       return {Error::UnknownBinop, binop.location, toString(binop.op)};
@@ -158,7 +158,7 @@ public:
                             env);
   }
 
-  auto operator()(Ast::Unop &unop) noexcept -> Result<Ast::Pointer> {
+  auto operator()(Ast::Unop &unop) noexcept -> Result<Ast::Ptr> {
     auto overloads = env->lookupUnop(unop.op);
     if (!overloads) {
       return {Error::UnknownUnop, unop.location, toString(unop.op)};
@@ -185,18 +185,18 @@ public:
     return instance.value()(right_value.value().get(), env);
   }
 
-  auto operator()(Ast::Term &term) noexcept -> Result<Ast::Pointer> {
+  auto operator()(Ast::Term &term) noexcept -> Result<Ast::Ptr> {
     if (term.ast.has_value()) {
       return evaluate(term.ast.value(), env);
     }
     return env->getNilAst({}, {});
   }
 
-  auto operator()(Ast::Parens &parens) noexcept -> Result<Ast::Pointer> {
+  auto operator()(Ast::Parens &parens) noexcept -> Result<Ast::Ptr> {
     return evaluate(parens.ast, env);
   }
 
-  auto operator()(Ast::Variable &variable) noexcept -> Result<Ast::Pointer> {
+  auto operator()(Ast::Variable &variable) noexcept -> Result<Ast::Ptr> {
     auto bound = env->lookup(variable.name);
     if (!bound) {
       return {bound.error().getKind(), variable.location, variable.name.view()};
@@ -206,13 +206,13 @@ public:
   }
 
   auto operator()([[maybe_unused]] Ast::Value &value) noexcept
-      -> Result<Ast::Pointer> {
+      -> Result<Ast::Ptr> {
     return ast;
   }
 };
 
-[[nodiscard]] auto evaluate(Ast::Pointer const &ast, Environment *env)
-    -> Result<Ast::Pointer> {
+[[nodiscard]] auto evaluate(Ast::Ptr const &ast, Environment *env)
+    -> Result<Ast::Ptr> {
   AstEvaluateVisitor visitor{ast, env};
   return visitor();
 }

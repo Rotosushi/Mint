@@ -51,7 +51,7 @@ auto Parser::extractSourceLine(Location const &location) const noexcept
 top = visibility? declaration
     | term
 */
-auto Parser::parseTop() noexcept -> Result<Ast::Pointer> {
+auto Parser::parseTop() noexcept -> Result<Ast::Ptr> {
   fill();
   if (endOfInput()) {
     return handle_error(Error::EndOfInput);
@@ -76,7 +76,7 @@ auto Parser::parseTop() noexcept -> Result<Ast::Pointer> {
   declaration = let
               | module
 */
-auto Parser::parseDeclaration(bool is_public) noexcept -> Result<Ast::Pointer> {
+auto Parser::parseDeclaration(bool is_public) noexcept -> Result<Ast::Ptr> {
   if (peek(Token::Let)) {
     return parseLet(is_public);
   } else if (peek(Token::Module)) {
@@ -89,7 +89,7 @@ auto Parser::parseDeclaration(bool is_public) noexcept -> Result<Ast::Pointer> {
 /*
   let = "let" identifier "=" term
 */
-auto Parser::parseLet(bool is_public) noexcept -> Result<Ast::Pointer> {
+auto Parser::parseLet(bool is_public) noexcept -> Result<Ast::Ptr> {
   Attributes attributes = default_attributes;
   attributes.isPublic(is_public);
   auto left_loc = location();
@@ -120,7 +120,7 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<Ast::Pointer> {
 /*
   module = "module" identifier "{" top* "}"
 */
-auto Parser::parseModule(bool is_public) noexcept -> Result<Ast::Pointer> {
+auto Parser::parseModule(bool is_public) noexcept -> Result<Ast::Ptr> {
   Attributes attributes = default_attributes;
   attributes.isPublic(is_public);
   auto left_loc = location();
@@ -139,7 +139,7 @@ auto Parser::parseModule(bool is_public) noexcept -> Result<Ast::Pointer> {
     return handle_error(Error::ExpectedABeginBrace);
   }
 
-  std::vector<Ast::Pointer> expressions;
+  std::vector<Ast::Ptr> expressions;
   /* top* '}' */
   while (!expect(Token::EndBrace)) {
     auto expr = parseTop();
@@ -158,7 +158,7 @@ auto Parser::parseModule(bool is_public) noexcept -> Result<Ast::Pointer> {
 /*
   import = "import" string ";"
 */
-auto Parser::parseImport() noexcept -> Result<Ast::Pointer> {
+auto Parser::parseImport() noexcept -> Result<Ast::Ptr> {
   auto left_loc = location();
   MINT_ASSERT(peek(Token::Import));
   next(); // eat "import"
@@ -180,10 +180,10 @@ auto Parser::parseImport() noexcept -> Result<Ast::Pointer> {
 }
 
 /* term = affix? ";" */
-auto Parser::parseTerm() noexcept -> Result<Ast::Pointer> {
+auto Parser::parseTerm() noexcept -> Result<Ast::Ptr> {
   auto left_loc = location();
 
-  std::optional<Ast::Pointer> affix;
+  std::optional<Ast::Ptr> affix;
   if (!expect(Token::Semicolon)) {
     auto result = parseAffix();
     if (!result) {
@@ -201,7 +201,7 @@ auto Parser::parseTerm() noexcept -> Result<Ast::Pointer> {
   return env->getTermAst(default_attributes, term_loc, affix);
 }
 
-auto Parser::parseAffix() noexcept -> Result<Ast::Pointer> {
+auto Parser::parseAffix() noexcept -> Result<Ast::Ptr> {
   auto basic = parseBasic();
   if (!basic) {
     return basic;
@@ -224,9 +224,9 @@ auto Parser::parseAffix() noexcept -> Result<Ast::Pointer> {
 // ... a + b ...
 // ...-^^^^^-...
 
-auto Parser::precedenceParser(Ast::Pointer left, BinopPrecedence prec) noexcept
-    -> Result<Ast::Pointer> {
-  Result<Ast::Pointer> result = left;
+auto Parser::precedenceParser(Ast::Ptr left, BinopPrecedence prec) noexcept
+    -> Result<Ast::Ptr> {
+  Result<Ast::Ptr> result = left;
   Location op_loc;
   Token op{Token::Error};
 
@@ -278,8 +278,8 @@ auto Parser::precedenceParser(Ast::Pointer left, BinopPrecedence prec) noexcept
 
     auto rhs_loc = ast_location(right.value());
     Location binop_loc = {op_loc, rhs_loc};
-    Ast::Pointer lhs = result.value();
-    Ast::Pointer rhs = right.value();
+    Ast::Ptr lhs = result.value();
+    Ast::Ptr rhs = right.value();
     result = env->getBinopAst(default_attributes, binop_loc, op, lhs, rhs);
   }
 
@@ -295,7 +295,7 @@ basic = "nil"
       | unop basic
       | "(" affix ")"
 */
-auto Parser::parseBasic() noexcept -> Result<Ast::Pointer> {
+auto Parser::parseBasic() noexcept -> Result<Ast::Ptr> {
   fill();
 
   switch (current) {

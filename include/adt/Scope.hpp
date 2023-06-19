@@ -44,7 +44,7 @@ namespace mint {
 class Bindings {
 public:
   using Key = Identifier;
-  using Value = std::tuple<Attributes, Type::Pointer, Ast::Pointer>;
+  using Value = std::tuple<Attributes, Type::Pointer, Ast::Ptr>;
   using Table = std::unordered_map<Key, Value>;
   using iterator = typename Table::iterator;
 
@@ -78,7 +78,7 @@ public:
       isn't Ast inherits from std::shared_from_this, so we can
       call ast->shared_from_this();
     */
-    [[nodiscard]] auto value() const noexcept -> Ast::Pointer {
+    [[nodiscard]] auto value() const noexcept -> Ast::Ptr {
       return std::get<2>(binding->second);
     }
   };
@@ -90,7 +90,7 @@ public:
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
   auto bind(Key key, Attributes attributes, Type::Pointer type,
-            Ast::Pointer value) noexcept -> Binding {
+            Ast::Ptr value) noexcept -> Binding {
     // use insert or assign to allow the caller to update
     // the values being kept track of within the table.
     auto pair = table.insert_or_assign(key, Value{attributes, type, value});
@@ -127,7 +127,7 @@ public:
     [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
 
     auto bind(Identifier name, Attributes attributes, Type::Pointer type,
-              Ast::Pointer value) noexcept -> Bindings::Binding;
+              Ast::Ptr value) noexcept -> Bindings::Binding;
 
     [[nodiscard]] auto lookup(Identifier name) noexcept
         -> Result<Bindings::Binding>;
@@ -220,7 +220,7 @@ public:
   }
 
   auto bindName(Identifier name, Attributes attributes, Type::Pointer type,
-                Ast::Pointer value) -> Bindings::Binding {
+                Ast::Ptr value) -> Bindings::Binding {
     return bindings.bind(name, attributes, type, value);
   }
 

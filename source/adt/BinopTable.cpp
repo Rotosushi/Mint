@@ -25,55 +25,49 @@ namespace mint {
   ) default construct Location and Attributes.
 */
 
-auto binop_add(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+auto binop_add(Ast *left, Ast *right, Environment *env) -> Result<Ast::Ptr> {
   auto left_integer = get_value<Ast::Value::Integer>(left);
   auto right_integer = get_value<Ast::Value::Integer>(right);
   return env->getIntegerAst(Attributes{}, Location{},
                             left_integer->value + right_integer->value);
 }
 
-auto binop_sub(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+auto binop_sub(Ast *left, Ast *right, Environment *env) -> Result<Ast::Ptr> {
   auto left_integer = get_value<Ast::Value::Integer>(left);
   auto right_integer = get_value<Ast::Value::Integer>(right);
   return env->getIntegerAst(Attributes{}, Location{},
                             left_integer->value - right_integer->value);
 }
 
-auto binop_mult(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+auto binop_mult(Ast *left, Ast *right, Environment *env) -> Result<Ast::Ptr> {
   auto left_integer = get_value<Ast::Value::Integer>(left);
   auto right_integer = get_value<Ast::Value::Integer>(right);
   return env->getIntegerAst(Attributes{}, Location{},
                             left_integer->value * right_integer->value);
 }
 
-auto binop_div(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+auto binop_div(Ast *left, Ast *right, Environment *env) -> Result<Ast::Ptr> {
   auto left_integer = get_value<Ast::Value::Integer>(left);
   auto right_integer = get_value<Ast::Value::Integer>(right);
   return env->getIntegerAst(Attributes{}, Location{},
                             left_integer->value / right_integer->value);
 }
 
-auto binop_mod(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+auto binop_mod(Ast *left, Ast *right, Environment *env) -> Result<Ast::Ptr> {
   auto left_integer = get_value<Ast::Value::Integer>(left);
   auto right_integer = get_value<Ast::Value::Integer>(right);
   return env->getIntegerAst(Attributes{}, Location{},
                             left_integer->value % right_integer->value);
 }
 
-auto binop_and(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+auto binop_and(Ast *left, Ast *right, Environment *env) -> Result<Ast::Ptr> {
   auto left_boolean = get_value<Ast::Value::Boolean>(left);
   auto right_boolean = get_value<Ast::Value::Boolean>(right);
   return env->getBooleanAst(Attributes{}, Location{},
                             left_boolean->value && right_boolean->value);
 }
 
-auto binop_or(Ast *left, Ast *right, Environment *env) -> Result<Ast::Pointer> {
+auto binop_or(Ast *left, Ast *right, Environment *env) -> Result<Ast::Ptr> {
   auto left_boolean = get_value<Ast::Value::Boolean>(left);
   auto right_boolean = get_value<Ast::Value::Boolean>(right);
   return env->getBooleanAst(Attributes{}, Location{},
@@ -81,7 +75,7 @@ auto binop_or(Ast *left, Ast *right, Environment *env) -> Result<Ast::Pointer> {
 }
 
 auto binop_integer_equality(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+    -> Result<Ast::Ptr> {
   auto left_integer = get_value<Ast::Value::Integer>(left);
   auto right_integer = get_value<Ast::Value::Integer>(right);
   return env->getBooleanAst(Attributes{}, Location{},
@@ -89,7 +83,7 @@ auto binop_integer_equality(Ast *left, Ast *right, Environment *env)
 }
 
 auto binop_boolean_equality(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+    -> Result<Ast::Ptr> {
   auto left_boolean = get_value<Ast::Value::Boolean>(left);
   auto right_boolean = get_value<Ast::Value::Boolean>(right);
   return env->getBooleanAst(Attributes{}, Location{},
@@ -97,7 +91,7 @@ auto binop_boolean_equality(Ast *left, Ast *right, Environment *env)
 }
 
 auto binop_integer_inequality(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+    -> Result<Ast::Ptr> {
   auto left_integer = get_value<Ast::Value::Integer>(left);
   auto right_integer = get_value<Ast::Value::Integer>(right);
   return env->getBooleanAst(Attributes{}, Location{},
@@ -105,7 +99,7 @@ auto binop_integer_inequality(Ast *left, Ast *right, Environment *env)
 }
 
 auto binop_boolean_inequality(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+    -> Result<Ast::Ptr> {
   auto left_boolean = get_value<Ast::Value::Boolean>(left);
   auto right_boolean = get_value<Ast::Value::Boolean>(right);
   return env->getBooleanAst(Attributes{}, Location{},
@@ -113,7 +107,7 @@ auto binop_boolean_inequality(Ast *left, Ast *right, Environment *env)
 }
 
 auto binop_less_than(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+    -> Result<Ast::Ptr> {
   auto left_integer = get_value<Ast::Value::Integer>(left);
   auto right_integer = get_value<Ast::Value::Integer>(right);
   return env->getBooleanAst(Attributes{}, Location{},
@@ -121,7 +115,7 @@ auto binop_less_than(Ast *left, Ast *right, Environment *env)
 }
 
 auto binop_less_than_or_equal(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+    -> Result<Ast::Ptr> {
   auto left_integer = get_value<Ast::Value::Integer>(left);
   auto right_integer = get_value<Ast::Value::Integer>(right);
   return env->getBooleanAst(Attributes{}, Location{},
@@ -129,7 +123,7 @@ auto binop_less_than_or_equal(Ast *left, Ast *right, Environment *env)
 }
 
 auto binop_greater_than(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+    -> Result<Ast::Ptr> {
   auto left_integer = get_value<Ast::Value::Integer>(left);
   auto right_integer = get_value<Ast::Value::Integer>(right);
   return env->getBooleanAst(Attributes{}, Location{},
@@ -137,7 +131,7 @@ auto binop_greater_than(Ast *left, Ast *right, Environment *env)
 }
 
 auto binop_greater_than_or_equal(Ast *left, Ast *right, Environment *env)
-    -> Result<Ast::Pointer> {
+    -> Result<Ast::Ptr> {
   auto left_integer = get_value<Ast::Value::Integer>(left);
   auto right_integer = get_value<Ast::Value::Integer>(right);
   return env->getBooleanAst(Attributes{}, Location{},
