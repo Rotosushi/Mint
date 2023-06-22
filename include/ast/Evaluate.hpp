@@ -18,6 +18,7 @@
 #include <sstream>
 
 #include "ast/Ast.hpp"
+#include "ast/Clone.hpp"
 #include "ast/Typecheck.hpp"
 
 #include "adt/Environment.hpp"
@@ -58,14 +59,8 @@ public:
     if (!type_result)
       return std::move(type_result.error());
     auto type = type_result.value();
-    /*
-    // #FIXME why do we assert here?
-    auto cached_type = let.term->cached_type();
-    MINT_ASSERT(cached_type.has_value());
-    auto type = cached_type.value();
-    */
 
-    env->bindName(let.id, let.attributes, type, value.value());
+    env->bindName(let.id, let.attributes, type, clone(value.value(), env));
     return env->getNilAst({}, let.location);
   }
 

@@ -29,7 +29,9 @@ auto main(int argc, char **argv) -> int {
 
     options_parser.parse();
 
-    mint::Environment env;
+    std::pmr::polymorphic_allocator<> alloc = std::pmr::new_delete_resource();
+
+    mint::Environment env(&alloc);
 
     return env.repl();
   } catch (const std::exception &e) {

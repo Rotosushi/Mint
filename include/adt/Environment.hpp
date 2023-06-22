@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <iostream>
+#include <memory_resource>
 
 #include "adt/BinopTable.hpp"
 #include "adt/DirectorySearch.hpp"
@@ -28,6 +29,10 @@
 
 namespace mint {
 class Environment {
+public:
+  using Alloc = std::pmr::polymorphic_allocator<>;
+
+private:
   DirectorySearcher directory_searcher;
   IdentifierSet id_interner;
   TypeInterner type_interner;
@@ -46,15 +51,19 @@ class Environment {
   std::istream *in;
   std::ostream *out;
   std::ostream *errout;
+  Alloc *memory_resource;
 
 public:
-  Environment(std::istream *in = &std::cin, std::ostream *out = &std::cout,
+  Environment(Alloc *resource, std::istream *in = &std::cin,
+              std::ostream *out = &std::cout,
               std::ostream *errout = &std::cerr) noexcept
       : global_scope(Scope::createGlobalScope()), local_scope(global_scope),
-        parser(this, in), in(in), out(out), errout(errout) {
+        parser(this, in), in(in), out(out), errout(errout),
+        memory_resource(resource) {
     MINT_ASSERT(in != nullptr);
     MINT_ASSERT(out != nullptr);
     MINT_ASSERT(errout != nullptr);
+    MINT_ASSERT(memory_resource != nullptr);
 
     InitializeBuiltinBinops(this);
     InitializeBuiltinUnops(this);
@@ -166,82 +175,75 @@ public:
 
   auto getTypeAst(Attributes attributes, Location location,
                   mint::Type::Pointer type) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Type>, attributes,
-                                 location, type);
+    return Ast::create<Ast::Type>(*memory_resource, attributes, location, type);
   }
 
-  // eventually all ast's are going to be constructed via custom
-  // allocators. such that an environment can be allocated entirely
-  // within a custom allocator. (Types, Asts, Binops, and Unops
-  // are all considered "part of" a given Environment.)
   auto getModuleAst(Attributes attributes, Location location, Identifier name,
                     std::vector<Ast::Ptr> expressions) noexcept {
-    auto alloc = new Ast(std::in_place_type<Ast::Module>, attributes, location,
-                         name, std::move(expressions));
-    return std::shared_ptr<Ast>(alloc);
+    return Ast::create<Ast::Module>(*memory_resource, attributes, location,
+                                    name, std::move(expressions));
   }
 
   auto getLetAst(Attributes attributes, Location location, Identifier name,
                  Ast::Ptr term) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Let>, attributes,
-                                 location, name, term);
+    return Ast::create<Ast::Let>(*memory_resource, attributes, location, name,
+                                 std::move(term));
   }
 
   auto getImportAst(Attributes attributes, Location location,
                     std::string_view file) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Import>, attributes,
-                                 location, file);
+    return Ast::create<Ast::Import>(*memory_resource, attributes, location,
+                                    file);
   }
 
   auto getBinopAst(Attributes attributes, Location location, Token op,
                    Ast::Ptr left, Ast::Ptr right) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Binop>, attributes,
-                                 location, op, left, right);
+    return Ast::create<Ast::Binop>(*memory_resource, attributes, location, op,
+                                   std::move(left), std::move(right));
   }
 
   auto getUnopAst(Attributes attributes, Location location, Token op,
                   Ast::Ptr right) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Unop>, attributes,
-                                 location, op, right);
+    return Ast::create<Ast::Unop>(*memory_resource, attributes, location, op,
+                                  std::move(right));
   }
 
   auto getTermAst(Attributes attributes, Location location,
                   std::optional<Ast::Ptr> ast) noexcept {
-    auto alloc =
-        new Ast(std::in_place_type<Ast::Term>, attributes, location, ast);
-    return std::shared_ptr<Ast>(alloc);
+    return Ast::create<Ast::Term>(*memory_resource, attributes, location,
+                                  std::move(ast));
   }
 
   auto getParensAst(Attributes attributes, Location location,
                     Ast::Ptr ast) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Parens>, attributes,
-                                 location, ast);
+    return Ast::create<Ast::Parens>(*memory_resource, attributes, location,
+                                    std::move(ast));
   }
 
   auto getVariableAst(Attributes attributes, Location location,
                       Identifier name) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Variable>, attributes,
-                                 location, name);
+    return Ast::create<Ast::Variable>(*memory_resource, attributes, location,
+                                      name);
   }
 
   auto getBooleanAst(Attributes attributes, Location location,
                      bool value) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Value>,
-                                 std::in_place_type<Ast::Value::Boolean>,
-                                 attributes, location, value);
+    return Ast::create<Ast::Value>(*memory_resource,
+                                   std::in_place_type<Ast::Value::Boolean>,
+                                   attributes, location, value);
   }
 
   auto getIntegerAst(Attributes attributes, Location location,
                      int value) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Value>,
-                                 std::in_place_type<Ast::Value::Integer>,
-                                 attributes, location, value);
+    return Ast::create<Ast::Value>(*memory_resource,
+                                   std::in_place_type<Ast::Value::Integer>,
+                                   attributes, location, value);
   }
 
   auto getNilAst(Attributes attributes, Location location) noexcept {
-    return std::make_shared<Ast>(std::in_place_type<Ast::Value>,
-                                 std::in_place_type<Ast::Value::Nil>,
-                                 attributes, location);
+    return Ast::create<Ast::Value>(*memory_resource,
+                                   std::in_place_type<Ast::Value::Nil>,
+                                   attributes, location);
   }
 };
 } // namespace mint

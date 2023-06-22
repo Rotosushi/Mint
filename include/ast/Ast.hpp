@@ -326,26 +326,4 @@ public:
 };
 
 inline constexpr AstLocationVisitor ast_location{};
-
-struct AstValueCloneVisitor {
-public:
-  auto operator()(Ast::Value const &value) const noexcept -> Ast::Ptr {
-    return std::visit(*this, value.data);
-  }
-
-  auto operator()(Ast::Value::Boolean const &boolean) const noexcept
-      -> Ast::Ptr {
-    return;
-  }
-
-  auto operator()(Ast::Value::Integer const &integer) const noexcept
-      -> Ast::Ptr {
-    return;
-  }
-
-  auto operator()(Ast::Value::Nil const &nil) const noexcept -> Ast::Ptr {
-    return;
-  }
-};
-
 } // namespace mint

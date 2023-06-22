@@ -76,7 +76,10 @@ public:
   }
 
   auto operator()(Ast::Let const &let) noexcept -> Result<Type::Pointer> {
-    return std::visit(*this, let.term->data);
+    auto type_result = std::visit(*this, let.term->data);
+    if (!type_result)
+      return type_result;
+    return env->getNilType();
   }
 
   auto operator()(Ast::Module const &m) noexcept -> Result<Type::Pointer> {
