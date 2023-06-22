@@ -52,9 +52,9 @@ the standard library is necessary for a few reasons,
   - it is the place to implement the less fundamental,
     and still essential features of the programming language.
     such as:
-    - memory allocators
     - strings
     - containers
+    - memory allocators
 
 we will decide what to add to the language next, once modules 
 are implemented and tested!

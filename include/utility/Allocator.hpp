@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 1
-#define MINT_GIT_REVISION "3ac6e0e70032ba3f09c1a00d17d36a36b893e559"
-// clang-format on
+#include <memory_resource>
+
+namespace mint {
+using Allocator = std::pmr::polymorphic_allocator<>;
+
+template <class T> using PolyAllocator = std::pmr::polymorphic_allocator<T>;
+} // namespace mint

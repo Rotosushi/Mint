@@ -16,7 +16,6 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <iostream>
-#include <memory_resource>
 
 #include "adt/BinopTable.hpp"
 #include "adt/DirectorySearch.hpp"
@@ -27,23 +26,20 @@
 
 #include "scan/Parser.hpp"
 
+#include "utility/Allocator.hpp"
+
 namespace mint {
 class Environment {
-public:
-  using Alloc = std::pmr::polymorphic_allocator<>;
-
-private:
   DirectorySearcher directory_searcher;
   IdentifierSet id_interner;
   TypeInterner type_interner;
   BinopTable binop_table;
   UnopTable unop_table;
   // #NOTE: since we only have std::weak_ptrs
-  // back up the tree of scopes, in order to
-  // prevent references, we must hold a shared_ptr
-  // to the top of the tree, global_scope. such that
-  // when we traverse to a lower scope, all of the
-  // above scopes stay alive.
+  // back up the tree of scopes, we must hold
+  // a shared_ptr to the top of the tree.
+  // so when we traverse to a new scope,
+  // all of the scopes stay alive.
   std::shared_ptr<Scope> global_scope;
   std::shared_ptr<Scope> local_scope;
   Parser parser;
@@ -51,19 +47,20 @@ private:
   std::istream *in;
   std::ostream *out;
   std::ostream *errout;
-  Alloc *memory_resource;
+  Allocator *resource;
 
 public:
-  Environment(Alloc *resource, std::istream *in = &std::cin,
+  Environment(Allocator &resource, std::istream *in = &std::cin,
               std::ostream *out = &std::cout,
               std::ostream *errout = &std::cerr) noexcept
-      : global_scope(Scope::createGlobalScope()), local_scope(global_scope),
+      : id_interner(resource), binop_table(resource), unop_table(resource),
+        global_scope(Scope::createGlobalScope()), local_scope(global_scope),
         parser(this, in), in(in), out(out), errout(errout),
-        memory_resource(resource) {
+        resource(&resource) {
     MINT_ASSERT(in != nullptr);
     MINT_ASSERT(out != nullptr);
     MINT_ASSERT(errout != nullptr);
-    MINT_ASSERT(memory_resource != nullptr);
+    MINT_ASSERT(resource != nullptr);
 
     InitializeBuiltinBinops(this);
     InitializeBuiltinUnops(this);
@@ -119,12 +116,13 @@ public:
     intended to be called when processing an Ast::Function,
     such that lookup and binding occurs within the local
     scope of the function.
-    note the lack of a scope name, these anonymous scopes
+    note the lack of a scope name, and thus no ability to
+    bind the scope to the current scope. thus anonymous scopes
     are only alive as long as they are the local_scope.
 
     this behavior is okay for functions, but not for
-    modules, as a modules public names need to be available
-    for qualified name lookup
+    modules, as a modules names must be alive for the
+    lifetime of a given program.
   */
   void pushScope() noexcept {
     local_scope = Scope::createScope({}, local_scope);
@@ -145,9 +143,12 @@ public:
     auto new_scope = local_scope->bindScope(name);
     local_scope = new_scope.ptr();
   }
-
+  // called when we fail to create a module, so we
+  // don't partially define a module within the current
+  // namespace.
   void unbindScope(Identifier name) noexcept { local_scope->unbindScope(name); }
 
+  // traverse up the scope tree one level.
   void popScope() noexcept {
     if (local_scope->isGlobal()) {
       return; // cannot traverse past global scope
@@ -175,73 +176,73 @@ public:
 
   auto getTypeAst(Attributes attributes, Location location,
                   mint::Type::Pointer type) noexcept {
-    return Ast::create<Ast::Type>(*memory_resource, attributes, location, type);
+    return Ast::create<Ast::Type>(*resource, attributes, location, type);
   }
 
   auto getModuleAst(Attributes attributes, Location location, Identifier name,
                     std::vector<Ast::Ptr> expressions) noexcept {
-    return Ast::create<Ast::Module>(*memory_resource, attributes, location,
+    return Ast::create<Ast::Module>(*resource, attributes, location,
                                     name, std::move(expressions));
   }
 
   auto getLetAst(Attributes attributes, Location location, Identifier name,
                  Ast::Ptr term) noexcept {
-    return Ast::create<Ast::Let>(*memory_resource, attributes, location, name,
+    return Ast::create<Ast::Let>(*resource, attributes, location, name,
                                  std::move(term));
   }
 
   auto getImportAst(Attributes attributes, Location location,
                     std::string_view file) noexcept {
-    return Ast::create<Ast::Import>(*memory_resource, attributes, location,
+    return Ast::create<Ast::Import>(*resource, attributes, location,
                                     file);
   }
 
   auto getBinopAst(Attributes attributes, Location location, Token op,
                    Ast::Ptr left, Ast::Ptr right) noexcept {
-    return Ast::create<Ast::Binop>(*memory_resource, attributes, location, op,
+    return Ast::create<Ast::Binop>(*resource, attributes, location, op,
                                    std::move(left), std::move(right));
   }
 
   auto getUnopAst(Attributes attributes, Location location, Token op,
                   Ast::Ptr right) noexcept {
-    return Ast::create<Ast::Unop>(*memory_resource, attributes, location, op,
+    return Ast::create<Ast::Unop>(*resource, attributes, location, op,
                                   std::move(right));
   }
 
   auto getTermAst(Attributes attributes, Location location,
                   std::optional<Ast::Ptr> ast) noexcept {
-    return Ast::create<Ast::Term>(*memory_resource, attributes, location,
+    return Ast::create<Ast::Term>(*resource, attributes, location,
                                   std::move(ast));
   }
 
   auto getParensAst(Attributes attributes, Location location,
                     Ast::Ptr ast) noexcept {
-    return Ast::create<Ast::Parens>(*memory_resource, attributes, location,
+    return Ast::create<Ast::Parens>(*resource, attributes, location,
                                     std::move(ast));
   }
 
   auto getVariableAst(Attributes attributes, Location location,
                       Identifier name) noexcept {
-    return Ast::create<Ast::Variable>(*memory_resource, attributes, location,
+    return Ast::create<Ast::Variable>(*resource, attributes, location,
                                       name);
   }
 
   auto getBooleanAst(Attributes attributes, Location location,
                      bool value) noexcept {
-    return Ast::create<Ast::Value>(*memory_resource,
+    return Ast::create<Ast::Value>(*resource,
                                    std::in_place_type<Ast::Value::Boolean>,
                                    attributes, location, value);
   }
 
   auto getIntegerAst(Attributes attributes, Location location,
                      int value) noexcept {
-    return Ast::create<Ast::Value>(*memory_resource,
+    return Ast::create<Ast::Value>(*resource,
                                    std::in_place_type<Ast::Value::Integer>,
                                    attributes, location, value);
   }
 
   auto getNilAst(Attributes attributes, Location location) noexcept {
-    return Ast::create<Ast::Value>(*memory_resource,
+    return Ast::create<Ast::Value>(*resource,
                                    std::in_place_type<Ast::Value::Nil>,
                                    attributes, location);
   }

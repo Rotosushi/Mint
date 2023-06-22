@@ -23,6 +23,8 @@
 
 #include "error/Error.hpp"
 
+#include "utility/Allocator.hpp"
+
 namespace mint {
 class Environment;
 
@@ -39,9 +41,13 @@ struct UnopOverload {
 };
 
 class UnopOverloads {
-  std::vector<UnopOverload> overloads;
+  std::vector<UnopOverload, PolyAllocator<UnopOverload>> overloads;
 
 public:
+  UnopOverloads(Allocator &allocator) noexcept : overloads(allocator) {
+    overloads.reserve(2);
+  }
+
   auto lookup(Type::Pointer right_type) noexcept
       -> std::optional<UnopOverload> {
     for (auto &overload : overloads) {
@@ -67,7 +73,9 @@ class UnopTable {
 public:
   using Key = Token;
   using Value = UnopOverloads;
-  using Table = std::unordered_map<Key, Value>;
+  using Pair = std::pair<const Key, Value>;
+  using Table = std::unordered_map<Key, Value, std::hash<Key>,
+                                   std::equal_to<Key>, PolyAllocator<Pair>>;
 
   class Unop {
     Table::iterator iter;
@@ -87,9 +95,13 @@ public:
   };
 
 private:
+  Allocator *allocator;
   Table table;
 
 public:
+  UnopTable(Allocator &allocator) noexcept
+      : allocator(&allocator), table(PolyAllocator(allocator)) {}
+
   auto lookup(Token op) noexcept -> std::optional<Unop> {
     auto found = table.find(op);
     if (found != table.end()) {
@@ -104,7 +116,7 @@ public:
       return found;
     }
 
-    return table.emplace(op, UnopOverloads{}).first;
+    return table.emplace(op, UnopOverloads{*allocator}).first;
   }
 };
 

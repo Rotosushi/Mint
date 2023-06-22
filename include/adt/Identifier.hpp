@@ -19,6 +19,7 @@
 #include <string>
 #include <unordered_set>
 
+#include "utility/Allocator.hpp"
 #include "utility/Assert.hpp"
 
 namespace mint {
@@ -26,9 +27,13 @@ class Identifier;
 
 class IdentifierSet {
 private:
-  std::unordered_set<std::string> set;
+  std::unordered_set<std::string, std::hash<std::string>,
+                     std::equal_to<std::string>, PolyAllocator<std::string>>
+      set;
 
 public:
+  IdentifierSet(Allocator &allocator) noexcept : set(allocator) {}
+
   template <class... Args>
   [[nodiscard]] auto emplace(Args &&...args) noexcept -> Identifier;
 };
@@ -66,7 +71,7 @@ public:
   operator std::string_view() const noexcept { return data; }
   auto view() const noexcept -> std::string_view { return data; }
   auto empty() const noexcept -> bool { return data.empty(); }
-  //auto get(std::string_view data) noexcept -> Identifier;
+  // auto get(std::string_view data) noexcept -> Identifier;
 
   /*
   does this identifier begin with a scope?
