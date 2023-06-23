@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <expected>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -121,31 +120,4 @@ inline auto operator<<(std::ostream &out, Error &error) -> std::ostream & {
   error.print(out);
   return out;
 }
-// TODO: factor Result into it's own file
-template <class T> class Result {
-  std::expected<T, Error> data;
-
-public:
-  Result(T t) noexcept : data(std::move(t)) {}
-  Result(Error e) noexcept : data(std::unexpect, std::move(e)) {}
-  Result(Error::Kind kind) noexcept : data(std::unexpect, kind) {}
-  Result(Error::Kind kind, Location location, std::string_view message) noexcept
-      : data(std::unexpect, kind, location, message) {}
-
-  operator bool() const noexcept { return data.has_value(); }
-
-  [[nodiscard]] auto has_value() const noexcept -> bool {
-    return data.has_value();
-  }
-
-  [[nodiscard]] auto value() noexcept -> T & {
-    MINT_ASSERT(data.has_value());
-    return data.value();
-  }
-  [[nodiscard]] auto error() noexcept -> Error & {
-    MINT_ASSERT(!data.has_value());
-    return data.error();
-  }
-};
-
 } // namespace mint

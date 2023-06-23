@@ -17,24 +17,19 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "adt/Environment.hpp"
 #include "utility/Assert.hpp"
 #include "utility/FatalError.hpp"
 #include "utility/OptionsParser.hpp"
 
-#include "adt/Environment.hpp"
-
 auto main(int argc, char **argv) -> int {
-  try {
-    mint::OptionsParser options_parser{argc, argv};
+  mint::OptionsParser options_parser{argc, argv};
 
-    options_parser.parse();
+  options_parser.parse();
 
-    std::pmr::polymorphic_allocator<> alloc = std::pmr::new_delete_resource();
+  std::pmr::polymorphic_allocator<> alloc = std::pmr::new_delete_resource();
 
-    mint::Environment env(alloc);
+  mint::Environment env(alloc);
 
-    return env.repl();
-  } catch (const std::exception &e) {
-    mint::fatalError(e.what());
-  }
+  return env.repl();
 }

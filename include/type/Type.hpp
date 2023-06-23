@@ -18,8 +18,6 @@
 #include <variant> // std::variant
 #include <vector>  // std::vector
 
-#include "utility/Assert.hpp" // MINT_ASSERT
-
 namespace mint {
 /*
   \todo if we can somehow make it so the only

@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/Environment.hpp"
-
 #include "ast/Evaluate.hpp"
 #include "ast/Print.hpp"
 #include "ast/Typecheck.hpp"
@@ -32,7 +31,7 @@ auto Environment::repl() noexcept -> int {
       auto &error = parse_result.error();
       if (error.getKind() == Error::EndOfInput)
         break;
-        
+
       printErrorWithSource(error);
       continue;
     }

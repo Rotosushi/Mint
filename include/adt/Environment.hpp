@@ -17,15 +17,19 @@
 #pragma once
 #include <iostream>
 
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/InlineAsm.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/Target/TargetMachine.h"
+
 #include "adt/BinopTable.hpp"
 #include "adt/DirectorySearch.hpp"
 #include "adt/Identifier.hpp"
 #include "adt/Scope.hpp"
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
-
 #include "scan/Parser.hpp"
-
 #include "utility/Allocator.hpp"
 
 namespace mint {

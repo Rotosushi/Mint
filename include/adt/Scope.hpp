@@ -20,10 +20,8 @@
 #include <unordered_map>
 
 #include "adt/Attributes.hpp"
-
 #include "ast/Ast.hpp"
-
-#include "error/Error.hpp"
+#include "error/Result.hpp"
 /*
   #TODO:
     ) implement a field in bindings to

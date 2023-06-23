@@ -16,11 +16,9 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <istream>
-// #include <stack>
-// #include <vector>
 
 #include "ast/Ast.hpp"
-#include "error/Error.hpp"
+#include "error/Result.hpp"
 #include "scan/Scanner.hpp"
 
 /*

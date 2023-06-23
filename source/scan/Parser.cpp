@@ -15,10 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "scan/Parser.hpp"
-
-#include "utility/NumbersRoundTrip.hpp"
-
 #include "adt/Environment.hpp"
+#include "utility/NumbersRoundTrip.hpp"
 
 namespace mint {
 

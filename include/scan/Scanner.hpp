@@ -61,7 +61,7 @@ public:
   }
 
   auto view() const noexcept -> std::string_view {
-    return {buffer.begin(), buffer.end()};
+    return {buffer.c_str(), buffer.length() + 1};
   }
 
   void reset() noexcept {

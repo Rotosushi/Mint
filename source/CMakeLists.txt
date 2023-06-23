@@ -12,7 +12,6 @@ add_custom_command(
   COMMENT "Generating ${output}"
 )
 endfunction()
-
 re2c_generate_scanner(
   ${MINT_SOURCE_DIR}/scan/Scanner.re
   ${MINT_SOURCE_DIR}/scan/Scanner.cpp
@@ -42,6 +41,7 @@ add_library(mint_common STATIC
 
   ${MINT_INCLUDE_DIR}/error/Error.hpp
   ${MINT_SOURCE_DIR}/error/Error.cpp
+  ${MINT_INCLUDE_DIR}/error/Result.hpp
 
   ${MINT_INCLUDE_DIR}/scan/Token.hpp
   ${MINT_INCLUDE_DIR}/scan/Location.hpp
@@ -50,6 +50,7 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/scan/Scanner.hpp
   ${MINT_SOURCE_DIR}/scan/Scanner.cpp
 
+  ${MINT_INCLUDE_DIR}/type/Equals.hpp
   ${MINT_INCLUDE_DIR}/type/Print.hpp
   ${MINT_INCLUDE_DIR}/type/Type.hpp 
 
@@ -61,18 +62,38 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/utility/NumbersRoundTrip.hpp
   ${MINT_INCLUDE_DIR}/utility/OptionsParser.hpp
 )
-
+set_property(
+  TARGET mint_common 
+  APPEND 
+  PROPERTY ADDITIONAL_CLEAN_FILES ${MINT_SOURCE_DIR}/scan/Scanner.cpp 
+)
+target_include_directories(mint_common PUBLIC ../include ${LLVM_INCLUDE_DIRS})
 target_compile_options(mint_common PUBLIC ${CXX_OPTIONS})
 target_compile_features(mint_common PUBLIC cxx_std_23)
-target_include_directories(mint_common PUBLIC ../include)
+target_link_options(mint_common PUBLIC 
+  ${LLVM_LDFLAGS} 
+  ${LLVM_LIBS} 
+  ${LLVM_SYSLIBS}
+)
+target_link_directories(mint_common PUBLIC ${LLVM_LIBRARY_DIRS})
+target_link_libraries(mint_common
+  ${LLVM_LIBRARY_DIRS}/liblldCommon.a
+  ${LLVM_LIBRARY_DIRS}/liblldELF.a
+)
+
 
 add_executable(mint main.cpp)
+target_include_directories(mint PUBLIC ../include ${LLVM_INCLUDE_DIRS})
 target_compile_options(mint PUBLIC ${CXX_OPTIONS})
 target_compile_features(mint PUBLIC cxx_std_23)
-target_include_directories(mint PUBLIC ../include)
-
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_definitions(mint PUBLIC MINT_DEBUG)
-endif()
-
-target_link_libraries(mint mint_common)
+target_link_options(mint PUBLIC 
+  ${LLVM_LDFLAGS} 
+  ${LLVM_LIBS} 
+  ${LLVM_SYSLIBS}
+)
+target_link_directories(mint PUBLIC ${LLVM_LIBRARY_DIRS})
+target_link_libraries(mint 
+  mint_common
+  ${LLVM_LIBRARY_DIRS}/liblldCommon.a
+  ${LLVM_LIBRARY_DIRS}/liblldELF.a
+)

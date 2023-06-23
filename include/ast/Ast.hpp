@@ -21,10 +21,8 @@
 
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
-
 #include "scan/Location.hpp"
 #include "scan/Token.hpp"
-
 #include "type/Type.hpp"
 
 namespace mint {

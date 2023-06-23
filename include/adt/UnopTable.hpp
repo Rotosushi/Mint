@@ -20,9 +20,7 @@
 #include <vector>
 
 #include "ast/Ast.hpp"
-
-#include "error/Error.hpp"
-
+#include "error/Result.hpp"
 #include "utility/Allocator.hpp"
 
 namespace mint {

@@ -20,9 +20,7 @@
 #include <vector>
 
 #include "ast/Ast.hpp"
-
-#include "error/Error.hpp"
-
+#include "error/Result.hpp"
 #include "utility/Allocator.hpp"
 
 namespace mint {
@@ -81,9 +79,8 @@ public:
   using Key = Token;
   using Value = BinopOverloads;
   using Pair = std::pair<const Key, Value>;
-  using Table =
-      std::unordered_map<Key, Value, std::hash<Key>, std::equal_to<Key>,
-                         PolyAllocator<Pair>>;
+  using Table = std::unordered_map<Key, Value, std::hash<Key>,
+                                   std::equal_to<Key>, PolyAllocator<Pair>>;
 
   class Binop {
     Table::iterator iter;

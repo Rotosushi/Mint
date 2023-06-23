@@ -17,14 +17,11 @@
 #pragma once
 #include <sstream>
 
+#include "adt/Environment.hpp"
 #include "ast/Ast.hpp"
-
+#include "error/Result.hpp"
 #include "type/Equals.hpp"
 #include "type/Print.hpp"
-
-#include "adt/Environment.hpp"
-
-#include "error/Error.hpp"
 
 namespace mint {
 class AstValueTypecheckVisitor {

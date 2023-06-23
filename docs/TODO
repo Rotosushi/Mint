@@ -26,38 +26,20 @@ two is to have something to play around with.
 for point one, I am currently interested in:
 memory allocators,
 compile time evaluation,
-modules,
-namespaces,
+compiling a source file,
 use-before-definition,
 lambdas,
 algebraic data types (and/or tagged unions and structs/tuples),
 pattern matching,
 macros,
-embedding the language interpreter itself into executables as a 
-scripting language, i.e. the language is c and lua.
-at comptime the compiler can interpret nearly all expressions,
+embedding the language interpreter itself into executables as a scripting language.
+at comptime the compiler interprets nearly all expressions,
 (other than runtime dependent expressions)
 and then from the interpreted input an executable is generated.
 
+needs testing:
+  Modules,
 
-
-in accomplishing any of these features I have some ideas,
-
-I think tackling modules first seems like a smart move.
-due to their foundational nature to the kind of code you 
-can write in the language, and because they is the basis 
-of writing a standard library.
-the standard library is necessary for a few reasons,
-  - it is a code-base written in the language
-  - it is the place to implement the less fundamental,
-    and still essential features of the programming language.
-    such as:
-    - strings
-    - containers
-    - memory allocators
-
-we will decide what to add to the language next, once modules 
-are implemented and tested!
 
 
 crazy ideas:
