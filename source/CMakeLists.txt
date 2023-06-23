@@ -54,10 +54,10 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/type/Print.hpp
   ${MINT_INCLUDE_DIR}/type/Type.hpp 
 
+  ${MINT_INCLUDE_DIR}/utility/Abort.hpp
   ${MINT_INCLUDE_DIR}/utility/Allocator.hpp 
   ${MINT_INCLUDE_DIR}/utility/Assert.hpp
   ${MINT_INCLUDE_DIR}/utility/Config.hpp
-  ${MINT_INCLUDE_DIR}/utility/FatalError.hpp
   ${MINT_INCLUDE_DIR}/utility/Log.hpp 
   ${MINT_INCLUDE_DIR}/utility/NumbersRoundTrip.hpp
   ${MINT_INCLUDE_DIR}/utility/OptionsParser.hpp
@@ -67,33 +67,31 @@ set_property(
   APPEND 
   PROPERTY ADDITIONAL_CLEAN_FILES ${MINT_SOURCE_DIR}/scan/Scanner.cpp 
 )
-target_include_directories(mint_common PUBLIC ../include ${LLVM_INCLUDE_DIRS})
-target_compile_options(mint_common PUBLIC ${CXX_OPTIONS})
+target_include_directories(mint_common PUBLIC ${MINT_INCLUDE_DIR} ${LLVM_INCLUDE_DIRS})
+target_compile_options(mint_common PUBLIC ${CXX_OPTIONS} ${llvm_cxxflags})
 target_compile_features(mint_common PUBLIC cxx_std_23)
 target_link_options(mint_common PUBLIC 
-  ${LLVM_LDFLAGS} 
-  ${LLVM_LIBS} 
-  ${LLVM_SYSLIBS}
+  ${llvm_ldflags} 
+  ${llvm_system_libs}
 )
-target_link_directories(mint_common PUBLIC ${LLVM_LIBRARY_DIRS})
 target_link_libraries(mint_common
+  ${llvm_libs}
   ${LLVM_LIBRARY_DIRS}/liblldCommon.a
   ${LLVM_LIBRARY_DIRS}/liblldELF.a
 )
 
 
 add_executable(mint main.cpp)
-target_include_directories(mint PUBLIC ../include ${LLVM_INCLUDE_DIRS})
-target_compile_options(mint PUBLIC ${CXX_OPTIONS})
+target_include_directories(mint PUBLIC ${MINT_INCLUDE_DIR} ${LLVM_INCLUDE_DIRS})
+target_compile_options(mint PUBLIC ${CXX_OPTIONS} ${llvm_cxxflags})
 target_compile_features(mint PUBLIC cxx_std_23)
 target_link_options(mint PUBLIC 
-  ${LLVM_LDFLAGS} 
-  ${LLVM_LIBS} 
-  ${LLVM_SYSLIBS}
+  ${llvm_ldflags} 
+  ${llvm_system_libs}
 )
-target_link_directories(mint PUBLIC ${LLVM_LIBRARY_DIRS})
 target_link_libraries(mint 
   mint_common
+  ${llvm_libs}
   ${LLVM_LIBRARY_DIRS}/liblldCommon.a
   ${LLVM_LIBRARY_DIRS}/liblldELF.a
 )

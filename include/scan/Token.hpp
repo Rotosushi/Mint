@@ -17,7 +17,7 @@
 #pragma once
 #include <string_view>
 
-#include "utility/FatalError.hpp"
+#include "utility/Abort.hpp"
 
 namespace mint {
 enum struct Token : int {
@@ -259,7 +259,7 @@ inline auto toString(Token token) noexcept -> std::string_view {
     return "Token::String";
 
   default:
-    fatalError("Unknown Token");
+    abort("Unknown Token");
     break;
   }
 }

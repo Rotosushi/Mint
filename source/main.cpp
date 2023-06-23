@@ -18,18 +18,23 @@
 #include <iostream>
 
 #include "adt/Environment.hpp"
-#include "utility/Assert.hpp"
-#include "utility/FatalError.hpp"
 #include "utility/OptionsParser.hpp"
 
-auto main(int argc, char **argv) -> int {
-  mint::OptionsParser options_parser{argc, argv};
+#include "llvm/Support/InitLLVM.h"
+#include "llvm/Support/TargetSelect.h"
 
+auto main(int argc, char **argv) -> int {
+  llvm::InitLLVM llvm{argc, argv};
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmParser();
+  llvm::InitializeNativeTargetAsmPrinter();
+  llvm::InitializeNativeTargetDisassembler();
+
+  mint::OptionsParser options_parser{argc, argv};
   options_parser.parse();
 
   std::pmr::polymorphic_allocator<> alloc = std::pmr::new_delete_resource();
-
-  mint::Environment env(alloc);
+  mint::Environment env = mint::Environment::create(alloc);
 
   return env.repl();
 }

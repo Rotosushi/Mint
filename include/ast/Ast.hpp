@@ -238,79 +238,73 @@ template <typename T> auto get_value(Ast const *ast) -> T const * {
 
 class AstValueLocationVisitor {
 public:
-  constexpr auto operator()(Ast::Value const &value) const noexcept
-      -> Location {
+  auto operator()(Ast::Value const &value) const noexcept -> Location {
     return std::visit(*this, value.data);
   }
 
-  constexpr auto operator()(Ast::Value::Boolean const &boolean) const noexcept
+  auto operator()(Ast::Value::Boolean const &boolean) const noexcept
       -> Location {
     return boolean.location;
   }
 
-  constexpr auto operator()(Ast::Value::Integer const &integer) const noexcept
+  auto operator()(Ast::Value::Integer const &integer) const noexcept
       -> Location {
     return integer.location;
   }
 
-  constexpr auto operator()(Ast::Value::Nil const &nil) const noexcept
-      -> Location {
+  auto operator()(Ast::Value::Nil const &nil) const noexcept -> Location {
     return nil.location;
   }
 };
 
-inline constexpr AstValueLocationVisitor ast_value_location{};
+inline AstValueLocationVisitor ast_value_location{};
 
 class AstLocationVisitor {
 public:
-  constexpr auto operator()(Ast::Ptr const &ast) const noexcept -> Location {
+  auto operator()(Ast::Ptr const &ast) const noexcept -> Location {
     return std::visit(*this, ast->data);
   }
 
-  constexpr auto operator()(Ast const &ast) const noexcept -> Location {
+  auto operator()(Ast const &ast) const noexcept -> Location {
     return std::visit(*this, ast.data);
   }
 
-  constexpr auto operator()(Ast::Let const &let) const noexcept -> Location {
+  auto operator()(Ast::Let const &let) const noexcept -> Location {
     return let.location;
   }
 
-  constexpr auto operator()(Ast::Module const &m) const noexcept -> Location {
+  auto operator()(Ast::Module const &m) const noexcept -> Location {
     return m.location;
   }
 
-  constexpr auto operator()(Ast::Import const &i) const noexcept -> Location {
+  auto operator()(Ast::Import const &i) const noexcept -> Location {
     return i.location;
   }
 
-  constexpr auto operator()(Ast::Binop const &binop) const noexcept
-      -> Location {
+  auto operator()(Ast::Binop const &binop) const noexcept -> Location {
     return binop.location;
   }
 
-  constexpr auto operator()(Ast::Unop const &unop) const noexcept -> Location {
+  auto operator()(Ast::Unop const &unop) const noexcept -> Location {
     return unop.location;
   }
 
-  constexpr auto operator()(Ast::Term const &term) const noexcept -> Location {
+  auto operator()(Ast::Term const &term) const noexcept -> Location {
     return term.location;
   }
 
-  constexpr auto operator()(Ast::Parens const &parens) const noexcept
-      -> Location {
+  auto operator()(Ast::Parens const &parens) const noexcept -> Location {
     return parens.location;
   }
 
-  constexpr auto operator()(Ast::Variable const &variable) const noexcept
-      -> Location {
+  auto operator()(Ast::Variable const &variable) const noexcept -> Location {
     return variable.location;
   }
 
-  constexpr auto operator()(Ast::Value const &value) const noexcept
-      -> Location {
+  auto operator()(Ast::Value const &value) const noexcept -> Location {
     return ast_value_location(value);
   }
 };
 
-inline constexpr AstLocationVisitor ast_location{};
+inline AstLocationVisitor ast_location{};
 } // namespace mint

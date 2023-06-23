@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "error/Error.hpp"
-#include "utility/FatalError.hpp"
+#include "utility/Abort.hpp"
 
 namespace mint {
 auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
@@ -70,7 +70,7 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
     return "Binop argument types mismatch";
 
   default:
-    fatalError("Unknown Error::Kind");
+    abort("Unknown Error::Kind");
   }
 }
 } // namespace mint

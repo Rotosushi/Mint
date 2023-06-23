@@ -22,19 +22,27 @@
 
 namespace mint {
 [[noreturn]] inline void
-fatalError(std::string_view message,
-           std::source_location location =
-               std::source_location::current()) noexcept(true) {
+abort(std::string_view message,
+      std::source_location location =
+          std::source_location::current()) noexcept(true) {
   log(std::cerr, message, location);
-  // if we are in a debug build, emit a breakpoint instruction here
-  MINT_ASSERT(false && "fatalError");
+  // if we are in a debug build,
+  // emit a breakpoint instruction.
+  // for debugging convenience
+  MINT_ASSERT(false && "abort");
 
-  std::exit(EXIT_FAILURE);
+  std::abort();
 }
 
-[[noreturn]] inline void fatalError(
+[[noreturn]] inline void abort(
     std::error_code error_code,
     std::source_location location = std::source_location::current()) noexcept {
-  fatalError(error_code.message(), location);
+  abort(error_code.message(), location);
+}
+
+[[noreturn]] inline void abort(
+    std::errc ec,
+    std::source_location location = std::source_location::current()) noexcept {
+  abort(std::make_error_code(ec), location);
 }
 } // namespace mint

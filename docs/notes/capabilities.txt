@@ -15,8 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 
+-) Core 
+  Definitions) 
+    Let 
+    Module, Import
 
+  Expressions) 
+    Variable
+    Binops 
+    Unops
 
-
-
-
+  Types) 
+    Nil 
+    Boolean
+    Integer 
+  
+  Values) 
+    nil
+    true, false
+    [0-9]+

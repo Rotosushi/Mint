@@ -19,7 +19,7 @@
 #include <optional>
 #include <vector>
 
-#include "utility/FatalError.hpp"
+#include "utility/Abort.hpp"
 
 namespace fs = std::filesystem;
 
@@ -35,7 +35,7 @@ class DirectorySearcher {
     std::error_code ec;
     auto result = fs::exists(path, ec);
     if (ec != std::error_code{}) {
-      fatalError(ec);
+      abort(ec);
     }
     return result;
   };

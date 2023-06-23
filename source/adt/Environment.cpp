@@ -19,7 +19,80 @@
 #include "ast/Print.hpp"
 #include "ast/Typecheck.hpp"
 
+#include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/MC/TargetRegistry.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/TargetSelect.h"
+
 namespace mint {
+[[nodiscard]] auto Environment::nativeCPUFeatures() noexcept -> std::string {
+  std::string features;
+  llvm::StringMap<bool> map;
+
+  if (llvm::sys::getHostCPUFeatures(map)) {
+    auto cursor = map.begin();
+    auto end = map.end();
+    auto length = map.getNumItems();
+    auto index = 0U;
+
+    while (cursor != end) {
+      if (cursor->getValue()) {
+        features += "+";
+      } else {
+        features += "-";
+      }
+
+      features += cursor->getKeyData();
+
+      if (index < (length - 1)) {
+        features += ",";
+      }
+
+      ++cursor;
+      ++index;
+    }
+  }
+
+  return features;
+}
+
+[[nodiscard]] auto Environment::create(Allocator &resource, std::istream *in,
+                                       std::ostream *out,
+                                       std::ostream *errout) noexcept
+    -> Environment {
+  auto context = std::make_unique<llvm::LLVMContext>();
+  auto target_triple = llvm::sys::getProcessTriple();
+
+  std::string error_message;
+  auto target =
+      llvm::TargetRegistry::lookupTarget(target_triple, error_message);
+  if (target == nullptr) {
+    abort(error_message);
+  }
+
+  auto target_machine = target->createTargetMachine(
+      target_triple, llvm::sys::getHostCPUName(), nativeCPUFeatures(),
+      llvm::TargetOptions{}, llvm::Reloc::Model::PIC_,
+      llvm::CodeModel::Model::Small);
+
+  auto data_layout = target_machine->createDataLayout();
+  auto ir_builder = std::make_unique<llvm::IRBuilder<>>(*context);
+  auto llvm_module = std::make_unique<llvm::Module>("", *context);
+  llvm_module->setDataLayout(data_layout);
+  llvm_module->setTargetTriple(target_triple);
+
+  return Environment{resource,
+                     in,
+                     out,
+                     errout,
+                     std::move(context),
+                     std::move(llvm_module),
+                     std::move(ir_builder),
+                     target_machine};
+}
+
 auto Environment::repl() noexcept -> int {
   bool run = true;
 

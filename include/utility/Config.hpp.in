@@ -20,4 +20,5 @@
 #define MINT_VERSION_MINOR @Mint_VERSION_MINOR@
 #define MINT_VERSION_PATCH @Mint_VERSION_PATCH@
 #define MINT_GIT_REVISION "@Mint_GIT_REVISION@"
+#cmakedefine01 MINT_DEBUG
 // clang-format on

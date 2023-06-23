@@ -53,21 +53,44 @@ class Environment {
   std::ostream *errout;
   Allocator *resource;
 
-public:
-  Environment(Allocator &resource, std::istream *in = &std::cin,
-              std::ostream *out = &std::cout,
-              std::ostream *errout = &std::cerr) noexcept
+  std::unique_ptr<llvm::LLVMContext> llvm_context;
+  std::unique_ptr<llvm::Module> llvm_module;
+  std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder;
+  llvm::TargetMachine *llvm_target_machine;
+  llvm::Function *current_llvm_function;
+
+  Environment(Allocator &resource, std::istream *in, std::ostream *out,
+              std::ostream *errout,
+              std::unique_ptr<llvm::LLVMContext> llvm_context,
+              std::unique_ptr<llvm::Module> llvm_module,
+              std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder,
+              llvm::TargetMachine *llvm_target_machine) noexcept
       : id_interner(resource), binop_table(resource), unop_table(resource),
         global_scope(Scope::createGlobalScope()), local_scope(global_scope),
-        parser(this, in), in(in), out(out), errout(errout),
-        resource(&resource) {
+        parser(this, in), in(in), out(out), errout(errout), resource(&resource),
+        llvm_context(std::move(llvm_context)),
+        llvm_module(std::move(llvm_module)),
+        llvm_ir_builder(std::move(llvm_ir_builder)),
+        llvm_target_machine(llvm_target_machine),
+        current_llvm_function(nullptr) {
     MINT_ASSERT(in != nullptr);
     MINT_ASSERT(out != nullptr);
     MINT_ASSERT(errout != nullptr);
 
+    MINT_ASSERT(llvm_target_machine != nullptr);
+
     InitializeBuiltinBinops(this);
     InitializeBuiltinUnops(this);
   }
+
+public:
+  [[nodiscard]] static auto nativeCPUFeatures() noexcept -> std::string;
+
+  [[nodiscard]] static auto create(Allocator &resource,
+                                   std::istream *in = &std::cin,
+                                   std::ostream *out = &std::cout,
+                                   std::ostream *errout = &std::cerr) noexcept
+      -> Environment;
 
   auto repl() noexcept -> int;
 

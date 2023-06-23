@@ -23,6 +23,9 @@ namespace mint {
   to give the newly constructed result Ast.
   ) steal the attributes and location of one of the parameters
   ) default construct Location and Attributes.
+
+  for now we default construct, and this is because these are
+  new values being created
 */
 
 auto binop_add(Ast *left, Ast *right, Environment *env) -> Result<Ast::Ptr> {
