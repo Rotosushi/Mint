@@ -42,7 +42,7 @@ public:
     ExpectedAClosingParen,
     ExpectedABeginBrace,
     ExpectedAEndBrace,
-    ExpectedAString,
+    ExpectedText,
 
     // typecheck errors
     FileNotFound,

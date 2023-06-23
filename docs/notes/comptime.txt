@@ -20,14 +20,35 @@
 
 so, what can be done at compile time, and what cannot?
 
-in general it is possible to interpret any information which 
-is known at compile time.
+In general it is possible to interpret any information which 
+is known at compile time. And Definitions must be made available 
+to the runtime, for the runtime to make any sense at all.
 
-Possible:
+Comptime:
+  Definitions
+    Let 
+    Module, Import 
+
+  Expressions 
+    Variables
+    Binops 
+    Unops
+
+  Types 
+    Nil 
+    Boolean 
+    Integer
+
+  Values 
+    nil 
+    true, false 
+    [0-9]+
+
+Runtime:
+  Definitions 
+    Let 
+    Module, Import
+
   
-
-
-Impossible:
-
 
 

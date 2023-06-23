@@ -171,11 +171,11 @@ auto Parser::parseImport() noexcept -> Result<Ast::Ptr> {
   MINT_ASSERT(peek(Token::Import));
   next(); // eat "import"
 
-  if (!peek(Token::String)) {
-    return handle_error(Error::ExpectedAString);
+  if (!peek(Token::Text)) {
+    return handle_error(Error::ExpectedText);
   }
 
-  auto file = env->getString(text());
+  auto file = env->getText(text());
   next(); // eat string
 
   if (!expect(Token::Semicolon)) {

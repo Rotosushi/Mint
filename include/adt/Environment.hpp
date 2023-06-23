@@ -113,11 +113,11 @@ public:
     error.print(*errout, bad_source);
   }
 
-  auto getString(std::string_view string) noexcept -> std::string_view {
+  auto getText(std::string_view string) noexcept -> std::string_view {
     auto cursor = std::next(string.begin());
     auto end = std::prev(string.end());
 
-    // #TODO: replace escape sequences with character literals here.
+    // #TODO: when do we replace escape sequences with character literals?
 
     return {cursor, static_cast<std::size_t>(std::distance(cursor, end))};
   }

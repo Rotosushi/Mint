@@ -46,8 +46,8 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
     return "Expected a '{'";
   case Error::ExpectedAEndBrace:
     return "Expected a '}'";
-  case Error::ExpectedAString:
-    return "Expected a string [\"...\"]";
+  case Error::ExpectedText:
+    return "Expected text [\"...\"]";
 
   case Error::FileNotFound:
     return "File not found";

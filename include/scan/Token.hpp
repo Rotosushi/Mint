@@ -71,7 +71,7 @@ enum struct Token : int {
   // regular-expressions
   Identifier,
   Integer,
-  String,
+  Text,
 };
 
 using BinopPrecedence = int8_t;
@@ -255,8 +255,8 @@ inline auto toString(Token token) noexcept -> std::string_view {
     return "Token::Identifier";
   case Token::Integer:
     return "Token::Integer";
-  case Token::String:
-    return "Token::String";
+  case Token::Text:
+    return "Token::Text";
 
   default:
     abort("Unknown Token");
