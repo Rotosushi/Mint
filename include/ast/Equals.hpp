@@ -88,14 +88,6 @@ struct AstEqualsVisitor {
 
   auto operator()() noexcept -> bool { return std::visit(*this, left->data); }
 
-  auto operator()(Ast::Type const &left_type) noexcept -> bool {
-    auto right_type = std::get_if<Ast::Type>(&right->data);
-    if (right_type == nullptr)
-      return false;
-
-    return equals(left_type.type, right_type->type);
-  }
-
   auto operator()(Ast::Let const &left_let) noexcept -> bool {
     auto right_let = std::get_if<Ast::Let>(&right->data);
     if (right_let == nullptr)

@@ -24,11 +24,6 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
   case Error::EndOfInput:
     return "End of input";
 
-  case Error::FileNotFound:
-    return "File not found";
-  case Error::ImportFailed:
-    return "Import failed";
-
   case Error::UnknownToken:
     return "Unknown Token";
   case Error::UnknownBinop:
@@ -38,6 +33,8 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
     return "Expected a basic term [nil, true, false, [0-9]+, ...]";
   case Error::ExpectedADeclaration:
     return "Expected a declaration [module, let]";
+  case Error::ExpectedAType:
+    return "Expected a type [Nil, Boolean, Integer]";
   case Error::ExpectedAnEquals:
     return "Expected a '='";
   case Error::ExpectedASemicolon:
@@ -52,6 +49,14 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
     return "Expected a '}'";
   case Error::ExpectedAString:
     return "Expected a string [\"...\"]";
+
+  case Error::FileNotFound:
+    return "File not found";
+  case Error::ImportFailed:
+    return "Import failed";
+
+  case Error::LetTypeMismatch:
+    return "Bound type does not equal type annotation";
 
   case Error::NameUnboundInScope:
     return "Name not bound in scope";

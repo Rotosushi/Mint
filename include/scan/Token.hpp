@@ -36,6 +36,7 @@ enum struct Token : int {
   // symbols
   Equal,
   Semicolon,
+  Colon,
   BeginParen,
   EndParen,
   BeginBrace,
@@ -196,6 +197,8 @@ inline auto toString(Token token) noexcept -> std::string_view {
     return "=";
   case Token::Semicolon:
     return ";";
+  case Token::Colon:
+    return ":";
   case Token::BeginParen:
     return "(";
   case Token::EndParen:

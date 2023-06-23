@@ -19,6 +19,9 @@
 
 #include "ast/Ast.hpp"
 
+#include "type/Equals.hpp"
+#include "type/Print.hpp"
+
 #include "adt/Environment.hpp"
 
 #include "error/Error.hpp"
@@ -71,14 +74,21 @@ public:
     return result;
   }
 
-  auto operator()(Ast::Type const &type) noexcept -> Result<Type::Pointer> {
-    return {type.type};
-  }
-
   auto operator()(Ast::Let const &let) noexcept -> Result<Type::Pointer> {
     auto type_result = std::visit(*this, let.term->data);
     if (!type_result)
       return type_result;
+
+    if (let.annotation.has_value()) {
+      auto &type = let.annotation.value();
+
+      if (!equals(type, type_result.value())) {
+        std::stringstream message;
+        message << type << " != " << type_result.value();
+        return {Error::LetTypeMismatch, let.location, message.view()};
+      }
+    }
+
     return env->getNilType();
   }
 

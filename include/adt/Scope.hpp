@@ -202,6 +202,7 @@ public:
 
   [[nodiscard]] auto getPrevScope() const noexcept -> std::shared_ptr<Scope> {
     // #QUESTION is asserting the precondition the best solution?
+    // I like it better than returning a nullptr.
     MINT_ASSERT(!prev_scope.expired());
     return prev_scope.lock();
   }

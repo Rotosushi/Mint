@@ -87,11 +87,12 @@ auto Parser::parseDeclaration(bool is_public) noexcept -> Result<Ast::Ptr> {
 }
 
 /*
-  let = "let" identifier "=" term
+  let = "let" identifier (":" type)? "=" term
 */
 auto Parser::parseLet(bool is_public) noexcept -> Result<Ast::Ptr> {
   Attributes attributes = default_attributes;
   attributes.isPublic(is_public);
+  std::optional<Type::Pointer> annotation;
   auto left_loc = location();
   MINT_ASSERT(peek(Token::Let));
   next(); // eat 'let'
@@ -102,6 +103,14 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<Ast::Ptr> {
 
   auto id = env->getIdentifier(text());
   next(); // eat identifier
+
+  if (expect(Token::Colon)) {
+    auto type = parseType();
+    if (!type)
+      return type.error();
+
+    annotation = type.value();
+  }
 
   if (!expect(Token::Equal)) {
     return handle_error(Error::ExpectedAnEquals);
@@ -114,7 +123,8 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<Ast::Ptr> {
 
   auto right_loc = location();
   Location let_loc = {left_loc, right_loc};
-  return {env->getLetAst(attributes, let_loc, id, affix.value())};
+  return {env->getLetAst(attributes, let_loc, id, annotation,
+                         std::move(affix.value()))};
 }
 
 /*
@@ -376,4 +386,33 @@ auto Parser::parseBasic() noexcept -> Result<Ast::Ptr> {
     break;
   }
 }
+
+auto Parser::parseType() noexcept -> Result<Type::Pointer> {
+  fill();
+
+  switch (current) {
+  case Token::NilType: {
+    next();
+    return env->getNilType();
+    break;
+  }
+
+  case Token::BooleanType: {
+    next();
+    return env->getBooleanType();
+    break;
+  }
+
+  case Token::IntegerType: {
+    next();
+    return env->getIntegerType();
+    break;
+  }
+
+  default:
+    return handle_error(Error::ExpectedAType);
+    break;
+  }
+}
+
 } // namespace mint

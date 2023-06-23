@@ -44,12 +44,6 @@ public:
     return std::visit(*this, ast->data);
   }
 
-  auto operator()([[maybe_unused]] Ast::Type &type) noexcept
-      -> Result<Ast::Ptr> {
-    // the Type itself is the result 'value' of the Type 'expression'
-    return ast;
-  }
-
   auto operator()(Ast::Let &let) noexcept -> Result<Ast::Ptr> {
     auto value = evaluate(let.term, env);
     if (!value)

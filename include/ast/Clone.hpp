@@ -67,13 +67,10 @@ struct AstCloneVisitor {
     return std::visit(*this, ast->data);
   }
 
-  auto operator()(Ast::Type const &type) noexcept -> Ast::Ptr {
-    return env->getTypeAst(type.attributes, type.location, type.type);
-  }
-
   auto operator()(Ast::Let const &let) noexcept -> Ast::Ptr {
     auto term = (*this)(let.term);
-    return env->getLetAst(let.attributes, let.location, let.id, term);
+    return env->getLetAst(let.attributes, let.location, let.id, let.annotation,
+                          term);
   }
 
   auto operator()(Ast::Module const &m) noexcept -> Ast::Ptr {

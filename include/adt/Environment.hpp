@@ -60,7 +60,6 @@ public:
     MINT_ASSERT(in != nullptr);
     MINT_ASSERT(out != nullptr);
     MINT_ASSERT(errout != nullptr);
-    MINT_ASSERT(resource != nullptr);
 
     InitializeBuiltinBinops(this);
     InitializeBuiltinUnops(this);
@@ -174,27 +173,22 @@ public:
   auto getIntegerType() noexcept { return type_interner.getIntegerType(); }
   auto getNilType() noexcept { return type_interner.getNilType(); }
 
-  auto getTypeAst(Attributes attributes, Location location,
-                  mint::Type::Pointer type) noexcept {
-    return Ast::create<Ast::Type>(*resource, attributes, location, type);
-  }
-
   auto getModuleAst(Attributes attributes, Location location, Identifier name,
                     std::vector<Ast::Ptr> expressions) noexcept {
-    return Ast::create<Ast::Module>(*resource, attributes, location,
-                                    name, std::move(expressions));
+    return Ast::create<Ast::Module>(*resource, attributes, location, name,
+                                    std::move(expressions));
   }
 
   auto getLetAst(Attributes attributes, Location location, Identifier name,
+                 std::optional<Type::Pointer> annotation,
                  Ast::Ptr term) noexcept {
     return Ast::create<Ast::Let>(*resource, attributes, location, name,
-                                 std::move(term));
+                                 std::move(annotation), std::move(term));
   }
 
   auto getImportAst(Attributes attributes, Location location,
                     std::string_view file) noexcept {
-    return Ast::create<Ast::Import>(*resource, attributes, location,
-                                    file);
+    return Ast::create<Ast::Import>(*resource, attributes, location, file);
   }
 
   auto getBinopAst(Attributes attributes, Location location, Token op,
@@ -223,8 +217,7 @@ public:
 
   auto getVariableAst(Attributes attributes, Location location,
                       Identifier name) noexcept {
-    return Ast::create<Ast::Variable>(*resource, attributes, location,
-                                      name);
+    return Ast::create<Ast::Variable>(*resource, attributes, location, name);
   }
 
   auto getBooleanAst(Attributes attributes, Location location,
@@ -242,9 +235,8 @@ public:
   }
 
   auto getNilAst(Attributes attributes, Location location) noexcept {
-    return Ast::create<Ast::Value>(*resource,
-                                   std::in_place_type<Ast::Value::Nil>,
-                                   attributes, location);
+    return Ast::create<Ast::Value>(
+        *resource, std::in_place_type<Ast::Value::Nil>, attributes, location);
   }
 };
 } // namespace mint

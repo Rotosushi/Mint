@@ -67,8 +67,6 @@ public:
     MINT_ASSERT(out != nullptr);
   }
 
-  void operator()(Ast::Type const &type) noexcept { *out << &type.type; }
-
   void operator()(Ast::Let const &let) noexcept {
     *out << "let " << let.id << " = ";
     std::visit(*this, let.term->data);

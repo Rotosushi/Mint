@@ -31,24 +31,17 @@ namespace mint {
 struct Ast {
   using Ptr = std::shared_ptr<Ast>;
 
-  struct Type {
-    Attributes attributes;
-    Location location;
-    mint::Type::Pointer type;
-    Type(Attributes attributes, Location location,
-         mint::Type::Pointer type) noexcept
-        : attributes(attributes), location(location), type(type) {}
-  };
-
   struct Let {
     Attributes attributes;
     Location location;
     Identifier id;
+    std::optional<Type::Pointer> annotation;
     Ast::Ptr term;
 
     Let(Attributes attributes, Location location, Identifier id,
-        Ast::Ptr term) noexcept
-        : attributes(attributes), location(location), id(id), term(term) {}
+        std::optional<Type::Pointer> annotation, Ast::Ptr term) noexcept
+        : attributes(attributes), location(location), id(id),
+          annotation(annotation), term(term) {}
   };
 
   struct Binop {
@@ -166,8 +159,8 @@ struct Ast {
         : data(type, std::forward<Args>(args)...) {}
   };
 
-  using Data = std::variant<Type, Let, Module, Import, Binop, Unop, Term,
-                            Parens, Variable, Value>;
+  using Data = std::variant<Let, Module, Import, Binop, Unop, Term, Parens,
+                            Variable, Value>;
   Data data;
 
 private:
@@ -278,10 +271,6 @@ public:
 
   constexpr auto operator()(Ast const &ast) const noexcept -> Location {
     return std::visit(*this, ast.data);
-  }
-
-  constexpr auto operator()(Ast::Type const &type) const noexcept -> Location {
-    return type.location;
   }
 
   constexpr auto operator()(Ast::Let const &let) const noexcept -> Location {

@@ -27,10 +27,8 @@ namespace mint {
 class Error {
 public:
   enum Kind {
+    // parser errors
     EndOfInput,
-
-    FileNotFound,
-    ImportFailed,
 
     UnknownToken,
     UnknownBinop,
@@ -38,6 +36,7 @@ public:
 
     ExpectedADeclaration,
     ExpectedABasicTerm,
+    ExpectedAType,
     ExpectedAnEquals,
     ExpectedASemicolon,
     ExpectedAnIdentifier,
@@ -45,6 +44,12 @@ public:
     ExpectedABeginBrace,
     ExpectedAEndBrace,
     ExpectedAString,
+
+    // typecheck errors
+    FileNotFound,
+    ImportFailed,
+
+    LetTypeMismatch,
 
     NameUnboundInScope,
     NameAlreadyBoundInScope,

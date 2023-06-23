@@ -38,7 +38,7 @@ import = "import" string-literal ";"
 
 term = affix? ";"
 
-let = "let" identifier "=" term
+let = "let" identifier (":" type)? "=" term
 
 module = "module" identifier "{" top* "}"
 
@@ -47,13 +47,19 @@ affix = basic (binop precedence-parser)?
 binop = "+" |"-" | "*" | "/" | "%" | "!" | "&" | "|"
         "<" | "<=" | "?=" | "!=" | "=>" | ">"
 
-basic = "nil"
-      | "true"
-      | "false"
+basic = literal
       | integer
       | identifier
       | unop basic
       | "(" affix ")"
+
+literal = "nil"
+        | "true"
+        | "false"
+
+type = "Nil"
+     | "Boolean"
+     | "Integer"
 
 integer = [0-9]+
 
@@ -145,12 +151,12 @@ private:
     }
   }
 
-  auto handle_error(Error::Kind kind) noexcept -> Result<Ast::Ptr> {
+  auto handle_error(Error::Kind kind) noexcept -> Error {
     recover();
     return {kind, location(), text()};
   }
   auto handle_error(Error::Kind kind, Location location,
-                    std::string_view message) noexcept -> Result<Ast::Ptr> {
+                    std::string_view message) noexcept -> Error {
     recover();
     return {kind, location, message};
   }
@@ -165,6 +171,7 @@ private:
   auto precedenceParser(Ast::Ptr left, BinopPrecedence prec) noexcept
       -> Result<Ast::Ptr>;
   auto parseBasic() noexcept -> Result<Ast::Ptr>;
+  auto parseType() noexcept -> Result<Type::Pointer>;
 
 public:
   Parser(Environment *env, std::istream *in)
