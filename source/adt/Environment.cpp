@@ -129,4 +129,43 @@ auto Environment::repl() noexcept -> int {
 
   return EXIT_SUCCESS;
 }
+
+auto Environment::read_type_evaluate(Parser &p) noexcept
+    -> Result<std::tuple<Ast::Ptr, Type::Pointer, Ast::Ptr>> {
+  if (p.endOfInput())
+    return {Error::EndOfInput, p.location(), p.text()};
+
+  auto parse_result = p.parse();
+  if (!parse_result) {
+    auto &error = parse_result.error();
+    if (error.getKind() == Error::EndOfInput)
+      return {Error::EndOfInput, p.location(), p.text()};
+
+    printErrorWithSource(error);
+    return {std::move(error)};
+  }
+  auto ast = parse_result.value();
+
+  auto typecheck_result = typecheck(ast, this);
+  if (!typecheck_result) {
+    auto &error = typecheck_result.error();
+    // if (error.getKind() == Error::NameUnboundInScope)
+
+    printErrorWithSource(error);
+    return {std::move(error)};
+  }
+  auto type = typecheck_result.value();
+
+  auto evaluate_result = evaluate(ast, this);
+  if (!evaluate_result) {
+    auto &error = evaluate_result.error();
+
+    printErrorWithSource(error);
+    return {std::move(error)};
+  }
+  auto value = evaluate_result.value();
+
+  return std::make_tuple(ast, type, value);
+}
+
 } // namespace mint

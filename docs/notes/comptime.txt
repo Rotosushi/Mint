@@ -24,6 +24,10 @@ In general it is possible to interpret any information which
 is known at compile time. And Definitions must be made available 
 to the runtime, for the runtime to make any sense at all.
 
+the important thing to consider is what happens to a term which 
+cannot be evaluated, only compiled. Due to that terms reliance upon 
+data which is only knowable at runtime.
+
 Comptime:
   Definitions
     Let 

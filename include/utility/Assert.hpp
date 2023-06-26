@@ -26,12 +26,21 @@
 #  define MINT_BREAKPOINT() std::abort()
 #endif
 
+/*
+  #NOTE: the use of operator , in the false case of the MINT_ASSERT
+  macro. operator , simply evaluates it's left hand side throws away
+  the result, then evaluates it's right hand side and returns that
+  as the result of the expression. Thus the log occurs, and then the
+  MINT_BREAKPOINT instruction is executed, halting the process.
+  then in order for the type of the ternary operator ? : to be correct
+  we return 1, to match the result of the true condition.
+*/
 #if !defined(NDEBUG)
 #  include "utility/Log.hpp" // mint::log
 #  include <iostream>        // std::cerr
 #  define MINT_ASSERT(condition)                                               \
     (condition) ? (1)                                                          \
-                : (mint::log(std::cerr, #condition), (MINT_BREAKPOINT(), 1))
+                : (mint::log(std::cerr, #condition), (MINT_BREAKPOINT(), 0))
 #else
 #  define MINT_ASSERT(condition)
 #endif

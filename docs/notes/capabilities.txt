@@ -35,3 +35,5 @@
     true, false
     [0-9]+
     text (incomplete, needs Text type and Ast::Value support)
+
+-) Standard Library

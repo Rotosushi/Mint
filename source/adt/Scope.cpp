@@ -32,8 +32,8 @@ namespace mint {
 
 auto ScopeTable::Entry::bind(Identifier name, Attributes attributes,
                              Type::Pointer type, Ast::Ptr value) noexcept
-    -> Bindings::Binding {
-  return iter->second->bindName(std::move(name), attributes, type, value);
+    -> Result<Bindings::Binding> {
+  return iter->second->bindName(name, attributes, type, std::move(value));
 }
 
 [[nodiscard]] auto ScopeTable::Entry::lookup(Identifier name) noexcept

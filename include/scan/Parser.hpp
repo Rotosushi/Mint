@@ -81,8 +81,6 @@ private:
   Token current;
   Attributes default_attributes;
 
-  auto text() const noexcept { return scanner.getText(); }
-  auto location() const noexcept { return scanner.getLocation(); }
   void next() noexcept { current = scanner.scan(); }
 
   void append(std::string_view text) noexcept { scanner.append(text); }
@@ -177,6 +175,9 @@ public:
     MINT_ASSERT(env != nullptr);
     MINT_ASSERT(in != nullptr);
   }
+
+  auto text() const noexcept { return scanner.getText(); }
+  auto location() const noexcept { return scanner.getLocation(); }
 
   auto endOfInput() const noexcept { return scanner.endOfInput() && in->eof(); }
 

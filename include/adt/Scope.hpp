@@ -88,17 +88,24 @@ public:
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
   auto bind(Key key, Attributes attributes, Type::Pointer type,
-            Ast::Ptr value) noexcept -> Binding {
-    // use insert or assign to allow the caller to update
-    // the values being kept track of within the table.
-    auto pair = table.insert_or_assign(key, Value{attributes, type, value});
-    return pair.first;
+            Ast::Ptr value) noexcept -> Result<Binding> {
+    auto found = lookup(key);
+    if (found) {
+      return Error{Error::NameAlreadyBoundInScope, {}, key.view()};
+    }
+    auto pair = table.try_emplace(key, Value{attributes, type, value});
+    return Binding{pair.first};
   }
+
+  auto updateBoundAttributes(Key key, Attributes attributes) noexcept
+      -> Result<Binding>;
+  auto updateBoundType(Key key, Type::Pointer type) noexcept -> Result<Binding>;
+  auto updateBoundValue(Key key, Ast::Ptr value) noexcept -> Result<Binding>;
 
   [[nodiscard]] auto lookup(Key key) noexcept -> Result<Binding> {
     auto found = table.find(key);
     if (found == table.end()) {
-      return Error{Error::NameUnboundInScope, Location{}, key.view()};
+      return Error{Error::NameUnboundInScope, {}, key.view()};
     }
     return {found};
   }
@@ -125,7 +132,7 @@ public:
     [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
 
     auto bind(Identifier name, Attributes attributes, Type::Pointer type,
-              Ast::Ptr value) noexcept -> Bindings::Binding;
+              Ast::Ptr value) noexcept -> Result<Bindings::Binding>;
 
     [[nodiscard]] auto lookup(Identifier name) noexcept
         -> Result<Bindings::Binding>;
@@ -219,11 +226,11 @@ public:
   }
 
   auto bindName(Identifier name, Attributes attributes, Type::Pointer type,
-                Ast::Ptr value) -> Bindings::Binding {
+                Ast::Ptr value) {
     return bindings.bind(name, attributes, type, value);
   }
 
-  auto bindScope(Identifier name) -> ScopeTable::Entry {
+  auto bindScope(Identifier name) {
     return scopes.emplace(name, weak_from_this());
   }
 
@@ -233,8 +240,7 @@ public:
     return scopes.lookup(name);
   }
 
-  [[nodiscard]] auto lookupLocal(Identifier name) noexcept
-      -> Result<Bindings::Binding> {
+  [[nodiscard]] auto lookupLocal(Identifier name) noexcept {
     return bindings.lookup(name);
   }
 

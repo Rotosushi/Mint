@@ -94,6 +94,12 @@ public:
 
   auto repl() noexcept -> int;
 
+  // #NOTE: I am trying to factor repl such that
+  // there is code reuse between repl(), evaluate(Ast::Import)
+  // and typecheck(Ast::Module)
+  auto read_type_evaluate(Parser &p) noexcept
+      -> Result<std::tuple<Ast::Ptr, Type::Pointer, Ast::Ptr>>;
+
   void printErrorWithSource(Error const &error) const noexcept {
     auto optional_location = error.getLocation();
     std::string_view bad_source;
@@ -146,17 +152,18 @@ public:
     bind the scope to the current scope. thus anonymous scopes
     are only alive as long as they are the local_scope.
 
-    this behavior is okay for functions, but not for
-    modules, as a modules names must be alive for the
-    lifetime of a given program.
+    this behavior is intended for functions, whose names
+    only need to be alive for the time functions are being
+    evaluated. but not for modules, as a modules names
+    must be alive for the lifetime of a given program.
   */
   void pushScope() noexcept {
     local_scope = Scope::createScope({}, local_scope);
   }
 
   /*
-    intended to be called when processing an Ast::Module,
-    such that lookup and binding occurs within a
+    called when processing an Ast::Module,
+    such that lookup and binding occurs within the
     local scope of the module.
   */
   void pushScope(Identifier name) noexcept {

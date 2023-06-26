@@ -23,19 +23,23 @@ one is to learn more about PL's and PL features.
 
 two is to have something to play around with.
 
-for point one, I am currently interested in:
-memory allocators,
+for point one, (no particular order) I am currently interested in:
+program arguments,
+modules,
+namespaces,
+use-before-definition,
 compile time evaluation,
 compiling a source file,
-use-before-definition,
 lambdas,
 algebraic data types (and/or tagged unions and structs/tuples),
 pattern matching,
 macros,
+conditional compilation,
 embedding the language interpreter itself into executables as a scripting language.
 at comptime the compiler interprets nearly all expressions,
 (other than runtime dependent expressions)
 and then from the interpreted input an executable is generated.
+memory allocators,
 
 needs testing:
   Modules,

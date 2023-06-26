@@ -1,0 +1,412 @@
+// Copyright (C) 2023 Cade Weinberg
+// 
+// This file is part of Mint.
+// 
+// Mint is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Mint is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+
+the main question is how do we interpret/compile definitions which 
+rely upon names which are defined after they are used?
+
+that is, how do we interpret/compile something like 
+
+fn a() { ... b(); ... }
+fn b() { ... a(); ... }
+
+or, even simpler 
+
+fn a() { ... a(); ...}
+
+in C/C++ forward declarations are used. That is, the type of 
+the name is written down before the full definition is given,
+then later the full definition is given. This solves the issue,
+because the typechecker has access to the type of a given name
+before it is used within the expression. allowing the type of 
+each definition to be computed as the definitions of each name 
+are known.
+
+that is:
+
+fn b();
+fn a() { ... b(); ... }
+fn b() { ... a(); ... }
+
+only b needs to be forward declared because a's definition appears 
+before b in the source. This is a fine solution. The only issue I 
+can think of is that is breaks the principle (rule-of-thumb/guideline/axiom)
+"don't repeat yourself" or DRY. 
+because the type of b now appears twice within the source code.
+which means that there is an opportunity for programmers to get this wrong.
+
+so, how can we get the compiler to have equivalent semantics without 
+requiring forward declarations?
+
+my initial guess is to delay typechecking expressions which use a name 
+before it is defined. That is, in the case that we are attempting 
+to interpret/compile something which uses a name before it is defined:
+
+fn a() { ... b(); ... }
+fn b() { ... a(); ... }
+
+we don't halt the process immediately an return an error.
+instead we delay typechecking the expression which failed 
+typechecking with the specific name_use_before_def error.
+we then cache/save the definition we could not type into a 
+map from the name which was used before it was defined to the
+definition which could not be typed due to it's usage of a 
+name before it was defined.
+
+this gets us part way, we no longer immediately report an error, 
+and we are in a state which can be used to reconstruct the 
+state we were in when typing the definition originally. 
+
+then, when we encounter another definition, we can see what name 
+it used and index the map with it, if we now have a full type for 
+the name then we can use the full type to type the original expression. 
+
+this solves the case: 
+
+let x = y; 
+ley y = ...; 
+
+however, the case: 
+
+let x = y; 
+let y = x; 
+
+is a trivial loop, and can never be resolved, 
+this is clearly an error. 
+
+what about the function case: 
+
+fn a() { ... b(); ... } 
+fn b() { ... a(); ... } 
+
+in order to typecheck the body of "b" we require 
+the type of all expressions within it's scope. 
+which requires the type of "a" which we deferred 
+till we could type "b" which is the name of the 
+definition we are currently attempting to type. 
+this reintroduces the cycle. 
+well, only if the type of a is inferred. 
+if "a" has a type annotation then we know it's return type. 
+and then we can compute the type of "a();" (or "a;" for that matter.)
+this is clearly another error. 
+
+(note: templates place a variable in the type of "a" right here, 
+and thus allow the compiler to type the expression "a()" as a 
+template, allowing for an "untyped" version of this loop to also exist)
+
+(note: this solution does not account for variable overloading)
+
+if we have the source code for a calculators parser:
+(assuming everything other than these three functions 
+are defined correctly, and that the implementation is 
+correct otherwise.)
+
+fn parse_top() -> ParseResult { 
+  ...
+
+  let left = parse_basic();
+
+  if (...) {
+    return parse_infix(...);
+  }
+
+  ...
+}
+
+fn parse_infix(left, prec) -> ParseResult {
+  ...
+
+  while (...) {
+
+    let right = parse_basic();
+
+    ...
+
+    while (...) {
+      right = parse_infix(...);
+    }
+
+    ...
+  }
+
+  ...
+}
+
+fn parse_basic() -> ParseResult {
+  ...
+
+  ... {
+    ...
+
+    {
+      ...
+      let term = parse_top();
+      ...
+    }
+
+    ...
+  }
+
+  ...
+}
+
+facts:
+the compiler is going to encounter "parse_top" then 
+"parse_infix" and then "parse_basic". 
+
+both "parse_top" and "parse_infix" call "parse_basic". 
+
+"parse_basic" calls "parse_top". 
+
+
+so, how does the compiler work with the given solution? 
+
+well, it will parse "parse_top" into a single Ast::Function,
+
+then it attempts to typecheck "parse_top", failing with a 
+Error::NameUnboundInScope, and the variable which produced 
+the error "parse_basic".
+thus it adds the Ast representing the Function to the map 
+key = "parse_basic"
+value = (Ast, optional<Type>)
+then, iff the optional type is filled we can create a temporary 
+full binding in the local scope of "parse_top" to it's type,
+and lookup "parse_top" in the map. we wont find anything so 
+we remove the temporary binding and 
+finally skip, attempting to evaluate the definition.
+
+fact: "parse_top" does not get bound in the local_scope.
+
+then it will parse "parse_infix".
+
+then it typechecks "parse_infix" failing with Error::NameUnboundInScope,
+along with the variable which produced the error "parse_basic".
+thus it adds the Ast representing "parse_infix" to the map 
+key = "parse_basic"
+value = (Ast, optional<Type>)
+then, iff the optional type is filled we create a temporary full binding 
+in the local scoep of "parse_infix" to it's type, and lookup "parse_infix"
+in the map. we still don't find anything so we remove the temporary 
+binding and then
+finally skip attempting to evaluate the definition.
+
+fact: "parse_infix" does not get bound in the local_scope
+
+then it will parse "parse_basic".
+
+then it typechecks "parse_basic" failing with Error::NameUnboundInScope,
+along with the variable which produced the error "parse_top".
+thus it adds "parse_basic" to the map, with
+key = "parse_top"
+value = (Ast, optional<Type>)
+then, iff the optional type is filled we create a temporary full binding 
+in the local scope of "parse_basic" to it's type, and lookup "parse_basic"
+in the map. this time we will find either "parse_infix" or "parse_top".
+since we found a definition we attempt to type that definition. iff it 
+fails with an error other than Error::NameUnboundInScope we return that 
+to the caller, if it fails with Error::NameUnboundInScope with a new 
+name, we rebind the Ast in the map under the new name (and remove the old 
+binding), and iff it succeeds typechecking then we bind it fully by evaluating 
+the definition. (note 1)
+then we can lookup "parse_basic" in the map again and find the remaining 
+definition. whichever we didn't find of "parse_infix" or "parse_top", and 
+try and typecheck that, iff it fails with an error other than Error::NameUnboundInScope,
+we return that to the caller, iff it fails with Error::NameUnboundInScope
+with a new name, we rebind the definition under the new name in the map, and 
+iff it succeeds in typechecking we evaluate it and thus add it to the full 
+bindings. (note 2)
+then, since there are no more names in the map, we can remove the temporary 
+binding of "parse_basic" and return either success, or return the error which 
+was generated by typechecking some term by this process.
+
+whenever we add a definition to the full bindings we can lookup that name in 
+the map. at point (note 1, note 2) we have successfully typed the term "parse_infix"
+or "parse_top" (whichever was resolved by the map), while pretending to have 
+a full binding of "parse_basic". iff we add "parse_infix" to the full bindings,
+we lookup "parse_infix" in the map we lookup "parse_infix" we wont find "parse_top",
+
+however iff we add "parse_top" to the full bindings and lookup "parse_top"
+in the map we fill find "parse_basic". the issue is that if we are currently 
+pretending to have a full binding when we then successfully typecheck "parse_basic"
+after adding "parse_top" to the full bindings, when we add the full binding 
+of "parse_basic" how do we ensure we don't remove the full binding when we 
+are attempting to remove the pretend binding?
+
+we can solve this problem if we add a constraint to removing the binding,
+we don't remove the binding if it is a full binding, with an associated 
+value. we only remove the binding if it is a pretend binding, with no 
+associated value. However, when we attempt to add the full binding of 
+"parse_basic", we will find the temporary binding. in this case, we can 
+simply add the value associated with parse_basic to the existing temporary 
+binding, "promoting" it from temporary to full binding.
+
+finally it skips attempting to evaluate the definition.
+
+fact: "parse_basic" does not get bound in the local_scope.
+
+this solution only goes part of the way there.
+
+we still need to resolve the stored bindings at some point into 
+full bindings.
+
+a natural place to do this would be when we bind a new full definition.
+if we define a new variable, and can bind it to the local_scope,
+then at that moment we can attept to resolve the type of each 
+mapped ast with key equal to the name we just defined.
+if this produces a type, we may bind the variable and thus create 
+the definition. if this produces an Error::NameUnboundInScope then 
+we may simply rebind the ast under the new variable, and continue looping.
+once we have no more Asts stored with the key equal to the new 
+definition, we can stop.
+notice that when we check for names stored under a certain undefined 
+name after we have defined a new name, we may be in a situation where 
+some other stored Ast under another name may also use the newly 
+defined name, in this case we don't need to worry, because we are currently 
+in a situation where we just fully defined a new name, which means that 
+when that other Ast gets processed, it will simply resolve the new name 
+through regular lookup.
+
+we still need to attempt to resolve stored bindings somewhere else though.
+as it is, attempting to enter in the above parser functions into the 
+REPL will never cause the compiler to resolve their definitions, regardless 
+of the fact that iff we have type-annotations on the definitions, we 
+may resolve the type of these three definitions. 
+
+what about when we store a new definition? 
+at that time we have the name of the new (failed to type) definition,
+and the name it failed to type with. iff the newly failed definition 
+has a type annotation then we can resolve the type of any name which 
+uses that newly failed definition.
+
+thus, when we fail to typecheck "parse_top", since "parse_top"
+has a type annotation we lookup "parse_top" within the map,
+fail to find anything, and continue on with storing it.
+
+then when we fail to typecheck "parse_infix", since "parse_infix"
+has a type annotation we lookup "parse_infix" within the map,
+fail to find anything, and continue on with storing it.
+
+then when we fail to typecheck "parse_basic", since "parse_basic"
+has a type annotation we lookup "parse_basic" within the map,
+and we find "parse_top", thus we can bind "parse_basic"
+to only it's type, and attempt to typecheck "parse_top" again.
+iff "parse_top" succeeds the typecheck then we can evaluate it 
+and thus add it to the set of full bindings. 
+then, since we added it to the full bindings we lookup "parse_top"
+in the map, and find "parse_basic". then since "parse_top" is a 
+full binding we can typecheck "parse_basic", iff "parse_basic"
+typechecks then we can evaluate it, and thus add it to the set 
+of full bindings. then since we added "parse_basic" to the set
+of full bindings we lookup "parse_basic" in the map and find 
+"parse_infix" then since "parse_basic" is a full binding we can 
+typecheck "parse_infix" again and iff "parse_infix" typechecks 
+we can evaluate it and thus add it to the set of full bindings.
+
+
+
+okay, that would seem to work for the case when all the names are 
+within the same module. 
+how does this work for the case when the names being used are 
+defined accross modules?
+or are modules themselves?
+
+module A {
+  ...
+
+  fn f() -> Tf {
+    ...
+    B::g();
+    ...
+  }
+
+  ...
+}
+
+module B {
+  ...
+
+  fn g() -> Tg {
+    ...
+    A::f();
+    ...
+  }
+
+  ...
+}
+
+well, a module is-a definition itself, so we do the same thing.
+modules also fail to typecheck when a name is used within the 
+module before it is defined. when a module is fully defined it 
+adds all of it's definitions to the local_scope, and 
+any of those definitions with type annotations can be used directly 
+as above.
+
+parse "A" 
+
+typecheck "A" -> fails returning Error::NameUnboundInScope with 
+the name being "B::g", insert "A" into map with key "B::g", then 
+what do we lookup? I think we want to lookup "A::f" in the map.
+as "A::f" was the definition that failed to typecheck within the
+module itself.
+
+parse "B" 
+
+typecheck "B" -> fails returning Error::NameUnboundInScope with 
+the name being "A::f", insert "B" into map with key "A::f". then 
+lookup "B::g", in this case we will find the definition of "A::f"
+within the map. then iff "A::f" has a type annotation we can 
+resolve the type of "B::g" and then evaluate "B::g". then since 
+we defined "B::g" we look it up, and will find "A::f" which we 
+can then typecheck and evaluate, adding it to the full bindings.
+thus we will have resolved the use-before-def.
+
+
+
+additionally, use-before-def can occur between terms within a 
+module.
+
+module A {
+  ...
+
+  fn f() -> Tf {
+    ...
+    g();
+    ...
+  }
+
+  fn g() -> Tg {
+    ...
+    f();
+    ...
+  }
+
+  ...
+}
+
+since we parse the entirety of A at once, and attempt to typecheck 
+the whole thing at once, the current solution will not resolve this 
+use-before-def. we need to extend the solution again to the typechecking 
+of the terms within the module itself.
+
+this means that whatever loop we write which resolves use-before-def at 
+global scope is simply run while we typecheck the modules local scope.
+
+--------------------------------------------------------------------------
+
+
+
+
+

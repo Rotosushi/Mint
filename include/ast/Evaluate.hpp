@@ -52,7 +52,12 @@ public:
       return std::move(type_result.error());
     auto type = type_result.value();
 
-    env->bindName(let.id, let.attributes, type, clone(value.value(), env));
+    auto bound =
+        env->bindName(let.id, let.attributes, type, clone(value.value(), env));
+    if (!bound) {
+      return bound.error();
+    }
+
     return env->getNilAst({}, let.location);
   }
 
