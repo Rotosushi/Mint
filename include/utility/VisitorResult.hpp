@@ -15,17 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "type/Type.hpp"
 
 namespace mint {
-class TypeInterner {
-  BooleanType boolean_type;
-  IntegerType integer_type;
-  NilType nil_type;
-
+template <class Visitor, class Ptr, class Result> class VisitorResult {
 public:
-  auto getBooleanType() const noexcept { return &boolean_type; }
-  auto getIntegerType() const noexcept { return &integer_type; }
-  auto getNilType() const noexcept { return &nil_type; }
+  Result result;
+
+  auto Compute(Ptr ptr, Visitor &other) -> Result {
+    Visitor visitor(other);
+    ptr->accept(&visitor);
+    return visitor.result;
+  }
+
+  void Return(Result result) { this->result = result; }
 };
 } // namespace mint

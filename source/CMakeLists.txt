@@ -31,13 +31,15 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/adt/TypeInterner.hpp 
   ${MINT_INCLUDE_DIR}/adt/UnopTable.hpp
   ${MINT_SOURCE_DIR}/adt/UnopTable.cpp
+  ${MINT_INCLUDE_DIR}/adt/UseBeforeDefMap.hpp 
 
   ${MINT_INCLUDE_DIR}/ast/Ast.hpp 
-  ${MINT_INCLUDE_DIR}/ast/Clone.hpp
-  ${MINT_INCLUDE_DIR}/ast/Equals.hpp
-  ${MINT_INCLUDE_DIR}/ast/Evaluate.hpp
-  ${MINT_INCLUDE_DIR}/ast/Print.hpp
-  ${MINT_INCLUDE_DIR}/ast/Typecheck.hpp
+  ${MINT_INCLUDE_DIR}/ast/Definition.hpp 
+  ${MINT_INCLUDE_DIR}/ast/Let.hpp
+  ${MINT_SOURCE_DIR}/ast/Let.cpp
+  ${MINT_INCLUDE_DIR}/ast/Value.hpp 
+  ${MINT_INCLUDE_DIR}/ast/Nil.hpp 
+  ${MINT_SOURCE_DIR}/ast/Nil.cpp 
 
   ${MINT_INCLUDE_DIR}/error/Error.hpp
   ${MINT_SOURCE_DIR}/error/Error.cpp
@@ -50,9 +52,10 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/scan/Scanner.hpp
   ${MINT_SOURCE_DIR}/scan/Scanner.cpp
 
-  ${MINT_INCLUDE_DIR}/type/Equals.hpp
-  ${MINT_INCLUDE_DIR}/type/Print.hpp
   ${MINT_INCLUDE_DIR}/type/Type.hpp 
+  ${MINT_INCLUDE_DIR}/type/NilType.hpp 
+  ${MINT_INCLUDE_DIR}/type/BooleanType.hpp 
+  ${MINT_INCLUDE_DIR}/type/IntegerType.hpp
 
   ${MINT_INCLUDE_DIR}/utility/Abort.hpp
   ${MINT_INCLUDE_DIR}/utility/Allocator.hpp 
@@ -61,6 +64,7 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/utility/Log.hpp 
   ${MINT_INCLUDE_DIR}/utility/NumbersRoundTrip.hpp
   ${MINT_INCLUDE_DIR}/utility/OptionsParser.hpp
+  ${MINT_INCLUDE_DIR}/utility/VisitorResult.hpp 
 )
 set_property(
   TARGET mint_common 

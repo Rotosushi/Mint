@@ -112,7 +112,29 @@ auto Environment::repl() noexcept -> int {
 
     auto typecheck_result = typecheck(ast, this);
     if (!typecheck_result) {
-      printErrorWithSource(typecheck_result.error());
+      auto &error = typecheck_result.error();
+      // handle use-before-def
+      // 1) get the variable which caused the error
+      // 2) bind the ast which generated the error to
+      //    the name which caused the error in the use-before-def-map
+      // 3) iff the ast has a type-annotation construct a
+      //    temporary binding of the term to the type-annotation (no value)
+      //    and lookup the ast which just failed in the map
+      // 3a) iff we find a term within the map attempt to typecheck
+      //     and evaluate the term
+      // 3b) iff we don't find anything registered to this definition
+      //     in the map, then continue on with the loop.
+      if (error.getKind() == Error::NameUnboundInScope) {
+        auto message = error.getMessage();
+        MINT_ASSERT(message.has_value());
+        auto name = getIdentifier(message.value());
+
+        use_before_def_map.insert(name, ast);
+
+        continue;
+      }
+
+      printErrorWithSource(error);
       continue;
     }
     auto &type = typecheck_result.value();
@@ -131,7 +153,7 @@ auto Environment::repl() noexcept -> int {
 }
 
 auto Environment::read_type_evaluate(Parser &p) noexcept
-    -> Result<std::tuple<Ast::Ptr, Type::Pointer, Ast::Ptr>> {
+    -> Result<std::tuple<Ast::Ptr, Type::Ptr, Ast::Ptr>> {
   if (p.endOfInput())
     return {Error::EndOfInput, p.location(), p.text()};
 

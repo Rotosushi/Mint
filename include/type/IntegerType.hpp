@@ -15,17 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+
 #include "type/Type.hpp"
 
 namespace mint {
-class TypeInterner {
-  BooleanType boolean_type;
-  IntegerType integer_type;
-  NilType nil_type;
-
+class IntegerType : public Type {
 public:
-  auto getBooleanType() const noexcept { return &boolean_type; }
-  auto getIntegerType() const noexcept { return &integer_type; }
-  auto getNilType() const noexcept { return &nil_type; }
+  IntegerType() noexcept : Type{Type::Kind::Integer} {}
+
+  static auto classof(Ptr type) noexcept -> bool {
+    return Type::Kind::Integer == type->kind();
+  }
+
+  [[nodiscard]] bool equals(Ptr right) const noexcept override {
+    return llvm::dyn_cast<const IntegerType>(right) != nullptr;
+  }
+
+  void print(std::ostream &out) const noexcept override { out << "Integer"; }
 };
 } // namespace mint

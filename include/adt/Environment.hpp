@@ -29,16 +29,18 @@
 #include "adt/Scope.hpp"
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
+#include "adt/UseBeforeDefMap.hpp"
 #include "scan/Parser.hpp"
 #include "utility/Allocator.hpp"
 
 namespace mint {
 class Environment {
   DirectorySearcher directory_searcher;
-  IdentifierSet id_interner;
+  IdentifierSet identifier_set;
   TypeInterner type_interner;
   BinopTable binop_table;
   UnopTable unop_table;
+  UseBeforeDefMap use_before_def_map;
   // #NOTE: since we only have std::weak_ptrs
   // back up the tree of scopes, we must hold
   // a shared_ptr to the top of the tree.
@@ -65,9 +67,10 @@ class Environment {
               std::unique_ptr<llvm::Module> llvm_module,
               std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder,
               llvm::TargetMachine *llvm_target_machine) noexcept
-      : id_interner(resource), binop_table(resource), unop_table(resource),
-        global_scope(Scope::createGlobalScope()), local_scope(global_scope),
-        parser(this, in), in(in), out(out), errout(errout), resource(&resource),
+      : identifier_set(resource), binop_table(resource), unop_table(resource),
+        use_before_def_map(resource), global_scope(Scope::createGlobalScope()),
+        local_scope(global_scope), parser(this, in), in(in), out(out),
+        errout(errout), resource(&resource),
         llvm_context(std::move(llvm_context)),
         llvm_module(std::move(llvm_module)),
         llvm_ir_builder(std::move(llvm_ir_builder)),
@@ -98,7 +101,7 @@ public:
   // there is code reuse between repl(), evaluate(Ast::Import)
   // and typecheck(Ast::Module)
   auto read_type_evaluate(Parser &p) noexcept
-      -> Result<std::tuple<Ast::Ptr, Type::Pointer, Ast::Ptr>>;
+      -> Result<std::tuple<Ast::Ptr, Type::Ptr, Ast::Ptr>>;
 
   void printErrorWithSource(Error const &error) const noexcept {
     auto optional_location = error.getLocation();
@@ -119,6 +122,10 @@ public:
     error.print(*errout, bad_source);
   }
 
+  /*
+    string is some "\"...\""
+    return "..."
+  */
   auto getText(std::string_view string) noexcept -> std::string_view {
     auto cursor = std::next(string.begin());
     auto end = std::prev(string.end());
@@ -141,7 +148,7 @@ public:
   }
 
   auto getIdentifier(std::string_view name) noexcept {
-    return id_interner.emplace(name);
+    return identifier_set.emplace(name);
   }
 
   /*
@@ -190,7 +197,7 @@ public:
     local_scope = local_scope->getPrevScope();
   }
 
-  auto bindName(Identifier name, Attributes attributes, Type::Pointer type,
+  auto bindName(Identifier name, Attributes attributes, Type::Ptr type,
                 Ast::Ptr value) noexcept {
     return local_scope->bindName(name, attributes, type, value);
   }
@@ -206,71 +213,5 @@ public:
   auto getBooleanType() noexcept { return type_interner.getBooleanType(); }
   auto getIntegerType() noexcept { return type_interner.getIntegerType(); }
   auto getNilType() noexcept { return type_interner.getNilType(); }
-
-  auto getModuleAst(Attributes attributes, Location location, Identifier name,
-                    std::vector<Ast::Ptr> expressions) noexcept {
-    return Ast::create<Ast::Module>(*resource, attributes, location, name,
-                                    std::move(expressions));
-  }
-
-  auto getLetAst(Attributes attributes, Location location, Identifier name,
-                 std::optional<Type::Pointer> annotation,
-                 Ast::Ptr term) noexcept {
-    return Ast::create<Ast::Let>(*resource, attributes, location, name,
-                                 std::move(annotation), std::move(term));
-  }
-
-  auto getImportAst(Attributes attributes, Location location,
-                    std::string_view file) noexcept {
-    return Ast::create<Ast::Import>(*resource, attributes, location, file);
-  }
-
-  auto getBinopAst(Attributes attributes, Location location, Token op,
-                   Ast::Ptr left, Ast::Ptr right) noexcept {
-    return Ast::create<Ast::Binop>(*resource, attributes, location, op,
-                                   std::move(left), std::move(right));
-  }
-
-  auto getUnopAst(Attributes attributes, Location location, Token op,
-                  Ast::Ptr right) noexcept {
-    return Ast::create<Ast::Unop>(*resource, attributes, location, op,
-                                  std::move(right));
-  }
-
-  auto getTermAst(Attributes attributes, Location location,
-                  std::optional<Ast::Ptr> ast) noexcept {
-    return Ast::create<Ast::Term>(*resource, attributes, location,
-                                  std::move(ast));
-  }
-
-  auto getParensAst(Attributes attributes, Location location,
-                    Ast::Ptr ast) noexcept {
-    return Ast::create<Ast::Parens>(*resource, attributes, location,
-                                    std::move(ast));
-  }
-
-  auto getVariableAst(Attributes attributes, Location location,
-                      Identifier name) noexcept {
-    return Ast::create<Ast::Variable>(*resource, attributes, location, name);
-  }
-
-  auto getBooleanAst(Attributes attributes, Location location,
-                     bool value) noexcept {
-    return Ast::create<Ast::Value>(*resource,
-                                   std::in_place_type<Ast::Value::Boolean>,
-                                   attributes, location, value);
-  }
-
-  auto getIntegerAst(Attributes attributes, Location location,
-                     int value) noexcept {
-    return Ast::create<Ast::Value>(*resource,
-                                   std::in_place_type<Ast::Value::Integer>,
-                                   attributes, location, value);
-  }
-
-  auto getNilAst(Attributes attributes, Location location) noexcept {
-    return Ast::create<Ast::Value>(
-        *resource, std::in_place_type<Ast::Value::Nil>, attributes, location);
-  }
 };
 } // namespace mint

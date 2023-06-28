@@ -29,8 +29,8 @@ class Environment;
 using UnopEvalFn = Result<Ast::Ptr> (*)(Ast *right, Environment *env);
 
 struct UnopOverload {
-  Type::Pointer right_type;
-  Type::Pointer result_type;
+  Type::Ptr right_type;
+  Type::Ptr result_type;
   UnopEvalFn eval;
 
   [[nodiscard]] auto operator()(Ast *right, Environment *env) {
@@ -46,8 +46,7 @@ public:
     overloads.reserve(2);
   }
 
-  auto lookup(Type::Pointer right_type) noexcept
-      -> std::optional<UnopOverload> {
+  auto lookup(Type::Ptr right_type) noexcept -> std::optional<UnopOverload> {
     for (auto &overload : overloads) {
       if (right_type == overload.right_type) {
         return overload;
@@ -56,7 +55,7 @@ public:
     return std::nullopt;
   }
 
-  auto emplace(Type::Pointer right_type, Type::Pointer result_type,
+  auto emplace(Type::Ptr right_type, Type::Ptr result_type,
                UnopEvalFn eval) noexcept -> UnopOverload {
     auto found = lookup(right_type);
     if (found) {
@@ -81,12 +80,11 @@ public:
   public:
     Unop(Table::iterator iter) noexcept : iter(iter) {}
 
-    auto lookup(Type::Pointer right_type) noexcept
-        -> std::optional<UnopOverload> {
+    auto lookup(Type::Ptr right_type) noexcept -> std::optional<UnopOverload> {
       return iter->second.lookup(right_type);
     }
 
-    auto emplace(Type::Pointer right_type, Type::Pointer result_type,
+    auto emplace(Type::Ptr right_type, Type::Ptr result_type,
                  UnopEvalFn eval) noexcept -> UnopOverload {
       return iter->second.emplace(right_type, result_type, eval);
     }

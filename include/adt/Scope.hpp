@@ -42,7 +42,7 @@ namespace mint {
 class Bindings {
 public:
   using Key = Identifier;
-  using Value = std::tuple<Attributes, Type::Pointer, Ast::Ptr>;
+  using Value = std::tuple<Attributes, Type::Ptr, Ast::Ptr>;
   using Table = std::unordered_map<Key, Value>;
   using iterator = typename Table::iterator;
 
@@ -66,7 +66,7 @@ public:
     [[nodiscard]] auto isPrivate() const noexcept -> bool {
       return attributes().isPrivate();
     }
-    [[nodiscard]] auto type() const noexcept -> Type::Pointer {
+    [[nodiscard]] auto type() const noexcept -> Type::Ptr {
       return std::get<1>(binding->second);
     }
     /*
@@ -87,7 +87,7 @@ private:
 public:
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
-  auto bind(Key key, Attributes attributes, Type::Pointer type,
+  auto bind(Key key, Attributes attributes, Type::Ptr type,
             Ast::Ptr value) noexcept -> Result<Binding> {
     auto found = lookup(key);
     if (found) {
@@ -99,7 +99,7 @@ public:
 
   auto updateBoundAttributes(Key key, Attributes attributes) noexcept
       -> Result<Binding>;
-  auto updateBoundType(Key key, Type::Pointer type) noexcept -> Result<Binding>;
+  auto updateBoundType(Key key, Type::Ptr type) noexcept -> Result<Binding>;
   auto updateBoundValue(Key key, Ast::Ptr value) noexcept -> Result<Binding>;
 
   [[nodiscard]] auto lookup(Key key) noexcept -> Result<Binding> {
@@ -131,7 +131,7 @@ public:
 
     [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
 
-    auto bind(Identifier name, Attributes attributes, Type::Pointer type,
+    auto bind(Identifier name, Attributes attributes, Type::Ptr type,
               Ast::Ptr value) noexcept -> Result<Bindings::Binding>;
 
     [[nodiscard]] auto lookup(Identifier name) noexcept
@@ -225,7 +225,7 @@ public:
     return scopes.empty();
   }
 
-  auto bindName(Identifier name, Attributes attributes, Type::Pointer type,
+  auto bindName(Identifier name, Attributes attributes, Type::Ptr type,
                 Ast::Ptr value) {
     return bindings.bind(name, attributes, type, value);
   }

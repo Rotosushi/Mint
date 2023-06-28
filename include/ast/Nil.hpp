@@ -15,17 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "type/Type.hpp"
+
+#include "ast/Value.hpp"
 
 namespace mint {
-class TypeInterner {
-  BooleanType boolean_type;
-  IntegerType integer_type;
-  NilType nil_type;
-
+class NilAst : public ValueAst {
 public:
-  auto getBooleanType() const noexcept { return &boolean_type; }
-  auto getIntegerType() const noexcept { return &integer_type; }
-  auto getNilType() const noexcept { return &nil_type; }
+  NilAst(Attributes attributes, Location location) noexcept
+      : ValueAst{Ast::Kind::Nil, attributes, location} {}
+
+  static auto classof(Ast const *ast) noexcept -> bool {
+    return ast->kind() == Ast::Kind::Nil;
+  }
+
+  Ptr clone(Allocator &allocator) const noexcept override {
+    return std::allocate_shared<NilAst>(allocator, attributes(), location());
+  }
+
+  void print(std::ostream &out) const noexcept override {
+    out << "nil";
+  }
+
+  Result<Type::Ptr> typecheck(Environment &env) const noexcept override;
+  Result<Ast::Ptr> evaluate(Environment &env) noexcept override;
 };
 } // namespace mint

@@ -90,7 +90,7 @@ auto Parser::parseDeclaration(bool is_public) noexcept -> Result<Ast::Ptr> {
 auto Parser::parseLet(bool is_public) noexcept -> Result<Ast::Ptr> {
   Attributes attributes = default_attributes;
   attributes.isPublic(is_public);
-  std::optional<Type::Pointer> annotation;
+  std::optional<Type::Ptr> annotation;
   auto left_loc = location();
   MINT_ASSERT(peek(Token::Let));
   next(); // eat 'let'
@@ -385,7 +385,7 @@ auto Parser::parseBasic() noexcept -> Result<Ast::Ptr> {
   }
 }
 
-auto Parser::parseType() noexcept -> Result<Type::Pointer> {
+auto Parser::parseType() noexcept -> Result<Type::Ptr> {
   fill();
 
   switch (current) {

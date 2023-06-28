@@ -109,10 +109,7 @@ public:
   auto getKind() const noexcept { return kind; }
   auto getLocation() const noexcept { return location; }
   auto getMessage() const noexcept -> std::optional<std::string_view> {
-    if (message.has_value())
-      return static_cast<std::string_view>(message.value());
-    else
-      return {};
+    return message;
   }
 };
 

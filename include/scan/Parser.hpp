@@ -81,8 +81,17 @@ private:
   Token current;
   Attributes default_attributes;
 
-  void next() noexcept { current = scanner.scan(); }
+public:
+  auto text() const noexcept { return scanner.getText(); }
+  auto location() const noexcept { return scanner.getLocation(); }
 
+  auto endOfInput() const noexcept { return scanner.endOfInput() && in->eof(); }
+
+  [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
+      -> std::string_view;
+
+private:
+  void next() noexcept { current = scanner.scan(); }
   void append(std::string_view text) noexcept { scanner.append(text); }
 
   void fill() noexcept {
@@ -167,7 +176,7 @@ private:
   auto precedenceParser(Ast::Ptr left, BinopPrecedence prec) noexcept
       -> Result<Ast::Ptr>;
   auto parseBasic() noexcept -> Result<Ast::Ptr>;
-  auto parseType() noexcept -> Result<Type::Pointer>;
+  auto parseType() noexcept -> Result<Type::Ptr>;
 
 public:
   Parser(Environment *env, std::istream *in)
@@ -175,14 +184,6 @@ public:
     MINT_ASSERT(env != nullptr);
     MINT_ASSERT(in != nullptr);
   }
-
-  auto text() const noexcept { return scanner.getText(); }
-  auto location() const noexcept { return scanner.getLocation(); }
-
-  auto endOfInput() const noexcept { return scanner.endOfInput() && in->eof(); }
-
-  [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
-      -> std::string_view;
 
   auto parse() -> Result<Ast::Ptr> { return parseTop(); }
 };

@@ -20,8 +20,6 @@
 #include "adt/Environment.hpp"
 #include "ast/Ast.hpp"
 #include "error/Result.hpp"
-#include "type/Equals.hpp"
-#include "type/Print.hpp"
 
 namespace mint {
 class AstValueTypecheckVisitor {
@@ -32,28 +30,28 @@ public:
     MINT_ASSERT(env != nullptr);
   }
 
-  auto operator()(Ast::Value const &value) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Value const &value) noexcept -> Result<Type::Ptr> {
     return std::visit(*this, value.data);
   }
 
   auto operator()([[maybe_unused]] Ast::Value::Boolean const &boolean) noexcept
-      -> Result<Type::Pointer> {
+      -> Result<Type::Ptr> {
     return env->getBooleanType();
   }
 
   auto operator()([[maybe_unused]] Ast::Value::Integer const &integer) noexcept
-      -> Result<Type::Pointer> {
+      -> Result<Type::Ptr> {
     return env->getIntegerType();
   }
 
   auto operator()([[maybe_unused]] Ast::Value::Nil const &nil) noexcept
-      -> Result<Type::Pointer> {
+      -> Result<Type::Ptr> {
     return env->getNilType();
   }
 };
 
 [[nodiscard]] auto typecheck(Ast::Value const &value, Environment &env) noexcept
-    -> Result<Type::Pointer> {
+    -> Result<Type::Ptr> {
   AstValueTypecheckVisitor visitor{&env};
   return visitor(value);
 }
@@ -66,12 +64,12 @@ public:
     MINT_ASSERT(env != nullptr);
   }
 
-  auto operator()(Ast::Ptr const &ast) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Ptr const &ast) noexcept -> Result<Type::Ptr> {
     auto result = std::visit(*this, ast->data);
     return result;
   }
 
-  auto operator()(Ast::Let const &let) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Let const &let) noexcept -> Result<Type::Ptr> {
     auto type_result = std::visit(*this, let.term->data);
     if (!type_result)
       return type_result;
@@ -79,7 +77,7 @@ public:
     if (let.annotation.has_value()) {
       auto &type = let.annotation.value();
 
-      if (!equals(type, type_result.value())) {
+      if (!type->equals(type_result.value())) {
         std::stringstream message;
         message << type << " != " << type_result.value();
         return {Error::LetTypeMismatch, let.location, message.view()};
@@ -89,7 +87,7 @@ public:
     return env->getNilType();
   }
 
-  auto operator()(Ast::Module const &m) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Module const &m) noexcept -> Result<Type::Ptr> {
     env->pushScope(m.name);
 
     for (auto &expr : m.expressions) {
@@ -107,7 +105,7 @@ public:
     the type of an import expression is Nil iff the
     identifier refers to an existing file.
   */
-  auto operator()(Ast::Import const &i) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Import const &i) noexcept -> Result<Type::Ptr> {
     auto found = env->fileExists(i.file);
     if (!found) {
       return {Error::FileNotFound, i.location, i.file};
@@ -116,7 +114,7 @@ public:
     return env->getNilType();
   }
 
-  auto operator()(Ast::Binop const &binop) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Binop const &binop) noexcept -> Result<Type::Ptr> {
     auto overloads = env->lookupBinop(binop.op);
     if (!overloads) {
       return {Error::UnknownBinop, binop.location, toString(binop.op)};
@@ -140,7 +138,7 @@ public:
     return instance->result_type;
   }
 
-  auto operator()(Ast::Unop const &unop) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Unop const &unop) noexcept -> Result<Type::Ptr> {
     auto overloads = env->lookupUnop(unop.op);
     if (!overloads) {
       return {Error::UnknownUnop, unop.location, toString(unop.op)};
@@ -161,25 +159,27 @@ public:
     return instance->result_type;
   }
 
-  auto operator()(Ast::Term const &term) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Term const &term) noexcept -> Result<Type::Ptr> {
     if (term.ast.has_value())
       return std::visit(*this, term.ast.value()->data);
 
     return env->getNilType();
   }
 
-  auto operator()(Ast::Parens const &parens) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Parens const &parens) noexcept -> Result<Type::Ptr> {
     return std::visit(*this, parens.ast->data);
   }
 
-  auto operator()(Ast::Value const &value) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Value const &value) noexcept -> Result<Type::Ptr> {
     return typecheck(value, *env);
   }
 
-  auto operator()(Ast::Variable &variable) noexcept -> Result<Type::Pointer> {
+  auto operator()(Ast::Variable &variable) noexcept -> Result<Type::Ptr> {
     auto binding = env->lookup(variable.name);
     if (!binding) {
-      return {Error::NameUnboundInScope, variable.location,
+      // #NOTE: we rely on the error message being just the
+      // variables name here.
+      return {binding.error().getKind(), variable.location,
               variable.name.view()};
     }
 
@@ -188,7 +188,7 @@ public:
 };
 
 [[nodiscard]] auto typecheck(Ast::Ptr const &ast, Environment *env)
-    -> Result<Type::Pointer> {
+    -> Result<Type::Ptr> {
   /*
   auto cache = ast->cached_type();
   if (cache) {

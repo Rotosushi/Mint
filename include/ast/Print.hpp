@@ -18,7 +18,6 @@
 #include <ostream>
 
 #include "ast/Ast.hpp"
-#include "type/Print.hpp"
 
 namespace mint {
 class AstValuePrintVisitor {

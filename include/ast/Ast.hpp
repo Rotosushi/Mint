@@ -16,16 +16,86 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <memory>
-#include <optional>
-#include <variant>
 
 #include "adt/Attributes.hpp"
-#include "adt/Identifier.hpp"
+#include "error/Result.hpp"
 #include "scan/Location.hpp"
-#include "scan/Token.hpp"
 #include "type/Type.hpp"
+#include "utility/Allocator.hpp"
+#include "utility/Assert.hpp"
 
 namespace mint {
+class Environment;
+
+class Ast : public std::enable_shared_from_this<Ast> {
+public:
+  using Ptr = std::shared_ptr<Ast>;
+
+  enum class Kind {
+    // Definitions
+    Definition,
+    Let,
+    // Function,
+    EndDefinition,
+
+    // Values
+    Value,
+    Nil,
+    Boolean,
+    Integer,
+    EndValue,
+
+    // Syntax
+    Term,
+    Parens,
+
+    // Semantics
+    Module,
+    Import,
+    Binop,
+    Unop,
+    Variable,
+  };
+
+private:
+  mutable Type::Ptr m_cached_type;
+  Kind m_kind;
+  Attributes m_attributes;
+  Location m_location;
+
+protected:
+  Ast(Kind kind, Attributes attributes, Location location) noexcept
+      : m_cached_type{nullptr}, m_kind{kind}, m_attributes{attributes},
+        m_location{location} {}
+
+public:
+  virtual ~Ast() noexcept = default;
+
+  void setCachedType(Type::Ptr type) const noexcept { m_cached_type = type; }
+
+  [[nodiscard]] auto cachedType() const noexcept { return m_cached_type; }
+  [[nodiscard]] auto cachedTypeOrAssert() const noexcept {
+    MINT_ASSERT(m_cached_type != nullptr);
+    return m_cached_type;
+  }
+  [[nodiscard]] auto kind() const noexcept { return m_kind; }
+  [[nodiscard]] auto attributes() const noexcept { return m_attributes; }
+  [[nodiscard]] auto location() const noexcept { return m_location; }
+
+  virtual Ptr clone(Allocator &allocator) const noexcept = 0;
+  virtual void print(std::ostream &out) const noexcept = 0;
+
+  virtual Result<Type::Ptr> typecheck(Environment &env) const noexcept = 0;
+  virtual Result<Ast::Ptr> evaluate(Environment &env) noexcept = 0;
+};
+
+inline auto operator<<(std::ostream &out, Ast::Ptr const &ast) noexcept
+    -> std::ostream & {
+  ast->print(out);
+  return out;
+}
+
+/*
 struct Ast {
   using Ptr = std::shared_ptr<Ast>;
 
@@ -33,11 +103,11 @@ struct Ast {
     Attributes attributes;
     Location location;
     Identifier id;
-    std::optional<Type::Pointer> annotation;
+    std::optional<Type::Ptr> annotation;
     Ast::Ptr term;
 
     Let(Attributes attributes, Location location, Identifier id,
-        std::optional<Type::Pointer> annotation, Ast::Ptr term) noexcept
+        std::optional<Type::Ptr> annotation, Ast::Ptr term) noexcept
         : attributes(attributes), location(location), id(id),
           annotation(annotation), term(term) {}
   };
@@ -116,9 +186,9 @@ struct Ast {
     // std::optional<Identifier> second;
 
     Import(Attributes attributes, Location location, std::string_view file
-           /*,std::optional<Identifier> second = std::nullopt*/) noexcept
+           ) noexcept
         : attributes(attributes), location(location), file(file)
-    /*,second(second)*/ {}
+     {}
   };
 
   struct Value {
@@ -175,7 +245,7 @@ public:
                                             std::forward<Args>(args)...);
   }
 
-  /*
+
     void setCachedType(mint::Type::Pointer type) const noexcept {
       MINT_ASSERT(type != nullptr);
       type_cache = type;
@@ -186,7 +256,7 @@ public:
       }
       return type_cache;
     }
-  */
+
 };
 
 template <typename T> auto isa(Ast const *ast) -> bool {
@@ -199,13 +269,13 @@ template <typename T> auto isa(Ast::Value const *value) -> bool {
   return std::holds_alternative<T>(value->data);
 }
 
-/*
+
   it is a bit idiosyncratic to return a pointer
   when we are asserting that the get needs to succeed.
   when we could return a nullptr.
   however, I like this usage of pointers more, as
   we aren't creating nullptrs to unintentionally deref later.
-*/
+
 template <typename T> auto get(Ast *ast) -> T * {
   MINT_ASSERT(isa<T>(ast));
   return std::get_if<T>(&ast->data);
@@ -307,4 +377,6 @@ public:
 };
 
 inline AstLocationVisitor ast_location{};
+*/
+
 } // namespace mint
