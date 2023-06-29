@@ -21,19 +21,20 @@
 
 #include "ast/Ast.hpp"
 #include "error/Result.hpp"
+#include "scan/Token.hpp"
 #include "utility/Allocator.hpp"
 
 namespace mint {
 class Environment;
 
-using UnopEvalFn = Result<Ast::Ptr> (*)(Ast *right, Environment *env);
+using UnopEvalFn = Result<ast::Ptr> (*)(ast::Ptr &right, Environment &env);
 
 struct UnopOverload {
-  Type::Ptr right_type;
-  Type::Ptr result_type;
+  type::Ptr right_type;
+  type::Ptr result_type;
   UnopEvalFn eval;
 
-  [[nodiscard]] auto operator()(Ast *right, Environment *env) {
+  [[nodiscard]] auto operator()(ast::Ptr &right, Environment &env) {
     return eval(right, env);
   }
 };
@@ -46,7 +47,7 @@ public:
     overloads.reserve(2);
   }
 
-  auto lookup(Type::Ptr right_type) noexcept -> std::optional<UnopOverload> {
+  auto lookup(type::Ptr right_type) noexcept -> std::optional<UnopOverload> {
     for (auto &overload : overloads) {
       if (right_type == overload.right_type) {
         return overload;
@@ -55,7 +56,7 @@ public:
     return std::nullopt;
   }
 
-  auto emplace(Type::Ptr right_type, Type::Ptr result_type,
+  auto emplace(type::Ptr right_type, type::Ptr result_type,
                UnopEvalFn eval) noexcept -> UnopOverload {
     auto found = lookup(right_type);
     if (found) {
@@ -80,11 +81,11 @@ public:
   public:
     Unop(Table::iterator iter) noexcept : iter(iter) {}
 
-    auto lookup(Type::Ptr right_type) noexcept -> std::optional<UnopOverload> {
+    auto lookup(type::Ptr right_type) noexcept -> std::optional<UnopOverload> {
       return iter->second.lookup(right_type);
     }
 
-    auto emplace(Type::Ptr right_type, Type::Ptr result_type,
+    auto emplace(type::Ptr right_type, type::Ptr result_type,
                  UnopEvalFn eval) noexcept -> UnopOverload {
       return iter->second.emplace(right_type, result_type, eval);
     }

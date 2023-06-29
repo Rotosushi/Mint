@@ -16,9 +16,6 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
-#include "adt/Environment.hpp"
-#include "ast/Ast.hpp"
-
 namespace mint {
 
 struct AstValueCloneVisitor {

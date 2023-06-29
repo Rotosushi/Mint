@@ -30,6 +30,7 @@
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
+#include "ast/All.hpp"
 #include "scan/Parser.hpp"
 #include "utility/Allocator.hpp"
 
@@ -97,11 +98,7 @@ public:
 
   auto repl() noexcept -> int;
 
-  // #NOTE: I am trying to factor repl such that
-  // there is code reuse between repl(), evaluate(Ast::Import)
-  // and typecheck(Ast::Module)
-  auto read_type_evaluate(Parser &p) noexcept
-      -> Result<std::tuple<Ast::Ptr, Type::Ptr, Ast::Ptr>>;
+  auto getResource() const noexcept -> Allocator & { return *resource; }
 
   void printErrorWithSource(Error const &error) const noexcept {
     auto optional_location = error.getLocation();
@@ -197,8 +194,8 @@ public:
     local_scope = local_scope->getPrevScope();
   }
 
-  auto bindName(Identifier name, Attributes attributes, Type::Ptr type,
-                Ast::Ptr value) noexcept {
+  auto bindName(Identifier name, Attributes attributes, type::Ptr type,
+                ast::Ptr value) noexcept {
     return local_scope->bindName(name, attributes, type, value);
   }
 
@@ -213,5 +210,66 @@ public:
   auto getBooleanType() noexcept { return type_interner.getBooleanType(); }
   auto getIntegerType() noexcept { return type_interner.getIntegerType(); }
   auto getNilType() noexcept { return type_interner.getNilType(); }
+
+  auto getLetAst(Attributes attributes, Location location,
+                 std::optional<type::Ptr> annotation, Identifier name,
+                 ast::Ptr ast) noexcept -> ast::Ptr {
+    return ast::Let::create(*resource, attributes, location, annotation, name,
+                            std::move(ast));
+  }
+
+  auto getNilAst(Attributes attributes, Location location) noexcept
+      -> ast::Ptr {
+    return ast::Nil::create(*resource, attributes, location);
+  }
+
+  auto getBooleanAst(Attributes attributes, Location location,
+                     bool value) noexcept -> ast::Ptr {
+    return ast::Boolean::create(*resource, attributes, location, value);
+  }
+
+  auto getIntegerAst(Attributes attributes, Location location,
+                     int value) noexcept -> ast::Ptr {
+    return ast::Integer::create(*resource, attributes, location, value);
+  }
+
+  auto getParensAst(Attributes attributes, Location location,
+                    ast::Ptr ast) noexcept -> ast::Ptr {
+    return ast::Parens::create(*resource, attributes, location, std::move(ast));
+  }
+
+  auto getTermAst(Attributes attributes, Location location,
+                  ast::Ptr ast) noexcept -> ast::Ptr {
+    return ast::Term::create(*resource, attributes, location, std::move(ast));
+  }
+
+  auto getBinopAst(Attributes attributes, Location location, Token op,
+                   ast::Ptr left, ast::Ptr right) noexcept -> ast::Ptr {
+    return ast::Binop::create(*resource, attributes, location, op,
+                              std::move(left), std::move(right));
+  }
+
+  auto getImportAst(Attributes attributes, Location location,
+                    std::string filename) noexcept -> ast::Ptr {
+    return ast::Import::create(*resource, attributes, location,
+                               std::move(filename));
+  }
+
+  auto getModuleAst(Attributes attributes, Location location, Identifier name,
+                    ast::Module::Expressions expressions) noexcept -> ast::Ptr {
+    return ast::Module::create(*resource, attributes, location, name,
+                               std::move(expressions));
+  }
+
+  auto getUnopAst(Attributes attributes, Location location, Token op,
+                  ast::Ptr right) noexcept -> ast::Ptr {
+    return ast::Unop::create(*resource, attributes, location, op,
+                             std::move(right));
+  }
+
+  auto getVariableAst(Attributes attributes, Location location,
+                      Identifier name) noexcept -> ast::Ptr {
+    return ast::Variable::create(*resource, attributes, location, name);
+  }
 };
 } // namespace mint

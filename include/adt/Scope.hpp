@@ -20,6 +20,7 @@
 #include <unordered_map>
 
 #include "adt/Attributes.hpp"
+#include "adt/Identifier.hpp"
 #include "ast/Ast.hpp"
 #include "error/Result.hpp"
 /*
@@ -42,7 +43,7 @@ namespace mint {
 class Bindings {
 public:
   using Key = Identifier;
-  using Value = std::tuple<Attributes, Type::Ptr, Ast::Ptr>;
+  using Value = std::tuple<Attributes, type::Ptr, ast::Ptr>;
   using Table = std::unordered_map<Key, Value>;
   using iterator = typename Table::iterator;
 
@@ -66,7 +67,7 @@ public:
     [[nodiscard]] auto isPrivate() const noexcept -> bool {
       return attributes().isPrivate();
     }
-    [[nodiscard]] auto type() const noexcept -> Type::Ptr {
+    [[nodiscard]] auto type() const noexcept -> type::Ptr {
       return std::get<1>(binding->second);
     }
     /*
@@ -76,7 +77,7 @@ public:
       isn't Ast inherits from std::shared_from_this, so we can
       call ast->shared_from_this();
     */
-    [[nodiscard]] auto value() const noexcept -> Ast::Ptr {
+    [[nodiscard]] auto value() const noexcept -> ast::Ptr {
       return std::get<2>(binding->second);
     }
   };
@@ -87,8 +88,8 @@ private:
 public:
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
-  auto bind(Key key, Attributes attributes, Type::Ptr type,
-            Ast::Ptr value) noexcept -> Result<Binding> {
+  auto bind(Key key, Attributes attributes, type::Ptr type,
+            ast::Ptr value) noexcept -> Result<Binding> {
     auto found = lookup(key);
     if (found) {
       return Error{Error::NameAlreadyBoundInScope, {}, key.view()};
@@ -99,8 +100,8 @@ public:
 
   auto updateBoundAttributes(Key key, Attributes attributes) noexcept
       -> Result<Binding>;
-  auto updateBoundType(Key key, Type::Ptr type) noexcept -> Result<Binding>;
-  auto updateBoundValue(Key key, Ast::Ptr value) noexcept -> Result<Binding>;
+  auto updateBoundType(Key key, type::Ptr type) noexcept -> Result<Binding>;
+  auto updateBoundValue(Key key, ast::Ptr value) noexcept -> Result<Binding>;
 
   [[nodiscard]] auto lookup(Key key) noexcept -> Result<Binding> {
     auto found = table.find(key);
@@ -131,8 +132,8 @@ public:
 
     [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
 
-    auto bind(Identifier name, Attributes attributes, Type::Ptr type,
-              Ast::Ptr value) noexcept -> Result<Bindings::Binding>;
+    auto bind(Identifier name, Attributes attributes, type::Ptr type,
+              ast::Ptr value) noexcept -> Result<Bindings::Binding>;
 
     [[nodiscard]] auto lookup(Identifier name) noexcept
         -> Result<Bindings::Binding>;
@@ -225,8 +226,8 @@ public:
     return scopes.empty();
   }
 
-  auto bindName(Identifier name, Attributes attributes, Type::Ptr type,
-                Ast::Ptr value) {
+  auto bindName(Identifier name, Attributes attributes, type::Ptr type,
+                ast::Ptr value) {
     return bindings.bind(name, attributes, type, value);
   }
 

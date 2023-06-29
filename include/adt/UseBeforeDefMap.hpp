@@ -25,7 +25,7 @@ namespace mint {
 class UseBeforeDefMap {
 public:
   using Key = Identifier;
-  using Value = Ast::Ptr;
+  using Value = ast::Ptr;
   using Pair = std::pair<const Key, Value>;
   using Map = std::unordered_multimap<Key, Value, std::hash<Key>,
                                       std::equal_to<Key>, PolyAllocator<Pair>>;
@@ -42,7 +42,7 @@ public:
     return map.equal_range(name);
   }
 
-  auto insert(Identifier name, Ast::Ptr ast) noexcept -> Ast::Ptr {
+  auto insert(Identifier name, ast::Ptr ast) noexcept -> ast::Ptr {
     auto iter = map.insert(Pair{name, ast});
     return iter->second;
   }

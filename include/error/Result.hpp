@@ -18,6 +18,7 @@
 #include <expected>
 
 #include "error/Error.hpp"
+#include "utility/Assert.hpp"
 
 namespace mint {
 template <class T> class Result {

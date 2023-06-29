@@ -14,26 +14,17 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-
-#include "ast/Ast.hpp"
+#include "ast/value/Nil.hpp"
+#include "adt/Environment.hpp"
 
 namespace mint {
-class ValueAst : public Ast {
-protected:
-  ValueAst(Ast::Kind kind, Attributes attributes, Location location) noexcept
-      : Ast{kind, attributes, location} {}
+namespace ast {
+Result<type::Ptr> Nil::typecheck(Environment &env) const noexcept {
+  return env.getNilType();
+}
 
-public:
-  static auto classof(Ast const *ast) noexcept -> bool {
-    return (ast->kind() >= Ast::Kind::Value) &&
-           (ast->kind() <= Ast::Kind::EndValue);
-  }
-
-  virtual Ptr clone(Allocator &allocator) const noexcept = 0;
-  virtual void print(std::ostream &out) const noexcept = 0;
-
-  virtual Result<Type::Ptr> typecheck(Environment &env) const noexcept = 0;
-  virtual Result<Ast::Ptr> evaluate(Environment &env) const noexcept = 0;
-};
+Result<ast::Ptr> Nil::evaluate([[maybe_unused]] Environment &env) noexcept {
+  return shared_from_this();
+}
+} // namespace ast
 } // namespace mint

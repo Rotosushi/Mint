@@ -166,17 +166,17 @@ private:
     return {kind, location, message};
   }
 
-  auto parseTop() noexcept -> Result<Ast::Ptr>;
-  auto parseDeclaration(bool is_public) noexcept -> Result<Ast::Ptr>;
-  auto parseModule(bool is_public) noexcept -> Result<Ast::Ptr>;
-  auto parseLet(bool is_public) noexcept -> Result<Ast::Ptr>;
-  auto parseImport() noexcept -> Result<Ast::Ptr>;
-  auto parseTerm() noexcept -> Result<Ast::Ptr>;
-  auto parseAffix() noexcept -> Result<Ast::Ptr>;
-  auto precedenceParser(Ast::Ptr left, BinopPrecedence prec) noexcept
-      -> Result<Ast::Ptr>;
-  auto parseBasic() noexcept -> Result<Ast::Ptr>;
-  auto parseType() noexcept -> Result<Type::Ptr>;
+  auto parseTop() noexcept -> Result<ast::Ptr>;
+  auto parseDeclaration(bool is_public) noexcept -> Result<ast::Ptr>;
+  auto parseModule(bool is_public) noexcept -> Result<ast::Ptr>;
+  auto parseLet(bool is_public) noexcept -> Result<ast::Ptr>;
+  auto parseImport() noexcept -> Result<ast::Ptr>;
+  auto parseTerm() noexcept -> Result<ast::Ptr>;
+  auto parseAffix() noexcept -> Result<ast::Ptr>;
+  auto precedenceParser(ast::Ptr left, BinopPrecedence prec) noexcept
+      -> Result<ast::Ptr>;
+  auto parseBasic() noexcept -> Result<ast::Ptr>;
+  auto parseType() noexcept -> Result<type::Ptr>;
 
 public:
   Parser(Environment *env, std::istream *in)
@@ -185,6 +185,6 @@ public:
     MINT_ASSERT(in != nullptr);
   }
 
-  auto parse() -> Result<Ast::Ptr> { return parseTop(); }
+  auto parse() -> Result<ast::Ptr> { return parseTop(); }
 };
 } // namespace mint

@@ -27,10 +27,12 @@
 namespace mint {
 class Environment;
 
+namespace ast {
+class Ast;
+using Ptr = std::shared_ptr<Ast>;
+
 class Ast : public std::enable_shared_from_this<Ast> {
 public:
-  using Ptr = std::shared_ptr<Ast>;
-
   enum class Kind {
     // Definitions
     Definition,
@@ -58,7 +60,7 @@ public:
   };
 
 private:
-  mutable Type::Ptr m_cached_type;
+  mutable type::Ptr m_cached_type;
   Kind m_kind;
   Attributes m_attributes;
   Location m_location;
@@ -71,7 +73,7 @@ protected:
 public:
   virtual ~Ast() noexcept = default;
 
-  void setCachedType(Type::Ptr type) const noexcept { m_cached_type = type; }
+  void setCachedType(type::Ptr type) const noexcept { m_cached_type = type; }
 
   [[nodiscard]] auto cachedType() const noexcept { return m_cached_type; }
   [[nodiscard]] auto cachedTypeOrAssert() const noexcept {
@@ -85,16 +87,16 @@ public:
   virtual Ptr clone(Allocator &allocator) const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
 
-  virtual Result<Type::Ptr> typecheck(Environment &env) const noexcept = 0;
-  virtual Result<Ast::Ptr> evaluate(Environment &env) noexcept = 0;
+  virtual Result<type::Ptr> typecheck(Environment &env) const noexcept = 0;
+  virtual Result<ast::Ptr> evaluate(Environment &env) noexcept = 0;
 };
 
-inline auto operator<<(std::ostream &out, Ast::Ptr const &ast) noexcept
+inline auto operator<<(std::ostream &out, ast::Ptr const &ast) noexcept
     -> std::ostream & {
   ast->print(out);
   return out;
 }
-
+} // namespace ast
 /*
 struct Ast {
   using Ptr = std::shared_ptr<Ast>;

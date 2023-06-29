@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <ostream>
 #include <string_view>
 
 #include "utility/Abort.hpp"
@@ -173,7 +174,7 @@ inline auto isUnop(Token token) noexcept -> bool {
   }
 }
 
-inline auto toString(Token token) noexcept -> std::string_view {
+inline auto tokenToView(Token token) noexcept -> std::string_view {
   switch (token) {
   case Token::Error:
     return "Token::Error";
@@ -262,6 +263,12 @@ inline auto toString(Token token) noexcept -> std::string_view {
     abort("Unknown Token");
     break;
   }
+}
+
+inline auto operator<<(std::ostream &out, Token token) noexcept
+    -> std::ostream & {
+  out << tokenToView(token);
+  return out;
 }
 
 } // namespace mint

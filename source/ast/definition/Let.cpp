@@ -17,11 +17,12 @@
 #include <sstream>
 
 #include "adt/Environment.hpp"
-#include "ast/Let.hpp"
+#include "ast/definition/Let.hpp"
 
 namespace mint {
-Result<Type::Ptr> LetAst::typecheck(Environment &env) const noexcept {
-  auto term_type_result = m_term->typecheck(env);
+namespace ast {
+Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
+  auto term_type_result = m_ast->typecheck(env);
   if (!term_type_result)
     return term_type_result;
   auto type = term_type_result.value();
@@ -41,18 +42,19 @@ Result<Type::Ptr> LetAst::typecheck(Environment &env) const noexcept {
   return env.getNilType();
 }
 
-Result<Ast::Ptr> LetAst::evaluate(Environment &env) noexcept {
-  auto term_value_result = m_term->evaluate(env);
+Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
+  auto term_value_result = m_ast->evaluate(env);
   if (!term_value_result)
     return term_value_result;
   auto &value = term_value_result.value();
 
-  auto type = m_term->cachedTypeOrAssert();
+  auto type = m_ast->cachedTypeOrAssert();
 
   auto bound = env.bindName(name(), attributes(), type, value);
   if (!bound)
     return bound.error();
 
-  // return env.getNilAst({}, location());
+  return env.getNilAst({}, location());
 }
+} // namespace ast
 } // namespace mint

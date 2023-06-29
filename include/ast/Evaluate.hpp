@@ -17,12 +17,6 @@
 #pragma once
 #include <sstream>
 
-#include "adt/Environment.hpp"
-#include "ast/Ast.hpp"
-#include "ast/Clone.hpp"
-#include "ast/Typecheck.hpp"
-#include "error/Result.hpp"
-
 namespace mint {
 [[nodiscard]] auto evaluate(Ast::Ptr const &ast, Environment *env)
     -> Result<Ast::Ptr>;

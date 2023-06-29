@@ -33,13 +33,32 @@ add_library(mint_common STATIC
   ${MINT_SOURCE_DIR}/adt/UnopTable.cpp
   ${MINT_INCLUDE_DIR}/adt/UseBeforeDefMap.hpp 
 
+  ${MINT_INCLUDE_DIR}/ast/All.hpp 
   ${MINT_INCLUDE_DIR}/ast/Ast.hpp 
-  ${MINT_INCLUDE_DIR}/ast/Definition.hpp 
-  ${MINT_INCLUDE_DIR}/ast/Let.hpp
-  ${MINT_SOURCE_DIR}/ast/Let.cpp
-  ${MINT_INCLUDE_DIR}/ast/Value.hpp 
-  ${MINT_INCLUDE_DIR}/ast/Nil.hpp 
-  ${MINT_SOURCE_DIR}/ast/Nil.cpp 
+  ${MINT_INCLUDE_DIR}/ast/definition/Definition.hpp 
+  ${MINT_INCLUDE_DIR}/ast/definition/Let.hpp
+  ${MINT_SOURCE_DIR}/ast/definition/Let.cpp
+  ${MINT_INCLUDE_DIR}/ast/value/Value.hpp 
+  ${MINT_INCLUDE_DIR}/ast/value/Nil.hpp 
+  ${MINT_SOURCE_DIR}/ast/value/Nil.cpp 
+  ${MINT_INCLUDE_DIR}/ast/value/Boolean.hpp 
+  ${MINT_SOURCE_DIR}/ast/value/Boolean.cpp 
+  ${MINT_INCLUDE_DIR}/ast/value/Integer.hpp 
+  ${MINT_SOURCE_DIR}/ast/value/Integer.cpp 
+  ${MINT_INCLUDE_DIR}/ast/syntax/Parens.hpp 
+  ${MINT_SOURCE_DIR}/ast/syntax/Parens.cpp 
+  ${MINT_INCLUDE_DIR}/ast/syntax/Term.hpp 
+  ${MINT_SOURCE_DIR}/ast/syntax/Term.cpp 
+  ${MINT_INCLUDE_DIR}/ast/semantics/Binop.hpp 
+  ${MINT_SOURCE_DIR}/ast/semantics/Binop.cpp
+  ${MINT_INCLUDE_DIR}/ast/semantics/Import.hpp 
+  ${MINT_SOURCE_DIR}/ast/semantics/Import.cpp
+  ${MINT_INCLUDE_DIR}/ast/semantics/Module.hpp
+  ${MINT_SOURCE_DIR}/ast/semantics/Module.cpp 
+  ${MINT_INCLUDE_DIR}/ast/semantics/Unop.hpp 
+  ${MINT_SOURCE_DIR}/ast/semantics/Unop.cpp
+  ${MINT_INCLUDE_DIR}/ast/semantics/Variable.hpp 
+  ${MINT_SOURCE_DIR}/ast/semantics/Variable.cpp
 
   ${MINT_INCLUDE_DIR}/error/Error.hpp
   ${MINT_SOURCE_DIR}/error/Error.cpp
@@ -52,10 +71,11 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/scan/Scanner.hpp
   ${MINT_SOURCE_DIR}/scan/Scanner.cpp
 
+  ${MINT_INCLUDE_DIR}/type/All.hpp 
   ${MINT_INCLUDE_DIR}/type/Type.hpp 
-  ${MINT_INCLUDE_DIR}/type/NilType.hpp 
-  ${MINT_INCLUDE_DIR}/type/BooleanType.hpp 
-  ${MINT_INCLUDE_DIR}/type/IntegerType.hpp
+  ${MINT_INCLUDE_DIR}/type/Nil.hpp 
+  ${MINT_INCLUDE_DIR}/type/Boolean.hpp 
+  ${MINT_INCLUDE_DIR}/type/Integer.hpp
 
   ${MINT_INCLUDE_DIR}/utility/Abort.hpp
   ${MINT_INCLUDE_DIR}/utility/Allocator.hpp 

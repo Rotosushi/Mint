@@ -21,23 +21,23 @@
 
 #include "ast/Ast.hpp"
 #include "error/Result.hpp"
+#include "scan/Token.hpp"
 #include "utility/Allocator.hpp"
 
 namespace mint {
 class Environment;
-/*
 
-*/
-using BinopEvalFn = Result<Ast::Ptr> (*)(Ast *left, Ast *right,
-                                         Environment *env);
+using BinopEvalFn = Result<ast::Ptr> (*)(ast::Ptr &left, ast::Ptr &right,
+                                         Environment &env);
 
 struct BinopOverload {
-  Type::Ptr left_type;
-  Type::Ptr right_type;
-  Type::Ptr result_type;
+  type::Ptr left_type;
+  type::Ptr right_type;
+  type::Ptr result_type;
   BinopEvalFn eval;
 
-  [[nodiscard]] auto operator()(Ast *left, Ast *right, Environment *env) {
+  [[nodiscard]] auto operator()(ast::Ptr &left, ast::Ptr &right,
+                                Environment &env) {
     return eval(left, right, env);
   }
 };
@@ -50,7 +50,7 @@ public:
     overloads.reserve(2);
   }
 
-  auto lookup(Type::Ptr left_type, Type::Ptr right_type) noexcept
+  auto lookup(type::Ptr left_type, type::Ptr right_type) noexcept
       -> std::optional<BinopOverload> {
     for (auto &overload : overloads) {
       if (left_type == overload.left_type &&
@@ -61,7 +61,7 @@ public:
     return std::nullopt;
   }
 
-  auto emplace(Type::Ptr left_type, Type::Ptr right_type, Type::Ptr result_type,
+  auto emplace(type::Ptr left_type, type::Ptr right_type, type::Ptr result_type,
                BinopEvalFn eval) noexcept -> BinopOverload {
     auto found = lookup(left_type, right_type);
     if (found) {
@@ -87,13 +87,13 @@ public:
   public:
     Binop(Table::iterator iter) noexcept : iter(iter) {}
 
-    auto lookup(Type::Ptr left_type, Type::Ptr right_type) noexcept
+    auto lookup(type::Ptr left_type, type::Ptr right_type) noexcept
         -> std::optional<BinopOverload> {
       return iter->second.lookup(left_type, right_type);
     }
 
-    auto emplace(Type::Ptr left_type, Type::Ptr right_type,
-                 Type::Ptr result_type, BinopEvalFn eval) noexcept
+    auto emplace(type::Ptr left_type, type::Ptr right_type,
+                 type::Ptr result_type, BinopEvalFn eval) noexcept
         -> BinopOverload {
       return iter->second.emplace(left_type, right_type, result_type, eval);
     }

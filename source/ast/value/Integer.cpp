@@ -14,23 +14,17 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-
-#include "type/Type.hpp"
+#include "ast/value/Integer.hpp"
+#include "adt/Environment.hpp"
 
 namespace mint {
-class IntegerType : public Type {
-public:
-  IntegerType() noexcept : Type{Type::Kind::Integer} {}
+namespace ast {
+Result<type::Ptr> Integer::typecheck(Environment &env) const noexcept {
+  return env.getIntegerType();
+}
 
-  static auto classof(Ptr type) noexcept -> bool {
-    return Type::Kind::Integer == type->kind();
-  }
-
-  [[nodiscard]] bool equals(Ptr right) const noexcept override {
-    return llvm::dyn_cast<const IntegerType>(right) != nullptr;
-  }
-
-  void print(std::ostream &out) const noexcept override { out << "Integer"; }
-};
+Result<ast::Ptr> Integer::evaluate([[maybe_unused]] Environment &env) noexcept {
+  return shared_from_this();
+}
+} // namespace ast
 } // namespace mint

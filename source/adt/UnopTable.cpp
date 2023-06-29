@@ -18,17 +18,9 @@
 #include "adt/Environment.hpp"
 
 namespace mint {
-auto unop_minus(Ast *right, Environment *env) -> Result<Ast::Ptr> {
-  auto *value = get<Ast::Value>(right);
-  auto *integer = get<Ast::Value::Integer>(value);
-  return env->getIntegerAst(Attributes{}, Location{}, -integer->value);
-}
+auto unop_minus(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {}
 
-auto unop_not(Ast *right, Environment *env) -> Result<Ast::Ptr> {
-  auto *value = get<Ast::Value>(right);
-  auto *boolean = get<Ast::Value::Boolean>(value);
-  return env->getBooleanAst(Attributes{}, Location{}, !boolean->value);
-}
+auto unop_not(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {}
 
 void InitializeBuiltinUnops(Environment *env) {
   auto minus = env->createUnop(Token::Minus);

@@ -16,27 +16,35 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
-#include "ast/Value.hpp"
+#include "ast/value/Value.hpp"
 
 namespace mint {
-class NilAst : public ValueAst {
+namespace ast {
+class Integer : public Value {
+  int m_value;
+
 public:
-  NilAst(Attributes attributes, Location location) noexcept
-      : ValueAst{Ast::Kind::Nil, attributes, location} {}
+  Integer(Attributes attributes, Location location, int value) noexcept
+      : Value{Ast::Kind::Integer, attributes, location}, m_value{value} {}
+
+  static auto create(Allocator &allocator, Attributes attributes,
+                     Location location, int value) noexcept -> Ptr {
+    return std::allocate_shared<Integer, Allocator>(allocator, attributes,
+                                                    location, value);
+  }
 
   static auto classof(Ast const *ast) noexcept -> bool {
-    return ast->kind() == Ast::Kind::Nil;
+    return ast->kind() == Ast::Kind::Integer;
   }
 
   Ptr clone(Allocator &allocator) const noexcept override {
-    return std::allocate_shared<NilAst>(allocator, attributes(), location());
+    return create(allocator, attributes(), location(), m_value);
   }
 
-  void print(std::ostream &out) const noexcept override {
-    out << "nil";
-  }
+  void print(std::ostream &out) const noexcept override { out << m_value; }
 
-  Result<Type::Ptr> typecheck(Environment &env) const noexcept override;
-  Result<Ast::Ptr> evaluate(Environment &env) noexcept override;
+  Result<type::Ptr> typecheck(Environment &env) const noexcept override;
+  Result<ast::Ptr> evaluate(Environment &env) noexcept override;
 };
+} // namespace ast
 } // namespace mint

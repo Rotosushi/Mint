@@ -16,21 +16,14 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
-#include "type/Type.hpp"
-
-namespace mint {
-class BooleanType : public Type {
-public:
-  BooleanType() noexcept : Type{Type::Kind::Boolean} {}
-
-  static auto classof(Ptr type) noexcept -> bool {
-    return Type::Kind::Boolean == type->kind();
-  }
-
-  [[nodiscard]] bool equals(Ptr right) const noexcept override {
-    return llvm::dyn_cast<const BooleanType>(right) != nullptr;
-  }
-
-  void print(std::ostream &out) const noexcept override { out << "Boolean"; }
-};
-} // namespace mint
+#include "ast/definition/Let.hpp"
+#include "ast/semantics/Binop.hpp"
+#include "ast/semantics/Import.hpp"
+#include "ast/semantics/Module.hpp"
+#include "ast/semantics/Unop.hpp"
+#include "ast/semantics/Variable.hpp"
+#include "ast/syntax/Parens.hpp"
+#include "ast/syntax/Term.hpp"
+#include "ast/value/Boolean.hpp"
+#include "ast/value/Integer.hpp"
+#include "ast/value/Nil.hpp"

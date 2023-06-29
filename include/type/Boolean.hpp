@@ -19,19 +19,20 @@
 #include "type/Type.hpp"
 
 namespace mint {
-
-class NilType : public Type {
+namespace type {
+class Boolean : public Type {
 public:
-  NilType() noexcept : Type{Type::Kind::Nil} {}
+  Boolean() noexcept : Type{Type::Kind::Boolean} {}
 
   static auto classof(Ptr type) noexcept -> bool {
-    return Type::Kind::Nil == type->kind();
+    return Type::Kind::Boolean == type->kind();
   }
 
   [[nodiscard]] bool equals(Ptr right) const noexcept override {
-    return llvm::dyn_cast<const NilType>(right) != nullptr;
+    return llvm::dyn_cast<const Boolean>(right) != nullptr;
   }
 
-  void print(std::ostream &out) const noexcept override { out << "Nil"; }
+  void print(std::ostream &out) const noexcept override { out << "Boolean"; }
 };
+} // namespace type
 } // namespace mint

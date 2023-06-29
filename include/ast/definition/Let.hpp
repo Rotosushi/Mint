@@ -18,26 +18,33 @@
 #include <optional>
 
 #include "adt/Identifier.hpp"
-#include "ast/Definition.hpp"
+#include "ast/definition/Definition.hpp"
 
 namespace mint {
-class LetAst : public DefinitionAst {
-  Ptr m_term;
+namespace ast {
+class Let : public Definition {
+  Ptr m_ast;
 
 public:
-  LetAst(Attributes attributes, Location location,
-         std::optional<Type::Ptr> annotation, Identifier name,
-         Ptr term) noexcept
-      : DefinitionAst{Ast::Kind::Let, attributes, location, annotation, name},
-        m_term{std::move(term)} {}
+  Let(Attributes attributes, Location location,
+      std::optional<type::Ptr> annotation, Identifier name, Ptr ast) noexcept
+      : Definition{Ast::Kind::Let, attributes, location, annotation, name},
+        m_ast{std::move(ast)} {}
+
+  static auto create(Allocator &allocator, Attributes attributes,
+                     Location location, std::optional<type::Ptr> annotation,
+                     Identifier name, Ptr ast) noexcept -> Ptr {
+    return std::allocate_shared<Let, Allocator>(allocator, attributes, location,
+                                                annotation, name, ast);
+  }
 
   static auto classof(Ast const *ast) noexcept -> bool {
     return Ast::Kind::Let == ast->kind();
   }
 
   Ptr clone(Allocator &allocator) const noexcept override {
-    return std::allocate_shared<LetAst>(allocator, attributes(), location(),
-                                        annotation(), name(), m_term);
+    return create(allocator, attributes(), location(), annotation(), name(),
+                  m_ast);
   }
 
   void print(std::ostream &out) const noexcept override {
@@ -45,10 +52,11 @@ public:
     auto anno = annotation();
     if (anno.has_value())
       out << " : " << anno.value();
-    out << " = " << m_term;
+    out << " = " << m_ast;
   }
 
-  Result<Type::Ptr> typecheck(Environment &env) const noexcept override;
-  Result<Ast::Ptr> evaluate(Environment &env) noexcept override;
+  Result<type::Ptr> typecheck(Environment &env) const noexcept override;
+  Result<ast::Ptr> evaluate(Environment &env) noexcept override;
 };
+} // namespace ast
 } // namespace mint

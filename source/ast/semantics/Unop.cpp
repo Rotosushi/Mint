@@ -14,8 +14,3 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-
-#include "type/Boolean.hpp"
-#include "type/Integer.hpp"
-#include "type/Nil.hpp"

@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "type/Type.hpp"
+#include "type/All.hpp"
 
 namespace mint {
 class TypeInterner {
-  BooleanType boolean_type;
-  IntegerType integer_type;
-  NilType nil_type;
+  type::Boolean boolean_type;
+  type::Integer integer_type;
+  type::Nil nil_type;
 
 public:
   auto getBooleanType() const noexcept { return &boolean_type; }

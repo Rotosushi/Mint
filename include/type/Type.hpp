@@ -20,10 +20,12 @@
 #include "llvm/Support/Casting.h"
 
 namespace mint {
+namespace type {
+class Type;
+using Ptr = Type const *;
+
 class Type {
 public:
-  using Ptr = Type const *;
-
   enum class Kind {
     Nil,
     Boolean,
@@ -43,9 +45,9 @@ public:
   virtual void print(std::ostream &out) const noexcept = 0;
 };
 
-inline auto operator<<(std::ostream &out, Type::Ptr type) -> std::ostream & {
+inline auto operator<<(std::ostream &out, Ptr type) -> std::ostream & {
   type->print(out);
   return out;
 }
-
+} // namespace type
 } // namespace mint
