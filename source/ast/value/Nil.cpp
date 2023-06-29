@@ -20,6 +20,7 @@
 namespace mint {
 namespace ast {
 Result<type::Ptr> Nil::typecheck(Environment &env) const noexcept {
+  setCachedType(env.getNilType());
   return env.getNilType();
 }
 

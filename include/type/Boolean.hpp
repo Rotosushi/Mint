@@ -23,6 +23,7 @@ namespace type {
 class Boolean : public Type {
 public:
   Boolean() noexcept : Type{Type::Kind::Boolean} {}
+  ~Boolean() noexcept override = default;
 
   static auto classof(Ptr type) noexcept -> bool {
     return Type::Kind::Boolean == type->kind();

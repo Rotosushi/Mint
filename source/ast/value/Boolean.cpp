@@ -20,6 +20,7 @@
 namespace mint {
 namespace ast {
 Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {
+  setCachedType(env.getBooleanType());
   return env.getBooleanType();
 }
 

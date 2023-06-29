@@ -70,13 +70,6 @@ public:
     [[nodiscard]] auto type() const noexcept -> type::Ptr {
       return std::get<1>(binding->second);
     }
-    /*
-      note: it might be good to return an Ast* here, as it saves
-      copying a shared ptr, and anything manipulating an Ast is
-      usually only reading it. and in the cases where the code
-      isn't Ast inherits from std::shared_from_this, so we can
-      call ast->shared_from_this();
-    */
     [[nodiscard]] auto value() const noexcept -> ast::Ptr {
       return std::get<2>(binding->second);
     }

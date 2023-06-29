@@ -26,6 +26,9 @@ class Integer : public Value {
 public:
   Integer(Attributes attributes, Location location, int value) noexcept
       : Value{Ast::Kind::Integer, attributes, location}, m_value{value} {}
+  ~Integer() noexcept override = default;
+
+  auto value() const noexcept { return m_value; }
 
   static auto create(Allocator &allocator, Attributes attributes,
                      Location location, int value) noexcept -> Ptr {

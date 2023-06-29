@@ -35,6 +35,7 @@ public:
          Expressions expressions) noexcept
       : Ast{Ast::Kind::Module, attributes, location}, m_name{name},
         m_expressions{std::move(expressions)} {}
+  ~Module() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,
                      Location location, Identifier name,

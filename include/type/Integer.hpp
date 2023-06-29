@@ -23,6 +23,7 @@ namespace type {
 class Integer : public Type {
 public:
   Integer() noexcept : Type{Type::Kind::Integer} {}
+  ~Integer() noexcept override = default;
 
   static auto classof(Ptr type) noexcept -> bool {
     return Type::Kind::Integer == type->kind();

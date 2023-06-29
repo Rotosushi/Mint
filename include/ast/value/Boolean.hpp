@@ -26,6 +26,9 @@ class Boolean : public Value {
 public:
   Boolean(Attributes attributes, Location location, bool value) noexcept
       : Value{Ast::Kind::Boolean, attributes, location}, m_value{value} {}
+  ~Boolean() noexcept override = default;
+
+  auto value() const noexcept { return m_value; }
 
   static auto create(Allocator &allocator, Attributes attributes,
                      Location location, bool value) noexcept -> Ptr {

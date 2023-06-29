@@ -31,6 +31,7 @@ public:
         Ptr right) noexcept
       : Ast{Ast::Kind::Binop, attributes, location}, m_op{op},
         m_left{std::move(left)}, m_right{std::move(right)} {}
+  ~Binop() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,
                      Location location, Token op, Ptr left, Ptr right) noexcept

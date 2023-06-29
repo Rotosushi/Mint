@@ -27,6 +27,7 @@ class Variable : public Ast {
 public:
   Variable(Attributes attributes, Location location, Identifier name) noexcept
       : Ast{Ast::Kind::Variable, attributes, location}, m_name{name} {}
+  ~Variable() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,
                      Location location, Identifier name) noexcept -> Ptr {

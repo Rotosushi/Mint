@@ -24,6 +24,7 @@ class Nil : public Value {
 public:
   Nil(Attributes attributes, Location location) noexcept
       : Value{Ast::Kind::Nil, attributes, location} {}
+  ~Nil() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,
                      Location location) noexcept -> Ptr {

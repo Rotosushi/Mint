@@ -26,6 +26,7 @@ class Term : public Ast {
 public:
   Term(Attributes attributes, Location location, Ptr ast) noexcept
       : Ast{Ast::Kind::Term, attributes, location}, m_ast{std::move(ast)} {}
+  ~Term() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,
                      Location location, Ptr ast) noexcept -> Ptr {

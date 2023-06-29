@@ -26,6 +26,8 @@ protected:
       : Ast{kind, attributes, location} {}
 
 public:
+  ~Value() noexcept override = default;
+
   static auto classof(Ast const *ast) noexcept -> bool {
     return (ast->kind() >= Ast::Kind::Value) &&
            (ast->kind() <= Ast::Kind::EndValue);

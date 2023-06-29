@@ -26,6 +26,7 @@ class Parens : public Ast {
 public:
   Parens(Attributes attributes, Location location, Ptr ast) noexcept
       : Ast{Ast::Kind::Parens, attributes, location}, m_ast{std::move(ast)} {}
+  ~Parens() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,
                      Location location, Ptr ast) noexcept -> Ptr {

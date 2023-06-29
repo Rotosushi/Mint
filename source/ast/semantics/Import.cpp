@@ -14,3 +14,54 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+#include "ast/semantics/Import.hpp"
+#include "adt/Environment.hpp"
+
+namespace mint {
+namespace ast {
+Result<type::Ptr> Import::typecheck(Environment &env) const noexcept {
+  auto exists = env.fileExists(m_filename);
+  if (!exists)
+    return {Error::FileNotFound, location(), m_filename};
+
+  setCachedType(env.getNilType());
+  return env.getNilType();
+}
+
+Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
+  auto found = env.fileSearch(m_filename);
+  if (!found)
+    return {Error::FileNotFound, location(), m_filename};
+  auto &file = found.value();
+  Parser parser{&env, &file};
+
+  while (!parser.endOfInput()) {
+    auto parse_result = parser.parse();
+    if (!parse_result) {
+      auto &error = parse_result.error();
+      if (error.getKind() == Error::EndOfInput)
+        break;
+      env.printErrorWithSource(error, parser);
+      return {Error::ImportFailed, location(), m_filename};
+    }
+    auto &ast = parse_result.value();
+
+    auto typecheck_result = ast->typecheck(env);
+    if (!typecheck_result) {
+      auto &error = typecheck_result.error();
+      env.printErrorWithSource(error, parser);
+      return {Error::ImportFailed, location(), m_filename};
+    }
+
+    auto evaluate_result = ast->evaluate(env);
+    if (!evaluate_result) {
+      auto &error = evaluate_result.error();
+      env.printErrorWithSource(error, parser);
+      return {Error::ImportFailed, location(), m_filename};
+    }
+  }
+
+  return env.getNilAst({}, {});
+}
+} // namespace ast
+} // namespace mint

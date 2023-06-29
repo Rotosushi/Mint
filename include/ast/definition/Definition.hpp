@@ -33,6 +33,8 @@ protected:
         m_name{name} {}
 
 public:
+  ~Definition() noexcept override = default;
+
   static auto classof(Ast const *ast) noexcept -> bool {
     return (ast->kind() >= Ast::Kind::Definition) &&
            (ast->kind() <= Ast::Kind::EndDefinition);

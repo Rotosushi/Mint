@@ -14,3 +14,28 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+#include "ast/semantics/Variable.hpp"
+#include "adt/Environment.hpp"
+
+namespace mint {
+namespace ast {
+Result<type::Ptr> Variable::typecheck(Environment &env) const noexcept {
+  auto bound = env.lookup(m_name);
+  if (!bound) {
+    return {bound.error().getKind(), location(), m_name.view()};
+  }
+
+  setCachedType(bound.value().type());
+  return bound.value().type();
+}
+
+Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {
+  auto bound = env.lookup(m_name);
+  if (!bound) {
+    return {bound.error().getKind(), location(), m_name.view()};
+  }
+
+  return bound.value().value();
+}
+} // namespace ast
+} // namespace mint

@@ -14,3 +14,21 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+#include "ast/syntax/Parens.hpp"
+
+namespace mint {
+namespace ast {
+Result<type::Ptr> Parens::typecheck(Environment &env) const noexcept {
+  auto result = m_ast->typecheck(env);
+  if (!result)
+    return result;
+
+  setCachedType(result.value());
+  return result;
+}
+
+Result<ast::Ptr> Parens::evaluate(Environment &env) noexcept {
+  return m_ast->evaluate(env);
+}
+} // namespace ast
+} // namespace mint

@@ -23,6 +23,7 @@ namespace type {
 class Nil : public Type {
 public:
   Nil() noexcept : Type{Type::Kind::Nil} {}
+  ~Nil() noexcept override = default;
 
   static auto classof(Ptr type) noexcept -> bool {
     return Type::Kind::Nil == type->kind();

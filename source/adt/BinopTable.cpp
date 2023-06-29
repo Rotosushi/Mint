@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/BinopTable.hpp"
 #include "adt/Environment.hpp"
+#include "utility/Casting.hpp"
 
 namespace mint {
 /*
@@ -29,49 +30,124 @@ namespace mint {
 */
 
 auto binop_add(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_integer = cast<ast::Integer>(left.get());
+  auto *right_integer = cast<ast::Integer>(right.get());
+  return env.getIntegerAst({}, {},
+                           left_integer->value() + right_integer->value());
+}
 
 auto binop_sub(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_integer = cast<ast::Integer>(left.get());
+  auto *right_integer = cast<ast::Integer>(right.get());
+  return env.getIntegerAst({}, {},
+                           left_integer->value() - right_integer->value());
+}
 
 auto binop_mult(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_integer = cast<ast::Integer>(left.get());
+  auto *right_integer = cast<ast::Integer>(right.get());
+  return env.getIntegerAst({}, {},
+                           left_integer->value() * right_integer->value());
+}
 
 auto binop_div(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_integer = cast<ast::Integer>(left.get());
+  auto *right_integer = cast<ast::Integer>(right.get());
+  return env.getIntegerAst({}, {},
+                           left_integer->value() / right_integer->value());
+}
 
 auto binop_mod(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_integer = cast<ast::Integer>(left.get());
+  auto *right_integer = cast<ast::Integer>(right.get());
+  return env.getIntegerAst({}, {},
+                           left_integer->value() % right_integer->value());
+}
 
 auto binop_and(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_boolean = cast<ast::Boolean>(left.get());
+  auto *right_boolean = cast<ast::Boolean>(right.get());
+  return env.getBooleanAst({}, {},
+                           left_boolean->value() && right_boolean->value());
+}
 
 auto binop_or(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_boolean = cast<ast::Boolean>(left.get());
+  auto *right_boolean = cast<ast::Boolean>(right.get());
+  return env.getBooleanAst({}, {},
+                           left_boolean->value() || right_boolean->value());
+}
 
 auto binop_integer_equality(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_integer = cast<ast::Integer>(left.get());
+  auto *right_integer = cast<ast::Integer>(right.get());
+  return env.getIntegerAst({}, {},
+                           left_integer->value() == right_integer->value());
+}
 
 auto binop_boolean_equality(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_boolean = cast<ast::Boolean>(left.get());
+  auto *right_boolean = cast<ast::Boolean>(right.get());
+  return env.getBooleanAst({}, {},
+                           left_boolean->value() == right_boolean->value());
+}
 
 auto binop_integer_inequality(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_integer = cast<ast::Integer>(left.get());
+  auto *right_integer = cast<ast::Integer>(right.get());
+  return env.getIntegerAst({}, {},
+                           left_integer->value() != right_integer->value());
+}
 
 auto binop_boolean_inequality(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_boolean = cast<ast::Boolean>(left.get());
+  auto *right_boolean = cast<ast::Boolean>(right.get());
+  return env.getBooleanAst({}, {},
+                           left_boolean->value() != right_boolean->value());
+}
 
 auto binop_less_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_integer = cast<ast::Integer>(left.get());
+  auto *right_integer = cast<ast::Integer>(right.get());
+  return env.getIntegerAst({}, {},
+                           left_integer->value() < right_integer->value());
+}
 
 auto binop_less_than_or_equal(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_integer = cast<ast::Integer>(left.get());
+  auto *right_integer = cast<ast::Integer>(right.get());
+  return env.getIntegerAst({}, {},
+                           left_integer->value() <= right_integer->value());
+}
 
 auto binop_greater_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {}
+    -> Result<ast::Ptr> {
+  auto *left_integer = cast<ast::Integer>(left.get());
+  auto *right_integer = cast<ast::Integer>(right.get());
+  return env.getIntegerAst({}, {},
+                           left_integer->value() > right_integer->value());
+}
 
 auto binop_greater_than_or_equal(ast::Ptr &left, ast::Ptr &right,
-                                 Environment &env) -> Result<ast::Ptr> {}
+                                 Environment &env) -> Result<ast::Ptr> {
+  auto *left_integer = cast<ast::Integer>(left.get());
+  auto *right_integer = cast<ast::Integer>(right.get());
+  return env.getIntegerAst({}, {},
+                           left_integer->value() >= right_integer->value());
+}
 
 void InitializeBuiltinBinops(Environment *env) {
   auto integer_type = env->getIntegerType();

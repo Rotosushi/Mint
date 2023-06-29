@@ -16,11 +16,18 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/UnopTable.hpp"
 #include "adt/Environment.hpp"
+#include "utility/Casting.hpp"
 
 namespace mint {
-auto unop_minus(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {}
+auto unop_minus(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {
+  auto *integer = cast<ast::Integer>(right.get());
+  return env.getIntegerAst({}, {}, -(integer->value()));
+}
 
-auto unop_not(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {}
+auto unop_not(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {
+  auto *boolean = cast<ast::Boolean>(right.get());
+  return env.getBooleanAst({}, {}, !(boolean->value()));
+}
 
 void InitializeBuiltinUnops(Environment *env) {
   auto minus = env->createUnop(Token::Minus);

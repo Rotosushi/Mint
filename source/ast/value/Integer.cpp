@@ -20,6 +20,7 @@
 namespace mint {
 namespace ast {
 Result<type::Ptr> Integer::typecheck(Environment &env) const noexcept {
+  setCachedType(env.getIntegerType());
   return env.getIntegerType();
 }
 

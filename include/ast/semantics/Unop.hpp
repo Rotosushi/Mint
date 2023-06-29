@@ -29,6 +29,7 @@ public:
   Unop(Attributes attributes, Location location, Token op, Ptr right) noexcept
       : Ast{Ast::Kind::Unop, attributes, location}, m_op{op},
         m_right{std::move(right)} {}
+  ~Unop() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,
                      Location location, Token op, Ptr right) noexcept -> Ptr {

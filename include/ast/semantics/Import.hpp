@@ -28,6 +28,7 @@ public:
          std::string filename) noexcept
       : Ast{Ast::Kind::Import, attributes, location},
         m_filename{std::move(filename)} {}
+  ~Import() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,
                      Location location, std::string filename) noexcept -> Ptr {
