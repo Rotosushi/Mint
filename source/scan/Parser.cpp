@@ -52,7 +52,7 @@ top = visibility? declaration
 auto Parser::parseTop() noexcept -> Result<ast::Ptr> {
   fill();
   if (endOfInput()) {
-    return handle_error(Error::EndOfInput);
+    return handle_error(Error::Kind::EndOfInput);
   }
 
   if (peek(Token::Public)) {
@@ -80,7 +80,7 @@ auto Parser::parseDeclaration(bool is_public) noexcept -> Result<ast::Ptr> {
   } else if (peek(Token::Module)) {
     return parseModule(is_public);
   } else {
-    return handle_error(Error::ExpectedADeclaration);
+    return handle_error(Error::Kind::ExpectedADeclaration);
   }
 }
 
@@ -96,7 +96,7 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<ast::Ptr> {
   next(); // eat 'let'
 
   if (!peek(Token::Identifier)) {
-    return handle_error(Error::ExpectedAnIdentifier);
+    return handle_error(Error::Kind::ExpectedAnIdentifier);
   }
 
   auto id = env->getIdentifier(text());
@@ -111,7 +111,7 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<ast::Ptr> {
   }
 
   if (!expect(Token::Equal)) {
-    return handle_error(Error::ExpectedAnEquals);
+    return handle_error(Error::Kind::ExpectedAnEquals);
   }
 
   auto affix = parseTerm();
@@ -137,14 +137,14 @@ auto Parser::parseModule(bool is_public) noexcept -> Result<ast::Ptr> {
   next(); // eat 'module'
 
   if (!peek(Token::Identifier)) {
-    return handle_error(Error::ExpectedAnIdentifier);
+    return handle_error(Error::Kind::ExpectedAnIdentifier);
   }
 
   auto id = env->getIdentifier(text());
   next();
 
   if (!expect(Token::BeginBrace)) {
-    return handle_error(Error::ExpectedABeginBrace);
+    return handle_error(Error::Kind::ExpectedABeginBrace);
   }
 
   ast::Module::Expressions expressions(env->getResource());
@@ -172,14 +172,14 @@ auto Parser::parseImport() noexcept -> Result<ast::Ptr> {
   next(); // eat "import"
 
   if (!peek(Token::Text)) {
-    return handle_error(Error::ExpectedText);
+    return handle_error(Error::Kind::ExpectedText);
   }
 
   auto file = env->getText(text());
   next(); // eat string
 
   if (!expect(Token::Semicolon)) {
-    return handle_error(Error::ExpectedASemicolon);
+    return handle_error(Error::Kind::ExpectedASemicolon);
   }
 
   auto right_loc = location();
@@ -198,7 +198,7 @@ auto Parser::parseTerm() noexcept -> Result<ast::Ptr> {
   auto &affix = result.value();
 
   if (!expect(Token::Semicolon)) {
-    return handle_error(Error::ExpectedASemicolon);
+    return handle_error(Error::Kind::ExpectedASemicolon);
   }
 
   auto right_loc = location();
@@ -369,7 +369,7 @@ auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
       return affix;
 
     if (!expect(Token::EndParen)) {
-      return handle_error(Error::ExpectedAClosingParen);
+      return handle_error(Error::Kind::ExpectedAClosingParen);
     }
 
     return env->getParensAst(default_attributes, affix.value()->location(),
@@ -378,7 +378,7 @@ auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
   }
 
   default:
-    return handle_error(Error::ExpectedABasicTerm);
+    return handle_error(Error::Kind::ExpectedABasicTerm);
     break;
   }
 }
@@ -406,7 +406,7 @@ auto Parser::parseType() noexcept -> Result<type::Ptr> {
   }
 
   default:
-    return handle_error(Error::ExpectedAType);
+    return handle_error(Error::Kind::ExpectedAType);
     break;
   }
 }

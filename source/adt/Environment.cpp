@@ -100,7 +100,7 @@ auto Environment::repl() noexcept -> int {
     auto parse_result = parser.parse();
     if (!parse_result) {
       auto &error = parse_result.error();
-      if (error.getKind() == Error::EndOfInput)
+      if (error.kind() == Error::Kind::EndOfInput)
         break;
 
       printErrorWithSource(error);
@@ -122,12 +122,7 @@ auto Environment::repl() noexcept -> int {
       //     and evaluate the term
       // 3b) iff we don't find anything registered to this definition
       //     in the map, then continue on with the loop.
-      if (error.getKind() == Error::NameUnboundInScope) {
-        auto message = error.getMessage();
-        MINT_ASSERT(message.has_value());
-        auto name = getIdentifier(message.value());
-
-        use_before_def_map.insert(name, ast);
+      if (error.kind() == Error::Kind::UseBeforeDef) {
 
         continue;
       }

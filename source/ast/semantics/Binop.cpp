@@ -22,7 +22,7 @@ namespace ast {
 Result<type::Ptr> Binop::typecheck(Environment &env) const noexcept {
   auto overloads = env.lookupBinop(m_op);
   if (!overloads)
-    return {Error::UnknownBinop, location(), tokenToView(m_op)};
+    return {Error::Kind::UnknownBinop, location(), tokenToView(m_op)};
 
   auto left_result = m_left->typecheck(env);
   if (!left_result)
@@ -40,7 +40,7 @@ Result<type::Ptr> Binop::typecheck(Environment &env) const noexcept {
     message << "no instance of binop [" << m_op
             << "] exists given argument types [" << left_type << ","
             << right_type << "]";
-    return {Error::BinopTypeMismatch, location(), message.view()};
+    return {Error::Kind::BinopTypeMismatch, location(), message.view()};
   }
 
   setCachedType(instance->result_type);
@@ -50,7 +50,7 @@ Result<type::Ptr> Binop::typecheck(Environment &env) const noexcept {
 Result<ast::Ptr> Binop::evaluate(Environment &env) noexcept {
   auto overloads = env.lookupBinop(m_op);
   if (!overloads)
-    return {Error::UnknownBinop, location(), tokenToView(m_op)};
+    return {Error::Kind::UnknownBinop, location(), tokenToView(m_op)};
 
   auto left_result = m_left->evaluate(env);
   if (!left_result)
@@ -70,7 +70,7 @@ Result<ast::Ptr> Binop::evaluate(Environment &env) noexcept {
     message << "no instance of binop [" << m_op
             << "] exists given argument types [" << left_type << ","
             << right_type << "]";
-    return {Error::BinopTypeMismatch, location(), message.view()};
+    return {Error::Kind::BinopTypeMismatch, location(), message.view()};
   }
 
   return (*instance)(left_value, right_value, env);

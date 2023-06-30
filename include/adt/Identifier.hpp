@@ -127,6 +127,15 @@ public:
     "a0::...::aN::x" -> "x"
   */
   [[nodiscard]] auto variable() noexcept -> Identifier;
+
+  /*
+    "x",   "a"           -> "a::x"
+    "::x", "a"           -> "::x"
+    "a::x", "b"          -> "b::a::x"
+    "a0::...::aN::x"     -> "b::a0::...::aN::x"
+  */
+  [[nodiscard]] auto prependScope(Identifier scope) noexcept
+      -> Identifier;
 };
 
 inline auto operator<<(std::ostream &out, Identifier const &id) noexcept

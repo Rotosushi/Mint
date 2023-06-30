@@ -15,44 +15,39 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <optional>
 
-#include "adt/Identifier.hpp"
 #include "ast/Ast.hpp"
 
 namespace mint {
 namespace ast {
 /*
   #NOTE: the common base class of all Ast's which
-  define a new name within the program.
+  represent some semantics within the grammar of the
+  program.
 */
-class Definition : public Ast {
-  std::optional<type::Ptr> m_annotation;
-  Identifier m_name;
-
+class Semantics : public Ast {
 protected:
-  Definition(Ast::Kind kind, Attributes attributes, Location location,
-             std::optional<type::Ptr> annotation, Identifier name) noexcept
-      : Ast{kind, attributes, location}, m_annotation{annotation},
-        m_name{name} {}
+  Semantics(Ast::Kind kind, Attributes attributes, Location location) noexcept
+      : Ast{kind, attributes, location} {}
 
 public:
-  ~Definition() noexcept override = default;
+  ~Semantics() noexcept override = default;
 
   static auto classof(Ast const *ast) noexcept -> bool {
-    return (ast->kind() >= Ast::Kind::Definition) &&
-           (ast->kind() <= Ast::Kind::EndDefinition);
-  }
-
-  std::optional<type::Ptr> annotation() const noexcept { return m_annotation; }
-  Identifier name() const noexcept { return m_name; }
-
-  std::optional<Identifier> getDefinitionName() const noexcept override {
-    return m_name;
+    return (ast->kind() >= Ast::Kind::Semantics) &&
+           (ast->kind() <= Ast::Kind::EndSemantics);
   }
 
   virtual Ptr clone(Allocator &allocator) const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
+
+  std::optional<Identifier> getDefinitionName() const noexcept override {
+    if (havePrevAst()) {
+      auto prev = getPrevAst();
+      return prev->getDefinitionName();
+    }
+    return std::nullopt;
+  }
 
   virtual Result<type::Ptr> typecheck(Environment &env) const noexcept = 0;
   virtual Result<ast::Ptr> evaluate(Environment &env) noexcept = 0;

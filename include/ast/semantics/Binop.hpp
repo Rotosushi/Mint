@@ -16,12 +16,12 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
-#include "ast/Ast.hpp"
+#include "ast/semantics/Semantics.hpp"
 #include "scan/Token.hpp"
 
 namespace mint {
 namespace ast {
-class Binop : public Ast {
+class Binop : public Semantics {
   Token m_op;
   Ptr m_left;
   Ptr m_right;
@@ -29,7 +29,7 @@ class Binop : public Ast {
 public:
   Binop(Attributes attributes, Location location, Token op, Ptr left,
         Ptr right) noexcept
-      : Ast{Ast::Kind::Binop, attributes, location}, m_op{op},
+      : Semantics{Ast::Kind::Binop, attributes, location}, m_op{op},
         m_left{std::move(left)}, m_right{std::move(right)} {}
   ~Binop() noexcept override = default;
 

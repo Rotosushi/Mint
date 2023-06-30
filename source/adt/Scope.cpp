@@ -95,7 +95,8 @@ auto ScopeTable::emplace(Identifier name,
       // note: this check prevents a module within a module
       // from accessing the outer modules private variables.
       if (found.value().isPrivate()) {
-        return Error{Error::NameIsPrivateInScope, Location{}, name.view()};
+        return Error{Error::Kind::NameIsPrivateInScope, Location{},
+                     name.view()};
       }
 
       return found;
@@ -114,4 +115,26 @@ auto ScopeTable::emplace(Identifier name,
   // name is of the form "a0::...::aN::x"
   return qualifiedScopeLookup(name);
 }
+
+// #NOTE: walk up to global scope, building up the
+// qualified name as we return to the local scope.
+[[nodiscard]] auto Scope::getQualifiedNameImpl(Identifier name) noexcept
+    -> Identifier {
+  if (isGlobal()) {
+    return name;
+  }
+
+  // qualify the name with the previous scope first.
+  auto prev = prev_scope.lock();
+  auto base = prev->getQualifiedNameImpl(name);
+
+  // if this scope has a name, add it to the qualifications.
+  if (this->name.has_value()) {
+    auto qualified = base.prependScope(this->name.value());
+    return qualified;
+  } else {
+    return base;
+  }
+}
+
 } // namespace mint

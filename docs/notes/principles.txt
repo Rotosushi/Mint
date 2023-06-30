@@ -24,3 +24,8 @@
 
 "Don't be everything for everyone"
 "Single Responsibility"
+
+"YAGNI - You Aren't Going To Need It"
+"Don't try and solve a problem you don't have,
+ or a problem you haven't encountered yet"
+"One step at a time, don't jump over any step"

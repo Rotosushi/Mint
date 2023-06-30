@@ -16,16 +16,16 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
-#include "ast/Ast.hpp"
+#include "ast/syntax/Syntax.hpp"
 
 namespace mint {
 namespace ast {
-class Term : public Ast {
+class Term : public Syntax {
   Ptr m_ast;
 
 public:
   Term(Attributes attributes, Location location, Ptr ast) noexcept
-      : Ast{Ast::Kind::Term, attributes, location}, m_ast{std::move(ast)} {}
+      : Syntax{Ast::Kind::Term, attributes, location}, m_ast{std::move(ast)} {}
   ~Term() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,

@@ -22,7 +22,7 @@ namespace ast {
 Result<type::Ptr> Unop::typecheck(Environment &env) const noexcept {
   auto overloads = env.lookupUnop(m_op);
   if (!overloads)
-    return {Error::UnknownUnop, location(), tokenToView(m_op)};
+    return {Error::Kind::UnknownUnop, location(), tokenToView(m_op)};
 
   auto right_result = m_right->typecheck(env);
   if (!right_result)
@@ -34,7 +34,7 @@ Result<type::Ptr> Unop::typecheck(Environment &env) const noexcept {
     std::stringstream message;
     message << "no instance of [" << m_op << "] found for type [" << right_type
             << "]";
-    return {Error::UnopTypeMismatch, m_right->location(), message.view()};
+    return {Error::Kind::UnopTypeMismatch, m_right->location(), message.view()};
   }
 
   setCachedType(instance->result_type);
@@ -44,7 +44,7 @@ Result<type::Ptr> Unop::typecheck(Environment &env) const noexcept {
 Result<ast::Ptr> Unop::evaluate(Environment &env) noexcept {
   auto overloads = env.lookupUnop(m_op);
   if (!overloads)
-    return {Error::UnknownUnop, location(), tokenToView(m_op)};
+    return {Error::Kind::UnknownUnop, location(), tokenToView(m_op)};
 
   auto right_type = m_right->cachedTypeOrAssert();
 
@@ -58,7 +58,7 @@ Result<ast::Ptr> Unop::evaluate(Environment &env) noexcept {
     std::stringstream message;
     message << "no instance of [" << m_op << "] found for type [" << right_type
             << "]";
-    return {Error::UnopTypeMismatch, m_right->location(), message.view()};
+    return {Error::Kind::UnopTypeMismatch, m_right->location(), message.view()};
   }
 
   return (*instance)(right_value, env);

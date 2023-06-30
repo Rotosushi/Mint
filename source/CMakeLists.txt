@@ -45,10 +45,12 @@ add_library(mint_common STATIC
   ${MINT_SOURCE_DIR}/ast/value/Boolean.cpp 
   ${MINT_INCLUDE_DIR}/ast/value/Integer.hpp 
   ${MINT_SOURCE_DIR}/ast/value/Integer.cpp 
+  ${MINT_INCLUDE_DIR}/ast/syntax/Syntax.hpp 
   ${MINT_INCLUDE_DIR}/ast/syntax/Parens.hpp 
   ${MINT_SOURCE_DIR}/ast/syntax/Parens.cpp 
   ${MINT_INCLUDE_DIR}/ast/syntax/Term.hpp 
   ${MINT_SOURCE_DIR}/ast/syntax/Term.cpp 
+  ${MINT_INCLUDE_DIR}/ast/semantics/Semantics.hpp
   ${MINT_INCLUDE_DIR}/ast/semantics/Binop.hpp 
   ${MINT_SOURCE_DIR}/ast/semantics/Binop.cpp
   ${MINT_INCLUDE_DIR}/ast/semantics/Import.hpp 

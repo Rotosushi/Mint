@@ -34,7 +34,7 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
     if (!annotated_type->equals(type)) {
       std::stringstream message;
       message << annotated_type << " != " << type;
-      return {Error::LetTypeMismatch, location(), message.view()};
+      return {Error::Kind::LetTypeMismatch, location(), message.view()};
     }
   }
 

@@ -360,7 +360,11 @@ typecheck "A" -> fails returning Error::NameUnboundInScope with
 the name being "B::g", insert "A" into map with key "B::g", then 
 what do we lookup? I think we want to lookup "A::f" in the map.
 as "A::f" was the definition that failed to typecheck within the
-module itself.
+module itself. But how do we get the name "A::f" from the module 
+if the module failed to typecheck? we have to add some sort of 
+lookup mechanism to find the definition within the module which 
+failed to typecheck. and how do we get the fully qualified name 
+of the current definition from within the definition itself?
 
 parse "B" 
 

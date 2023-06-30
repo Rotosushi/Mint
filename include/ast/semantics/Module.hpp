@@ -18,11 +18,11 @@
 #include <vector>
 
 #include "adt/Identifier.hpp"
-#include "ast/Ast.hpp"
+#include "ast/semantics/Semantics.hpp"
 
 namespace mint {
 namespace ast {
-class Module : public Ast {
+class Module : public Semantics {
 public:
   using Expressions = std::vector<Ptr, PolyAllocator<Ptr>>;
 
@@ -33,7 +33,7 @@ private:
 public:
   Module(Attributes attributes, Location location, Identifier name,
          Expressions expressions) noexcept
-      : Ast{Ast::Kind::Module, attributes, location}, m_name{name},
+      : Semantics{Ast::Kind::Module, attributes, location}, m_name{name},
         m_expressions{std::move(expressions)} {}
   ~Module() noexcept override = default;
 

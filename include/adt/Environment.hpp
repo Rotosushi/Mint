@@ -101,22 +101,24 @@ public:
   auto getResource() const noexcept -> Allocator & { return *resource; }
 
   void printErrorWithSource(Error const &error) const noexcept {
-    auto optional_location = error.getLocation();
-    std::string_view bad_source;
-    if (optional_location.has_value())
-      bad_source = parser.extractSourceLine(optional_location.value());
-
-    error.print(*errout, bad_source);
+    if (error.isDefault()) {
+      auto &data = error.getDefault();
+      auto bad_source = parser.extractSourceLine(data.location);
+      error.print(*errout, bad_source);
+    } else {
+      error.print(*errout);
+    }
   }
 
   void printErrorWithSource(Error const &error,
                             Parser const &parser) const noexcept {
-    auto optional_location = error.getLocation();
-    std::string_view bad_source;
-    if (optional_location.has_value())
-      bad_source = parser.extractSourceLine(optional_location.value());
-
-    error.print(*errout, bad_source);
+    if (error.isDefault()) {
+      auto &data = error.getDefault();
+      auto bad_source = parser.extractSourceLine(data.location);
+      error.print(*errout, bad_source);
+    } else {
+      error.print(*errout);
+    }
   }
 
   /*
@@ -200,6 +202,9 @@ public:
   }
 
   auto lookup(Identifier name) { return local_scope->lookup(name); }
+  auto getQualifiedName(Identifier name) {
+    return local_scope->getQualifiedName(name);
+  }
 
   auto createBinop(Token op) { return binop_table.emplace(op); }
   auto lookupBinop(Token op) { return binop_table.lookup(op); }

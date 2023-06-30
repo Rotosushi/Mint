@@ -20,6 +20,10 @@
 
 namespace mint {
 namespace ast {
+/*
+  #NOTE: the common base class of all Ast's which
+  represent some value within the program.
+*/
 class Value : public Ast {
 protected:
   Value(Ast::Kind kind, Attributes attributes, Location location) noexcept
@@ -35,6 +39,14 @@ public:
 
   virtual Ptr clone(Allocator &allocator) const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
+
+  std::optional<Identifier> getDefinitionName() const noexcept override {
+    if (havePrevAst()) {
+      auto prev = getPrevAst();
+      return prev->getDefinitionName();
+    }
+    return std::nullopt;
+  }
 
   virtual Result<type::Ptr> typecheck(Environment &env) const noexcept = 0;
   virtual Result<ast::Ptr> evaluate(Environment &env) noexcept = 0;

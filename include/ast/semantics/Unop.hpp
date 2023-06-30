@@ -16,18 +16,18 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
-#include "ast/Ast.hpp"
+#include "ast/semantics/Semantics.hpp"
 #include "scan/Token.hpp"
 
 namespace mint {
 namespace ast {
-class Unop : public Ast {
+class Unop : public Semantics {
   Token m_op;
   Ptr m_right;
 
 public:
   Unop(Attributes attributes, Location location, Token op, Ptr right) noexcept
-      : Ast{Ast::Kind::Unop, attributes, location}, m_op{op},
+      : Semantics{Ast::Kind::Unop, attributes, location}, m_op{op},
         m_right{std::move(right)} {}
   ~Unop() noexcept override = default;
 

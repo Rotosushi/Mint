@@ -17,16 +17,16 @@
 #pragma once
 
 #include "adt/Identifier.hpp"
-#include "ast/Ast.hpp"
+#include "ast/semantics/Semantics.hpp"
 
 namespace mint {
 namespace ast {
-class Variable : public Ast {
+class Variable : public Semantics {
   Identifier m_name;
 
 public:
   Variable(Attributes attributes, Location location, Identifier name) noexcept
-      : Ast{Ast::Kind::Variable, attributes, location}, m_name{name} {}
+      : Semantics{Ast::Kind::Variable, attributes, location}, m_name{name} {}
   ~Variable() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,

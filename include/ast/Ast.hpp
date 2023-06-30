@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "adt/Attributes.hpp"
+#include "adt/Identifier.hpp"
 #include "error/Result.hpp"
 #include "scan/Location.hpp"
 #include "type/Type.hpp"
@@ -48,18 +49,23 @@ public:
     EndValue,
 
     // Syntax
+    Syntax,
     Term,
     Parens,
+    EndSyntax,
 
     // Semantics
+    Semantics,
     Module,
     Import,
     Binop,
     Unop,
     Variable,
+    EndSemantics,
   };
 
 private:
+  mutable std::weak_ptr<Ast> m_prev_ast;
   mutable type::Ptr m_cached_type;
   Kind m_kind;
   Attributes m_attributes;
@@ -67,12 +73,22 @@ private:
 
 protected:
   Ast(Kind kind, Attributes attributes, Location location) noexcept
-      : m_cached_type{nullptr}, m_kind{kind}, m_attributes{attributes},
-        m_location{location} {}
+      : m_prev_ast{}, m_cached_type{nullptr}, m_kind{kind},
+        m_attributes{attributes}, m_location{location} {}
+
+  bool havePrevAst() const noexcept { return !m_prev_ast.expired(); }
+
+  std::shared_ptr<Ast> getPrevAst() const noexcept {
+    MINT_ASSERT(havePrevAst());
+    return m_prev_ast.lock();
+  }
 
 public:
   virtual ~Ast() noexcept = default;
 
+  void setPrevAst(std::weak_ptr<Ast> prev_ast) const noexcept {
+    m_prev_ast = prev_ast;
+  }
   void setCachedType(type::Ptr type) const noexcept { m_cached_type = type; }
 
   [[nodiscard]] auto cachedType() const noexcept { return m_cached_type; }
@@ -84,11 +100,20 @@ public:
   [[nodiscard]] auto attributes() const noexcept { return m_attributes; }
   [[nodiscard]] auto location() const noexcept { return m_location; }
 
-  virtual Ptr clone(Allocator &allocator) const noexcept = 0;
+  [[nodiscard]] virtual Ptr clone(Allocator &allocator) const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
 
-  virtual Result<type::Ptr> typecheck(Environment &env) const noexcept = 0;
-  virtual Result<ast::Ptr> evaluate(Environment &env) noexcept = 0;
+  // #NOTE: walk up the Ast, iff we find an definition,
+  // then return the definitions name.
+  // if we reach the top the return std::nullopt
+  // #TODO: this isn't a name I am totally happy with.
+  [[nodiscard]] virtual std::optional<Identifier>
+  getDefinitionName() const noexcept = 0;
+
+  [[nodiscard]] virtual Result<type::Ptr>
+  typecheck(Environment &env) const noexcept = 0;
+  [[nodiscard]] virtual Result<ast::Ptr>
+  evaluate(Environment &env) noexcept = 0;
 };
 
 inline auto operator<<(std::ostream &out, ast::Ptr const &ast) noexcept

@@ -85,7 +85,7 @@ public:
             ast::Ptr value) noexcept -> Result<Binding> {
     auto found = lookup(key);
     if (found) {
-      return Error{Error::NameAlreadyBoundInScope, {}, key.view()};
+      return Error{Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
     }
     auto pair = table.try_emplace(key, Value{attributes, type, value});
     return Binding{pair.first};
@@ -99,7 +99,7 @@ public:
   [[nodiscard]] auto lookup(Key key) noexcept -> Result<Binding> {
     auto found = table.find(key);
     if (found == table.end()) {
-      return Error{Error::NameUnboundInScope, {}, key.view()};
+      return Error{Error::Kind::NameUnboundInScope, {}, key.view()};
     }
     return {found};
   }
@@ -151,7 +151,7 @@ public:
   [[nodiscard]] auto lookup(Identifier name) noexcept -> Result<Entry> {
     auto found = table.find(name);
     if (found == table.end()) {
-      return Error{Error::NameUnboundInScope, Location{}, name.view()};
+      return Error{Error::Kind::NameUnboundInScope, Location{}, name.view()};
     }
     return Entry{found};
   }
@@ -179,6 +179,9 @@ private:
       -> Result<Bindings::Binding>;
   [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept
       -> Result<Bindings::Binding>;
+
+  [[nodiscard]] auto getQualifiedNameImpl(Identifier name) noexcept
+      -> Identifier;
 
   void setGlobal(std::weak_ptr<Scope> scope) noexcept { global = scope; }
 
@@ -217,6 +220,11 @@ public:
 
   [[nodiscard]] auto scopesEmpty() const noexcept -> bool {
     return scopes.empty();
+  }
+
+  [[nodiscard]] auto getQualifiedName(Identifier name) noexcept -> Identifier {
+    auto variable = name.variable();
+    return getQualifiedNameImpl(variable);
   }
 
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,

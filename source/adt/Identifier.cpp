@@ -75,4 +75,15 @@ namespace mint {
 
   return *this;
 }
+
+[[nodiscard]] auto Identifier::prependScope(Identifier scope) noexcept
+    -> Identifier {
+  if (!globallyQualified()) {
+    std::string new_name{scope};
+    new_name += "::";
+    new_name += data;
+    return set->emplace(std::move(new_name));
+  }
+  return *this;
+}
 } // namespace mint

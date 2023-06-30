@@ -22,7 +22,12 @@ namespace ast {
 Result<type::Ptr> Variable::typecheck(Environment &env) const noexcept {
   auto bound = env.lookup(m_name);
   if (!bound) {
-    return {bound.error().getKind(), location(), m_name.view()};
+    auto &error = bound.error();
+    if (error.kind() == Error::Kind::NameUnboundInScope) {
+      auto undef = env.getQualifiedName(m_name);
+    }
+
+    return {error.kind(), location(), m_name.view()};
   }
 
   setCachedType(bound.value().type());
@@ -32,7 +37,7 @@ Result<type::Ptr> Variable::typecheck(Environment &env) const noexcept {
 Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {
   auto bound = env.lookup(m_name);
   if (!bound) {
-    return {bound.error().getKind(), location(), m_name.view()};
+    return {bound.error().kind(), location(), m_name.view()};
   }
 
   return bound.value().value();
