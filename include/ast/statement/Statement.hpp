@@ -21,21 +21,21 @@
 namespace mint {
 namespace ast {
 /*
-  #NOTE: the common base class of all Ast's which
-  represent some semantics within the grammar of the
-  program.
+  The base class of all Ast's which result in Nil when
+  typechecked or evaluated. i.e. expressions which are
+  evaluated for their side effects only.
 */
-class Semantics : public Ast {
+class Statement : public Ast {
 protected:
-  Semantics(Ast::Kind kind, Attributes attributes, Location location) noexcept
+  Statement(Ast::Kind kind, Attributes attributes, Location location) noexcept
       : Ast{kind, attributes, location} {}
 
 public:
-  ~Semantics() noexcept override = default;
+  ~Statement() noexcept override = default;
 
   static auto classof(Ast const *ast) noexcept -> bool {
-    return (ast->kind() >= Ast::Kind::Semantics) &&
-           (ast->kind() <= Ast::Kind::EndSemantics);
+    return (ast->kind() >= Ast::Kind::Statement) &&
+           (ast->kind() <= Ast::Kind::EndStatement);
   }
 
   virtual Ptr clone(Allocator &allocator) const noexcept = 0;

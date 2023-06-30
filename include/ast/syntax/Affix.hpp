@@ -16,42 +16,35 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
-#include "ast/semantics/Semantics.hpp"
-#include "scan/Token.hpp"
+#include "ast/syntax/Syntax.hpp"
 
 namespace mint {
 namespace ast {
-class Binop : public Semantics {
-  Token m_op;
-  Ptr m_left;
-  Ptr m_right;
+class Affix : public Syntax {
+  Ptr m_ast;
 
 public:
-  Binop(Attributes attributes, Location location, Token op, Ptr left,
-        Ptr right) noexcept
-      : Semantics{Ast::Kind::Binop, attributes, location}, m_op{op},
-        m_left{std::move(left)}, m_right{std::move(right)} {}
-  ~Binop() noexcept override = default;
+  Affix(Attributes attributes, Location location, Ptr ast) noexcept
+      : Syntax{Ast::Kind::Affix, attributes, location}, m_ast{std::move(ast)} {
+    m_ast->setPrevAst(weak_from_this());
+  }
+  ~Affix() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,
-                     Location location, Token op, Ptr left, Ptr right) noexcept
-      -> Ptr {
-    return std::allocate_shared<Binop, Allocator>(
-        allocator, attributes, location, op, std::move(left), std::move(right));
+                     Location location, Ptr ast) noexcept -> Ptr {
+    return std::allocate_shared<Affix, Allocator>(allocator, attributes,
+                                                  location, std::move(ast));
   }
 
   static auto classof(Ast const *ast) noexcept -> bool {
-    return ast->kind() == Ast::Kind::Binop;
+    return ast->kind() == Ast::Kind::Affix;
   }
 
   Ptr clone(Allocator &allocator) const noexcept override {
-    return create(allocator, attributes(), location(), m_op,
-                  m_left->clone(allocator), m_right->clone(allocator));
+    return create(allocator, attributes(), location(), m_ast->clone(allocator));
   }
 
-  void print(std::ostream &out) const noexcept override {
-    out << m_left << " " << m_op << " " << m_right;
-  }
+  void print(std::ostream &out) const noexcept override { out << m_ast << ";"; }
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;

@@ -14,33 +14,21 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "ast/semantics/Variable.hpp"
-#include "adt/Environment.hpp"
+#include "ast/syntax/Affix.hpp"
 
 namespace mint {
 namespace ast {
-Result<type::Ptr> Variable::typecheck(Environment &env) const noexcept {
-  auto bound = env.lookup(m_name);
-  if (!bound) {
-    auto &error = bound.error();
-    if (error.kind() == Error::Kind::NameUnboundInScope) {
-      auto undef = env.getQualifiedName(m_name);
-    }
+Result<type::Ptr> Affix::typecheck(Environment &env) const noexcept {
+  auto result = m_ast->typecheck(env);
+  if (!result)
+    return result;
 
-    return {error.kind(), location(), m_name.view()};
-  }
-
-  setCachedType(bound.value().type());
-  return bound.value().type();
+  setCachedType(result.value());
+  return result;
 }
 
-Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {
-  auto bound = env.lookup(m_name);
-  if (!bound) {
-    return {bound.error().kind(), location(), m_name.view()};
-  }
-
-  return bound.value().value();
+Result<ast::Ptr> Affix::evaluate(Environment &env) noexcept {
+  return m_ast->evaluate(env);
 }
 } // namespace ast
 } // namespace mint

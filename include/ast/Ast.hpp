@@ -50,18 +50,22 @@ public:
 
     // Syntax
     Syntax,
-    Term,
+    Affix,
     Parens,
     EndSyntax,
 
-    // Semantics
-    Semantics,
-    Module,
-    Import,
+    // Expression
+    Expression,
     Binop,
     Unop,
     Variable,
-    EndSemantics,
+    EndExpression,
+
+    // Statement
+    Statement,
+    Module,
+    Import,
+    EndStatement,
   };
 
 private:
@@ -86,6 +90,17 @@ protected:
 public:
   virtual ~Ast() noexcept = default;
 
+  /*
+    #NOTE: we need this function to set up the chain of
+    pointers back up the current Ast. We cannot accept the
+    prev_ast at time of construction, because the Ast is
+    built from the bottom up. so the prev Ast does not
+    exist when the current Ast is constructed.
+    #NOTE: this function needs to have public access such
+    that the prev Ast node can modify the current ast nodes
+    prev_ast pointer. protected access only works with
+    the members of the current Ast node.
+  */
   void setPrevAst(std::weak_ptr<Ast> prev_ast) const noexcept {
     m_prev_ast = prev_ast;
   }
@@ -105,7 +120,11 @@ public:
 
   // #NOTE: walk up the Ast, iff we find an definition,
   // then return the definitions name.
-  // if we reach the top the return std::nullopt
+  // if we reach the top the return std::nullopt.
+  // #NOTE: use-before-def relies in part on there being
+  // no way of constructing an Ast which holds a
+  // definition within another definition, by the
+  // grammar.
   // #TODO: this isn't a name I am totally happy with.
   [[nodiscard]] virtual std::optional<Identifier>
   getDefinitionName() const noexcept = 0;

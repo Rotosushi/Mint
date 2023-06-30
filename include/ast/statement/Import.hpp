@@ -16,17 +16,17 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
-#include "ast/semantics/Semantics.hpp"
+#include "ast/statement/Statement.hpp"
 
 namespace mint {
 namespace ast {
-class Import : public Semantics {
+class Import : public Statement {
   std::string m_filename;
 
 public:
   Import(Attributes attributes, Location location,
          std::string filename) noexcept
-      : Semantics{Ast::Kind::Import, attributes, location},
+      : Statement{Ast::Kind::Import, attributes, location},
         m_filename{std::move(filename)} {}
   ~Import() noexcept override = default;
 

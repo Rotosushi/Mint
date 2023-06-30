@@ -245,7 +245,7 @@ public:
 
   auto getTermAst(Attributes attributes, Location location,
                   ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast::Term::create(*resource, attributes, location, std::move(ast));
+    return ast::Affix::create(*resource, attributes, location, std::move(ast));
   }
 
   auto getBinopAst(Attributes attributes, Location location, Token op,

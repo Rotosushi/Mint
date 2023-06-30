@@ -14,7 +14,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "ast/semantics/Unop.hpp"
+#include "ast/expression/Unop.hpp"
 #include "adt/Environment.hpp"
 
 namespace mint {

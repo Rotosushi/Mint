@@ -21,25 +21,20 @@
 namespace mint {
 namespace ast {
 /*
-  #NOTE: the common base class of all Ast's which
-  represent some syntax within the grammar of the
-  program.
-  #NOTE: these interior nodes to the Ast theoretically
-  do not need to exist, they are used so that when we
-  print a given Ast, the text produced can be parsed to
-  build up the exact same Ast.
+  The base class of all Ast's which evaluate to some
+  usable value.
 */
-class Syntax : public Ast {
+class Expression : public Ast {
 protected:
-  Syntax(Ast::Kind kind, Attributes attributes, Location location) noexcept
+  Expression(Ast::Kind kind, Attributes attributes, Location location) noexcept
       : Ast{kind, attributes, location} {}
 
 public:
-  ~Syntax() noexcept override = default;
+  ~Expression() noexcept override = default;
 
   static auto classof(Ast const *ast) noexcept -> bool {
-    return (ast->kind() >= Ast::Kind::Syntax) &&
-           (ast->kind() <= Ast::Kind::EndSyntax);
+    return (ast->kind() >= Ast::Kind::Expression) &&
+           (ast->kind() <= Ast::Kind::EndExpression);
   }
 
   virtual Ptr clone(Allocator &allocator) const noexcept = 0;

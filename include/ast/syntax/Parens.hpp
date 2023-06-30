@@ -26,6 +26,7 @@ class Parens : public Syntax {
 public:
   Parens(Attributes attributes, Location location, Ptr ast) noexcept
       : Syntax{Ast::Kind::Parens, attributes, location}, m_ast{std::move(ast)} {
+    m_ast->setPrevAst(weak_from_this());
   }
   ~Parens() noexcept override = default;
 

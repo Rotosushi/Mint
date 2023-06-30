@@ -38,6 +38,23 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/ast/definition/Definition.hpp 
   ${MINT_INCLUDE_DIR}/ast/definition/Let.hpp
   ${MINT_SOURCE_DIR}/ast/definition/Let.cpp
+  ${MINT_INCLUDE_DIR}/ast/expression/Expression.hpp 
+  ${MINT_INCLUDE_DIR}/ast/expression/Binop.hpp 
+  ${MINT_SOURCE_DIR}/ast/expression/Binop.cpp
+  ${MINT_INCLUDE_DIR}/ast/expression/Unop.hpp 
+  ${MINT_SOURCE_DIR}/ast/expression/Unop.cpp
+  ${MINT_INCLUDE_DIR}/ast/expression/Variable.hpp 
+  ${MINT_SOURCE_DIR}/ast/expression/Variable.cpp
+  ${MINT_INCLUDE_DIR}/ast/statement/Statement.hpp
+  ${MINT_INCLUDE_DIR}/ast/statement/Import.hpp 
+  ${MINT_SOURCE_DIR}/ast/statement/Import.cpp
+  ${MINT_INCLUDE_DIR}/ast/statement/Module.hpp
+  ${MINT_SOURCE_DIR}/ast/statement/Module.cpp 
+  ${MINT_INCLUDE_DIR}/ast/syntax/Syntax.hpp 
+  ${MINT_INCLUDE_DIR}/ast/syntax/Affix.hpp 
+  ${MINT_SOURCE_DIR}/ast/syntax/Affix.cpp 
+  ${MINT_INCLUDE_DIR}/ast/syntax/Parens.hpp 
+  ${MINT_SOURCE_DIR}/ast/syntax/Parens.cpp 
   ${MINT_INCLUDE_DIR}/ast/value/Value.hpp 
   ${MINT_INCLUDE_DIR}/ast/value/Nil.hpp 
   ${MINT_SOURCE_DIR}/ast/value/Nil.cpp 
@@ -45,22 +62,7 @@ add_library(mint_common STATIC
   ${MINT_SOURCE_DIR}/ast/value/Boolean.cpp 
   ${MINT_INCLUDE_DIR}/ast/value/Integer.hpp 
   ${MINT_SOURCE_DIR}/ast/value/Integer.cpp 
-  ${MINT_INCLUDE_DIR}/ast/syntax/Syntax.hpp 
-  ${MINT_INCLUDE_DIR}/ast/syntax/Parens.hpp 
-  ${MINT_SOURCE_DIR}/ast/syntax/Parens.cpp 
-  ${MINT_INCLUDE_DIR}/ast/syntax/Term.hpp 
-  ${MINT_SOURCE_DIR}/ast/syntax/Term.cpp 
-  ${MINT_INCLUDE_DIR}/ast/semantics/Semantics.hpp
-  ${MINT_INCLUDE_DIR}/ast/semantics/Binop.hpp 
-  ${MINT_SOURCE_DIR}/ast/semantics/Binop.cpp
-  ${MINT_INCLUDE_DIR}/ast/semantics/Import.hpp 
-  ${MINT_SOURCE_DIR}/ast/semantics/Import.cpp
-  ${MINT_INCLUDE_DIR}/ast/semantics/Module.hpp
-  ${MINT_SOURCE_DIR}/ast/semantics/Module.cpp 
-  ${MINT_INCLUDE_DIR}/ast/semantics/Unop.hpp 
-  ${MINT_SOURCE_DIR}/ast/semantics/Unop.cpp
-  ${MINT_INCLUDE_DIR}/ast/semantics/Variable.hpp 
-  ${MINT_SOURCE_DIR}/ast/semantics/Variable.cpp
+
 
   ${MINT_INCLUDE_DIR}/error/Error.hpp
   ${MINT_SOURCE_DIR}/error/Error.cpp

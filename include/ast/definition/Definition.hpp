@@ -24,7 +24,7 @@ namespace mint {
 namespace ast {
 /*
   #NOTE: the common base class of all Ast's which
-  define a new name within the program.
+  define a new name of some type within the program.
 */
 class Definition : public Ast {
   std::optional<type::Ptr> m_annotation;

@@ -16,39 +16,34 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
-#include "ast/semantics/Semantics.hpp"
-#include "scan/Token.hpp"
+#include "adt/Identifier.hpp"
+#include "ast/expression/Expression.hpp"
 
 namespace mint {
 namespace ast {
-class Unop : public Semantics {
-  Token m_op;
-  Ptr m_right;
+class Variable : public Expression {
+  Identifier m_name;
 
 public:
-  Unop(Attributes attributes, Location location, Token op, Ptr right) noexcept
-      : Semantics{Ast::Kind::Unop, attributes, location}, m_op{op},
-        m_right{std::move(right)} {}
-  ~Unop() noexcept override = default;
+  Variable(Attributes attributes, Location location, Identifier name) noexcept
+      : Expression{Ast::Kind::Variable, attributes, location}, m_name{name} {}
+  ~Variable() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,
-                     Location location, Token op, Ptr right) noexcept -> Ptr {
-    return std::allocate_shared<Unop, Allocator>(
-        allocator, attributes, location, op, std::move(right));
+                     Location location, Identifier name) noexcept -> Ptr {
+    return std::allocate_shared<Variable, Allocator>(allocator, attributes,
+                                                     location, name);
   }
 
   static auto classof(Ast const *ast) noexcept -> bool {
-    return ast->kind() == Ast::Kind::Unop;
+    return ast->kind() == Ast::Kind::Variable;
   }
 
   Ptr clone(Allocator &allocator) const noexcept override {
-    return create(allocator, attributes(), location(), m_op,
-                  m_right->clone(allocator));
+    return create(allocator, attributes(), location(), m_name);
   }
 
-  void print(std::ostream &out) const noexcept override {
-    out << m_op << " " << m_right;
-  }
+  void print(std::ostream &out) const noexcept override { out << m_name; }
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;

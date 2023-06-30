@@ -29,7 +29,9 @@ public:
   Let(Attributes attributes, Location location,
       std::optional<type::Ptr> annotation, Identifier name, Ptr ast) noexcept
       : Definition{Ast::Kind::Let, attributes, location, annotation, name},
-        m_ast{std::move(ast)} {}
+        m_ast{std::move(ast)} {
+    m_ast->setPrevAst(weak_from_this());
+  }
   ~Let() noexcept override = default;
 
   static auto create(Allocator &allocator, Attributes attributes,
