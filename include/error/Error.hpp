@@ -33,8 +33,10 @@ public:
   };
 
   struct UseBeforeDef {
-    Identifier definition;
+    Identifier def;
+    Identifier q_def;
     Identifier undef;
+    Identifier q_undef;
   };
 
   using Data = std::variant<std::monostate, Default, UseBeforeDef>;
@@ -59,16 +61,21 @@ public:
     ExpectedText,
 
     // typecheck errors
+    // import errors
     FileNotFound,
     ImportFailed,
-
+    // definition errors
     LetTypeMismatch,
 
     UseBeforeDef,
+    TypeCannotBeResolved,
+
+    // variable errors
     NameUnboundInScope,
     NameAlreadyBoundInScope,
     NameIsPrivateInScope,
 
+    // operator errors
     UnopTypeMismatch,
     BinopTypeMismatch,
   };
@@ -84,9 +91,10 @@ public:
   Error(Kind kind, Location location, std::string_view message) noexcept
       : m_kind(kind),
         m_data(std::in_place_type<Default>, location, std::string(message)) {}
-  Error(Kind kind, Identifier definition, Identifier undef) noexcept
+  Error(Kind kind, Identifier def, Identifier q_def, Identifier undef,
+        Identifier q_undef) noexcept
       : m_kind(kind),
-        m_data(std::in_place_type<UseBeforeDef>, definition, undef) {}
+        m_data(std::in_place_type<UseBeforeDef>, def, q_def, undef, q_undef) {}
 
   [[nodiscard]] auto isMonostate() const noexcept -> bool {
     return std::holds_alternative<std::monostate>(m_data);

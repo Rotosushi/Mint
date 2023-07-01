@@ -40,7 +40,7 @@ template <class To, class From>
 }
 
 template <class To, class From>
-[[nodiscard]] inline auto dyn_cast(From *value) noexcept {
+[[nodiscard]] inline auto dynCast(From *value) noexcept {
   return llvm::dyn_cast<To>(value);
 }
 } // namespace mint

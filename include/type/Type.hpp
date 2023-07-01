@@ -17,7 +17,7 @@
 #pragma once
 #include <ostream>
 
-#include "llvm/Support/Casting.h"
+#include "utility/Casting.hpp"
 
 namespace mint {
 namespace type {

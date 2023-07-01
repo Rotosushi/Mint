@@ -57,6 +57,11 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
   case Error::Kind::LetTypeMismatch:
     return "Bound type does not equal type annotation";
 
+  case Error::Kind::UseBeforeDef:
+    return "Name use before Definition";
+  case Error::Kind::TypeCannotBeResolved:
+    return "Type of expression cannot be resolved";
+
   case Error::Kind::NameUnboundInScope:
     return "Name not bound in scope";
   case Error::Kind::NameAlreadyBoundInScope:

@@ -27,16 +27,20 @@ Result<type::Ptr> Variable::typecheck(Environment &env) const noexcept {
     if (error.kind() == Error::Kind::NameUnboundInScope) {
       auto found = getDefinitionName();
       if (found) {
-        auto definition = found.value();
-        auto undef = env.getQualifiedName(m_name);
-        return Error{Error::Kind::UseBeforeDef, definition, undef};
+        auto def = found.value();
+        auto q_def = env.getQualifiedName(def);
+        auto undef = m_name;
+        auto q_undef = env.getQualifiedName(undef);
+        return Error{Error::Kind::UseBeforeDef, def, q_def, undef, q_undef};
       }
       // else #NOTE:
       // this variable is not use-before-def within a definition,
       // so it's an attempt to use a use-before-def variable
       // as a value, which is an error.
     }
-
+    // #NOTE: the Error generated within the env does not
+    // have the location information, so we construct a new
+    // Error here adding in more context.
     return {error.kind(), location(), m_name.view()};
   }
 

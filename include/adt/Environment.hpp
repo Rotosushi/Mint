@@ -196,6 +196,23 @@ public:
     local_scope = local_scope->getPrevScope();
   }
 
+  std::optional<Error> handleUseBeforeDef(const Error &error, ast::Ptr &ast) noexcept;
+
+  /*
+    #NOTE: undef is the name which caused the use-before-def error.
+      definition is the name of the definition which failed to typecheck.
+      that is, undef is the name which needs to be defined for the
+      definition to be able to typecheck. (or at least, make it past this
+      single use-before-def type error.)
+  */
+  void bindUseBeforeDef(Identifier undef, Identifier definition, ast::Ptr ast) {
+    use_before_def_map.insert(undef, definition, std::move(ast));
+  }
+  [[nodiscard]] auto lookupUseBeforeDef(Identifier undef)
+      -> UseBeforeDefMap::Range {
+    return use_before_def_map.lookup(undef);
+  }
+
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
                 ast::Ptr value) noexcept {
     return local_scope->bindName(name, attributes, type, value);

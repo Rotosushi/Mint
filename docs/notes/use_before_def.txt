@@ -182,11 +182,11 @@ the error "parse_basic".
 thus it adds the Ast representing the Function to the map 
 key = "parse_basic"
 value = (Ast, optional<Type>)
-then, iff the optional type is filled we can create a temporary 
-full binding in the local scope of "parse_top" to it's type,
+then, iff the optional type is filled we can create a partial 
+ binding in the local scope of "parse_top" to it's type,
 and lookup "parse_top" in the map. we wont find anything so 
-we remove the temporary binding and 
-finally skip, attempting to evaluate the definition.
+we remove the temporary binding.
+finally skip attempting to evaluate the definition.
 
 fact: "parse_top" does not get bound in the local_scope.
 
