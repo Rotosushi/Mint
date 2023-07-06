@@ -147,7 +147,7 @@ auto Parser::parseModule(bool is_public) noexcept -> Result<ast::Ptr> {
     return handle_error(Error::Kind::ExpectedABeginBrace);
   }
 
-  ast::Module::Expressions expressions(env->getResource());
+  ast::Module::Expressions expressions;
   /* top* '}' */
   while (!expect(Token::EndBrace)) {
     auto expr = parseTop();

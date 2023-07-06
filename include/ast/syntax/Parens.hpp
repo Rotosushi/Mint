@@ -30,18 +30,17 @@ public:
   }
   ~Parens() noexcept override = default;
 
-  static auto create(Allocator &allocator, Attributes attributes,
-                     Location location, Ptr ast) noexcept -> Ptr {
-    return std::allocate_shared<Parens, Allocator>(allocator, attributes,
-                                                   location, std::move(ast));
+  static auto create(Attributes attributes, Location location, Ptr ast) noexcept
+      -> Ptr {
+    return std::make_shared<Parens>(attributes, location, std::move(ast));
   }
 
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Parens;
   }
 
-  Ptr clone(Allocator &allocator) const noexcept override {
-    return create(allocator, attributes(), location(), m_ast->clone(allocator));
+  Ptr clone() const noexcept override {
+    return create(attributes(), location(), m_ast->clone());
   }
 
   void print(std::ostream &out) const noexcept override {

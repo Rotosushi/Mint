@@ -32,7 +32,6 @@
 #include "adt/UseBeforeDefMap.hpp"
 #include "ast/All.hpp"
 #include "scan/Parser.hpp"
-#include "utility/Allocator.hpp"
 
 namespace mint {
 class Environment {
@@ -54,7 +53,6 @@ class Environment {
   std::istream *in;
   std::ostream *out;
   std::ostream *errout;
-  Allocator *resource;
 
   std::unique_ptr<llvm::LLVMContext> llvm_context;
   std::unique_ptr<llvm::Module> llvm_module;
@@ -62,17 +60,14 @@ class Environment {
   llvm::TargetMachine *llvm_target_machine;
   llvm::Function *current_llvm_function;
 
-  Environment(Allocator &resource, std::istream *in, std::ostream *out,
-              std::ostream *errout,
+  Environment(std::istream *in, std::ostream *out, std::ostream *errout,
               std::unique_ptr<llvm::LLVMContext> llvm_context,
               std::unique_ptr<llvm::Module> llvm_module,
               std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder,
               llvm::TargetMachine *llvm_target_machine) noexcept
-      : identifier_set(resource), binop_table(resource), unop_table(resource),
-        use_before_def_map(resource),
-        global_scope(Scope::createGlobalScope(resource)),
-        local_scope(global_scope), parser(this, in), in(in), out(out),
-        errout(errout), resource(&resource),
+      : identifier_set(), binop_table(), unop_table(), use_before_def_map(),
+        global_scope(Scope::createGlobalScope()), local_scope(global_scope),
+        parser(this, in), in(in), out(out), errout(errout),
         llvm_context(std::move(llvm_context)),
         llvm_module(std::move(llvm_module)),
         llvm_ir_builder(std::move(llvm_ir_builder)),
@@ -91,15 +86,12 @@ class Environment {
 public:
   [[nodiscard]] static auto nativeCPUFeatures() noexcept -> std::string;
 
-  [[nodiscard]] static auto create(Allocator &resource,
-                                   std::istream *in = &std::cin,
+  [[nodiscard]] static auto create(std::istream *in = &std::cin,
                                    std::ostream *out = &std::cout,
                                    std::ostream *errout = &std::cerr) noexcept
       -> Environment;
 
   auto repl() noexcept -> int;
-
-  auto getResource() const noexcept -> Allocator & { return *resource; }
 
   void printErrorWithSource(Error const &error) const noexcept {
     if (error.isDefault()) {
@@ -165,7 +157,7 @@ public:
     must be alive for the lifetime of a given program.
   */
   void pushScope() noexcept {
-    local_scope = Scope::createScope(*resource, {}, local_scope);
+    local_scope = Scope::createScope({}, local_scope);
   }
 
   /*
@@ -180,7 +172,7 @@ public:
       return;
     }
 
-    auto new_scope = local_scope->bindScope(*resource, name);
+    auto new_scope = local_scope->bindScope(name);
     local_scope = new_scope.ptr();
   }
   // called when we fail to create a module, so we
@@ -250,62 +242,60 @@ public:
   auto getLetAst(Attributes attributes, Location location,
                  std::optional<type::Ptr> annotation, Identifier name,
                  ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast::Let::create(*resource, attributes, location, annotation, name,
+    return ast::Let::create(attributes, location, annotation, name,
                             std::move(ast));
   }
 
   auto getNilAst(Attributes attributes, Location location) noexcept
       -> ast::Ptr {
-    return ast::Nil::create(*resource, attributes, location);
+    return ast::Nil::create(attributes, location);
   }
 
   auto getBooleanAst(Attributes attributes, Location location,
                      bool value) noexcept -> ast::Ptr {
-    return ast::Boolean::create(*resource, attributes, location, value);
+    return ast::Boolean::create(attributes, location, value);
   }
 
   auto getIntegerAst(Attributes attributes, Location location,
                      int value) noexcept -> ast::Ptr {
-    return ast::Integer::create(*resource, attributes, location, value);
+    return ast::Integer::create(attributes, location, value);
   }
 
   auto getParensAst(Attributes attributes, Location location,
                     ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast::Parens::create(*resource, attributes, location, std::move(ast));
+    return ast::Parens::create(attributes, location, std::move(ast));
   }
 
   auto getTermAst(Attributes attributes, Location location,
                   ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast::Affix::create(*resource, attributes, location, std::move(ast));
+    return ast::Affix::create(attributes, location, std::move(ast));
   }
 
   auto getBinopAst(Attributes attributes, Location location, Token op,
                    ast::Ptr left, ast::Ptr right) noexcept -> ast::Ptr {
-    return ast::Binop::create(*resource, attributes, location, op,
-                              std::move(left), std::move(right));
+    return ast::Binop::create(attributes, location, op, std::move(left),
+                              std::move(right));
   }
 
   auto getImportAst(Attributes attributes, Location location,
                     std::string filename) noexcept -> ast::Ptr {
-    return ast::Import::create(*resource, attributes, location,
-                               std::move(filename));
+    return ast::Import::create(attributes, location, std::move(filename));
   }
 
   auto getModuleAst(Attributes attributes, Location location, Identifier name,
                     ast::Module::Expressions expressions) noexcept -> ast::Ptr {
-    return ast::Module::create(*resource, attributes, location, name,
+    return ast::Module::create(attributes, location, name,
                                std::move(expressions));
   }
 
   auto getUnopAst(Attributes attributes, Location location, Token op,
                   ast::Ptr right) noexcept -> ast::Ptr {
-    return ast::Unop::create(*resource, attributes, location, op,
-                             std::move(right));
+    return ast::Unop::create(attributes, location, op, std::move(right));
   }
 
   auto getVariableAst(Attributes attributes, Location location,
                       Identifier name) noexcept -> ast::Ptr {
-    return ast::Variable::create(*resource, attributes, location, name);
+    return ast::Variable::create(attributes, location, name);
   }
 };
 } // namespace mint

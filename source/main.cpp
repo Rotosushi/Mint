@@ -33,8 +33,7 @@ auto main(int argc, char **argv) -> int {
   mint::OptionsParser options_parser{argc, argv};
   options_parser.parse();
 
-  std::pmr::polymorphic_allocator<> alloc = std::pmr::new_delete_resource();
-  mint::Environment env = mint::Environment::create(alloc);
+  mint::Environment env = mint::Environment::create();
 
   return env.repl();
 }

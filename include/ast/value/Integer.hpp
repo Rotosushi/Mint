@@ -30,18 +30,17 @@ public:
 
   auto value() const noexcept { return m_value; }
 
-  static auto create(Allocator &allocator, Attributes attributes,
-                     Location location, int value) noexcept -> Ptr {
-    return std::allocate_shared<Integer, Allocator>(allocator, attributes,
-                                                    location, value);
+  static auto create(Attributes attributes, Location location,
+                     int value) noexcept -> Ptr {
+    return std::make_shared<Integer>(attributes, location, value);
   }
 
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Integer;
   }
 
-  Ptr clone(Allocator &allocator) const noexcept override {
-    return create(allocator, attributes(), location(), m_value);
+  Ptr clone() const noexcept override {
+    return create(attributes(), location(), m_value);
   }
 
   void print(std::ostream &out) const noexcept override { out << m_value; }

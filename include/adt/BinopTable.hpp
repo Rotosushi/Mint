@@ -22,7 +22,6 @@
 #include "ast/Ast.hpp"
 #include "error/Result.hpp"
 #include "scan/Token.hpp"
-#include "utility/Allocator.hpp"
 
 namespace mint {
 class Environment;
@@ -43,12 +42,10 @@ struct BinopOverload {
 };
 
 class BinopOverloads {
-  std::vector<BinopOverload, PolyAllocator<BinopOverload>> overloads;
+  std::vector<BinopOverload> overloads;
 
 public:
-  BinopOverloads(Allocator &allocator) noexcept : overloads(allocator) {
-    overloads.reserve(2);
-  }
+  BinopOverloads() noexcept { overloads.reserve(2); }
 
   auto lookup(type::Ptr left_type, type::Ptr right_type) noexcept
       -> std::optional<BinopOverload> {
@@ -78,8 +75,7 @@ public:
   using Key = Token;
   using Value = BinopOverloads;
   using Pair = std::pair<const Key, Value>;
-  using Table = std::unordered_map<Key, Value, std::hash<Key>,
-                                   std::equal_to<Key>, PolyAllocator<Pair>>;
+  using Table = std::unordered_map<Key, Value>;
 
   class Binop {
     Table::iterator iter;
@@ -100,12 +96,10 @@ public:
   };
 
 private:
-  Allocator *allocator;
   Table table;
 
 public:
-  BinopTable(Allocator &allocator) noexcept
-      : allocator(&allocator), table(PolyAllocator<Pair>(allocator)) {}
+  BinopTable() noexcept = default;
 
   auto lookup(Token op) noexcept -> std::optional<Binop> {
     auto found = table.find(op);
@@ -121,7 +115,7 @@ public:
       return found;
     }
 
-    return table.emplace(std::make_pair(op, BinopOverloads{*allocator})).first;
+    return table.emplace(std::make_pair(op, BinopOverloads{})).first;
   }
 };
 

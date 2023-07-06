@@ -33,19 +33,17 @@ public:
   }
   ~Unop() noexcept override = default;
 
-  static auto create(Allocator &allocator, Attributes attributes,
-                     Location location, Token op, Ptr right) noexcept -> Ptr {
-    return std::allocate_shared<Unop, Allocator>(
-        allocator, attributes, location, op, std::move(right));
+  static auto create(Attributes attributes, Location location, Token op,
+                     Ptr right) noexcept -> Ptr {
+    return std::make_shared<Unop>(attributes, location, op, std::move(right));
   }
 
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Unop;
   }
 
-  Ptr clone(Allocator &allocator) const noexcept override {
-    return create(allocator, attributes(), location(), m_op,
-                  m_right->clone(allocator));
+  Ptr clone() const noexcept override {
+    return create(attributes(), location(), m_op, m_right->clone());
   }
 
   void print(std::ostream &out) const noexcept override {

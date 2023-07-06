@@ -22,7 +22,6 @@
 #include "error/Result.hpp"
 #include "scan/Location.hpp"
 #include "type/Type.hpp"
-#include "utility/Allocator.hpp"
 #include "utility/Assert.hpp"
 
 namespace mint {
@@ -108,7 +107,7 @@ public:
   [[nodiscard]] auto attributes() const noexcept { return m_attributes; }
   [[nodiscard]] auto location() const noexcept { return m_location; }
 
-  [[nodiscard]] virtual Ptr clone(Allocator &allocator) const noexcept = 0;
+  [[nodiscard]] virtual Ptr clone() const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
 
   // #NOTE: walk up the Ast, iff we find an definition,

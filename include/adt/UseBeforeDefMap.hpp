@@ -19,7 +19,6 @@
 
 #include "adt/Identifier.hpp"
 #include "ast/Ast.hpp"
-#include "utility/Allocator.hpp"
 
 namespace mint {
 class UseBeforeDefMap {
@@ -27,7 +26,7 @@ public:
   using Key = Identifier;
   using Value = std::pair<Identifier, ast::Ptr>;
   using Pair = std::pair<const Key, Value>;
-  using Map = std::multimap<Key, Value, std::less<Key>, PolyAllocator<Pair>>;
+  using Map = std::multimap<Key, Value>;
 
   class Entry : public Map::iterator {
   public:
@@ -53,9 +52,6 @@ private:
   Map map;
 
 public:
-  UseBeforeDefMap(Allocator &allocator) noexcept
-      : map(PolyAllocator<Pair>(allocator)) {}
-
   [[nodiscard]] auto lookup(Identifier undef) noexcept -> Range {
     return map.equal_range(undef);
   }

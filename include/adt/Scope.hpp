@@ -81,8 +81,6 @@ private:
   PartialBindings partials;
 
 public:
-  Bindings(Allocator &allocator) noexcept : table(allocator) {}
-
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
   auto partialBind(Key key, type::Ptr type) noexcept -> Binding {
@@ -159,8 +157,8 @@ private:
 public:
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
-  auto emplace(Allocator &allocator, Identifier name,
-               std::weak_ptr<Scope> prev_scope) noexcept -> Entry;
+  auto emplace(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
+      -> Entry;
 
   void unbind(Identifier name) noexcept {
     auto found = table.find(name);
@@ -187,13 +185,12 @@ private:
   ScopeTable scopes;
 
 public:
-  Scope(Allocator &allocator) noexcept : bindings(allocator) {}
-  Scope(Allocator &allocator, std::optional<Identifier> name,
+  Scope() noexcept = default;
+  Scope(std::optional<Identifier> name,
         std::weak_ptr<Scope> prev_scope) noexcept
-      : name(name), prev_scope(prev_scope), bindings(allocator) {}
-  Scope(Allocator &allocator, Identifier name,
-        std::weak_ptr<Scope> prev_scope) noexcept
-      : name(std::move(name)), prev_scope(prev_scope), bindings(allocator) {
+      : name(name), prev_scope(prev_scope) {}
+  Scope(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
+      : name(std::move(name)), prev_scope(prev_scope) {
     auto ptr = prev_scope.lock();
     global = ptr->global;
   }
@@ -210,20 +207,16 @@ private:
   void setGlobal(std::weak_ptr<Scope> scope) noexcept { global = scope; }
 
 public:
-  [[nodiscard]] static auto createGlobalScope(Allocator &allocator)
-      -> std::shared_ptr<Scope> {
-    auto global =
-        std::allocate_shared<Scope, PolyAllocator<Scope>>(allocator, allocator);
+  [[nodiscard]] static auto createGlobalScope() -> std::shared_ptr<Scope> {
+    auto global = std::make_shared<Scope>();
     global->setGlobal(global->weak_from_this());
     return global;
   }
 
-  [[nodiscard]] static auto createScope(Allocator &allocator,
-                                        std::optional<Identifier> name,
+  [[nodiscard]] static auto createScope(std::optional<Identifier> name,
                                         std::weak_ptr<Scope> prev_scope)
       -> std::shared_ptr<Scope> {
-    return std::allocate_shared<Scope, PolyAllocator<Scope>>(
-        allocator, allocator, name, prev_scope);
+    return std::make_shared<Scope>(name, prev_scope);
   }
 
   [[nodiscard]] auto isGlobal() const noexcept -> bool {
@@ -264,8 +257,8 @@ public:
     return bindings.partialBind(name, type);
   }
 
-  auto bindScope(Allocator &allocator, Identifier name) {
-    return scopes.emplace(allocator, name, weak_from_this());
+  auto bindScope(Identifier name) {
+    return scopes.emplace(name, weak_from_this());
   }
 
   void unbindScope(Identifier name) { return scopes.unbind(name); }

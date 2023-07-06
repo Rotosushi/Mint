@@ -20,7 +20,6 @@
 #include <string>
 #include <unordered_set>
 
-#include "utility/Allocator.hpp"
 #include "utility/Assert.hpp"
 
 namespace mint {
@@ -28,13 +27,9 @@ class Identifier;
 
 class IdentifierSet {
 private:
-  std::unordered_set<std::string, std::hash<std::string>,
-                     std::equal_to<std::string>, PolyAllocator<std::string>>
-      set;
+  std::unordered_set<std::string> set;
 
 public:
-  IdentifierSet(Allocator &allocator) noexcept : set(allocator) {}
-
   template <class... Args>
   [[nodiscard]] auto emplace(Args &&...args) noexcept -> Identifier;
 };

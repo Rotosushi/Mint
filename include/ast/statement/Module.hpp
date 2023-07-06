@@ -24,41 +24,38 @@ namespace mint {
 namespace ast {
 class Module : public Statement {
 public:
-  using Expressions = std::vector<Ptr, PolyAllocator<Ptr>>;
+  using Expressions = std::vector<Ptr>;
 
 private:
   Identifier m_name;
   Expressions m_expressions;
 
 public:
-  Module(Allocator &allocator, Attributes attributes, Location location,
-         Identifier name, Expressions expressions) noexcept
+  Module(Attributes attributes, Location location, Identifier name,
+         Expressions expressions) noexcept
       : Statement{Ast::Kind::Module, attributes, location}, m_name{name},
-        m_expressions{std::move(expressions), allocator} {
+        m_expressions{std::move(expressions)} {
     for (auto &expression : m_expressions)
       expression->setPrevAst(this);
   }
   ~Module() noexcept override = default;
 
-  static auto create(Allocator &allocator, Attributes attributes,
-                     Location location, Identifier name,
+  static auto create(Attributes attributes, Location location, Identifier name,
                      Expressions expressions) noexcept -> Ptr {
-    return std::allocate_shared<Module, Allocator>(allocator, allocator,
-                                                   attributes, location, name,
-                                                   std::move(expressions));
+    return std::make_shared<Module>(attributes, location, name,
+                                    std::move(expressions));
   }
 
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Module;
   }
 
-  Ptr clone(Allocator &allocator) const noexcept override {
+  Ptr clone() const noexcept override {
     Expressions expressions;
     for (auto &expression : m_expressions)
-      expressions.emplace_back(expression->clone(allocator));
+      expressions.emplace_back(expression->clone());
 
-    return create(allocator, attributes(), location(), m_name,
-                  std::move(expressions));
+    return create(attributes(), location(), m_name, std::move(expressions));
   }
 
   void print(std::ostream &out) const noexcept override {

@@ -17,21 +17,17 @@
 #include <utility>
 #include <vector>
 
-#include "utility/Allocator.hpp"
-
 namespace mint {
 template <class Key, class Value> class VectorMap {
 public:
   using Pair = std::pair<Key, Value>;
-  using Map = std::vector<Pair, PolyAllocator<Pair>>;
+  using Map = std::vector<Pair>;
   using iterator = typename Map::iterator;
 
 private:
   Map m_map;
 
 public:
-  VectorMap(Allocator &allocator) noexcept : m_map(allocator) {}
-
   [[nodiscard]] auto empty() const noexcept { return m_map.empty(); }
 
   [[nodiscard]] auto begin() noexcept { return m_map.begin(); }

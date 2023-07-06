@@ -16,20 +16,16 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 
-#include "utility/Allocator.hpp"
-
 namespace mint {
 template <class Key> class VectorSet {
 public:
-  using Set = std::vector<Key, PolyAllocator<Key>>;
+  using Set = std::vector<Key>;
   using iterator = typename Set::iterator;
 
 private:
   Set m_set;
 
 public:
-  VectorSet(Allocator &allocator) noexcept : m_set(allocator) {}
-
   [[nodiscard]] auto begin() noexcept { return m_set.begin(); }
   [[nodiscard]] auto end() noexcept { return m_set.end(); }
 

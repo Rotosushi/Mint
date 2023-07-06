@@ -56,8 +56,7 @@ namespace mint {
   return features;
 }
 
-[[nodiscard]] auto Environment::create(Allocator &resource, std::istream *in,
-                                       std::ostream *out,
+[[nodiscard]] auto Environment::create(std::istream *in, std::ostream *out,
                                        std::ostream *errout) noexcept
     -> Environment {
   auto context = std::make_unique<llvm::LLVMContext>();
@@ -81,8 +80,7 @@ namespace mint {
   llvm_module->setDataLayout(data_layout);
   llvm_module->setTargetTriple(target_triple);
 
-  return Environment{resource,
-                     in,
+  return Environment{in,
                      out,
                      errout,
                      std::move(context),

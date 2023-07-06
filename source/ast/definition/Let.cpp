@@ -65,8 +65,7 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
   // this is not the meaning of let, which introduces a
   // new variable. and as such must model the semantics of
   // a new value.
-  auto bound =
-      env.bindName(name(), attributes(), type, value->clone(env.getResource()));
+  auto bound = env.bindName(name(), attributes(), type, value->clone());
   if (!bound)
     return bound.error();
 

@@ -38,7 +38,7 @@ public:
            (ast->kind() <= Ast::Kind::EndStatement);
   }
 
-  virtual Ptr clone(Allocator &allocator) const noexcept = 0;
+  virtual Ptr clone() const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
 
   std::optional<Identifier> getDefinitionName() const noexcept override {
