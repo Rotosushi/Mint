@@ -29,7 +29,7 @@ public:
   Unop(Attributes attributes, Location location, Token op, Ptr right) noexcept
       : Expression{Ast::Kind::Unop, attributes, location}, m_op{op},
         m_right{std::move(right)} {
-    m_right->setPrevAst(weak_from_this());
+    m_right->setPrevAst(this);
   }
   ~Unop() noexcept override = default;
 

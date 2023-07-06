@@ -26,7 +26,7 @@ class Affix : public Syntax {
 public:
   Affix(Attributes attributes, Location location, Ptr ast) noexcept
       : Syntax{Ast::Kind::Affix, attributes, location}, m_ast{std::move(ast)} {
-    m_ast->setPrevAst(weak_from_this());
+    m_ast->setPrevAst(this);
   }
   ~Affix() noexcept override = default;
 

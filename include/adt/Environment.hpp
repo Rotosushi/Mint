@@ -69,7 +69,8 @@ class Environment {
               std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder,
               llvm::TargetMachine *llvm_target_machine) noexcept
       : identifier_set(resource), binop_table(resource), unop_table(resource),
-        use_before_def_map(resource), global_scope(Scope::createGlobalScope()),
+        use_before_def_map(resource),
+        global_scope(Scope::createGlobalScope(resource)),
         local_scope(global_scope), parser(this, in), in(in), out(out),
         errout(errout), resource(&resource),
         llvm_context(std::move(llvm_context)),
@@ -164,7 +165,7 @@ public:
     must be alive for the lifetime of a given program.
   */
   void pushScope() noexcept {
-    local_scope = Scope::createScope({}, local_scope);
+    local_scope = Scope::createScope(*resource, {}, local_scope);
   }
 
   /*
@@ -179,7 +180,7 @@ public:
       return;
     }
 
-    auto new_scope = local_scope->bindScope(name);
+    auto new_scope = local_scope->bindScope(*resource, name);
     local_scope = new_scope.ptr();
   }
   // called when we fail to create a module, so we
@@ -196,7 +197,20 @@ public:
     local_scope = local_scope->getPrevScope();
   }
 
-  std::optional<Error> handleUseBeforeDef(const Error &error, ast::Ptr &ast) noexcept;
+  /*
+    #NOTE: called when we just encountered a term that could not
+    be type'd because it used a name before that name was defined.
+  */
+  std::optional<Error> handleUseBeforeDef(const Error &error,
+                                          ast::Ptr &ast) noexcept;
+
+  /*
+    #NOTE: called when we just defined a new name. Resolves UseBeforeDef
+    bindings that failed to type due to the given definition not being
+    present.
+    this assumes that the "Identifier def" was just fully defined.
+  */
+  std::optional<Error> resolveUseBeforeDef(Identifier def) noexcept;
 
   /*
     #NOTE: undef is the name which caused the use-before-def error.

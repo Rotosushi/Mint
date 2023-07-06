@@ -28,7 +28,6 @@ public:
   using Value = std::pair<Identifier, ast::Ptr>;
   using Pair = std::pair<const Key, Value>;
   using Map = std::multimap<Key, Value, std::less<Key>, PolyAllocator<Pair>>;
-  // using Range = std::pair<Map::iterator, Map::iterator>;
 
   class Entry : public Map::iterator {
   public:

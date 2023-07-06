@@ -15,13 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <map>
 #include <optional>
+#include <set>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
+#include "adt/VectorMap.hpp"
 #include "ast/Ast.hpp"
 #include "error/Result.hpp"
 /*
@@ -45,7 +46,7 @@ class Bindings {
 public:
   using Key = Identifier;
   using Value = std::tuple<Attributes, type::Ptr, ast::Ptr>;
-  using Table = std::unordered_map<Key, Value>;
+  using Table = VectorMap<Key, Value>;
   using iterator = typename Table::iterator;
 
   class Binding : public iterator {
@@ -70,15 +71,18 @@ public:
     [[nodiscard]] auto value() const noexcept -> ast::Ptr {
       return std::get<2>((*this)->second);
     }
+    [[nodiscard]] auto isPartial() const noexcept -> bool { return !value(); }
   };
 
-  using PartialBindings = std::unordered_set<Key>;
+  using PartialBindings = std::set<Key>;
 
 private:
   Table table;
   PartialBindings partials;
 
 public:
+  Bindings(Allocator &allocator) noexcept : table(allocator) {}
+
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
   auto partialBind(Key key, type::Ptr type) noexcept -> Binding {
@@ -128,7 +132,7 @@ class ScopeTable {
 public:
   using Key = Identifier;
   using Value = std::shared_ptr<Scope>;
-  using Table = std::unordered_map<Key, Value>;
+  using Table = std::map<Key, Value>;
 
   class Entry {
     Table::iterator iter;
@@ -155,8 +159,8 @@ private:
 public:
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
-  auto emplace(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
-      -> Entry;
+  auto emplace(Allocator &allocator, Identifier name,
+               std::weak_ptr<Scope> prev_scope) noexcept -> Entry;
 
   void unbind(Identifier name) noexcept {
     auto found = table.find(name);
@@ -182,16 +186,19 @@ private:
   Bindings bindings;
   ScopeTable scopes;
 
-  Scope() noexcept = default;
-  Scope(std::optional<Identifier> name,
+public:
+  Scope(Allocator &allocator) noexcept : bindings(allocator) {}
+  Scope(Allocator &allocator, std::optional<Identifier> name,
         std::weak_ptr<Scope> prev_scope) noexcept
-      : name(name), prev_scope(prev_scope) {}
-  Scope(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
-      : name(std::move(name)), prev_scope(prev_scope) {
+      : name(name), prev_scope(prev_scope), bindings(allocator) {}
+  Scope(Allocator &allocator, Identifier name,
+        std::weak_ptr<Scope> prev_scope) noexcept
+      : name(std::move(name)), prev_scope(prev_scope), bindings(allocator) {
     auto ptr = prev_scope.lock();
     global = ptr->global;
   }
 
+private:
   [[nodiscard]] auto qualifiedScopeLookup(Identifier name) noexcept
       -> Result<Bindings::Binding>;
   [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept
@@ -203,16 +210,20 @@ private:
   void setGlobal(std::weak_ptr<Scope> scope) noexcept { global = scope; }
 
 public:
-  [[nodiscard]] static auto createGlobalScope() -> std::shared_ptr<Scope> {
-    auto global = std::shared_ptr<Scope>(new Scope());
+  [[nodiscard]] static auto createGlobalScope(Allocator &allocator)
+      -> std::shared_ptr<Scope> {
+    auto global =
+        std::allocate_shared<Scope, PolyAllocator<Scope>>(allocator, allocator);
     global->setGlobal(global->weak_from_this());
     return global;
   }
 
-  [[nodiscard]] static auto createScope(std::optional<Identifier> name,
+  [[nodiscard]] static auto createScope(Allocator &allocator,
+                                        std::optional<Identifier> name,
                                         std::weak_ptr<Scope> prev_scope)
       -> std::shared_ptr<Scope> {
-    return std::shared_ptr<Scope>(new Scope(name, prev_scope));
+    return std::allocate_shared<Scope, PolyAllocator<Scope>>(
+        allocator, allocator, name, prev_scope);
   }
 
   [[nodiscard]] auto isGlobal() const noexcept -> bool {
@@ -253,8 +264,8 @@ public:
     return bindings.partialBind(name, type);
   }
 
-  auto bindScope(Identifier name) {
-    return scopes.emplace(name, weak_from_this());
+  auto bindScope(Allocator &allocator, Identifier name) {
+    return scopes.emplace(allocator, name, weak_from_this());
   }
 
   void unbindScope(Identifier name) { return scopes.unbind(name); }

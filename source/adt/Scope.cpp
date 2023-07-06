@@ -41,9 +41,10 @@ auto ScopeTable::Entry::bind(Identifier name, Attributes attributes,
   return iter->second->lookup(name);
 }
 
-auto ScopeTable::emplace(Identifier name,
+auto ScopeTable::emplace(Allocator &allocator, Identifier name,
                          std::weak_ptr<Scope> prev_scope) noexcept -> Entry {
-  auto pair = table.emplace(name, Scope::createScope(name, prev_scope));
+  auto pair =
+      table.emplace(name, Scope::createScope(allocator, name, prev_scope));
   return pair.first;
 }
 

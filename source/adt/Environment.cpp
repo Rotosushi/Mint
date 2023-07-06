@@ -111,17 +111,14 @@ auto Environment::repl() noexcept -> int {
     auto typecheck_result = ast->typecheck(*this);
     if (!typecheck_result) {
       auto &error = typecheck_result.error();
-
       if (error.isUseBeforeDef()) {
-        auto failed = handleUseBeforeDef(error, ast);
-        if (failed) {
+        if (auto failed = handleUseBeforeDef(error, ast)) {
           printErrorWithSource(failed.value());
         }
-        continue;
       } else {
         printErrorWithSource(error);
-        continue;
       }
+      continue;
     }
     auto &type = typecheck_result.value();
 
@@ -146,7 +143,11 @@ std::optional<Error> Environment::handleUseBeforeDef(const Error &error,
   // sanity check that the Ast we are currently processing
   // is a Definition itself. as it only makes sense
   // to bind a Definition in the use-before-def-map
-  auto *def_ast = cast<ast::Definition>(ast.get());
+  auto def_ast = dynCast<ast::Definition>(ast.get());
+  MINT_ASSERT(def_ast != nullptr);
+  // sanity check that the name of the Definition is the same
+  // as the name returned by the use-before-def Error.
+  MINT_ASSERT(def_name == def_ast->name());
   // sanity check that the use-before-def is not
   // an unresolvable trivial loop.
   // #TODO: this check needs to be made more robust moving forward.
@@ -157,67 +158,56 @@ std::optional<Error> Environment::handleUseBeforeDef(const Error &error,
   if (auto *let_ast = dynCast<ast::Let>(ast.get()); let_ast != nullptr) {
     if (undef_name == def_name) {
       std::stringstream message;
-      message << "Definition of [" << def_name << "] relies upon itself ["
-              << undef_name << "]";
+      message << "Definition [" << ast << "] relies upon itself [" << undef_name
+              << "]";
       Error e{Error::Kind::TypeCannotBeResolved, ast->location(),
               message.view()};
       return e;
     }
   }
-  // sanity check that the name of the Definition is the same
-  // as the name returned by the use-before-def Error.
-  MINT_ASSERT(def_name == getQualifiedName(def_ast->name()));
-  // 1) create an entry within the use-before-def-map for this
+  // create an entry within the use-before-def-map for this
   // use-before-def Error
   bindUseBeforeDef(undef_name, def_name, ast);
-  // 2) attempt to resolve any existing use-before-def entries
-  // iff this error has a type annotation, then we can use that
-  // to potentially type an existing entry in the use-before-def-map
-  auto annotation = def_ast->annotation();
-  if (annotation.has_value()) {
-    auto type = annotation.value();
-    local_scope->partialBind(def_name, type);
-    // try to type previous UBDs with the partialBinding.
-    auto range = lookupUseBeforeDef(def_name);
-    auto cursor = range.begin();
-    auto end = range.end();
-    while (cursor != end) {
-      auto typecheck_result = cursor.ast()->typecheck(*this);
-      if (!typecheck_result) {
-        auto &e = typecheck_result.error();
-        if (e.isUseBeforeDef()) {
-          auto &ubd = e.getUseBeforeDef();
-          // reinsert the ast under the new name
-          use_before_def_map.reinsert(ubd.undef, cursor);
-        } else {
-          return e;
-        }
+  return std::nullopt;
+}
+
+/*
+  called when a new name is defined.
+  any use-before-def definitions that rely
+  upon the name that was just defined are
+  attempted to be resolved here.
+*/
+std::optional<Error> Environment::resolveUseBeforeDef(Identifier def) noexcept {
+  auto range = lookupUseBeforeDef(def);
+  auto cursor = range.begin();
+  auto end = range.end();
+  while (cursor != end) {
+    auto &ast = cursor.ast();
+    auto typecheck_result = ast->typecheck(*this);
+    if (!typecheck_result) {
+      auto &e = typecheck_result.error();
+      if (e.isUseBeforeDef()) {
+        // reinsert the ast under the new undef name
+        auto failed = handleUseBeforeDef(e, ast);
+        if (failed)
+          return failed;
+        // remove the old use before def
+        use_before_def_map.erase(cursor);
+      } else {
+        return e;
       }
-
-      auto type = typecheck_result.value();
-
-      // the definition typed after we created the partial binding,
-      // thus we can create the definition.
-      auto evaluate_result = cursor.ast()->evaluate(*this);
-      if (!evaluate_result) {
-        return evaluate_result.error();
-      }
-
-      // move to the next UseBeforeDef that is dependant
-      // on the partial binding in the multimap.
-      ++cursor;
-
-      // #NOTE: we do not clean up the partial binding here.
-      // as it leaves open the possiblity of a definition
-      // appearing after this point being defined relative
-      // to this name.
+      // we don't evaluate any expression which fails to typecheck
+      continue;
     }
+
+    auto evaluate_result = cursor.ast()->evaluate(*this);
+    if (!evaluate_result) {
+      return evaluate_result.error();
+    }
+
+    ++cursor;
   }
-  // #NOTE: in the case that the definition we just
-  // bound in the use-before-def-map has no type annotation,
-  // there is no way to create a partial binding for it.
-  // thus, the undef name it is defined upon must be defined
-  // at some later point for this partial binding to be resolved.
+  return std::nullopt;
 }
 
 } // namespace mint

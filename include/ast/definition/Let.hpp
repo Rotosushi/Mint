@@ -30,7 +30,7 @@ public:
       std::optional<type::Ptr> annotation, Identifier name, Ptr ast) noexcept
       : Definition{Ast::Kind::Let, attributes, location, annotation, name},
         m_ast{std::move(ast)} {
-    m_ast->setPrevAst(weak_from_this());
+    m_ast->setPrevAst(this);
   }
   ~Let() noexcept override = default;
 

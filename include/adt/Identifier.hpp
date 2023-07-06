@@ -168,7 +168,7 @@ template <> struct less<mint::Identifier> {
     else if (llen > rlen) {
       return false;
     } else { // llen == rlen
-      return strncmp(left.begin(), right.begin(), llen);
+      return strncmp(left.begin(), right.begin(), llen) < 0;
     }
   }
 };

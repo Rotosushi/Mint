@@ -31,8 +31,8 @@ public:
         Ptr right) noexcept
       : Expression{Ast::Kind::Binop, attributes, location}, m_op{op},
         m_left{std::move(left)}, m_right{std::move(right)} {
-    m_left->setPrevAst(weak_from_this());
-    m_right->setPrevAst(weak_from_this());
+    m_left->setPrevAst(this);
+    m_right->setPrevAst(this);
   }
   ~Binop() noexcept override = default;
 

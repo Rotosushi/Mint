@@ -22,6 +22,11 @@
 namespace mint {
 namespace ast {
 Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
+  auto found = env.lookup(name());
+  if (found) {
+    return {Error::Kind::NameAlreadyBoundInScope, location(), name().view()};
+  }
+
   auto term_type_result = m_ast->typecheck(env);
   if (!term_type_result)
     return term_type_result;
@@ -43,6 +48,11 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
 }
 
 Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
+  auto found = env.lookup(name());
+  if (found) {
+    return {Error::Kind::NameAlreadyBoundInScope, location(), name().view()};
+  }
+
   auto term_value_result = m_ast->evaluate(env);
   if (!term_value_result)
     return term_value_result;
@@ -50,9 +60,20 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
 
   auto type = m_ast->cachedTypeOrAssert();
 
-  auto bound = env.bindName(name(), attributes(), type, value);
+  // we bind to a clone of the value, because otherwise
+  // the let expression would introduce a reference.
+  // this is not the meaning of let, which introduces a
+  // new variable. and as such must model the semantics of
+  // a new value.
+  auto bound =
+      env.bindName(name(), attributes(), type, value->clone(env.getResource()));
   if (!bound)
     return bound.error();
+
+  // #NOTE: we just created a new binding, so we can
+  // fully typecheck and evaluate any partial bindings
+  // that rely on this definition
+  env.resolveUseBeforeDef(name());
 
   return env.getNilAst({}, location());
 }

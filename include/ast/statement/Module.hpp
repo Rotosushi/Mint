@@ -36,7 +36,7 @@ public:
       : Statement{Ast::Kind::Module, attributes, location}, m_name{name},
         m_expressions{std::move(expressions), allocator} {
     for (auto &expression : m_expressions)
-      expression->setPrevAst(weak_from_this());
+      expression->setPrevAst(this);
   }
   ~Module() noexcept override = default;
 
