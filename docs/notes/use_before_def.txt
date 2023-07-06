@@ -39,6 +39,74 @@ the key.
 
 then we encounter 2, fully typecheck and evaluate it, then since we 
 just created a new definition we try and resolve any use-before-def 
-definitions held within the map under the newly defined name.
+definitions held within the map under the newly defined name. since 
+the definition of y is within the map under the name x the definition 
+of y gets resolved here.
 
+this works! :)
+
+yet it only accounts for names defined at global scope.
+
+so, how about use-before-def names within a module:
+
+1)
+module A {
+  let a = b;
+  let b = 1;
+}
+
+and use-before-def names between modules:
+
+2)
+module A {
+  let a = B::b;
+}
+
+module B {
+  let b = 1;
+}
+
+
+facts:
+a modules scope is stored in the environments scope tree, mapped to the name of the module 
+
+all modules defined in the environments scope tree have lifetimes tied to the environments lifetime.
+
+any names which fail to typecheck cause the entire module to fail to typecheck.
+  - when a module fails to typecheck we do not add that modules scope to the scope tree.
+
+names occuring within a module are qualified with that modules name.
+(note that there is no mechanism to alias a name with another name,
+ such that a name defined within module A could be aliased to another 
+ name within module B. or visa-versa)
+
+
+well, what if we did the exact same thing with modules as we do with regular definitions?
+
+This would solve case 2, i think. as module A would be able to be resolved after 
+the definition of module B. 
+(module A would be staged under the undef name of "B::b" then, once we defined "B::b" 
+while processing module B, we would resolve module A. we also  
+need to resolve each definition within module when we fully define the module. 
+and when we lookup the new definitions from a given module in the use-before-def map
+we have to use their qualified names.)
+
+however this does nothing to address use-before-def within the modules themselves.
+we also need to stage definitions appearing during typechecking a module. this 
+is a more difficult question. as we currently treat the module itself as a single 
+definition. so we typecheck and evaluate the entire thing. 
+acctually i think this means we have a bug currently during typechecking a module.
+yep, we cannot currently typecheck:
+
+module A {
+  let x = 1;
+  let y = x;
+}
+
+because we only construct definitions when we evaluate them.
+
+lets see, if we construct partial definitions when we typecheck, and 
+we simply add the value to a definition that we evaluate, does that 
+break anything? yes, eval also enforces that the name not already has a defintion,
+but that is easy to change.
 

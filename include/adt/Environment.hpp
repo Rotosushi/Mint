@@ -224,7 +224,16 @@ public:
     return local_scope->bindName(name, attributes, type, value);
   }
 
-  auto lookup(Identifier name) { return local_scope->lookup(name); }
+  auto partialBindName(Identifier name, Attributes attributes,
+                       type::Ptr type) noexcept {
+    return local_scope->partialBind(name, attributes, type);
+  }
+
+  auto completeNameBinding(Identifier name, ast::Ptr ast) noexcept {
+    return local_scope->completeBinding(name, ast);
+  }
+
+  auto lookupBinding(Identifier name) { return local_scope->lookup(name); }
   auto getQualifiedName(Identifier name) {
     return local_scope->getQualifiedName(name);
   }

@@ -22,7 +22,7 @@
 namespace mint {
 namespace ast {
 Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
-  auto found = env.lookup(name());
+  auto found = env.lookupBinding(name());
   if (found) {
     return {Error::Kind::NameAlreadyBoundInScope, location(), name().view()};
   }
@@ -30,7 +30,7 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   auto term_type_result = m_ast->typecheck(env);
   if (!term_type_result)
     return term_type_result;
-  auto type = term_type_result.value();
+  auto &type = term_type_result.value();
 
   auto anno = annotation();
   if (anno.has_value()) {
@@ -43,14 +43,27 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
     }
   }
 
+  auto bound = env.partialBindName(name(), attributes(), type);
+  if (!bound)
+    return bound.error();
+
   setCachedType(env.getNilType());
   return env.getNilType();
 }
 
 Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
-  auto found = env.lookup(name());
+  /*
+    #RULE #NOTE: we create partial bindings during typechecking,
+    and complete them during evaluation. this means we
+    expect the name to be bound already in scope, we are
+    simply confirming that the binding is partial here
+  */
+  auto found = env.lookupBinding(name());
   if (found) {
-    return {Error::Kind::NameAlreadyBoundInScope, location(), name().view()};
+    auto binding = found.value();
+
+    if (binding.hasValue())
+      return {Error::Kind::NameAlreadyBoundInScope, location(), name().view()};
   }
 
   auto term_value_result = m_ast->evaluate(env);
@@ -58,14 +71,13 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
     return term_value_result;
   auto &value = term_value_result.value();
 
-  auto type = m_ast->cachedTypeOrAssert();
-
+  // #NOTE #RULE
   // we bind to a clone of the value, because otherwise
   // the let expression would introduce a reference.
   // this is not the meaning of let, which introduces a
   // new variable. and as such must model the semantics of
   // a new value.
-  auto bound = env.bindName(name(), attributes(), type, value->clone());
+  auto bound = env.completeNameBinding(name(), value->clone());
   if (!bound)
     return bound.error();
 

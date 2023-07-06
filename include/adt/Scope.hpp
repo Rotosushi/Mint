@@ -45,7 +45,7 @@ namespace mint {
 class Bindings {
 public:
   using Key = Identifier;
-  using Value = std::tuple<Attributes, type::Ptr, ast::Ptr>;
+  using Value = std::tuple<Attributes, type::Ptr, std::optional<ast::Ptr>>;
   using Table = VectorMap<Key, Value>;
   using iterator = typename Table::iterator;
 
@@ -68,57 +68,67 @@ public:
     [[nodiscard]] auto type() const noexcept -> type::Ptr {
       return std::get<1>((*this)->second);
     }
-    [[nodiscard]] auto value() const noexcept -> ast::Ptr {
+    [[nodiscard]] auto hasValue() const noexcept -> bool {
+      return optionalValue().has_value();
+    }
+    [[nodiscard]] auto optionalValue() const noexcept
+        -> std::optional<ast::Ptr> & {
       return std::get<2>((*this)->second);
     }
+    [[nodiscard]] auto value() const noexcept -> ast::Ptr {
+      MINT_ASSERT(hasValue());
+      return optionalValue().value();
+    }
+    void setValue(ast::Ptr &ast) noexcept { optionalValue() = ast; }
     [[nodiscard]] auto isPartial() const noexcept -> bool { return !value(); }
   };
 
-  using PartialBindings = std::set<Key>;
-
 private:
   Table table;
-  PartialBindings partials;
 
 public:
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
-  auto partialBind(Key key, type::Ptr type) noexcept -> Binding {
-    MINT_ASSERT(!lookup(key));
-    partials.insert(key);
-    return table.try_emplace(key, Value{Attributes{}, type, ast::Ptr{}}).first;
-  }
-
-  void unbindPartial(Key &name) noexcept {
-    MINT_ASSERT(partials.contains(name));
-    table.erase(name);
-    partials.erase(name);
-  }
-
-  void unbindPartials() noexcept {
-    for (auto &binding : partials)
-      table.erase(binding);
-    partials.clear();
-  }
+  void unbind(Key name) noexcept { table.erase(name); }
 
   auto bind(Key key, Attributes attributes, type::Ptr type,
             ast::Ptr value) noexcept -> Result<Binding> {
-    /*
-      #NOTE: we don't have dynamic typing, so we disallow
-      overwriting the given key in the map.
-    */
     auto found = lookup(key);
     if (found) {
-      return Error{Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
+      return {Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
     }
     auto pair = table.try_emplace(key, Value{attributes, type, value});
     return Binding{pair.first};
   }
 
+  auto partialBind(Key key, Attributes attributes, type::Ptr type) noexcept
+      -> Result<Binding> {
+    if (auto found = lookup(key))
+      return {Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
+
+    auto pair = table.try_emplace(key, Value{attributes, type, std::nullopt});
+    return Binding{pair.first};
+  }
+
+  auto completeBinding(Key key, ast::Ptr ast) -> Result<Binding> {
+    // #PERF: this check could be made a precondition.
+    auto found = lookup(key);
+    if (!found)
+      return found;
+
+    auto binding = found.value();
+
+    if (binding.hasValue())
+      return {Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
+
+    binding.setValue(ast);
+    return found;
+  }
+
   [[nodiscard]] auto lookup(Key key) noexcept -> Result<Binding> {
     auto found = table.find(key);
     if (found == table.end()) {
-      return Error{Error::Kind::NameUnboundInScope, {}, key.view()};
+      return {Error::Kind::NameUnboundInScope, {}, key.view()};
     }
     return {found};
   }
@@ -249,12 +259,17 @@ public:
   }
 
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
-                ast::Ptr value) {
+                ast::Ptr value) noexcept {
     return bindings.bind(name, attributes, type, value);
   }
 
-  auto partialBind(Identifier name, type::Ptr type) {
-    return bindings.partialBind(name, type);
+  auto partialBind(Identifier name, Attributes attributes,
+                   type::Ptr type) noexcept {
+    return bindings.partialBind(name, attributes, type);
+  }
+
+  auto completeBinding(Identifier name, ast::Ptr ast) noexcept {
+    return bindings.completeBinding(name, ast);
   }
 
   auto bindScope(Identifier name) {

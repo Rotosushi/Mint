@@ -20,7 +20,7 @@
 namespace mint {
 namespace ast {
 Result<type::Ptr> Variable::typecheck(Environment &env) const noexcept {
-  auto bound = env.lookup(m_name);
+  auto bound = env.lookupBinding(m_name);
   if (!bound) {
     auto &error = bound.error();
     // if this is a use-before-def variable
@@ -50,7 +50,7 @@ Result<type::Ptr> Variable::typecheck(Environment &env) const noexcept {
 }
 
 Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {
-  auto bound = env.lookup(m_name);
+  auto bound = env.lookupBinding(m_name);
   if (!bound) {
     return {bound.error().kind(), location(), m_name.view()};
   }

@@ -51,5 +51,12 @@ public:
     m_set.emplace_back(key);
     return {std::prev(end()), true};
   }
+
+  void erase(Key key) noexcept {
+    auto found = find(key);
+
+    if (found != end())
+      m_set.erase(found);
+  }
 };
 } // namespace mint
