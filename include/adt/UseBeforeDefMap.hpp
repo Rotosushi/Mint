@@ -18,6 +18,7 @@
 #include <map>
 
 #include "adt/Identifier.hpp"
+// #include "adt/VectorMap.hpp"
 #include "ast/Ast.hpp"
 
 namespace mint {
@@ -25,7 +26,7 @@ class UseBeforeDefMap {
 public:
   using Key = Identifier;
   using Value = std::pair<Identifier, ast::Ptr>;
-  using Pair = std::pair<const Key, Value>;
+  using Pair = std::pair<Key, Value>;
   using Map = std::multimap<Key, Value>;
 
   class Entry : public Map::iterator {
@@ -44,6 +45,9 @@ public:
     Range(std::pair<Map::iterator, Map::iterator> range) noexcept
         : range(range) {}
 
+    auto pair() noexcept -> std::pair<Map::iterator, Map::iterator> & {
+      return range;
+    }
     auto begin() noexcept -> Entry { return range.first; }
     auto end() noexcept -> Entry { return range.second; }
   };
@@ -63,9 +67,10 @@ public:
   }
 
   void erase(Entry entry) noexcept { map.erase(entry); }
+  void erase(Range range) noexcept { map.erase(range.begin(), range.end()); }
 
   void insert(Identifier undef, Identifier definition, ast::Ptr ast) noexcept {
-    map.insert(Pair{undef, std::make_pair(definition, ast)});
+    map.emplace(undef, std::make_pair(definition, ast));
   }
 };
 } // namespace mint

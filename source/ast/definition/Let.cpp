@@ -21,15 +21,29 @@
 
 namespace mint {
 namespace ast {
+
+auto Let::handleUseBeforeDef(Error &error,
+                             [[maybe_unused]] Environment &env) const noexcept
+    -> Result<type::Ptr> {
+  if (error.kind() == Error::Kind::UseBeforeDef) {
+  }
+  return error;
+}
+
 Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   auto found = env.lookupBinding(name());
   if (found) {
     return {Error::Kind::NameAlreadyBoundInScope, location(), name().view()};
   }
 
+  /*
+    #NOTE: if this let expression is use-before-def,
+    then the error is returned here.
+  */
   auto term_type_result = m_ast->typecheck(env);
-  if (!term_type_result)
+  if (!term_type_result) {
     return term_type_result;
+  }
   auto &type = term_type_result.value();
 
   auto anno = annotation();
@@ -43,9 +57,22 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
     }
   }
 
+  // #NOTE:
+  // since we could type this definition, we construct a
+  // partial binding, such that definitions appearing after
+  // this one and relying upon this definitions type can be
+  // typechecked
   auto bound = env.partialBindName(name(), attributes(), type);
   if (!bound)
     return bound.error();
+
+  // #NOTE:
+  // since we could construct a partialBinding, we check
+  // if we can partially resolve any use-before-def
+  // which rely upon this one.
+  auto failed = env.partialResolveUseBeforeDef(env.getQualifiedName(name()));
+  if (failed)
+    return failed.value();
 
   setCachedType(env.getNilType());
   return env.getNilType();
@@ -55,16 +82,16 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
   /*
     #RULE #NOTE: we create partial bindings during typechecking,
     and complete them during evaluation. this means we
-    expect the name to be bound already in scope, we are
-    simply confirming that the binding is partial here
+    expect the name to be bound already in scope.
+    thus we assert that the binding exists.
   */
   auto found = env.lookupBinding(name());
-  if (found) {
-    auto binding = found.value();
+  MINT_ASSERT(found);
 
-    if (binding.hasValue())
-      return {Error::Kind::NameAlreadyBoundInScope, location(), name().view()};
-  }
+  auto binding = found.value();
+
+  if (binding.hasValue())
+    return {Error::Kind::NameAlreadyBoundInScope, location(), name().view()};
 
   auto term_value_result = m_ast->evaluate(env);
   if (!term_value_result)
@@ -77,14 +104,16 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
   // this is not the meaning of let, which introduces a
   // new variable. and as such must model the semantics of
   // a new value.
-  auto bound = env.completeNameBinding(name(), value->clone());
-  if (!bound)
+  auto bound = env.completeNameBinding(binding, value->clone());
+  if (!bound) // #TODO: add location context to this error before returning
     return bound.error();
 
   // #NOTE: we just created a new binding, so we can
   // fully typecheck and evaluate any partial bindings
   // that rely on this definition
-  env.resolveUseBeforeDef(name());
+  auto failed = env.resolveUseBeforeDef(env.getQualifiedName(name()));
+  if (failed)
+    return failed.value();
 
   return env.getNilAst({}, location());
 }

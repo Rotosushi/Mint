@@ -95,18 +95,24 @@ however this does nothing to address use-before-def within the modules themselve
 we also need to stage definitions appearing during typechecking a module. this 
 is a more difficult question. as we currently treat the module itself as a single 
 definition. so we typecheck and evaluate the entire thing. 
-acctually i think this means we have a bug currently during typechecking a module.
-yep, we cannot currently typecheck:
+this means that in order to handle use-before-def within a module we have to 
+stage definitions which fail to type with use-before-def while we are typechecking 
+the entire module, and subsequently stage the entire module.
+because we don't want to delete the contents of the module as we normally would given 
+an error being generated during typecheck or eval.
 
-module A {
-  let x = 1;
-  let y = x;
-}
+one issue is how can we distinguish between the two cases?
+or can we think of one solution which handles both cases?
 
-because we only construct definitions when we evaluate them.
-
-lets see, if we construct partial definitions when we typecheck, and 
-we simply add the value to a definition that we evaluate, does that 
-break anything? yes, eval also enforces that the name not already has a defintion,
-but that is easy to change.
+if we define a name, and that name is relied upon by an existing 
+use-before-def, we want to attempt to define that use-before-def.
+at global scope this isn't an issue, because the scope in which 
+to define the use-before-def is implicitly the global scope, and 
+the global scope is the current scope. however, when we have failed 
+to typecheck a term within a module, we bail out of typeing the entire 
+module. meaning we remove the modules scope and exit it back to the global 
+scope. 
+we cannot do that if we want to create the definition within that 
+modules scope by typing some term appearing later within the module,
+or if we are typing some term appearing after the module.
 

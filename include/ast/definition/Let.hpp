@@ -22,6 +22,45 @@
 
 namespace mint {
 namespace ast {
+/*
+  #TODO: #MAYBE:
+  do we want to allow expressions like
+
+  if (let x = ...) { ...
+
+  where the let expression defines a new variable
+  within the scope of the if expression?
+  nearly identical to:
+  let x = ...;
+  if (... x ...) { ...
+
+
+  except limiting the scope of the variable to the
+  if condition. (expressing a sublte intent implicitly)
+  and reducing the line count by one.
+
+  this kind of construct relies upon changing let expressions
+  to return the defined variable as their result instead of nil
+  as it is currently.
+  and implementing one step of automatic conversion to bool.
+  introducing implicit conversions to the language.
+
+  we could skirt implicit conversions if we instead required the
+  conditional to convert to bool explicitly:
+
+  if (let x = ...; ... x ...) { ...
+
+  though the idea behind this is to turn the ';' into something
+  akin to the comma operator in c++. which simply evaluates it's left
+  hand side and then it's right, and returns it's right as the result
+  type and value.
+  in that case we can allow for if expressions like:
+
+  if (let x = ...; ... x ...
+    & let y = ...; ... y ...) { ...
+
+  which combine multiple definitions into a single if statement.
+*/
 class Let : public Definition {
   Ptr m_ast;
 
@@ -43,6 +82,9 @@ public:
   static auto classof(Ast const *ast) noexcept -> bool {
     return Ast::Kind::Let == ast->kind();
   }
+
+  auto handleUseBeforeDef(Error &error, Environment &env) const noexcept
+      -> Result<type::Ptr>;
 
   Ptr clone() const noexcept override {
     return create(attributes(), location(), annotation(), name(), m_ast);

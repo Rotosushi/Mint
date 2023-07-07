@@ -59,10 +59,10 @@ public:
   }
 
   void print(std::ostream &out) const noexcept override {
-    out << "module " << m_name << " { ";
+    out << "module " << m_name << " { \n";
 
     for (auto &expression : m_expressions)
-      out << expression;
+      out << expression << "\n";
 
     out << "}";
   }

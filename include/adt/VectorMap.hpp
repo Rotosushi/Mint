@@ -14,6 +14,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+#pragma once
+
 #include <utility>
 #include <vector>
 
@@ -38,20 +40,21 @@ public:
     auto end = m_map.end();
     while (cursor != end) {
       if (cursor->first == key)
-        return cursor;
+        break;
 
       ++cursor;
     }
-    return end;
+    return cursor;
   }
 
-  [[nodiscard]] auto try_emplace(Key key, Value value) noexcept
+  template <class... Args>
+  [[nodiscard]] auto try_emplace(Key key, Args &&...args) noexcept
       -> std::pair<iterator, bool> {
     auto found = find(key);
     if (found != end())
       return {found, false};
 
-    m_map.emplace_back(key, value);
+    m_map.emplace_back(key, std::forward<Args>(args)...);
     return {std::prev(end()), true};
   }
 
@@ -63,5 +66,65 @@ public:
       return end();
   }
   auto erase(iterator iter) noexcept { return m_map.erase(iter); };
+};
+
+template <class Key, class Value> class VectorMultimap {
+public:
+  using Pair = std::pair<Key, Value>;
+  using Map = std::vector<Pair>;
+  using iterator = typename Map::iterator;
+  using Range = std::pair<iterator, iterator>;
+
+private:
+  Map m_map;
+
+public:
+  [[nodiscard]] auto empty() const noexcept { return m_map.empty(); }
+
+  [[nodiscard]] auto begin() noexcept { return m_map.begin(); }
+  [[nodiscard]] auto end() noexcept { return m_map.end(); }
+
+  [[nodiscard]] auto find(Key key) noexcept -> iterator {
+    auto cursor = m_map.begin();
+    auto end = m_map.end();
+    while (cursor != end) {
+      if (cursor->first == key)
+        break;
+
+      ++cursor;
+    }
+
+    return cursor;
+  }
+
+  [[nodiscard]] auto find_range(Key key) noexcept -> Range {
+    auto cursor = m_map.begin();
+    auto end = m_map.end();
+    while (cursor != end) {
+      if (cursor->first == key) {
+        auto range_end = cursor;
+        do {
+          ++range_end;
+        } while (range_end->first == key);
+        return {cursor, range_end};
+      }
+
+      ++cursor;
+    }
+    return {end, end};
+  }
+
+  auto emplace(Key key, Value value) noexcept -> iterator {
+    auto range = find_range(key);
+    return m_map.emplace(range.second, key, value);
+  }
+
+  void erase(iterator iter) noexcept { m_map.erase(iter); }
+  void erase(Range range) noexcept { m_map.erase(range.first, range.second); }
+
+  [[nodiscard]] auto contains(Key key) noexcept -> bool {
+    auto found = find(key);
+    return found != end();
+  }
 };
 } // namespace mint

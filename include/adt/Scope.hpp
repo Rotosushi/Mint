@@ -80,7 +80,9 @@ public:
       return optionalValue().value();
     }
     void setValue(ast::Ptr &ast) noexcept { optionalValue() = ast; }
-    [[nodiscard]] auto isPartial() const noexcept -> bool { return !value(); }
+    [[nodiscard]] auto isPartial() const noexcept -> bool {
+      return !optionalValue();
+    }
   };
 
 private:
@@ -110,19 +112,12 @@ public:
     return Binding{pair.first};
   }
 
-  auto completeBinding(Key key, ast::Ptr ast) -> Result<Binding> {
-    // #PERF: this check could be made a precondition.
-    auto found = lookup(key);
-    if (!found)
-      return found;
-
-    auto binding = found.value();
-
+  auto completeBinding(Binding binding, ast::Ptr ast) -> Result<Binding> {
     if (binding.hasValue())
-      return {Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
+      return {Error::Kind::NameAlreadyBoundInScope, {}, binding.name().view()};
 
     binding.setValue(ast);
-    return found;
+    return binding;
   }
 
   [[nodiscard]] auto lookup(Key key) noexcept -> Result<Binding> {
@@ -268,8 +263,8 @@ public:
     return bindings.partialBind(name, attributes, type);
   }
 
-  auto completeBinding(Identifier name, ast::Ptr ast) noexcept {
-    return bindings.completeBinding(name, ast);
+  auto completeBinding(Bindings::Binding binding, ast::Ptr ast) noexcept {
+    return bindings.completeBinding(binding, ast);
   }
 
   auto bindScope(Identifier name) {

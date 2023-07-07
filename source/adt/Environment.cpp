@@ -110,7 +110,7 @@ auto Environment::repl() noexcept -> int {
     if (!typecheck_result) {
       auto &error = typecheck_result.error();
       if (error.isUseBeforeDef()) {
-        if (auto failed = handleUseBeforeDef(error, ast)) {
+        if (auto failed = bindUseBeforeDef(error, ast)) {
           printErrorWithSource(failed.value());
         }
       } else {
@@ -133,11 +133,12 @@ auto Environment::repl() noexcept -> int {
   return EXIT_SUCCESS;
 }
 
-std::optional<Error> Environment::handleUseBeforeDef(const Error &error,
-                                                     ast::Ptr &ast) noexcept {
+std::optional<Error>
+Environment::bindUseBeforeDef(const Error &error,
+                              const ast::Ptr &ast) noexcept {
   auto &use_before_def = error.getUseBeforeDef();
-  auto &undef_name = use_before_def.undef;
-  auto &def_name = use_before_def.def;
+  auto &undef_name = use_before_def.q_undef;
+  auto &def_name = use_before_def.q_def;
   // sanity check that the Ast we are currently processing
   // is a Definition itself. as it only makes sense
   // to bind a Definition in the use-before-def-map
@@ -145,7 +146,7 @@ std::optional<Error> Environment::handleUseBeforeDef(const Error &error,
   MINT_ASSERT(def_ast != nullptr);
   // sanity check that the name of the Definition is the same
   // as the name returned by the use-before-def Error.
-  MINT_ASSERT(def_name == def_ast->name());
+  MINT_ASSERT(def_name == getQualifiedName(def_ast->name()));
   // sanity check that the use-before-def is not
   // an unresolvable trivial loop.
   // #TODO: this check needs to be made more robust moving forward.
@@ -181,30 +182,62 @@ std::optional<Error> Environment::resolveUseBeforeDef(Identifier def) noexcept {
   auto end = range.end();
   while (cursor != end) {
     auto &ast = cursor.ast();
-    auto typecheck_result = ast->typecheck(*this);
-    if (!typecheck_result) {
-      auto &e = typecheck_result.error();
-      if (e.isUseBeforeDef()) {
-        // reinsert the ast under the new undef name
-        auto failed = handleUseBeforeDef(e, ast);
-        if (failed)
-          return failed;
-        // remove the old use before def
-        use_before_def_map.erase(cursor);
-      } else {
-        return e;
-      }
-      // we don't evaluate any expression which fails to typecheck
-      continue;
-    }
 
-    auto evaluate_result = cursor.ast()->evaluate(*this);
+    /*
+      when we resolve a use before def, we are now in a situation
+      where we have already created a partial binding of the
+      use before def term to it's type. via partialResolveUseBeforeDef.
+      thus we have already typechecked the term being fully resolved.
+
+    */
+    // sanity check that we have already called typecheck on
+    // this ast and it succeeded.
+    [[maybe_unused]] auto type = ast->cachedTypeOrAssert();
+
+    // create the full binding.
+    auto evaluate_result = ast->evaluate(*this);
     if (!evaluate_result) {
       return evaluate_result.error();
     }
 
     ++cursor;
   }
+
+  // remove the old use before def
+  use_before_def_map.erase(range);
+
+  return std::nullopt;
+}
+
+std::optional<Error>
+Environment::partialResolveUseBeforeDef(Identifier def) noexcept {
+  auto range = lookupUseBeforeDef(def);
+  auto cursor = range.begin();
+  auto end = range.end();
+  while (cursor != end) {
+    auto &ast = cursor.ast();
+    // #NOTE:
+    // create the partial binding if we can now
+    // typecheck this definition after def was
+    // partially defined.
+    auto typecheck_result = ast->typecheck(*this);
+
+    if (!typecheck_result) {
+      auto &e = typecheck_result.error();
+      if (!e.isUseBeforeDef())
+        return e;
+
+      // reinsert the ast under the new undef name
+      auto failed = bindUseBeforeDef(e, ast);
+      if (failed)
+        return failed;
+    }
+
+    ++cursor;
+  }
+
+  use_before_def_map.erase(range);
+
   return std::nullopt;
 }
 

@@ -193,16 +193,22 @@ public:
     #NOTE: called when we just encountered a term that could not
     be type'd because it used a name before that name was defined.
   */
-  std::optional<Error> handleUseBeforeDef(const Error &error,
-                                          ast::Ptr &ast) noexcept;
+  std::optional<Error> bindUseBeforeDef(const Error &error,
+                                        const ast::Ptr &ast) noexcept;
 
   /*
-    #NOTE: called when we just defined a new name. Resolves UseBeforeDef
-    bindings that failed to type due to the given definition not being
-    present.
-    this assumes that the "Identifier def" was just fully defined.
+    #NOTE: called when we successfully evaluate a new definition.
+    creates full bindings for any definition that is in the
+    use-before-def map relying on the given definition.
   */
   std::optional<Error> resolveUseBeforeDef(Identifier def) noexcept;
+
+  /*
+    #NOTE: called when we successfully typecheck a new definition.
+    creates partial bindings for any definitions that are in the
+    use-before-def-map relying on the given definition.
+  */
+  std::optional<Error> partialResolveUseBeforeDef(Identifier def) noexcept;
 
   /*
     #NOTE: undef is the name which caused the use-before-def error.
@@ -229,8 +235,8 @@ public:
     return local_scope->partialBind(name, attributes, type);
   }
 
-  auto completeNameBinding(Identifier name, ast::Ptr ast) noexcept {
-    return local_scope->completeBinding(name, ast);
+  auto completeNameBinding(Bindings::Binding binding, ast::Ptr ast) noexcept {
+    return local_scope->completeBinding(binding, ast);
   }
 
   auto lookupBinding(Identifier name) { return local_scope->lookup(name); }
