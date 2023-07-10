@@ -18,14 +18,14 @@
 #include <map>
 
 #include "adt/Identifier.hpp"
-// #include "adt/VectorMap.hpp"
+#include "adt/Scope.hpp"
 #include "ast/Ast.hpp"
 
 namespace mint {
 class UseBeforeDefMap {
 public:
   using Key = Identifier;
-  using Value = std::pair<Identifier, ast::Ptr>;
+  using Value = std::tuple<Identifier, ast::Ptr, std::shared_ptr<Scope>>;
   using Pair = std::pair<Key, Value>;
   using Map = std::multimap<Key, Value>;
 
@@ -34,8 +34,13 @@ public:
     Entry(Map::iterator iter) noexcept : Map::iterator(iter) {}
 
     auto undef() noexcept -> Identifier { return (*this)->first; }
-    auto definition() noexcept -> Identifier { return (*this)->second.first; }
-    auto ast() noexcept -> ast::Ptr & { return (*this)->second.second; }
+    auto definition() noexcept -> Identifier {
+      return std::get<0>((*this)->second);
+    }
+    auto ast() noexcept -> ast::Ptr & { return std::get<1>((*this)->second); }
+    auto scope() noexcept -> std::shared_ptr<Scope> & {
+      return std::get<2>((*this)->second);
+    }
   };
 
   class Range {
@@ -60,17 +65,26 @@ public:
     return map.equal_range(undef);
   }
 
-  void reinsert(Identifier undef, Entry entry) noexcept {
-    MINT_ASSERT(map.contains(entry.undef()));
-    insert(undef, entry.definition(), entry.ast());
-    erase(entry);
-  }
-
   void erase(Entry entry) noexcept { map.erase(entry); }
   void erase(Range range) noexcept { map.erase(range.begin(), range.end()); }
 
-  void insert(Identifier undef, Identifier definition, ast::Ptr ast) noexcept {
-    map.emplace(undef, std::make_pair(definition, ast));
+  void insert(Identifier undef, Identifier definition, ast::Ptr ast,
+              std::shared_ptr<Scope> scope) noexcept {
+    // #NOTE:
+    // while multiple definitions can be allowed to rely on
+    // the same undef name, we cannot allow the same definition
+    // to be added to the map twice.
+    auto range = lookup(undef);
+    auto cursor = range.begin();
+    auto end = range.end();
+    while (cursor != end) {
+      if (cursor.definition() == definition)
+        return;
+
+      ++cursor;
+    }
+
+    map.emplace(undef, std::make_tuple(definition, ast, scope));
   }
 };
 } // namespace mint

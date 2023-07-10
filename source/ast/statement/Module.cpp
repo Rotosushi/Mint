@@ -49,7 +49,7 @@ Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
       if (auto failed = env.bindUseBeforeDef(error, expression)) {
         env.unbindScope(m_name);
         env.popScope();
-        return result;
+        return failed.value();
       }
       // else ... we continue to typecheck expressions within the
       // module. any definitions which we typecheck will create
@@ -86,7 +86,7 @@ Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {
       if (auto failed = env.bindUseBeforeDef(error, expression)) {
         env.unbindScope(m_name);
         env.popScope();
-        return result;
+        return failed.value();
       }
       // else we leave the definition to be defined later, when
       // we define the use-before-def variable. any definitions

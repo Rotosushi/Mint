@@ -26,55 +26,30 @@ auto Variable::handleUseBeforeDef(Error &error, Environment &env) const noexcept
     return {error.kind(), location(), m_name.view()};
   }
 
-  auto found = getDefinitionName();
-  if (!found) {
-    // this variable is not use-before-def within a definition,
-    // so it's an attempt to use a use-before-def variable
-    // as a value, which is an error.
-    return {error.kind(), location(), m_name.view()};
-  }
-
-  /*
-    #NOTE: we need to map the use-before-def definition to
-    an Identifier, that Identifier is going to be used to
-    lookup this use-before-def later, when it is defined.
-    thus it makes sense to fully qualify both names,
-    as when we declare a new definition, we define the fully
-    qualified name, and thus that fully qualified name is
-    looked up in the map finding the definition which relies
-    on that name.
-  */
-  auto def = found.value();
-  auto q_def = env.getQualifiedName(def);
-  auto undef = m_name;
-  auto q_undef = env.getQualifiedName(undef);
-  return Error{Error::Kind::UseBeforeDef, def, q_def, undef, q_undef};
+  return handleUseBeforeDef(env);
 }
 
 auto Variable::handleUseBeforeDef(Environment &env) const noexcept -> Error {
   auto found = getDefinitionName();
   if (!found) {
-    // this variable is not use-before-def within a definition,
-    // so it's an attempt to use a use-before-def variable
-    // as a value, which is an error.
+    // We cannot delay expressions generally, only definitions.
     return {Error::Kind::NameUnboundInScope, location(), m_name.view()};
   }
 
-  /*
-    #NOTE: we need to map the use-before-def definition to
-    an Identifier, that Identifier is going to be used to
-    lookup this use-before-def later, when it is defined.
-    thus it makes sense to fully qualify both names,
-    as when we declare a new definition, we define the fully
-    qualified name, and thus that fully qualified name is
-    looked up in the map finding the definition which relies
-    on that name.
-  */
-  auto def = found.value();
-  auto q_def = env.getQualifiedName(def);
-  auto undef = m_name;
-  auto q_undef = env.getQualifiedName(undef);
-  return Error{Error::Kind::UseBeforeDef, def, q_def, undef, q_undef};
+  auto def = env.getQualifiedName(found.value());
+  // #NOTE: if the undef name is globally qualified, we
+  // assume the programmer specified the correct name of
+  // the use-before-def. otherwise we assume that the
+  // undef name refers to a binding that is going to be
+  // created within the scope local to this definition.
+  auto undef =
+      m_name.isGloballyQualified() ? m_name : env.getQualifiedName(m_name);
+
+  // does it work to call bindUseBeforeDef here instead of when we
+  // ignore the UseBeforeDef Error during the loop?
+  // not easily, we need a shared_ptr to the definition, which
+  // requires walking up the Ast to the top.
+  return Error{Error::Kind::UseBeforeDef, def, undef, env.localScope()};
 }
 
 /*

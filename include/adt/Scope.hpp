@@ -154,6 +154,9 @@ public:
 
     [[nodiscard]] auto lookup(Identifier name) noexcept
         -> Result<Bindings::Binding>;
+
+    [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept
+        -> Result<Bindings::Binding>;
   };
 
 private:
@@ -199,6 +202,8 @@ public:
     auto ptr = prev_scope.lock();
     global = ptr->global;
   }
+
+  friend class ScopeTable;
 
 private:
   [[nodiscard]] auto qualifiedScopeLookup(Identifier name) noexcept
@@ -303,22 +308,25 @@ public:
     "a0,a1,...,aN" are all considered scopes,
     "x" is considered a variable local to scope "aN"
 
-    both scope lookup, and variable lookup first search
-    the local scope, and if the variable/scope is not found,
-    lookup one scope higher. if we are at global scope
-    and we fail to find the binding then lookup fails.
+    #NOTE: to make order independant definitions possible,
+    traversing up the scope tree must be done explicitly
+    the by programmer.
+    this means that lookup only needs to resolve names
+    within the local scope or lower, unless the name
+    given explicitly asks to be resolved from global scope.
   */
   [[nodiscard]] auto lookup(Identifier name) noexcept
       -> Result<Bindings::Binding> {
-    auto found = lookupLocal(name);
-    if (!found) {
-      if (isGlobal()) {
-        return qualifiedLookup(name);
-      }
-      auto prev = prev_scope.lock();
-      return prev->qualifiedLookup(name);
+    if (name.isGloballyQualified()) {
+      auto global_scope = global.lock();
+      return global_scope->qualifiedLookup(name.restScope());
     }
-    return found;
+
+    if (!name.isScoped()) {
+      return lookupLocal(name);
+    }
+
+    return qualifiedLookup(name);
   }
 };
 

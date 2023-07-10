@@ -67,7 +67,7 @@ public:
   operator std::string_view() const noexcept { return data; }
   auto view() const noexcept -> std::string_view { return data; }
   auto empty() const noexcept -> bool { return data.empty(); }
-  // auto get(std::string_view data) noexcept -> Identifier;
+  auto globalNamespace() const noexcept -> Identifier;
 
   /*
   does this identifier begin with a scope?
@@ -93,7 +93,7 @@ public:
   "a::x"           -> false
   "a0::...::aN::x" -> false
   */
-  [[nodiscard]] auto globallyQualified() const noexcept -> bool {
+  [[nodiscard]] auto isGloballyQualified() const noexcept -> bool {
     if (*data.begin() == ':') {
       return true;
     }
@@ -106,7 +106,7 @@ public:
   "a::x"           -> "a"
   "a0::...::aN::x" -> "a0"
 */
-  [[nodiscard]] auto first_scope() noexcept -> Identifier;
+  [[nodiscard]] auto firstScope() const noexcept -> Identifier;
 
   /*
     "x"              -> ""
@@ -114,7 +114,7 @@ public:
     "a::x"           -> ""
     "a0::...::aN::x" -> "a1::...::aN::x"
   */
-  [[nodiscard]] auto rest_scope() noexcept -> Identifier;
+  [[nodiscard]] auto restScope() const noexcept -> Identifier;
 
   /*
     "x"              -> "x"
@@ -122,7 +122,7 @@ public:
     "a::x"           -> "x"
     "a0::...::aN::x" -> "x"
   */
-  [[nodiscard]] auto variable() noexcept -> Identifier;
+  [[nodiscard]] auto variable() const noexcept -> Identifier;
 
   /*
     "x",   "a"           -> "a::x"
@@ -130,7 +130,8 @@ public:
     "a::x", "b"          -> "b::a::x"
     "a0::...::aN::x"     -> "b::a0::...::aN::x"
   */
-  [[nodiscard]] auto prependScope(Identifier scope) noexcept -> Identifier;
+  [[nodiscard]] auto prependScope(Identifier scope) const noexcept
+      -> Identifier;
 };
 
 inline auto operator<<(std::ostream &out, Identifier const &id) noexcept

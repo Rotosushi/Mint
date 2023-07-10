@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <memory>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -25,6 +26,7 @@
 #include "scan/Location.hpp"
 
 namespace mint {
+class Scope;
 class Error {
 public:
   struct Default {
@@ -34,9 +36,8 @@ public:
 
   struct UseBeforeDef {
     Identifier def;
-    Identifier q_def;
     Identifier undef;
-    Identifier q_undef;
+    std::shared_ptr<Scope> scope;
   };
 
   using Data = std::variant<std::monostate, Default, UseBeforeDef>;
@@ -91,10 +92,12 @@ public:
   Error(Kind kind, Location location, std::string_view message) noexcept
       : m_kind(kind),
         m_data(std::in_place_type<Default>, location, std::string(message)) {}
-  Error(Kind kind, Identifier def, Identifier q_def, Identifier undef,
-        Identifier q_undef) noexcept
+  Error(Kind kind, Identifier def, Identifier undef,
+        std::shared_ptr<Scope> scope) noexcept
       : m_kind(kind),
-        m_data(std::in_place_type<UseBeforeDef>, def, q_def, undef, q_undef) {}
+        m_data(std::in_place_type<UseBeforeDef>, def, undef, scope) {}
+  Error(UseBeforeDef const &usedef) noexcept
+      : m_kind(Kind::UseBeforeDef), m_data(usedef) {}
 
   [[nodiscard]] auto isMonostate() const noexcept -> bool {
     return std::holds_alternative<std::monostate>(m_data);

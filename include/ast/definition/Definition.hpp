@@ -40,6 +40,7 @@ namespace ast {
   the more complex inheritance heirarchy.)
 */
 class Definition : public Ast {
+  mutable Error::Data m_use_before_def;
   std::optional<type::Ptr> m_annotation;
   Identifier m_name;
 
@@ -57,6 +58,18 @@ public:
            (ast->kind() <= Ast::Kind::EndDefinition);
   }
 
+  bool isUseBeforeDef() const noexcept {
+    return std::holds_alternative<Error::UseBeforeDef>(m_use_before_def);
+  }
+  auto getUseBeforeDef() const noexcept {
+    return std::get<Error::UseBeforeDef>(m_use_before_def);
+  }
+  void setUseBeforeDef(Error::UseBeforeDef const &usedef) const noexcept {
+    m_use_before_def = usedef;
+  }
+  void clearUseBeforeDef() const noexcept {
+    m_use_before_def = std::monostate{};
+  }
   std::optional<type::Ptr> annotation() const noexcept { return m_annotation; }
   Identifier name() const noexcept { return m_name; }
 

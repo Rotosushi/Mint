@@ -33,16 +33,20 @@ public:
 
   operator bool() const noexcept { return data.has_value(); }
 
-  [[nodiscard]] auto has_value() const noexcept -> bool {
+  [[nodiscard]] auto hasValue() const noexcept -> bool {
     return data.has_value();
   }
 
+  [[nodiscard]] auto hasError() const noexcept -> bool {
+    return !data.has_value();
+  }
+
   [[nodiscard]] auto value() noexcept -> T & {
-    MINT_ASSERT(data.has_value());
+    MINT_ASSERT(hasValue());
     return data.value();
   }
   [[nodiscard]] auto error() noexcept -> Error & {
-    MINT_ASSERT(!data.has_value());
+    MINT_ASSERT(hasError());
     return data.error();
   }
 };

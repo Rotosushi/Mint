@@ -83,14 +83,15 @@ public:
     return Ast::Kind::Let == ast->kind();
   }
 
-  auto handleUseBeforeDef(Error &error, Environment &env) const noexcept
-      -> Result<type::Ptr>;
-
   Ptr clone() const noexcept override {
     return create(attributes(), location(), annotation(), name(), m_ast);
   }
 
   void print(std::ostream &out) const noexcept override {
+    if (attributes().isPublic()) {
+      out << "public ";
+    }
+
     out << "let " << name();
     auto anno = annotation();
     if (anno.has_value())

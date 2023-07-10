@@ -143,6 +143,8 @@ public:
     return identifier_set.emplace(name);
   }
 
+  auto localScope() noexcept -> std::shared_ptr<Scope> { return local_scope; }
+
   /*
     intended to be called when processing an Ast::Function,
     such that lookup and binding occurs within the local
@@ -217,8 +219,9 @@ public:
       definition to be able to typecheck. (or at least, make it past this
       single use-before-def type error.)
   */
-  void bindUseBeforeDef(Identifier undef, Identifier definition, ast::Ptr ast) {
-    use_before_def_map.insert(undef, definition, std::move(ast));
+  void bindUseBeforeDef(Identifier undef, Identifier definition, ast::Ptr ast,
+                        std::shared_ptr<Scope> scope) {
+    use_before_def_map.insert(undef, definition, std::move(ast), scope);
   }
   [[nodiscard]] auto lookupUseBeforeDef(Identifier undef)
       -> UseBeforeDefMap::Range {

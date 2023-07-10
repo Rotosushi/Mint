@@ -41,6 +41,11 @@ auto ScopeTable::Entry::bind(Identifier name, Attributes attributes,
   return iter->second->lookup(name);
 }
 
+[[nodiscard]] auto ScopeTable::Entry::qualifiedLookup(Identifier name) noexcept
+    -> Result<Bindings::Binding> {
+  return iter->second->qualifiedLookup(name);
+}
+
 auto ScopeTable::emplace(Identifier name,
                          std::weak_ptr<Scope> prev_scope) noexcept -> Entry {
   auto pair = table.emplace(name, Scope::createScope(name, prev_scope));
@@ -53,37 +58,23 @@ auto ScopeTable::emplace(Identifier name,
 [[nodiscard]] auto Scope::qualifiedScopeLookup(Identifier name) noexcept
     -> Result<Bindings::Binding> {
   /*
-    if name begins with "::"
-  */
-  if (name.globallyQualified()) {
-    auto g = global.lock();
-    return g->qualifiedLookup(name.variable());
-  }
-
-  /*
     "a0::...::aN::x" -> "a0"
   */
-  auto first = name.first_scope();
-  auto scope = scopes.lookup(first);
-  if (!scope) {
-    // lookup in the above scope.
-    if (!isGlobal()) {
-      auto p = prev_scope.lock();
-      return p->qualifiedLookup(name);
-    }
-    // there is no scope matching the name,
-    // and there are no larger scopes to query.
-    return {std::move(scope.error())};
+  auto first = name.firstScope();
+  auto found = scopes.lookup(first);
+  if (!found) {
+    return {std::move(found.error())};
   }
+  auto &scope = found.value();
 
   /*
     lookup "a1::...::aN::x" in scope "a0"
   */
-  return scope.value().lookup(name.rest_scope());
+  return scope.qualifiedLookup(name.restScope());
 }
 
 /*
-  lookup name while traversing up the scope tree
+  lookup name while traversing down the scope tree
 */
 [[nodiscard]] auto Scope::qualifiedLookup(Identifier name) noexcept
     -> Result<Bindings::Binding> {
@@ -92,8 +83,6 @@ auto ScopeTable::emplace(Identifier name,
     // lookup "x" in current scope
     auto found = bindings.lookup(name);
     if (found) {
-      // note: this check prevents a module within a module
-      // from accessing the outer modules private variables.
       if (found.value().isPrivate()) {
         return Error{Error::Kind::NameIsPrivateInScope, Location{},
                      name.view()};
@@ -102,12 +91,6 @@ auto ScopeTable::emplace(Identifier name,
       return found;
     }
 
-    // since we didn't find "x" in local
-    // scope, try and search the prev_scope.
-    if (!isGlobal()) {
-      auto p = prev_scope.lock();
-      return p->qualifiedLookup(name);
-    }
     // "x" isn't in scope.
     return {std::move(found.error())};
   }
@@ -121,7 +104,8 @@ auto ScopeTable::emplace(Identifier name,
 [[nodiscard]] auto Scope::getQualifiedNameImpl(Identifier name) noexcept
     -> Identifier {
   if (isGlobal()) {
-    return name;
+    auto qualified = name.prependScope(name.globalNamespace());
+    return qualified;
   }
 
   // qualify the name with the previous scope first.
