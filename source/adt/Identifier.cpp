@@ -56,7 +56,7 @@ auto Identifier::globalNamespace() const noexcept -> Identifier {
     cursor++;
   }
 
-  return set->emplace("");
+  return *this;
 }
 
 [[nodiscard]] auto Identifier::variable() const noexcept -> Identifier {

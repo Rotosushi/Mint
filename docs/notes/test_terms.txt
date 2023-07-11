@@ -1,0 +1,58 @@
+// Copyright (C) 2023 Cade Weinberg
+// 
+// This file is part of Mint.
+// 
+// Mint is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Mint is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+
+this is simply a listing of all of the current features available in the langauge,
+in the form of code snippets that must compile and have some given meaning.
+
+
+/* the basics */
+
+// values
+
+nil; : Nil => nil 
+
+1024; : Integer => 1024
+
+true; : Boolean => true
+
+
+// operators 
+
+1 + 1; : Integer => 2 
+// more arithmentic [- * / %]
+1 == 0; : Boolean => false 
+// more comparisons [!= < <= >= >]
+
+
+//let bindings and variable references:
+
+let a = 1; : Nil => nil
+a; : Integer => 1
+// any value can be bound [nil, true, false, etc]
+
+let b = a; : Nil => nil 
+b; : Integer => 1 
+
+// reordering let bindings does not change their meaning
+let c = d; : Nil => nil 
+let d = 1; : Nil => nil 
+c; : Integer => 1;
+d; : Integer => 1;
+
+
+// modules and namespaces 
+// modules define a new namespace 

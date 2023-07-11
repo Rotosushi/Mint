@@ -191,7 +191,7 @@ std::optional<Error> Environment::resolveUseBeforeDef(Identifier def) noexcept {
     auto &ast = cursor.ast();
     [[maybe_unused]] auto def_scope = cursor.scope();
     [[maybe_unused]] auto temp_scope = local_scope;
-    // local_scope = def_scope;
+    local_scope = def_scope;
     // sanity check that the Ast we are currently processing
     // is a Definition itself. as it only makes sense
     // to bind a Definition in the use-before-def-map
@@ -217,7 +217,7 @@ std::optional<Error> Environment::resolveUseBeforeDef(Identifier def) noexcept {
     if (!evaluate_result) {
       auto &error = evaluate_result.error();
       if (!error.isUseBeforeDef()) {
-        // local_scope = temp_scope;
+        local_scope = temp_scope;
         return error;
       }
       // since the ast failed to typecheck due to another
@@ -232,7 +232,7 @@ std::optional<Error> Environment::resolveUseBeforeDef(Identifier def) noexcept {
       stage.emplace_back(usedef.undef, usedef.def, ast, usedef.scope);
     }
 
-    // local_scope = temp_scope;
+    local_scope = temp_scope;
     ++cursor;
   }
 
@@ -268,7 +268,7 @@ Environment::partialResolveUseBeforeDef(Identifier def) noexcept {
     // save the current scope, and enter the scope
     // that the definition appears in
     [[maybe_unused]] auto temp_scope = local_scope;
-    // local_scope = def_scope;
+    local_scope = def_scope;
     // sanity check that the Ast we are currently processing
     // is a Definition itself. as it only makes sense
     // to bind a Definition in the use-before-def-map
@@ -286,7 +286,7 @@ Environment::partialResolveUseBeforeDef(Identifier def) noexcept {
     if (!typecheck_result) {
       auto &error = typecheck_result.error();
       if (!error.isUseBeforeDef()) {
-        // local_scope = temp_scope; // restore scope
+        local_scope = temp_scope; // restore scope
         return error;
       }
       // since the ast failed to typecheck due to another
@@ -304,8 +304,8 @@ Environment::partialResolveUseBeforeDef(Identifier def) noexcept {
       // map is out of date, thus we need to remove it.
       old_entries.emplace_back(cursor);
     }
-    // local_scope = temp_scope; // restore scope
 
+    local_scope = temp_scope; // restore scope
     ++cursor;
   }
 

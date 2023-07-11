@@ -22,7 +22,7 @@
 
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
-#include "adt/VectorMap.hpp"
+#include "adt/Map.hpp"
 #include "ast/Ast.hpp"
 #include "error/Result.hpp"
 /*
@@ -46,12 +46,12 @@ class Bindings {
 public:
   using Key = Identifier;
   using Value = std::tuple<Attributes, type::Ptr, std::optional<ast::Ptr>>;
-  using Table = VectorMap<Key, Value>;
+  using Table = std::map<Key, Value>;
   using iterator = typename Table::iterator;
 
-  class Binding : public iterator {
+  class Binding : public Table::iterator {
   public:
-    Binding(iterator binding) noexcept : iterator(binding) {}
+    Binding(iterator binding) noexcept : Table::iterator(binding) {}
 
     [[nodiscard]] auto name() const noexcept -> const Key & {
       return (*this)->first;
@@ -189,16 +189,25 @@ private:
   std::optional<Identifier> name;
   std::weak_ptr<Scope> prev_scope;
   std::weak_ptr<Scope> global;
-  Bindings bindings;
-  ScopeTable scopes;
+  std::unique_ptr<Bindings> bindings;
+  std::unique_ptr<ScopeTable> scopes;
 
 public:
-  Scope() noexcept = default;
+  Scope() noexcept
+      : bindings(std::make_unique<Bindings>()),
+        scopes(std::make_unique<ScopeTable>()) {}
   Scope(std::optional<Identifier> name,
         std::weak_ptr<Scope> prev_scope) noexcept
-      : name(name), prev_scope(prev_scope) {}
+      : name(name), prev_scope(prev_scope),
+        bindings(std::make_unique<Bindings>()),
+        scopes(std::make_unique<ScopeTable>()) {
+    auto ptr = prev_scope.lock();
+    global = ptr->global;
+  }
   Scope(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
-      : name(std::move(name)), prev_scope(prev_scope) {
+      : name(std::move(name)), prev_scope(prev_scope),
+        bindings(std::make_unique<Bindings>()),
+        scopes(std::make_unique<ScopeTable>()) {
     auto ptr = prev_scope.lock();
     global = ptr->global;
   }
@@ -218,9 +227,9 @@ private:
 
 public:
   [[nodiscard]] static auto createGlobalScope() -> std::shared_ptr<Scope> {
-    auto global = std::make_shared<Scope>();
-    global->setGlobal(global->weak_from_this());
-    return global;
+    auto scope = std::make_shared<Scope>();
+    scope->setGlobal(scope->weak_from_this());
+    return scope;
   }
 
   [[nodiscard]] static auto createScope(std::optional<Identifier> name,
@@ -246,44 +255,44 @@ public:
   }
 
   [[nodiscard]] auto bindingsEmpty() const noexcept -> bool {
-    return bindings.empty();
+    return bindings->empty();
   }
 
   [[nodiscard]] auto scopesEmpty() const noexcept -> bool {
-    return scopes.empty();
+    return scopes->empty();
   }
 
   [[nodiscard]] auto getQualifiedName(Identifier name) noexcept -> Identifier {
-    auto variable = name.variable();
-    return getQualifiedNameImpl(variable);
+    // auto variable = name.restScope();
+    return getQualifiedNameImpl(name);
   }
 
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
                 ast::Ptr value) noexcept {
-    return bindings.bind(name, attributes, type, value);
+    return bindings->bind(name, attributes, type, value);
   }
 
   auto partialBind(Identifier name, Attributes attributes,
                    type::Ptr type) noexcept {
-    return bindings.partialBind(name, attributes, type);
+    return bindings->partialBind(name, attributes, type);
   }
 
   auto completeBinding(Bindings::Binding binding, ast::Ptr ast) noexcept {
-    return bindings.completeBinding(binding, ast);
+    return bindings->completeBinding(binding, ast);
   }
 
   auto bindScope(Identifier name) {
-    return scopes.emplace(name, weak_from_this());
+    return scopes->emplace(name, weak_from_this());
   }
 
-  void unbindScope(Identifier name) { return scopes.unbind(name); }
+  void unbindScope(Identifier name) { return scopes->unbind(name); }
 
   [[nodiscard]] auto lookupScope(Identifier name) noexcept {
-    return scopes.lookup(name);
+    return scopes->lookup(name);
   }
 
   [[nodiscard]] auto lookupLocal(Identifier name) noexcept {
-    return bindings.lookup(name);
+    return bindings->lookup(name);
   }
 
   /*

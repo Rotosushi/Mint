@@ -16,18 +16,18 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
+#include <list>
 #include <utility>
-#include <vector>
 
 namespace mint {
-template <class Key, class Value> class VectorMap {
+template <class Key, class Value> class Map {
 public:
   using Pair = std::pair<Key, Value>;
-  using Map = std::vector<Pair>;
-  using iterator = typename Map::iterator;
+  using Table = std::list<Pair>;
+  using iterator = typename Table::iterator;
 
 private:
-  Map m_map;
+  Table m_map;
 
 public:
   [[nodiscard]] auto empty() const noexcept { return m_map.empty(); }
@@ -36,6 +36,9 @@ public:
   [[nodiscard]] auto end() noexcept { return m_map.end(); }
 
   [[nodiscard]] auto find(Key key) noexcept -> iterator {
+    if (empty())
+      return end();
+
     auto cursor = m_map.begin();
     auto end = m_map.end();
     while (cursor != end) {
@@ -58,25 +61,26 @@ public:
     return {std::prev(end()), true};
   }
 
-  auto erase(Key key) noexcept {
+  void erase(Key key) noexcept {
     auto found = find(key);
     if (found != end())
-      return erase(found);
-    else
-      return end();
+      m_map.erase(found);
   }
-  auto erase(iterator iter) noexcept { return m_map.erase(iter); };
+  void erase(iterator iter) noexcept {
+    if (iter != end())
+      m_map.erase(iter);
+  };
 };
 
-template <class Key, class Value> class VectorMultimap {
+template <class Key, class Value> class Multimap {
 public:
   using Pair = std::pair<Key, Value>;
-  using Map = std::vector<Pair>;
-  using iterator = typename Map::iterator;
+  using Table = std::list<Pair>;
+  using iterator = typename Table::iterator;
   using Range = std::pair<iterator, iterator>;
 
 private:
-  Map m_map;
+  Table m_map;
 
 public:
   [[nodiscard]] auto empty() const noexcept { return m_map.empty(); }
@@ -85,6 +89,9 @@ public:
   [[nodiscard]] auto end() noexcept { return m_map.end(); }
 
   [[nodiscard]] auto find(Key key) noexcept -> iterator {
+    if (empty())
+      return end();
+
     auto cursor = m_map.begin();
     auto end = m_map.end();
     while (cursor != end) {
@@ -97,7 +104,10 @@ public:
     return cursor;
   }
 
-  [[nodiscard]] auto find_range(Key key) noexcept -> Range {
+  [[nodiscard]] auto equal_range(Key key) noexcept -> Range {
+    if (empty())
+      return std::make_pair(end(), end());
+
     auto cursor = m_map.begin();
     auto end = m_map.end();
     while (cursor != end) {
@@ -115,12 +125,22 @@ public:
   }
 
   auto emplace(Key key, Value value) noexcept -> iterator {
-    auto range = find_range(key);
+    auto range = equal_range(key);
     return m_map.emplace(range.second, key, value);
   }
 
-  void erase(iterator iter) noexcept { m_map.erase(iter); }
-  void erase(Range range) noexcept { m_map.erase(range.first, range.second); }
+  void erase(iterator iter) noexcept {
+    if (iter != end())
+      m_map.erase(iter);
+  }
+  void erase(iterator begin, iterator end) noexcept {
+    if (begin != this->end())
+      m_map.erase(begin, end);
+  }
+  void erase(Range range) noexcept {
+    if (range.first != end())
+      m_map.erase(range.first, range.second);
+  }
 
   [[nodiscard]] auto contains(Key key) noexcept -> bool {
     auto found = find(key);

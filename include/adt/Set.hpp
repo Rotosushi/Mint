@@ -14,24 +14,24 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include <vector>
+#include <list>
 
 namespace mint {
-template <class Key> class VectorSet {
+template <class Key> class Set {
 public:
-  using Set = std::vector<Key>;
-  using iterator = typename Set::iterator;
+  using Elements = std::list<Key>;
+  using iterator = typename Elements::iterator;
 
 private:
-  Set m_set;
+  Elements m_elements;
 
 public:
-  [[nodiscard]] auto begin() noexcept { return m_set.begin(); }
-  [[nodiscard]] auto end() noexcept { return m_set.end(); }
+  [[nodiscard]] auto begin() noexcept { return m_elements.begin(); }
+  [[nodiscard]] auto end() noexcept { return m_elements.end(); }
 
   [[nodiscard]] auto find(Key key) noexcept -> iterator {
-    auto cursor = m_set.begin();
-    auto end = m_set.end();
+    auto cursor = m_elements.begin();
+    auto end = m_elements.end();
 
     while (cursor != end) {
       if (*cursor == key)
@@ -48,7 +48,7 @@ public:
     if (found != end())
       return {found, false};
 
-    m_set.emplace_back(key);
+    m_elements.emplace_back(key);
     return {std::prev(end()), true};
   }
 
@@ -56,7 +56,9 @@ public:
     auto found = find(key);
 
     if (found != end())
-      m_set.erase(found);
+      m_elements.erase(found);
   }
+
+  void erase(iterator element) noexcept { m_elements.erase(element); }
 };
 } // namespace mint

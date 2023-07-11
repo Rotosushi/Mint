@@ -48,7 +48,7 @@ auto ScopeTable::Entry::bind(Identifier name, Attributes attributes,
 
 auto ScopeTable::emplace(Identifier name,
                          std::weak_ptr<Scope> prev_scope) noexcept -> Entry {
-  auto pair = table.emplace(name, Scope::createScope(name, prev_scope));
+  auto pair = table.try_emplace(name, Scope::createScope(name, prev_scope));
   return pair.first;
 }
 
@@ -61,7 +61,7 @@ auto ScopeTable::emplace(Identifier name,
     "a0::...::aN::x" -> "a0"
   */
   auto first = name.firstScope();
-  auto found = scopes.lookup(first);
+  auto found = scopes->lookup(first);
   if (!found) {
     return {std::move(found.error())};
   }
@@ -81,7 +81,7 @@ auto ScopeTable::emplace(Identifier name,
   // if name is of the form "x"
   if (!name.isScoped()) {
     // lookup "x" in current scope
-    auto found = bindings.lookup(name);
+    auto found = bindings->lookup(name);
     if (found) {
       if (found.value().isPrivate()) {
         return Error{Error::Kind::NameIsPrivateInScope, Location{},
@@ -108,17 +108,17 @@ auto ScopeTable::emplace(Identifier name,
     return qualified;
   }
 
-  // qualify the name with the previous scope first.
-  auto prev = prev_scope.lock();
-  auto base = prev->getQualifiedNameImpl(name);
+  Identifier base = [&]() {
+    if (this->name.has_value()) {
+      return name.prependScope(this->name.value());
+    } else {
+      return name;
+    }
+  }();
 
-  // if this scope has a name, add it to the qualifications.
-  if (this->name.has_value()) {
-    auto qualified = base.prependScope(this->name.value());
-    return qualified;
-  } else {
-    return base;
-  }
+  // qualify the name with the previous scope
+  auto prev = prev_scope.lock();
+  return prev->getQualifiedNameImpl(base);
 }
 
 } // namespace mint
