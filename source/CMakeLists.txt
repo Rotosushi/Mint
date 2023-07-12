@@ -32,8 +32,6 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/adt/UnopTable.hpp
   ${MINT_SOURCE_DIR}/adt/UnopTable.cpp
   ${MINT_INCLUDE_DIR}/adt/UseBeforeDefMap.hpp 
-  ${MINT_INCLUDE_DIR}/adt/Map.hpp 
-  ${MINT_INCLUDE_DIR}/adt/Set.hpp 
 
   ${MINT_INCLUDE_DIR}/ast/All.hpp 
   ${MINT_INCLUDE_DIR}/ast/Ast.hpp 

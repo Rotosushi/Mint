@@ -73,7 +73,7 @@ class Ast;
   copy-semantics. which makes implementing an interpreter
   with shared_ptrs slightly easier to get right.
   but I could also argue that enforced move semantics
-  would force the implementation to be intimately aware
+  would force the implementation to be aware
   of what part of the interpreter owns what, and that
   could be more efficient.
   the issue there is that the goal is currently

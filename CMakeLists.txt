@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(Mint LANGUAGES C CXX VERSION 0.0.1 DESCRIPTION "A minimal interpreter")
+project(Mint LANGUAGES C CXX VERSION 0.0.2 DESCRIPTION "A minimal interpreter")
 
 message(STATUS "c++ standard: ${CMAKE_CXX_STANDARD}")
 

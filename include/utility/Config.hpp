@@ -18,7 +18,7 @@
 // clang-format off
 #define MINT_VERSION_MAJOR 0
 #define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 1
-#define MINT_GIT_REVISION "5a6727c2331bea315b62747fb7ee9b123eecb1f7"
+#define MINT_VERSION_PATCH 2
+#define MINT_GIT_REVISION "03f17a518ddc0612da2f38a74a47c7740442b631"
 #define MINT_DEBUG 1
 // clang-format on
