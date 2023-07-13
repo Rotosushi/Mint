@@ -20,10 +20,12 @@ link_directories(${LLVM_LIBRARY_DIRS})
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 
+# retrieved from llvm-config --cxxflags 
+# explicitly listed to remove -std=c++20 flag
 set(llvm_cxxflags 
   -I/usr/local/include 
-  -fno-exceptions 
-  -fno-rtti 
+  #-fno-exceptions 
+  #-fno-rtti 
   -D_GNU_SOURCE 
   -D_DEBUG 
   -D__STDC_CONSTANT_MACROS 
@@ -72,5 +74,10 @@ configure_file(
   ${MINT_INCLUDE_DIR}/utility/Config.hpp
 )
 
-# the subdirectory contains the rules to build to executable and tests
+# build the 'mint_common' library and the 'mint' executable
 add_subdirectory(source)
+
+if (MINT_BUILD_TESTS)
+  # build the 'mint_test' executable
+  add_subdirectory(test)
+endif()
