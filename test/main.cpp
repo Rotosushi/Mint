@@ -19,7 +19,12 @@
   https://www.boost.org/doc/libs/1_82_0/libs/test/doc/html/boost_test/adv_scenarios/single_header_customizations/entry_point.html
 */
 #define BOOST_TEST_MODULE mint
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_NO_MAIN
 #include "boost/test/unit_test.hpp"
+
+#include "llvm/Support/InitLLVM.h"
+#include "llvm/Support/TargetSelect.h"
 
 /*
 #NOTE:
@@ -30,7 +35,7 @@ however I am fine having exceptions enabled within mint.
 they were turned off only because of using
 llvm-config --cxxflags to generate compilation flags for llvm compatibility.
 however, these don't seem to be strictly necessary when linking against
-llvm statically.
+llvm statically. (which makes sense)
 
 #define BOOST_NO_EXCEPTIONS
 #include "boost/throw_exception.hpp"
@@ -39,4 +44,12 @@ void boost::throw_exception([[maybe_unused]] std::exception const &e) {
 }
 */
 
-BOOST_AUTO_TEST_CASE(hello_boost_test) { BOOST_TEST(true); }
+int main(int argc, char *argv[]) {
+  llvm::InitLLVM llvm{argc, argv};
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmParser();
+  llvm::InitializeNativeTargetAsmPrinter();
+  llvm::InitializeNativeTargetDisassembler();
+
+  return boost::unit_test::unit_test_main(&init_unit_test, argc, argv);
+}

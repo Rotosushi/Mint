@@ -127,7 +127,7 @@ auto Environment::repl() noexcept -> int {
     }
     auto &value = evaluate_result.value();
 
-    std::cout << ast << " : " << type << " => " << value << "\n";
+    *out << ast << " : " << type << " => " << value << "\n";
   }
 
   return EXIT_SUCCESS;

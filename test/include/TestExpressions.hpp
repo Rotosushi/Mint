@@ -15,10 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 2
-#define MINT_GIT_REVISION "16c742ec32399923cdae538a7049e28dfb2c228e"
-#define MINT_DEBUG 1
-// clang-format on
+#include <string_view>
+#include <vector>
+
+struct TestExpression {
+  std::string_view test_code;
+  std::string_view expected_result;
+};
+
+std::vector<TestExpression> getTestExpressions() noexcept {
+  std::vector<TestExpression> expressions{
+      {"nil;", "nil"}, {"1;", "1"}, {"true;", "true"}, {"false;", "false"}};
+
+  return expressions;
+}
