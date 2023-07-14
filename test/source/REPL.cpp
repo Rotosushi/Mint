@@ -109,22 +109,60 @@ std::string_view extractResult(std::string_view view) {
   return {cursor, end};
 }
 
-bool testExpressionInREPL(TestExpression &expression) {
-  std::stringstream input(std::string(expression.test_code));
+/*
+  #NOTE: walk backwards through the view until we see a '\n'
+  store this location (1), then keep walking backwards until we
+  see another '\n' or the end of the view, store this location (2)
+  return a view from 2 to 1.
+*/
+std::string_view extractFinalLine(std::string_view view) noexcept {
+  auto cursor = view.rbegin();
+  auto token = view.rbegin();
+  auto end = view.rend();
+
+  while (cursor != end) {
+    if (*cursor == '\n') {
+      token = cursor;
+      ++token;
+
+      while (token != end) {
+        if (*token == '\n') {
+          break;
+        }
+        ++token;
+      }
+
+      return {token.base(), static_cast<std::size_t>(
+                                std::distance(token.base(), cursor.base()))};
+    }
+
+    ++cursor;
+  }
+
+  // there was never a '\n' in the view, return the whole view
+  return {cursor.base(),
+          static_cast<std::size_t>(std::distance(cursor.base(), end.base()))};
+}
+
+void testExpressionInREPL(TestCode &expression) {
+  std::stringstream input;
+  input << expression.setup << "\n" << expression.test_code;
+  [[maybe_unused]] auto inview = input.view();
   std::stringstream output;
   auto env = mint::Environment::create(&input, &output);
 
   env.repl();
 
-  auto result = extractResult(output.view());
+  auto line = extractFinalLine(output.view());
+  auto result = extractResult(line);
 
-  return result == expression.expected_result;
+  BOOST_CHECK(result == expression.expected_result);
 }
 
 BOOST_AUTO_TEST_CASE(mint_repl) {
-  auto test_expressions = getTestExpressions();
+  auto test_expressions = getAllTestCode();
 
   for (auto &expression : test_expressions) {
-    BOOST_CHECK(testExpressionInREPL(expression));
+    testExpressionInREPL(expression);
   }
 }

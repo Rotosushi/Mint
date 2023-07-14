@@ -89,7 +89,7 @@ auto binop_integer_equality(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
-  return env.getIntegerAst({}, {},
+  return env.getBooleanAst({}, {},
                            left_integer->value() == right_integer->value());
 }
 
@@ -105,7 +105,7 @@ auto binop_integer_inequality(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
-  return env.getIntegerAst({}, {},
+  return env.getBooleanAst({}, {},
                            left_integer->value() != right_integer->value());
 }
 
@@ -121,7 +121,7 @@ auto binop_less_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
-  return env.getIntegerAst({}, {},
+  return env.getBooleanAst({}, {},
                            left_integer->value() < right_integer->value());
 }
 
@@ -129,7 +129,7 @@ auto binop_less_than_or_equal(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
-  return env.getIntegerAst({}, {},
+  return env.getBooleanAst({}, {},
                            left_integer->value() <= right_integer->value());
 }
 
@@ -137,7 +137,7 @@ auto binop_greater_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
-  return env.getIntegerAst({}, {},
+  return env.getBooleanAst({}, {},
                            left_integer->value() > right_integer->value());
 }
 
@@ -145,7 +145,7 @@ auto binop_greater_than_or_equal(ast::Ptr &left, ast::Ptr &right,
                                  Environment &env) -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
-  return env.getIntegerAst({}, {},
+  return env.getBooleanAst({}, {},
                            left_integer->value() >= right_integer->value());
 }
 

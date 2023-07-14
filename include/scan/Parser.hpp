@@ -43,7 +43,7 @@ module = "module" identifier "{" top* "}"
 affix = basic (binop precedence-parser)?
 
 binop = "+" |"-" | "*" | "/" | "%" | "!" | "&" | "|"
-        "<" | "<=" | "?=" | "!=" | "=>" | ">"
+        "<" | "<=" | "==" | "!=" | "=>" | ">"
 
 basic = literal
       | integer
