@@ -63,5 +63,7 @@ Result<ast::Ptr> Unop::evaluate(Environment &env) noexcept {
 
   return (*instance)(right_value, env);
 }
+
+Result<llvm::Value *> Unop::codegen(Environment &env) noexcept {}
 } // namespace ast
 } // namespace mint

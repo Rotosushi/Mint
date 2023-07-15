@@ -27,5 +27,10 @@ Result<type::Ptr> Nil::typecheck(Environment &env) const noexcept {
 Result<ast::Ptr> Nil::evaluate([[maybe_unused]] Environment &env) noexcept {
   return shared_from_this();
 }
+
+Result<llvm::Value *> Nil::codegen(Environment &env) noexcept {
+  return env.getLLVMNil();
+}
+
 } // namespace ast
 } // namespace mint

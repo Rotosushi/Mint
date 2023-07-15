@@ -30,5 +30,9 @@ Result<type::Ptr> Affix::typecheck(Environment &env) const noexcept {
 Result<ast::Ptr> Affix::evaluate(Environment &env) noexcept {
   return m_ast->evaluate(env);
 }
+
+Result<llvm::Value *> Affix::codegen(Environment &env) noexcept {
+  return m_ast->codegen(env);
+}
 } // namespace ast
 } // namespace mint

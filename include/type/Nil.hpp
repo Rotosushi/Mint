@@ -34,6 +34,9 @@ public:
   }
 
   void print(std::ostream &out) const noexcept override { out << "Nil"; }
+
+  [[nodiscard]] llvm::Type *
+  toLLVMImpl(Environment &env) const noexcept override;
 };
 } // namespace type
 } // namespace mint

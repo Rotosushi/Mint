@@ -24,6 +24,8 @@
 #include "type/Type.hpp"
 #include "utility/Assert.hpp"
 
+#include "llvm/IR/Value.h"
+
 namespace mint {
 class Environment;
 
@@ -80,6 +82,10 @@ class Ast;
   correctness and not performance.
   so shared_ptr is what we are going with for the
   forseeable future.
+
+  #NOTE(7/15/23): it might be best to disconnect the allocation
+  from the tree entirely. storing all smart pointers in a separate
+  structure, and constructing the tree itself out of raw pointers.
 */
 using Ptr = std::shared_ptr<Ast>;
 
@@ -177,6 +183,8 @@ public:
   typecheck(Environment &env) const noexcept = 0;
   [[nodiscard]] virtual Result<ast::Ptr>
   evaluate(Environment &env) noexcept = 0;
+  [[nodiscard]] virtual Result<llvm::Value *>
+  codegen(Environment &env) noexcept = 0;
 };
 
 inline auto operator<<(std::ostream &out, ast::Ptr const &ast) noexcept

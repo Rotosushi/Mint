@@ -23,18 +23,26 @@
 #include "error/Result.hpp"
 #include "scan/Token.hpp"
 
+#include "llvm/IR/Value.h"
+
 namespace mint {
 class Environment;
 
 using UnopEvalFn = Result<ast::Ptr> (*)(ast::Ptr &right, Environment &env);
+using UnopCodegenFn = Result<llvm::Value *> (*)(llvm::Value *right,
+                                                Environment &env);
 
 struct UnopOverload {
   type::Ptr right_type;
   type::Ptr result_type;
   UnopEvalFn eval;
+  UnopCodegenFn codegen;
 
-  [[nodiscard]] auto operator()(ast::Ptr &right, Environment &env) {
+  [[nodiscard]] auto evaluate(ast::Ptr &right, Environment &env) {
     return eval(right, env);
+  }
+  [[nodiscard]] auto codegen(llvm::Value *right, Environment &env) {
+    return codegen(right, env);
   }
 };
 

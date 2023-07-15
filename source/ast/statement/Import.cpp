@@ -71,5 +71,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
 
   return env.getNilAst({}, {});
 }
+
+Result<llvm::Value *> Import::codegen(Environment &env) noexcept {}
 } // namespace ast
 } // namespace mint

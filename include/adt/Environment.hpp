@@ -58,7 +58,7 @@ class Environment {
   std::unique_ptr<llvm::Module> llvm_module;
   std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder;
   llvm::TargetMachine *llvm_target_machine;
-  llvm::Function *current_llvm_function;
+  // llvm::Function *current_llvm_function;
 
   Environment(std::istream *in, std::ostream *out, std::ostream *errout,
               std::unique_ptr<llvm::LLVMContext> llvm_context,
@@ -71,8 +71,9 @@ class Environment {
         llvm_context(std::move(llvm_context)),
         llvm_module(std::move(llvm_module)),
         llvm_ir_builder(std::move(llvm_ir_builder)),
-        llvm_target_machine(llvm_target_machine),
-        current_llvm_function(nullptr) {
+        llvm_target_machine(llvm_target_machine)
+  // ,current_llvm_function(nullptr)
+  {
     MINT_ASSERT(in != nullptr);
     MINT_ASSERT(out != nullptr);
     MINT_ASSERT(errout != nullptr);
@@ -314,6 +315,33 @@ public:
   auto getVariableAst(Attributes attributes, Location location,
                       Identifier name) noexcept -> ast::Ptr {
     return ast::Variable::create(attributes, location, name);
+  }
+
+  /* LLVM interface */
+  // types
+  auto getLLVMNilType() noexcept -> llvm::IntegerType * {
+    return llvm_ir_builder->getInt1Ty();
+  }
+
+  auto getLLVMBooleanType() noexcept -> llvm::IntegerType * {
+    return llvm_ir_builder->getInt1Ty();
+  }
+
+  auto getLLVMIntegerType() noexcept -> llvm::IntegerType * {
+    return llvm_ir_builder->getInt32Ty();
+  }
+
+  // values
+  auto getLLVMNil() noexcept -> llvm::ConstantInt * {
+    return llvm_ir_builder->getInt1(false);
+  }
+
+  auto getLLVMBoolean(bool value) noexcept -> llvm::ConstantInt * {
+    return llvm_ir_builder->getInt1(value);
+  }
+
+  auto getLLVMInteger(int value) noexcept -> llvm::ConstantInt * {
+    return llvm_ir_builder->getInt32(value);
   }
 };
 } // namespace mint

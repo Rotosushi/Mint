@@ -82,5 +82,9 @@ Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {
 
   return bound.value().value();
 }
+
+Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {
+  
+}
 } // namespace ast
 } // namespace mint

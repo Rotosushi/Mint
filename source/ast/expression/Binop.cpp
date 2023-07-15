@@ -75,5 +75,9 @@ Result<ast::Ptr> Binop::evaluate(Environment &env) noexcept {
 
   return (*instance)(left_value, right_value, env);
 }
+
+Result<llvm::Value *> Binop::codegen(Environment &env) noexcept {
+  
+}
 } // namespace ast
 } // namespace mint

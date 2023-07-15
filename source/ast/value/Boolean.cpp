@@ -40,5 +40,9 @@ Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {
 Result<ast::Ptr> Boolean::evaluate([[maybe_unused]] Environment &env) noexcept {
   return shared_from_this();
 }
+
+Result<llvm::Value *> Boolean::codegen(Environment &env) noexcept {
+  return env.getLLVMBoolean(m_value);
+}
 } // namespace ast
 } // namespace mint

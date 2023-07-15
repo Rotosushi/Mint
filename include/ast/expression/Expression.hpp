@@ -50,6 +50,7 @@ public:
 
   virtual Result<type::Ptr> typecheck(Environment &env) const noexcept = 0;
   virtual Result<ast::Ptr> evaluate(Environment &env) noexcept = 0;
+  virtual Result<llvm::Value *> codegen(Environment &) noexcept = 0;
 };
 } // namespace ast
 } // namespace mint

@@ -57,6 +57,7 @@ public:
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;
+  Result<llvm::Value *> codegen(Environment &env) noexcept override;
 };
 } // namespace ast
 } // namespace mint

@@ -78,8 +78,11 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/type/All.hpp 
   ${MINT_INCLUDE_DIR}/type/Type.hpp 
   ${MINT_INCLUDE_DIR}/type/Nil.hpp 
+  ${MINT_SOURCE_DIR}/type/Nil.cpp
   ${MINT_INCLUDE_DIR}/type/Boolean.hpp 
+  ${MINT_SOURCE_DIR}/type/Boolean.cpp
   ${MINT_INCLUDE_DIR}/type/Integer.hpp
+  ${MINT_SOURCE_DIR}/type/Integer.cpp
 
   ${MINT_INCLUDE_DIR}/utility/Abort.hpp
   ${MINT_INCLUDE_DIR}/utility/Allocator.hpp 

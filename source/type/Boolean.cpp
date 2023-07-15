@@ -14,22 +14,14 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "ast/value/Integer.hpp"
+#include "type/Boolean.hpp"
 #include "adt/Environment.hpp"
 
 namespace mint {
-namespace ast {
-Result<type::Ptr> Integer::typecheck(Environment &env) const noexcept {
-  setCachedType(env.getIntegerType());
-  return env.getIntegerType();
+namespace type {
+[[nodiscard]] llvm::Type *Boolean::toLLVMImpl(Environment &env) const noexcept {
+  m_cached_llvm_type = env.getLLVMBooleanType();
+  return m_cached_llvm_type;
 }
-
-Result<ast::Ptr> Integer::evaluate([[maybe_unused]] Environment &env) noexcept {
-  return shared_from_this();
-}
-
-Result<llvm::Value *> Integer::codegen(Environment &env) noexcept {
-  return env.getLLVMInteger(m_value);
-}
-} // namespace ast
+} // namespace type
 } // namespace mint

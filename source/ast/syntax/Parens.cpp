@@ -30,5 +30,9 @@ Result<type::Ptr> Parens::typecheck(Environment &env) const noexcept {
 Result<ast::Ptr> Parens::evaluate(Environment &env) noexcept {
   return m_ast->evaluate(env);
 }
+
+Result<llvm::Value *> Parens::codegen(Environment &env) noexcept {
+  return m_ast->codegen(env);
+}
 } // namespace ast
 } // namespace mint

@@ -55,6 +55,35 @@ Runtime:
     Let 
     Module, Import
 
-  
+okay, all currently implemented values are scalars.
+at comptime values are represented as Ast nodes.
+at runtime values are represented as their equivalent llvm::Values.
+at runtime:
+  Nil     -> llvm::ConstantInt(1, false)
+  Boolean -> llvm::ConstantInt(1, value)
+  Integer -> llvm::ConstantInt(32, value)
+
+next to translate are the syntax ast's, 
+these can just pass through at comptime and runtime.
+
+next are expressions:
+at comptime expressions operate on Asts
+at runtime expressions operator on llvm::Value's
+at runtime:
+  Binop  -> BinopCodegenFn(llvm::Value *, llvm::Value *, Environment &)
+  Unop   -> UnopCodegenFn(llvm::Value *, Environment &)
+  Variable -> Bindings stores a llvm::Value * that is retrieved
+
+next are definitions:
+at comptime definitions bind Types and Asts.
+at runtime definitions bind global variables.
+at runtime:
+  Let -> must create a global variable within the module.
+         needs to use it's fully qualified name in the module 
+         symbol table, and needs to convert the qualified name 
+         to something that llvm accepts.
+         (convert any "::" to ".")
+
+
 
 

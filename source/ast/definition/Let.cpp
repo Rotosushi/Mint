@@ -121,5 +121,9 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
 
   return env.getNilAst({}, location());
 }
+
+Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
+  
+}
 } // namespace ast
 } // namespace mint

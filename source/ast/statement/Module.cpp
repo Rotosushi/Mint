@@ -99,5 +99,9 @@ Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {
   env.popScope();
   return env.getNilAst({}, {});
 }
+
+Result<llvm::Value *> Module::codegen(Environment &env) noexcept {
+  
+}
 } // namespace ast
 } // namespace mint
