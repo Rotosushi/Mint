@@ -16,9 +16,5 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 // clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 2
-#define MINT_GIT_REVISION "4633c0fc6f82de424b09699a0da44b9eb8751005"
-#define MINT_DEBUG 1
+#define MINT_TEST_RESOURCES_DIR "/home/cadence/projects/Mint/test/resources"
 // clang-format on
