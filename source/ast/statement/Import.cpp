@@ -49,8 +49,16 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
     auto typecheck_result = ast->typecheck(env);
     if (!typecheck_result) {
       auto &error = typecheck_result.error();
-      env.printErrorWithSource(error, parser);
-      return {Error::Kind::ImportFailed, location(), m_filename};
+      if (error.isUseBeforeDef()) {
+        if (auto failed = env.bindUseBeforeDef(error, ast)) {
+          env.printErrorWithSource(failed.value());
+          return {Error::Kind::ImportFailed, location(), m_filename};
+        }
+      } else {
+        env.printErrorWithSource(error, parser);
+        return {Error::Kind::ImportFailed, location(), m_filename};
+      }
+      continue;
     }
 
     auto evaluate_result = ast->evaluate(env);

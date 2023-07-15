@@ -1,3 +1,0 @@
-module A {
-  public let a = 1;
-}

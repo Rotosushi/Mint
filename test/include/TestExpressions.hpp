@@ -63,7 +63,8 @@ std::vector<TestCode> getAllTestCode() noexcept {
       {"public let a = 1;", "::a;", "1"},
       {"public let a = 1;\n public let b = a;", "::b;", "1"},
       {"public let b = a;\n public let a = 1;", "::b;", "1"},
-      {"public let b = a;\n public let a = c;\n public let c = 1;", "::b;", "1"},
+      {"public let b = a;\n public let a = c;\n public let c = 1;", "::b;",
+       "1"},
       {"module A {\n public let a = 1; \n}", "::A::a;", "1"},
       {"module A {\n public let a = 1; \n public let b = a; \n}", "::A::b;",
        "1"},
@@ -99,8 +100,11 @@ std::vector<TestCode> getAllTestCode() noexcept {
       {"module A {\n public let a = B::a; \n} module A { module B { public let "
        "a = 1; }}",
        "::A::a;", "1"},
-      {"import \"" MINT_TEST_RESOURCES_DIR "/module_simple.mi\";", "::A::a;",
-       "1"},
+      {"import \"" MINT_TEST_RESOURCES_DIR "/module.mi\";", "::A::a;", "1"},
+      {"import \"" MINT_TEST_RESOURCES_DIR "/module.mi\";", "::a;", "2"},
+      {"import \"" MINT_TEST_RESOURCES_DIR "/module.mi\";", "::A::b;", "2"},
+      {"import \"" MINT_TEST_RESOURCES_DIR "/module.mi\";", "::A::d;", "3"},
+      {"import \"" MINT_TEST_RESOURCES_DIR "/module.mi\";", "::A::e;", "4"},
   };
 
   return expressions;

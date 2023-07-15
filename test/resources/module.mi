@@ -1,0 +1,23 @@
+
+public let a = ::A::b;
+
+module A {
+  public let a = 1;
+  public let b = c;
+}
+
+module A {
+  public let c = 2;
+  public let d = ::B::a;
+  public let e = B::a;
+}
+
+module B {
+  public let a = 3;
+}
+
+module A {
+  module B {
+    public let a = 4;
+  }
+}
