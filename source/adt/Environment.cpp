@@ -90,9 +90,7 @@ namespace mint {
 }
 
 auto Environment::repl() noexcept -> int {
-  bool run = true;
-
-  while (run) {
+  while (true) {
     *out << "# ";
 
     auto parse_result = parser.parse();
@@ -109,12 +107,13 @@ auto Environment::repl() noexcept -> int {
     auto typecheck_result = ast->typecheck(*this);
     if (!typecheck_result) {
       auto &error = typecheck_result.error();
-      if (error.isUseBeforeDef()) {
-        if (auto failed = bindUseBeforeDef(error, ast)) {
-          printErrorWithSource(failed.value());
-        }
-      } else {
+      if (!error.isUseBeforeDef()) {
         printErrorWithSource(error);
+        continue;
+      }
+
+      if (auto failed = bindUseBeforeDef(error, ast)) {
+        printErrorWithSource(failed.value());
       }
       continue;
     }
@@ -130,6 +129,101 @@ auto Environment::repl() noexcept -> int {
     *out << ast << " : " << type << " => " << value << "\n";
   }
 
+  return EXIT_SUCCESS;
+}
+
+auto Environment::compile(fs::path filename) noexcept -> int {
+  auto found = fileSearch(filename);
+  if (!found) {
+    Error e{Error::Kind::FileNotFound, Location{}, filename.c_str()};
+    e.print(*errout);
+    return EXIT_FAILURE;
+  }
+  auto &file = found.value();
+  parser.setIstream(&file);
+
+  /*
+    Parse, Typecheck, and Evaluate each ast within the source file
+
+    #TODO: maybe we can handle multiple source files by "import"ing
+    each subsequent file into the environment created by the first
+    file given. then generating the code from there.
+  */
+  while (true) {
+    auto parse_result = parser.parse();
+    if (!parse_result) {
+      auto &error = parse_result.error();
+      if (error.kind() == Error::Kind::EndOfInput)
+        break;
+
+      printErrorWithSource(error);
+      return EXIT_FAILURE;
+    }
+    auto &ast = parse_result.value();
+
+    auto typecheck_result = ast->typecheck(*this);
+    if (!typecheck_result) {
+      auto &error = typecheck_result.error();
+      if (!error.isUseBeforeDef()) {
+        printErrorWithSource(error);
+        return EXIT_FAILURE;
+      }
+
+      if (auto failed = bindUseBeforeDef(error, ast)) {
+        printErrorWithSource(failed.value());
+        return EXIT_FAILURE;
+      }
+      // #NOTE:
+      // if the error was use-before-def, then this ast is
+      // still potentially good, so we still place it into
+      // the current module.
+      m_module.push_back(ast);
+      continue;
+    }
+
+    auto evaluate_result = ast->evaluate(*this);
+    if (!evaluate_result) {
+      auto &error = evaluate_result.error();
+      if (!error.isUseBeforeDef()) {
+        printErrorWithSource(evaluate_result.error());
+        return EXIT_FAILURE;
+      }
+
+      if (auto failed = bindUseBeforeDef(error, ast)) {
+        printErrorWithSource(failed.value());
+        return EXIT_FAILURE;
+      }
+
+      m_module.push_back(ast);
+      continue;
+    }
+
+    m_module.push_back(ast);
+  }
+
+  /*
+    codegen each term within the module,
+    this populates the llvm_module with
+    the llvm equivalent of all terms.
+  */
+  for (auto ast : m_module) {
+    auto codegen_result = ast->codegen(*this);
+    if (!codegen_result) {
+      printErrorWithSource(codegen_result.error());
+      return EXIT_FAILURE;
+    }
+  }
+
+  /*
+    emit the module
+
+    #TODO: iff there is a main entry point
+    emit an object file and link it with lld
+    to create an executable.
+    iff there is more than one main entry point
+    report an error
+  */
+  emitLLVMIR(filename);
   return EXIT_SUCCESS;
 }
 

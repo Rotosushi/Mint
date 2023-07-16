@@ -82,6 +82,11 @@ private:
   Attributes default_attributes;
 
 public:
+  void setIstream(std::istream *in) noexcept {
+    MINT_ASSERT(in != nullptr);
+    this->in = in;
+  }
+
   auto text() const noexcept { return scanner.getText(); }
   auto location() const noexcept { return scanner.getLocation(); }
 

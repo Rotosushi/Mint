@@ -43,7 +43,8 @@ private:
       {"h", 'h', "print valid program argument usage", None},
       {"help", 'h', "print valid program argument usage", None},
       {"v", 'v', "print version information and exit", None},
-      {"version", 'v', "print version information and exit", None}};
+      {"version", 'v', "print version information and exit", None},
+      {"compile", 'c', "compile the given input file", Required}};
 
   std::vector<std::string_view> arguments;
 
@@ -64,8 +65,9 @@ private:
       if (argument[0] != option.text[0])
         continue;
 
-      if (option.text == argument)
+      if (option.text == argument) {
         return option.tag;
+      }
     }
     // unknown option
     return '?';

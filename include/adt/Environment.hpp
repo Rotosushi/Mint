@@ -49,6 +49,7 @@ class Environment {
   std::shared_ptr<Scope> global_scope;
   std::shared_ptr<Scope> local_scope;
   Parser parser;
+  std::vector<ast::Ptr> m_module;
 
   std::istream *in;
   std::ostream *out;
@@ -94,6 +95,8 @@ public:
 
   auto repl() noexcept -> int;
 
+  auto compile(std::filesystem::path file) noexcept -> int;
+
   void printErrorWithSource(Error const &error) const noexcept {
     if (error.isDefault()) {
       auto &data = error.getDefault();
@@ -123,7 +126,7 @@ public:
     auto cursor = std::next(string.begin());
     auto end = std::prev(string.end());
 
-    // #TODO: when do we replace escape sequences with character literals?
+    // #TODO: replace escape sequences with character literals?
 
     return {cursor, static_cast<std::size_t>(std::distance(cursor, end))};
   }
@@ -142,6 +145,20 @@ public:
 
   auto getIdentifier(std::string_view name) noexcept {
     return identifier_set.emplace(name);
+  }
+
+  auto emitLLVMIR(fs::path filename) noexcept -> int {
+    auto llvm_ir_filename = filename.replace_extension("ll");
+    std::error_code error;
+    llvm::raw_fd_ostream outfile{llvm_ir_filename.c_str(), error};
+    if (error) {
+      *errout << "Couldn't open file: " << llvm_ir_filename << " -- " << error
+              << "\n";
+      return EXIT_FAILURE;
+    }
+
+    llvm_module->print(outfile, /* AssemblyAnnotationWriter = */ nullptr);
+    return EXIT_SUCCESS;
   }
 
   auto localScope() noexcept -> std::shared_ptr<Scope> { return local_scope; }
