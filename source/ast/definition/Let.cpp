@@ -18,6 +18,7 @@
 
 #include "adt/Environment.hpp"
 #include "ast/definition/Let.hpp"
+#include "utility/LLVMToString.hpp"
 
 namespace mint {
 namespace ast {
@@ -65,10 +66,9 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
 
   // #NOTE:
   // since we could construct a partialBinding, we check
-  // if we can partially resolve any use-before-def
+  // if we can resolve the type of any use-before-def
   // which rely upon this one.
-  if (auto failed =
-          env.partialResolveUseBeforeDef(env.getQualifiedName(name())))
+  if (auto failed = env.resolveTypeOfUseBeforeDef(env.getQualifiedName(name())))
     return failed.value();
 
   setCachedType(env.getNilType());
@@ -94,7 +94,7 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
 
   auto binding = found.value();
 
-  if (binding.hasValue())
+  if (binding.hasComptimeValue())
     return {Error::Kind::NameAlreadyBoundInScope, location(), name().view()};
 
   auto term_value_result = m_ast->evaluate(env);
@@ -108,22 +108,61 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
   // this is not the meaning of let, which introduces a
   // new variable. and as such must model the semantics of
   // a new value.
-  if (auto bound = env.completeNameBinding(binding, value->clone());
-      bound.hasError()) // #TODO: add location context to this error before
-                        // returning
-    return bound.error();
+  binding.setComptimeValue(value->clone());
 
-  // #NOTE: we just created a new binding, so we can
-  // fully typecheck and evaluate any partial bindings
-  // that rely on this definition
-  if (auto failed = env.resolveUseBeforeDef(env.getQualifiedName(name())))
+  // #NOTE: we just created the comptime value for this binding,
+  // so we can evaluate any partial bindings
+  // that rely on this binding
+  if (auto failed =
+          env.resolveComptimeValueOfUseBeforeDef(env.getQualifiedName(name())))
     return failed.value();
 
   return env.getNilAst({}, location());
 }
 
+/*
+  create the llvm::Value of the bound expression.
+  create the variable representing the value at runtime.
+*/
 Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
-  
+  if (isUseBeforeDef())
+    return {getUseBeforeDef()};
+
+  auto found = env.lookupBinding(name());
+  MINT_ASSERT(found);
+
+  auto binding = found.value();
+
+  if (binding.hasRuntimeValue())
+    return {Error::Kind::NameAlreadyBoundInScope, location(), name().view()};
+
+  auto codegen_result = m_ast->codegen(env);
+  if (!codegen_result)
+    return codegen_result;
+  auto value = codegen_result.value();
+
+  auto type = m_ast->cachedTypeOrAssert();
+  auto llvm_type = type->toLLVM(env);
+
+  // create a global variable for the binding
+  auto llvm_name = env.getQualifiedNameForLLVM(name());
+  llvm::GlobalVariable *variable = nullptr;
+  if (auto constant = dynCast<llvm::Constant>(value)) {
+    variable =
+        env.createLLVMGlobalVariable(llvm_name.view(), llvm_type, constant);
+  } else {
+    return {Error::Kind::GlobalInitNotConstant, m_ast->location(),
+            toString(value)};
+  }
+
+  binding.setRuntimeValue(variable);
+
+  // resolve any use-before-def relying on this name
+  if (auto failed =
+          env.resolveRuntimeValueOfUseBeforeDef(env.getQualifiedName(name())))
+    return failed.value();
+
+  return env.getLLVMNil();
 }
 } // namespace ast
 } // namespace mint

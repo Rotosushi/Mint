@@ -74,17 +74,28 @@ Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {
   if (!bound)
     return handleUseBeforeDef(bound.error(), env);
 
-  // we cannot evaluate a variable given a
-  // partial binding.
-  if (bound.value().isPartial()) {
-    return handleUseBeforeDef(env);
-  }
+  auto binding = bound.value();
 
-  return bound.value().value();
+  // we cannot evaluate a variable given a
+  // binding without a comptime value
+  if (!binding.hasComptimeValue())
+    return handleUseBeforeDef(env);
+
+  return binding.comptimeValueOrAssert();
 }
 
 Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {
-  
+  auto bound = env.lookupBinding(m_name);
+  if (!bound)
+    return handleUseBeforeDef(bound.error(), env);
+  auto binding = bound.value();
+
+  // we cannot codegen a variable given a
+  // binding without a runtime value
+  if (!binding.hasRuntimeValue())
+    return handleUseBeforeDef(env);
+
+  return binding.runtimeValueOrAssert();
 }
 } // namespace ast
 } // namespace mint

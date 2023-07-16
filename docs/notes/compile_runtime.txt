@@ -68,11 +68,14 @@ these can just pass through at comptime and runtime.
 
 next are expressions:
 at comptime expressions operate on Asts
-at runtime expressions operator on llvm::Value's
+at runtime expressions operator on llvm::Values
 at runtime:
   Binop  -> BinopCodegenFn(llvm::Value *, llvm::Value *, Environment &)
   Unop   -> UnopCodegenFn(llvm::Value *, Environment &)
-  Variable -> Bindings stores a llvm::Value * that is retrieved
+  Variable -> Bindings stores a llvm::Value * that is retrieved,
+              if the variable is use-before-def of the runtime value 
+              that needs to be handled the same as we handle use-before-def 
+              of the comptime value.
 
 next are definitions:
 at comptime definitions bind Types and Asts.
@@ -84,6 +87,17 @@ at runtime:
          to something that llvm accepts.
          (convert any "::" to ".")
 
+next are statements:
+at comptime statements operate on Asts 
+at runtime statements operate on llvm::Values 
+at runtime:
+  Import -> is a no-op, as evaluation brought all definitions into 
+            the current environment already. so as long as codegen 
+            is done after we fully typecheck and evaluate all source 
+            code, we will codegen anything that the import statement 
+            would bring in.
+  Module -> needs to codegen each of it's subexpressions.
+            and handle any use-before-def as usual.
 
 
 

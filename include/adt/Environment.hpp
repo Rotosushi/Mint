@@ -200,18 +200,22 @@ public:
                                         const ast::Ptr &ast) noexcept;
 
   /*
-    #NOTE: called when we successfully evaluate a new definition.
-    creates full bindings for any definition that is in the
-    use-before-def map relying on the given definition.
-  */
-  std::optional<Error> resolveUseBeforeDef(Identifier def) noexcept;
-
-  /*
     #NOTE: called when we successfully typecheck a new definition.
     creates partial bindings for any definitions that are in the
     use-before-def-map relying on the given definition.
   */
-  std::optional<Error> partialResolveUseBeforeDef(Identifier def) noexcept;
+  std::optional<Error> resolveTypeOfUseBeforeDef(Identifier def) noexcept;
+
+  /*
+  #NOTE: called when we successfully evaluate a new definition.
+  creates full bindings for any definition that is in the
+  use-before-def map relying on the given definition.
+*/
+  std::optional<Error>
+  resolveComptimeValueOfUseBeforeDef(Identifier def) noexcept;
+
+  std::optional<Error>
+  resolveRuntimeValueOfUseBeforeDef(Identifier def) noexcept;
 
   /*
     #NOTE: undef is the name which caused the use-before-def error.
@@ -221,38 +225,39 @@ public:
       single use-before-def type error.)
   */
   void bindUseBeforeDef(Identifier undef, Identifier definition, ast::Ptr ast,
-                        std::shared_ptr<Scope> scope) {
+                        std::shared_ptr<Scope> scope) noexcept {
     use_before_def_map.insert(undef, definition, std::move(ast), scope);
   }
-  [[nodiscard]] auto lookupUseBeforeDef(Identifier undef)
+  [[nodiscard]] auto lookupUseBeforeDef(Identifier undef) noexcept
       -> UseBeforeDefMap::Range {
     return use_before_def_map.lookup(undef);
   }
 
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
-                ast::Ptr value) noexcept {
-    return local_scope->bindName(name, attributes, type, value);
+                ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept {
+    return local_scope->bindName(name, attributes, type, comptime_value,
+                                 runtime_value);
   }
 
   auto partialBindName(Identifier name, Attributes attributes,
                        type::Ptr type) noexcept {
-    return local_scope->partialBind(name, attributes, type);
+    return local_scope->partialBindName(name, attributes, type);
   }
 
-  auto completeNameBinding(Bindings::Binding binding, ast::Ptr ast) noexcept {
-    return local_scope->completeBinding(binding, ast);
+  auto lookupBinding(Identifier name) noexcept {
+    return local_scope->lookup(name);
   }
-
-  auto lookupBinding(Identifier name) { return local_scope->lookup(name); }
-  auto getQualifiedName(Identifier name) {
+  auto getQualifiedName(Identifier name) noexcept {
     return local_scope->getQualifiedName(name);
   }
+  /* https://llvm.org/docs/LangRef.html#identifiers */
+  auto getQualifiedNameForLLVM(Identifier name) noexcept -> Identifier;
 
-  auto createBinop(Token op) { return binop_table.emplace(op); }
-  auto lookupBinop(Token op) { return binop_table.lookup(op); }
+  auto createBinop(Token op) noexcept { return binop_table.emplace(op); }
+  auto lookupBinop(Token op) noexcept { return binop_table.lookup(op); }
 
-  auto createUnop(Token op) { return unop_table.emplace(op); }
-  auto lookupUnop(Token op) { return unop_table.lookup(op); }
+  auto createUnop(Token op) noexcept { return unop_table.emplace(op); }
+  auto lookupUnop(Token op) noexcept { return unop_table.lookup(op); }
 
   auto getBooleanType() noexcept { return type_interner.getBooleanType(); }
   auto getIntegerType() noexcept { return type_interner.getIntegerType(); }
@@ -343,5 +348,103 @@ public:
   auto getLLVMInteger(int value) noexcept -> llvm::ConstantInt * {
     return llvm_ir_builder->getInt32(value);
   }
+
+  // instructions
+  llvm::Value *createLLVMNeg(llvm::Value *right, llvm::Twine const &name = "",
+                             bool no_unsigned_wrap = false,
+                             bool no_signed_wrap = false) noexcept {
+    return llvm_ir_builder->CreateNeg(right, name, no_unsigned_wrap,
+                                      no_signed_wrap);
+  }
+
+  llvm::Value *createLLVMNot(llvm::Value *right, llvm::Twine const &name = "") {
+    return llvm_ir_builder->CreateNot(right, name);
+  }
+
+  /* https://llvm.org/docs/LangRef.html#add-instruction */
+  llvm::Value *createLLVMAdd(llvm::Value *left, llvm::Value *right,
+                             llvm::Twine const &name = "",
+                             bool no_unsigned_wrap = false,
+                             bool no_signed_wrap = false) noexcept {
+    return llvm_ir_builder->CreateAdd(left, right, name, no_unsigned_wrap,
+                                      no_signed_wrap);
+  }
+
+  /* https://llvm.org/docs/LangRef.html#sub-instruction */
+  llvm::Value *createLLVMSub(llvm::Value *left, llvm::Value *right,
+                             llvm::Twine const &name = "",
+                             bool no_unsigned_wrap = false,
+                             bool no_signed_wrap = false) noexcept {
+    return llvm_ir_builder->CreateSub(left, right, name, no_unsigned_wrap,
+                                      no_signed_wrap);
+  }
+
+  /* https://llvm.org/docs/LangRef.html#mul-instruction */
+  llvm::Value *createLLVMMul(llvm::Value *left, llvm::Value *right,
+                             llvm::Twine const &name = "",
+                             bool no_unsigned_wrap = false,
+                             bool no_signed_wrap = false) noexcept {
+    return llvm_ir_builder->CreateMul(left, right, name, no_unsigned_wrap,
+                                      no_signed_wrap);
+  }
+
+  /* https://llvm.org/docs/LangRef.html#sdiv-instruction */
+  llvm::Value *createLLVMSDiv(llvm::Value *left, llvm::Value *right,
+                              llvm::Twine const &name = "",
+                              bool is_exact = false) noexcept {
+    return llvm_ir_builder->CreateSDiv(left, right, name, is_exact);
+  }
+
+  /* https://llvm.org/docs/LangRef.html#srem-instruction */
+  llvm::Value *createLLVMSRem(llvm::Value *left, llvm::Value *right,
+                              llvm::Twine const &name = "") noexcept {
+    return llvm_ir_builder->CreateSRem(left, right, name);
+  }
+
+  /* https://llvm.org/docs/LangRef.html#icmp-instruction */
+  auto createLLVMICmpEQ(llvm::Value *left, llvm::Value *right,
+                        const llvm::Twine &name = "") noexcept {
+    return llvm_ir_builder->CreateICmpEQ(left, right, name);
+  }
+
+  auto createLLVMICmpNE(llvm::Value *left, llvm::Value *right,
+                        const llvm::Twine &name = "") noexcept {
+    return llvm_ir_builder->CreateICmpNE(left, right, name);
+  }
+
+  auto createLLVMICmpSGT(llvm::Value *left, llvm::Value *right,
+                         const llvm::Twine &name = "") noexcept {
+    return llvm_ir_builder->CreateICmpSGT(left, right, name);
+  }
+
+  auto createLLVMICmpSGE(llvm::Value *left, llvm::Value *right,
+                         const llvm::Twine &name = "") noexcept {
+    return llvm_ir_builder->CreateICmpSGE(left, right, name);
+  }
+
+  auto createLLVMICmpSLT(llvm::Value *left, llvm::Value *right,
+                         const llvm::Twine &name = "") noexcept {
+    return llvm_ir_builder->CreateICmpSLT(left, right, name);
+  }
+
+  auto createLLVMICmpSLE(llvm::Value *left, llvm::Value *right,
+                         const llvm::Twine &name = "") noexcept {
+    return llvm_ir_builder->CreateICmpSLE(left, right, name);
+  }
+
+  auto createLLVMAnd(llvm::Value *left, llvm::Value *right,
+                     const llvm::Twine &name = "") noexcept {
+    return llvm_ir_builder->CreateAnd(left, right, name);
+  }
+
+  auto createLLVMOr(llvm::Value *left, llvm::Value *right,
+                    const llvm::Twine &name = "") noexcept {
+    return llvm_ir_builder->CreateOr(left, right, name);
+  }
+
+  /* allocations */
+  auto createLLVMGlobalVariable(std::string_view name, llvm::Type *type,
+                                llvm::Constant *init = nullptr) noexcept
+      -> llvm::GlobalVariable *;
 };
 } // namespace mint

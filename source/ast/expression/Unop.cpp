@@ -61,9 +61,30 @@ Result<ast::Ptr> Unop::evaluate(Environment &env) noexcept {
     return {Error::Kind::UnopTypeMismatch, m_right->location(), message.view()};
   }
 
-  return (*instance)(right_value, env);
+  return instance->evaluate(right_value, env);
 }
 
-Result<llvm::Value *> Unop::codegen(Environment &env) noexcept {}
+Result<llvm::Value *> Unop::codegen(Environment &env) noexcept {
+  auto overloads = env.lookupUnop(m_op);
+  if (!overloads)
+    return {Error::Kind::UnknownUnop, location(), tokenToView(m_op)};
+
+  auto right_type = m_right->cachedTypeOrAssert();
+
+  auto right_result = m_right->codegen(env);
+  if (!right_result)
+    return right_result;
+  auto right_value = right_result.value();
+
+  auto instance = overloads->lookup(right_type);
+  if (!instance) {
+    std::stringstream message;
+    message << "no instance of [" << m_op << "] found for type [" << right_type
+            << "]";
+    return {Error::Kind::UnopTypeMismatch, m_right->location(), message.view()};
+  }
+
+  return instance->codegen(right_value, env);
+}
 } // namespace ast
 } // namespace mint

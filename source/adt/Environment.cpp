@@ -133,6 +133,32 @@ auto Environment::repl() noexcept -> int {
   return EXIT_SUCCESS;
 }
 
+auto Environment::getQualifiedNameForLLVM(Identifier name) noexcept
+    -> Identifier {
+  auto qualified = getQualifiedName(name);
+  auto view = qualified.view();
+  std::string llvm_name;
+  llvm_name.resize(view.size() + 1);
+
+  // the llvm_name is the same as the given name,
+  // where "::" is replaced with "."
+  auto cursor = view.begin();
+  auto end = view.end();
+  while (cursor != end) {
+    auto c = *cursor;
+    if (c == ':') {
+      llvm_name.append(1, '.');
+      ++cursor; // eat "::"
+      ++cursor;
+    } else {
+      llvm_name.append(1, c);
+      ++cursor; // eat the char
+    }
+  }
+
+  return identifier_set.emplace(std::move(llvm_name));
+}
+
 std::optional<Error>
 Environment::bindUseBeforeDef(const Error &error,
                               const ast::Ptr &ast) noexcept {
@@ -171,87 +197,8 @@ Environment::bindUseBeforeDef(const Error &error,
   return std::nullopt;
 }
 
-/*
-  called when a new name is defined.
-  any use-before-def definitions that rely
-  upon the name that was just defined are
-  attempted to be resolved here.
-*/
-std::optional<Error> Environment::resolveUseBeforeDef(Identifier def) noexcept {
-  std::vector<
-      std::tuple<Identifier, Identifier, ast::Ptr, std::shared_ptr<Scope>>>
-      stage;
-
-  auto range = lookupUseBeforeDef(def);
-  auto cursor = range.begin();
-  auto end = range.end();
-  while (cursor != end) {
-    [[maybe_unused]] auto undef = cursor.undef();
-    [[maybe_unused]] auto def = cursor.definition();
-    auto &ast = cursor.ast();
-    [[maybe_unused]] auto def_scope = cursor.scope();
-    [[maybe_unused]] auto temp_scope = local_scope;
-    local_scope = def_scope;
-    // sanity check that the Ast we are currently processing
-    // is a Definition itself. as it only makes sense
-    // to bind a Definition in the use-before-def-map
-    auto def_ast = cast<ast::Definition>(ast.get());
-    // since we are attempting to resolve this UseBeforeDef
-    // we clear the current UseBeforeDef error during the
-    // attempt.
-    def_ast->clearUseBeforeDef();
-
-    /*
-      when we resolve a use before def, we are now in a situation
-      where we have already created a partial binding of the
-      use before def term to it's type. via partialResolveUseBeforeDef.
-      thus we have already typechecked the term being fully resolved.
-      thus all that is needed is to fully resolve the definition.
-    */
-    // sanity check that we have already called typecheck on
-    // this ast and it succeeded.
-    [[maybe_unused]] auto type = ast->cachedTypeOrAssert();
-
-    // create the full binding. resolving the use-before-def
-    auto evaluate_result = ast->evaluate(*this);
-    if (!evaluate_result) {
-      auto &error = evaluate_result.error();
-      if (!error.isUseBeforeDef()) {
-        local_scope = temp_scope;
-        return error;
-      }
-      // since the ast failed to typecheck due to another
-      // use-before-def we want to handle that here.
-      auto &usedef = error.getUseBeforeDef();
-      // sanity check that this undef name is not
-      // the same as the original undef name
-      MINT_ASSERT(usedef.undef != undef);
-
-      // stage the use-before-def to be inserted into the map.
-      // (so we are not inserting as we are iterating)
-      stage.emplace_back(usedef.undef, usedef.def, ast, usedef.scope);
-    }
-
-    local_scope = temp_scope;
-    ++cursor;
-  }
-
-  // remove the old use before defs
-  use_before_def_map.erase(range);
-
-  // reinsert any definitions which failed to type
-  // because of another use-before-def
-  if (!stage.empty()) {
-    for (auto &usedef : stage)
-      use_before_def_map.insert(std::get<0>(usedef), std::get<1>(usedef),
-                                std::get<2>(usedef), std::get<3>(usedef));
-  }
-
-  return std::nullopt;
-}
-
 std::optional<Error>
-Environment::partialResolveUseBeforeDef(Identifier def) noexcept {
+Environment::resolveTypeOfUseBeforeDef(Identifier def) noexcept {
   std::vector<
       std::tuple<Identifier, Identifier, ast::Ptr, std::shared_ptr<Scope>>>
       stage;
@@ -321,6 +268,188 @@ Environment::partialResolveUseBeforeDef(Identifier def) noexcept {
                                 std::get<2>(usedef), std::get<3>(usedef));
 
   return std::nullopt;
+}
+
+/*
+  called when a new name is defined.
+  any use-before-def definitions that rely
+  upon the name that was just defined are
+  attempted to be resolved here.
+*/
+std::optional<Error>
+Environment::resolveComptimeValueOfUseBeforeDef(Identifier def) noexcept {
+  std::vector<
+      std::tuple<Identifier, Identifier, ast::Ptr, std::shared_ptr<Scope>>>
+      stage;
+  std::vector<UseBeforeDefMap::Entry> old_entries;
+
+  auto range = lookupUseBeforeDef(def);
+  auto cursor = range.begin();
+  auto end = range.end();
+  while (cursor != end) {
+    [[maybe_unused]] auto undef = cursor.undef();
+    [[maybe_unused]] auto def = cursor.definition();
+    auto &ast = cursor.ast();
+    [[maybe_unused]] auto def_scope = cursor.scope();
+    [[maybe_unused]] auto temp_scope = local_scope;
+    local_scope = def_scope;
+    // sanity check that the Ast we are currently processing
+    // is a Definition itself. as it only makes sense
+    // to bind a Definition in the use-before-def-map
+    auto def_ast = cast<ast::Definition>(ast.get());
+    // since we are attempting to resolve this UseBeforeDef
+    // we clear the current UseBeforeDef error during the
+    // attempt.
+    def_ast->clearUseBeforeDef();
+
+    /*
+      when we resolve a use before def, we are now in a situation
+      where we have already created a partial binding of the
+      use before def term to it's type. via resolveTypeOfUseBeforeDef.
+      thus we have already typechecked the term being fully resolved.
+      thus all that is needed is to fully resolve the definition.
+    */
+    // sanity check that we have already called typecheck on
+    // this ast and it succeeded.
+    [[maybe_unused]] auto type = ast->cachedTypeOrAssert();
+
+    // create the full binding. resolving the use-before-def
+    auto evaluate_result = ast->evaluate(*this);
+    if (!evaluate_result) {
+      auto &error = evaluate_result.error();
+      if (!error.isUseBeforeDef()) {
+        local_scope = temp_scope;
+        return error;
+      }
+      // since the ast failed to typecheck due to another
+      // use-before-def we want to handle that here.
+      auto &usedef = error.getUseBeforeDef();
+      // sanity check that this undef name is not
+      // the same as the original undef name
+      MINT_ASSERT(usedef.undef != undef);
+
+      // stage the use-before-def to be inserted into the map.
+      // (so we are not inserting as we are iterating)
+      stage.emplace_back(usedef.undef, usedef.def, ast, usedef.scope);
+      // since this entry in the use-before-def map failed
+      // with another use-before-def error, it's entry in the
+      // map is out of date, thus we need to remove it.
+      old_entries.emplace_back(cursor);
+    }
+
+    local_scope = temp_scope;
+    ++cursor;
+  }
+
+  // remove the old use before defs
+  if (!old_entries.empty())
+    for (auto &entry : old_entries)
+      use_before_def_map.erase(entry);
+
+  // reinsert any definitions which failed to type
+  // because of another use-before-def
+  if (!stage.empty()) {
+    for (auto &usedef : stage)
+      use_before_def_map.insert(std::get<0>(usedef), std::get<1>(usedef),
+                                std::get<2>(usedef), std::get<3>(usedef));
+  }
+
+  return std::nullopt;
+}
+
+std::optional<Error>
+Environment::resolveRuntimeValueOfUseBeforeDef(Identifier def) noexcept {
+  std::vector<
+      std::tuple<Identifier, Identifier, ast::Ptr, std::shared_ptr<Scope>>>
+      stage;
+  std::vector<UseBeforeDefMap::Entry> old_entries;
+
+  auto range = lookupUseBeforeDef(def);
+  auto cursor = range.begin();
+  auto end = range.end();
+  while (cursor != end) {
+    [[maybe_unused]] auto undef = cursor.undef();
+    [[maybe_unused]] auto def = cursor.definition();
+    auto &ast = cursor.ast();
+    [[maybe_unused]] auto def_scope = cursor.scope();
+    [[maybe_unused]] auto temp_scope = local_scope;
+    local_scope = def_scope;
+    // sanity check that the Ast we are currently processing
+    // is a Definition itself. as it only makes sense
+    // to bind a Definition in the use-before-def-map
+    auto def_ast = cast<ast::Definition>(ast.get());
+    // since we are attempting to resolve this UseBeforeDef
+    // we clear the current UseBeforeDef error during the
+    // attempt.
+    def_ast->clearUseBeforeDef();
+
+    /*
+      when we resolve a use before def, we are now in a situation
+      where we have already created a partial binding of the
+      use before def term to it's type. via resolveTypeOfUseBeforeDef.
+      thus we have already typechecked the term being fully resolved.
+      thus all that is needed is to fully resolve the definition.
+    */
+    // sanity check that we have already called typecheck on
+    // this ast and it succeeded.
+    [[maybe_unused]] auto type = ast->cachedTypeOrAssert();
+
+    // create the full binding. resolving the use-before-def
+    auto codegen_result = ast->codegen(*this);
+    if (!codegen_result) {
+      auto &error = codegen_result.error();
+      if (!error.isUseBeforeDef()) {
+        local_scope = temp_scope;
+        return error;
+      }
+      // since the ast failed to typecheck due to another
+      // use-before-def we want to handle that here.
+      auto &usedef = error.getUseBeforeDef();
+      // sanity check that this undef name is not
+      // the same as the original undef name
+      MINT_ASSERT(usedef.undef != undef);
+
+      // stage the use-before-def to be inserted into the map.
+      // (so we are not inserting as we are iterating)
+      stage.emplace_back(usedef.undef, usedef.def, ast, usedef.scope);
+      // since this entry in the use-before-def map failed
+      // with another use-before-def error, it's entry in the
+      // map is out of date, thus we need to remove it.
+      old_entries.emplace_back(cursor);
+    }
+
+    local_scope = temp_scope;
+    ++cursor;
+  }
+
+  // remove the resolved use before defs
+  // #NOTE: once the runtime value has
+  // been resolved, there is nothing more
+  // to resolve for a given binding.
+  use_before_def_map.erase(range);
+
+  // reinsert any definitions which failed to type
+  // because of another use-before-def
+  if (!stage.empty()) {
+    for (auto &usedef : stage)
+      use_before_def_map.insert(std::get<0>(usedef), std::get<1>(usedef),
+                                std::get<2>(usedef), std::get<3>(usedef));
+  }
+
+  return std::nullopt;
+}
+
+auto Environment::createLLVMGlobalVariable(std::string_view name,
+                                           llvm::Type *type,
+                                           llvm::Constant *init) noexcept
+    -> llvm::GlobalVariable * {
+  auto variable = mint::cast<llvm::GlobalVariable>(
+      llvm_module->getOrInsertGlobal(name, type));
+
+  if (init != nullptr)
+    variable->setInitializer(init);
+
+  return variable;
 }
 
 } // namespace mint

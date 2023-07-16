@@ -74,6 +74,9 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
   case Error::Kind::BinopTypeMismatch:
     return "Binop argument types mismatch";
 
+  case Error::Kind::GlobalInitNotConstant:
+    return "Global initializer not a constant";
+
   default:
     abort("Unknown Error::Kind");
   }

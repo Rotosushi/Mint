@@ -36,13 +36,13 @@ struct UnopOverload {
   type::Ptr right_type;
   type::Ptr result_type;
   UnopEvalFn eval;
-  UnopCodegenFn codegen;
+  UnopCodegenFn gen;
 
   [[nodiscard]] auto evaluate(ast::Ptr &right, Environment &env) {
     return eval(right, env);
   }
   [[nodiscard]] auto codegen(llvm::Value *right, Environment &env) {
-    return codegen(right, env);
+    return gen(right, env);
   }
 };
 
@@ -61,14 +61,14 @@ public:
     return std::nullopt;
   }
 
-  auto emplace(type::Ptr right_type, type::Ptr result_type,
-               UnopEvalFn eval) noexcept -> UnopOverload {
+  auto emplace(type::Ptr right_type, type::Ptr result_type, UnopEvalFn eval,
+               UnopCodegenFn codegen) noexcept -> UnopOverload {
     auto found = lookup(right_type);
     if (found) {
       return found.value();
     }
 
-    return overloads.emplace_back(UnopOverload{right_type, result_type, eval});
+    return overloads.emplace_back(right_type, result_type, eval, codegen);
   }
 };
 
@@ -89,9 +89,9 @@ public:
       return iter->second.lookup(right_type);
     }
 
-    auto emplace(type::Ptr right_type, type::Ptr result_type,
-                 UnopEvalFn eval) noexcept -> UnopOverload {
-      return iter->second.emplace(right_type, result_type, eval);
+    auto emplace(type::Ptr right_type, type::Ptr result_type, UnopEvalFn eval,
+                 UnopCodegenFn codegen) noexcept -> UnopOverload {
+      return iter->second.emplace(right_type, result_type, eval, codegen);
     }
   };
 

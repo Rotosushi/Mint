@@ -327,7 +327,7 @@ auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
   }
 
   case Token::Integer: {
-    int value = StringToNumber<int>(text());
+    int value = fromString<int>(text());
     auto loc = location();
     next();
 

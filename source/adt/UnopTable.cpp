@@ -19,21 +19,33 @@
 #include "utility/Casting.hpp"
 
 namespace mint {
-auto unop_minus(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {
+auto eval_unop_minus(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {
   auto *integer = cast<ast::Integer>(right.get());
   return env.getIntegerAst({}, {}, -(integer->value()));
 }
 
-auto unop_not(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {
+auto codegen_unop_minus(llvm::Value *right, Environment &env)
+    -> Result<llvm::Value *> {
+  return env.createLLVMNeg(right);
+}
+
+auto eval_unop_not(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {
   auto *boolean = cast<ast::Boolean>(right.get());
   return env.getBooleanAst({}, {}, !(boolean->value()));
 }
 
+auto codegen_unop_not(llvm::Value *right, Environment &env)
+    -> Result<llvm::Value *> {
+  return env.createLLVMNot(right);
+}
+
 void InitializeBuiltinUnops(Environment *env) {
   auto minus = env->createUnop(Token::Minus);
-  minus.emplace(env->getIntegerType(), env->getIntegerType(), unop_minus);
+  minus.emplace(env->getIntegerType(), env->getIntegerType(), eval_unop_minus,
+                codegen_unop_minus);
 
   auto negate = env->createUnop(Token::Not);
-  negate.emplace(env->getBooleanType(), env->getBooleanType(), unop_not);
+  negate.emplace(env->getBooleanType(), env->getBooleanType(), eval_unop_not,
+                 codegen_unop_not);
 }
 } // namespace mint

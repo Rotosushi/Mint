@@ -73,7 +73,11 @@ public:
     // #NOTE:
     // while multiple definitions can be allowed to rely on
     // the same undef name, we cannot allow the same definition
-    // to be added to the map twice.
+    // to be added to the map twice, depending on the same variable
+    // twice.
+    // and the opposite case (a definition using more than
+    // one name before it is defined) is handled within the
+    // resolve*UseBeforeDef functions.
     auto range = lookup(undef);
     auto cursor = range.begin();
     auto end = range.end();

@@ -22,20 +22,6 @@ namespace ast {
 Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
   env.pushScope(m_name);
 
-  /*
-    #NOTE: if a name fails to typecheck because of a use-before-def error,
-      what steps do we need to take here?
-
-      well, in order to properly handle use-before-def between definitions
-      within the module, use-before-def cannot stop the typechecking of a
-      module. therefore we must continue to typecheck expressions if
-      we get a use-before-def.
-      however, we need to construct a partial definition of the use-before-def
-      when we resolve it and not a full definition, because we simply do not
-    have the ability to compute the value of this use-before-def at this point
-    in time. (if we did, we would call evaluate twice on the same definition
-      within the same scope, which would generate a name conflict.)
-  */
   for (auto &expression : m_expressions) {
     auto result = expression->typecheck(env);
     if (!result) {
@@ -46,15 +32,14 @@ Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
         return result;
       }
 
+      // all we need to do to handle use-before-def at this point
+      // is attempt to bind this use-before-def term to the map.
+      // binding the same definition to the map
       if (auto failed = env.bindUseBeforeDef(error, expression)) {
         env.unbindScope(m_name);
         env.popScope();
         return failed.value();
       }
-      // else ... we continue to typecheck expressions within the
-      // module. any definitions which we typecheck will create
-      // partial bindings, and then will partially resolve any
-      // use-before-def terms that rely on those definitions.
     }
   }
 
@@ -66,12 +51,6 @@ Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
 Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {
   env.pushScope(m_name);
 
-  /*
-    #NOTE: if we had some use-before-def definitions occur within this
-    module while we were typechecking, then we created partial-bindings
-    of those terms when we typecheckd the dependant definitions.
-    so now when we evaluate those terms we will retrieve a partial binding
-  */
   for (auto &expression : m_expressions) {
     auto result = expression->evaluate(env);
     if (!result) {
@@ -88,11 +67,6 @@ Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {
         env.popScope();
         return failed.value();
       }
-      // else we leave the definition to be defined later, when
-      // we define the use-before-def variable. any definitions
-      // which we evaluate will create full definitions,
-      // and then we resolve any use-before-def defintions
-      // which depend upon that definition.
     }
   }
 
@@ -101,7 +75,29 @@ Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {
 }
 
 Result<llvm::Value *> Module::codegen(Environment &env) noexcept {
-  
+  env.pushScope(m_name);
+
+  for (auto &expression : m_expressions) {
+    auto result = expression->codegen(env);
+    if (!result) {
+      auto &error = result.error();
+
+      if (!error.isUseBeforeDef()) {
+        env.unbindScope(m_name);
+        env.popScope();
+        return result;
+      }
+
+      if (auto failed = env.bindUseBeforeDef(error, expression)) {
+        env.unbindScope(m_name);
+        env.popScope();
+        return failed.value();
+      }
+    }
+  }
+
+  env.popScope();
+  return env.getLLVMNil();
 }
 } // namespace ast
 } // namespace mint

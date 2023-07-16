@@ -28,16 +28,25 @@ class Environment;
 
 using BinopEvalFn = Result<ast::Ptr> (*)(ast::Ptr &left, ast::Ptr &right,
                                          Environment &env);
+using BinopCodegenFn = Result<llvm::Value *> (*)(llvm::Value *left,
+                                                 llvm::Value *right,
+                                                 Environment &env);
 
 struct BinopOverload {
   type::Ptr left_type;
   type::Ptr right_type;
   type::Ptr result_type;
   BinopEvalFn eval;
+  BinopCodegenFn gen;
 
-  [[nodiscard]] auto operator()(ast::Ptr &left, ast::Ptr &right,
-                                Environment &env) {
+  [[nodiscard]] auto evaluate(ast::Ptr &left, ast::Ptr &right,
+                              Environment &env) {
     return eval(left, right, env);
+  }
+
+  [[nodiscard]] auto codegen(llvm::Value *left, llvm::Value *right,
+                             Environment &env) {
+    return gen(left, right, env);
   }
 };
 
@@ -59,14 +68,14 @@ public:
   }
 
   auto emplace(type::Ptr left_type, type::Ptr right_type, type::Ptr result_type,
-               BinopEvalFn eval) noexcept -> BinopOverload {
+               BinopEvalFn eval, BinopCodegenFn gen) noexcept -> BinopOverload {
     auto found = lookup(left_type, right_type);
     if (found) {
       return found.value();
     }
 
-    return overloads.emplace_back(
-        BinopOverload{left_type, right_type, result_type, eval});
+    return overloads.emplace_back(left_type, right_type, result_type, eval,
+                                  gen);
   }
 };
 
@@ -89,9 +98,10 @@ public:
     }
 
     auto emplace(type::Ptr left_type, type::Ptr right_type,
-                 type::Ptr result_type, BinopEvalFn eval) noexcept
-        -> BinopOverload {
-      return iter->second.emplace(left_type, right_type, result_type, eval);
+                 type::Ptr result_type, BinopEvalFn eval,
+                 BinopCodegenFn gen) noexcept -> BinopOverload {
+      return iter->second.emplace(left_type, right_type, result_type, eval,
+                                  gen);
     }
   };
 

@@ -29,7 +29,7 @@ namespace mint {
   new values being created
 */
 
-auto binop_add(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto eval_binop_add(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
@@ -37,7 +37,12 @@ auto binop_add(ast::Ptr &left, ast::Ptr &right, Environment &env)
                            left_integer->value() + right_integer->value());
 }
 
-auto binop_sub(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto gen_binop_add(llvm::Value *left, llvm::Value *right, Environment &env)
+    -> Result<llvm::Value *> {
+  return env.createLLVMAdd(left, right);
+}
+
+auto eval_binop_sub(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
@@ -45,7 +50,12 @@ auto binop_sub(ast::Ptr &left, ast::Ptr &right, Environment &env)
                            left_integer->value() - right_integer->value());
 }
 
-auto binop_mult(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto gen_binop_sub(llvm::Value *left, llvm::Value *right, Environment &env)
+    -> Result<llvm::Value *> {
+  return env.createLLVMSub(left, right);
+}
+
+auto eval_binop_mult(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
@@ -53,7 +63,12 @@ auto binop_mult(ast::Ptr &left, ast::Ptr &right, Environment &env)
                            left_integer->value() * right_integer->value());
 }
 
-auto binop_div(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto gen_binop_mult(llvm::Value *left, llvm::Value *right, Environment &env)
+    -> Result<llvm::Value *> {
+  return env.createLLVMMul(left, right);
+}
+
+auto eval_binop_div(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
@@ -61,7 +76,12 @@ auto binop_div(ast::Ptr &left, ast::Ptr &right, Environment &env)
                            left_integer->value() / right_integer->value());
 }
 
-auto binop_mod(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto gen_binop_div(llvm::Value *left, llvm::Value *right, Environment &env)
+    -> Result<llvm::Value *> {
+  return env.createLLVMSDiv(left, right);
+}
+
+auto eval_binop_mod(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
@@ -69,7 +89,12 @@ auto binop_mod(ast::Ptr &left, ast::Ptr &right, Environment &env)
                            left_integer->value() % right_integer->value());
 }
 
-auto binop_and(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto gen_binop_mod(llvm::Value *left, llvm::Value *right, Environment &env)
+    -> Result<llvm::Value *> {
+  return env.createLLVMSRem(left, right);
+}
+
+auto eval_binop_and(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_boolean = cast<ast::Boolean>(left.get());
   auto *right_boolean = cast<ast::Boolean>(right.get());
@@ -77,7 +102,12 @@ auto binop_and(ast::Ptr &left, ast::Ptr &right, Environment &env)
                            left_boolean->value() && right_boolean->value());
 }
 
-auto binop_or(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto gen_binop_and(llvm::Value *left, llvm::Value *right, Environment &env)
+    -> Result<llvm::Value *> {
+  return env.createLLVMAnd(left, right);
+}
+
+auto eval_binop_or(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_boolean = cast<ast::Boolean>(left.get());
   auto *right_boolean = cast<ast::Boolean>(right.get());
@@ -85,39 +115,64 @@ auto binop_or(ast::Ptr &left, ast::Ptr &right, Environment &env)
                            left_boolean->value() || right_boolean->value());
 }
 
-auto binop_integer_equality(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {
+auto gen_binop_or(llvm::Value *left, llvm::Value *right, Environment &env)
+    -> Result<llvm::Value *> {
+  return env.createLLVMOr(left, right);
+}
+
+auto eval_binop_integer_equality(ast::Ptr &left, ast::Ptr &right,
+                                 Environment &env) -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
   return env.getBooleanAst({}, {},
                            left_integer->value() == right_integer->value());
 }
 
-auto binop_boolean_equality(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {
+auto gen_binop_integer_equality(llvm::Value *left, llvm::Value *right,
+                                Environment &env) -> Result<llvm::Value *> {
+  return env.createLLVMICmpEQ(left, right);
+}
+
+auto eval_binop_boolean_equality(ast::Ptr &left, ast::Ptr &right,
+                                 Environment &env) -> Result<ast::Ptr> {
   auto *left_boolean = cast<ast::Boolean>(left.get());
   auto *right_boolean = cast<ast::Boolean>(right.get());
   return env.getBooleanAst({}, {},
                            left_boolean->value() == right_boolean->value());
 }
 
-auto binop_integer_inequality(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {
+auto gen_binop_boolean_equality(llvm::Value *left, llvm::Value *right,
+                                Environment &env) -> Result<llvm::Value *> {
+  return env.createLLVMICmpEQ(left, right);
+}
+
+auto eval_binop_integer_inequality(ast::Ptr &left, ast::Ptr &right,
+                                   Environment &env) -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
   return env.getBooleanAst({}, {},
                            left_integer->value() != right_integer->value());
 }
 
-auto binop_boolean_inequality(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {
+auto gen_binop_integer_inequality(llvm::Value *left, llvm::Value *right,
+                                  Environment &env) -> Result<llvm::Value *> {
+  return env.createLLVMICmpNE(left, right);
+}
+
+auto eval_binop_boolean_inequality(ast::Ptr &left, ast::Ptr &right,
+                                   Environment &env) -> Result<ast::Ptr> {
   auto *left_boolean = cast<ast::Boolean>(left.get());
   auto *right_boolean = cast<ast::Boolean>(right.get());
   return env.getBooleanAst({}, {},
                            left_boolean->value() != right_boolean->value());
 }
 
-auto binop_less_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto gen_binop_boolean_inequality(llvm::Value *left, llvm::Value *right,
+                                  Environment &env) -> Result<llvm::Value *> {
+  return env.createLLVMICmpNE(left, right);
+}
+
+auto eval_binop_less_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
@@ -125,15 +180,25 @@ auto binop_less_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
                            left_integer->value() < right_integer->value());
 }
 
-auto binop_less_than_or_equal(ast::Ptr &left, ast::Ptr &right, Environment &env)
-    -> Result<ast::Ptr> {
+auto gen_binop_less_than(llvm::Value *left, llvm::Value *right,
+                         Environment &env) -> Result<llvm::Value *> {
+  return env.createLLVMICmpSLT(left, right);
+}
+
+auto eval_binop_less_than_or_equal(ast::Ptr &left, ast::Ptr &right,
+                                   Environment &env) -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
   return env.getBooleanAst({}, {},
                            left_integer->value() <= right_integer->value());
 }
 
-auto binop_greater_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto gen_binop_less_than_or_equal(llvm::Value *left, llvm::Value *right,
+                                  Environment &env) -> Result<llvm::Value *> {
+  return env.createLLVMICmpSLE(left, right);
+}
+
+auto eval_binop_greater_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
@@ -141,12 +206,23 @@ auto binop_greater_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
                            left_integer->value() > right_integer->value());
 }
 
-auto binop_greater_than_or_equal(ast::Ptr &left, ast::Ptr &right,
-                                 Environment &env) -> Result<ast::Ptr> {
+auto gen_binop_greater_than(llvm::Value *left, llvm::Value *right,
+                            Environment &env) -> Result<llvm::Value *> {
+  return env.createLLVMICmpSGT(left, right);
+}
+
+auto eval_binop_greater_than_or_equal(ast::Ptr &left, ast::Ptr &right,
+                                      Environment &env) -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left.get());
   auto *right_integer = cast<ast::Integer>(right.get());
   return env.getBooleanAst({}, {},
                            left_integer->value() >= right_integer->value());
+}
+
+auto gen_binop_greater_than_or_equal(llvm::Value *left, llvm::Value *right,
+                                     Environment &env)
+    -> Result<llvm::Value *> {
+  return env.createLLVMICmpSGE(left, right);
 }
 
 void InitializeBuiltinBinops(Environment *env) {
@@ -154,51 +230,64 @@ void InitializeBuiltinBinops(Environment *env) {
   auto boolean_type = env->getBooleanType();
 
   auto plus = env->createBinop(Token::Plus);
-  plus.emplace(integer_type, integer_type, integer_type, binop_add);
+  plus.emplace(integer_type, integer_type, integer_type, eval_binop_add,
+               gen_binop_add);
 
   auto minus = env->createBinop(Token::Minus);
-  minus.emplace(integer_type, integer_type, integer_type, binop_sub);
+  minus.emplace(integer_type, integer_type, integer_type, eval_binop_sub,
+                gen_binop_sub);
 
   auto mult = env->createBinop(Token::Star);
-  mult.emplace(integer_type, integer_type, integer_type, binop_mult);
+  mult.emplace(integer_type, integer_type, integer_type, eval_binop_mult,
+               gen_binop_mult);
 
   auto div = env->createBinop(Token::Divide);
-  div.emplace(integer_type, integer_type, integer_type, binop_div);
+  div.emplace(integer_type, integer_type, integer_type, eval_binop_div,
+              gen_binop_div);
 
   auto mod = env->createBinop(Token::Modulo);
-  mod.emplace(integer_type, integer_type, integer_type, binop_mod);
+  mod.emplace(integer_type, integer_type, integer_type, eval_binop_mod,
+              gen_binop_mod);
 
   auto boolean_and = env->createBinop(Token::And);
-  boolean_and.emplace(boolean_type, boolean_type, boolean_type, binop_and);
+  boolean_and.emplace(boolean_type, boolean_type, boolean_type, eval_binop_and,
+                      gen_binop_and);
 
   auto boolean_or = env->createBinop(Token::Or);
-  boolean_or.emplace(boolean_type, boolean_type, boolean_type, binop_or);
+  boolean_or.emplace(boolean_type, boolean_type, boolean_type, eval_binop_or,
+                     gen_binop_or);
 
   auto equality = env->createBinop(Token::EqualEqual);
   equality.emplace(integer_type, integer_type, boolean_type,
-                   binop_integer_equality);
+                   eval_binop_integer_equality, gen_binop_integer_equality);
   equality.emplace(boolean_type, boolean_type, boolean_type,
-                   binop_boolean_equality);
+                   eval_binop_boolean_equality, gen_binop_boolean_equality);
 
   auto inequality = env->createBinop(Token::NotEqual);
   inequality.emplace(integer_type, integer_type, boolean_type,
-                     binop_integer_inequality);
+                     eval_binop_integer_inequality,
+                     gen_binop_integer_inequality);
   inequality.emplace(boolean_type, boolean_type, boolean_type,
-                     binop_boolean_inequality);
+                     eval_binop_boolean_inequality,
+                     gen_binop_boolean_inequality);
 
   auto less = env->createBinop(Token::LessThan);
-  less.emplace(integer_type, integer_type, boolean_type, binop_less_than);
+  less.emplace(integer_type, integer_type, boolean_type, eval_binop_less_than,
+               gen_binop_less_than);
 
   auto less_or_equal = env->createBinop(Token::LessThanOrEqual);
   less_or_equal.emplace(integer_type, integer_type, boolean_type,
-                        binop_less_than_or_equal);
+                        eval_binop_less_than_or_equal,
+                        gen_binop_less_than_or_equal);
 
   auto greater = env->createBinop(Token::GreaterThan);
-  greater.emplace(integer_type, integer_type, boolean_type, binop_greater_than);
+  greater.emplace(integer_type, integer_type, boolean_type,
+                  eval_binop_greater_than, gen_binop_greater_than);
 
   auto greater_or_equal = env->createBinop(Token::GreaterThanOrEqual);
   greater_or_equal.emplace(integer_type, integer_type, boolean_type,
-                           binop_greater_than_or_equal);
+                           eval_binop_greater_than_or_equal,
+                           gen_binop_greater_than_or_equal);
 }
 
 } // namespace mint

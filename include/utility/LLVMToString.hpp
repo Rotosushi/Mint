@@ -15,31 +15,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "utility/Assert.hpp"
+#include <string>
 
-#include "llvm/Support/Casting.h"
+#include "llvm/IR/Value.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/raw_ostream.h"
 
 namespace mint {
-/*
-  #NOTE: normally I would be happy to simply use the llvm::*
-  provided functions. I just want the program to break exactly
-  when an assert is hit, and not later. which is only applicable
-  for 'cast'. The other functions are wrapped only for uniformity.
-*/
-template <class To, class From>
-[[nodiscard]] inline auto isa(From *value) noexcept {
-  return llvm::isa<To>(value);
-}
-
-template <class To, class From>
-[[nodiscard]] inline auto cast(From *value) noexcept {
-  To *result = llvm::dyn_cast<To>(value);
-  MINT_ASSERT(result != nullptr);
+inline auto toString(llvm::Error const &error) noexcept -> std::string {
+  std::string result;
+  llvm::raw_string_ostream stream{result};
+  stream << error;
   return result;
 }
 
-template <class To, class From>
-[[nodiscard]] inline auto dynCast(From *value) noexcept {
-  return llvm::dyn_cast<To>(value);
+inline auto toString(llvm::Type const *type) noexcept -> std::string {
+  std::string result;
+  llvm::raw_string_ostream stream{result};
+  type->print(stream);
+  return result;
+}
+
+inline auto toString(llvm::Value const *value) noexcept -> std::string {
+  std::string result;
+  llvm::raw_string_ostream stream{result};
+  value->print(stream);
+  return result;
 }
 } // namespace mint

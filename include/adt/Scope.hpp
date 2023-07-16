@@ -44,7 +44,8 @@ namespace mint {
 class Bindings {
 public:
   using Key = Identifier;
-  using Value = std::tuple<Attributes, type::Ptr, std::optional<ast::Ptr>>;
+  using Value = std::tuple<Attributes, type::Ptr, std::optional<ast::Ptr>,
+                           std::optional<llvm::Value *>>;
   using Table = std::map<Key, Value>;
   using iterator = typename Table::iterator;
 
@@ -52,11 +53,15 @@ public:
   public:
     Binding(iterator binding) noexcept : Table::iterator(binding) {}
 
-    [[nodiscard]] auto name() const noexcept -> const Key & {
+    [[nodiscard]] auto key() const noexcept -> Key const & {
       return (*this)->first;
     }
-    [[nodiscard]] auto attributes() const noexcept -> Attributes & {
-      return std::get<0>((*this)->second);
+    [[nodiscard]] auto value() const noexcept -> Value const & {
+      return (*this)->second;
+    }
+    [[nodiscard]] auto value() noexcept -> Value & { return (*this)->second; }
+    [[nodiscard]] auto attributes() const noexcept -> Attributes const & {
+      return std::get<Attributes>(value());
     }
     [[nodiscard]] auto isPublic() const noexcept -> bool {
       return attributes().isPublic();
@@ -65,22 +70,42 @@ public:
       return attributes().isPrivate();
     }
     [[nodiscard]] auto type() const noexcept -> type::Ptr {
-      return std::get<1>((*this)->second);
+      return std::get<type::Ptr>(value());
     }
-    [[nodiscard]] auto hasValue() const noexcept -> bool {
-      return optionalValue().has_value();
+
+    [[nodiscard]] auto comptimeValue() const noexcept
+        -> std::optional<ast::Ptr> const & {
+      return std::get<std::optional<ast::Ptr>>(value());
     }
-    [[nodiscard]] auto optionalValue() const noexcept
-        -> std::optional<ast::Ptr> & {
-      return std::get<2>((*this)->second);
+    [[nodiscard]] auto comptimeValue() noexcept -> std::optional<ast::Ptr> & {
+      return std::get<std::optional<ast::Ptr>>(value());
     }
-    [[nodiscard]] auto value() const noexcept -> ast::Ptr {
-      MINT_ASSERT(hasValue());
-      return optionalValue().value();
+    [[nodiscard]] auto hasComptimeValue() const noexcept -> bool {
+      return comptimeValue().has_value();
     }
-    void setValue(ast::Ptr &ast) noexcept { optionalValue() = ast; }
-    [[nodiscard]] auto isPartial() const noexcept -> bool {
-      return !optionalValue();
+    [[nodiscard]] auto comptimeValueOrAssert() const noexcept -> ast::Ptr {
+      MINT_ASSERT(hasComptimeValue());
+      return comptimeValue().value();
+    }
+    void setComptimeValue(ast::Ptr ast) noexcept { comptimeValue() = ast; }
+
+    [[nodiscard]] auto runtimeValue() noexcept
+        -> std::optional<llvm::Value *> & {
+      return std::get<std::optional<llvm::Value *>>(value());
+    }
+    [[nodiscard]] auto runtimeValue() const noexcept
+        -> std::optional<llvm::Value *> const & {
+      return std::get<std::optional<llvm::Value *>>(value());
+    }
+    [[nodiscard]] auto hasRuntimeValue() const noexcept -> bool {
+      return runtimeValue().has_value();
+    }
+    [[nodiscard]] auto runtimeValueOrAssert() const noexcept -> llvm::Value * {
+      MINT_ASSERT(hasRuntimeValue());
+      return runtimeValue().value();
+    }
+    void setRuntimeValue(llvm::Value *value) noexcept {
+      runtimeValue() = value;
     }
   };
 
@@ -93,12 +118,14 @@ public:
   void unbind(Key name) noexcept { table.erase(name); }
 
   auto bind(Key key, Attributes attributes, type::Ptr type,
-            ast::Ptr value) noexcept -> Result<Binding> {
+            ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
+      -> Result<Binding> {
     auto found = lookup(key);
     if (found) {
       return {Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
     }
-    auto pair = table.try_emplace(key, Value{attributes, type, value});
+    auto pair = table.try_emplace(
+        key, Value{attributes, type, comptime_value, runtime_value});
     return Binding{pair.first};
   }
 
@@ -107,16 +134,9 @@ public:
     if (auto found = lookup(key))
       return {Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
 
-    auto pair = table.try_emplace(key, Value{attributes, type, std::nullopt});
+    auto pair = table.try_emplace(
+        key, Value{attributes, type, std::nullopt, std::nullopt});
     return Binding{pair.first};
-  }
-
-  auto completeBinding(Binding binding, ast::Ptr ast) -> Result<Binding> {
-    if (binding.hasValue())
-      return {Error::Kind::NameAlreadyBoundInScope, {}, binding.name().view()};
-
-    binding.setValue(ast);
-    return binding;
   }
 
   [[nodiscard]] auto lookup(Key key) noexcept -> Result<Binding> {
@@ -149,7 +169,11 @@ public:
     [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
 
     auto bind(Identifier name, Attributes attributes, type::Ptr type,
-              ast::Ptr value) noexcept -> Result<Bindings::Binding>;
+              ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
+        -> Result<Bindings::Binding>;
+
+    auto partialBind(Identifier name, Attributes attributes,
+                     type::Ptr type) noexcept -> Result<Bindings::Binding>;
 
     [[nodiscard]] auto lookup(Identifier name) noexcept
         -> Result<Bindings::Binding>;
@@ -267,17 +291,14 @@ public:
   }
 
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
-                ast::Ptr value) noexcept {
-    return bindings->bind(name, attributes, type, value);
+                ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept {
+    return bindings->bind(name, attributes, type, comptime_value,
+                          runtime_value);
   }
 
-  auto partialBind(Identifier name, Attributes attributes,
-                   type::Ptr type) noexcept {
+  auto partialBindName(Identifier name, Attributes attributes,
+                       type::Ptr type) noexcept {
     return bindings->partialBind(name, attributes, type);
-  }
-
-  auto completeBinding(Bindings::Binding binding, ast::Ptr ast) noexcept {
-    return bindings->completeBinding(binding, ast);
   }
 
   auto bindScope(Identifier name) {

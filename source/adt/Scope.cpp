@@ -31,9 +31,17 @@ namespace mint {
 }
 
 auto ScopeTable::Entry::bind(Identifier name, Attributes attributes,
-                             type::Ptr type, ast::Ptr value) noexcept
+                             type::Ptr type, ast::Ptr comptime_value,
+                             llvm::Value *runtime_value) noexcept
     -> Result<Bindings::Binding> {
-  return iter->second->bindName(name, attributes, type, std::move(value));
+  return iter->second->bindName(name, attributes, type, comptime_value,
+                                runtime_value);
+}
+
+auto ScopeTable::Entry::partialBind(Identifier name, Attributes attributes,
+                                    type::Ptr type) noexcept
+    -> Result<Bindings::Binding> {
+  return iter->second->partialBindName(name, attributes, type);
 }
 
 [[nodiscard]] auto ScopeTable::Entry::lookup(Identifier name) noexcept

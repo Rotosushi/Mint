@@ -79,6 +79,9 @@ public:
     // operator errors
     UnopTypeMismatch,
     BinopTypeMismatch,
+
+    // codegen errors
+    GlobalInitNotConstant,
   };
 
 private:
