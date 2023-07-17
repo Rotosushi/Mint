@@ -58,6 +58,8 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
         env.printErrorWithSource(error, parser);
         return {Error::Kind::ImportFailed, location(), m_filename};
       }
+
+      env.addAstToModule(ast);
       continue;
     }
 
@@ -67,6 +69,8 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
       env.printErrorWithSource(error, parser);
       return {Error::Kind::ImportFailed, location(), m_filename};
     }
+
+    env.addAstToModule(ast);
   }
 
   return env.getNilAst({}, {});

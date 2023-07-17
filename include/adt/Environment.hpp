@@ -118,7 +118,10 @@ public:
     }
   }
 
+  void addAstToModule(ast::Ptr ast) noexcept { m_module.push_back(ast); }
+
   /*
+    #NOTE:
     string is some "\"...\""
     return "..."
   */
@@ -463,5 +466,13 @@ public:
   auto createLLVMGlobalVariable(std::string_view name, llvm::Type *type,
                                 llvm::Constant *init = nullptr) noexcept
       -> llvm::GlobalVariable *;
+
+  /* composite 'instructions' */
+  auto createLLVMLoad(llvm::Type *type, llvm::Value *source) -> llvm::Value * {
+    // #NOTE: we can only load single value types
+    // all types currently available in the language
+    // are single value. so we need not worry.
+    return llvm_ir_builder->CreateLoad(type, source);
+  }
 };
 } // namespace mint

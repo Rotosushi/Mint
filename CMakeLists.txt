@@ -25,7 +25,7 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 set(llvm_cxxflags 
   -I/usr/local/include 
   #-fno-exceptions 
-  #-fno-rtti 
+  -fno-rtti 
   -D_GNU_SOURCE 
   -D_DEBUG 
   -D__STDC_CONSTANT_MACROS 

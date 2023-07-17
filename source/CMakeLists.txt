@@ -91,7 +91,7 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/utility/Config.hpp
   ${MINT_INCLUDE_DIR}/utility/Log.hpp 
   ${MINT_INCLUDE_DIR}/utility/NumbersRoundTrip.hpp
-  ${MINT_INCLUDE_DIR}/utility/OptionsParser.hpp
+  ${MINT_INCLUDE_DIR}/utility/CommandLineOptions.hpp
 )
 set_property(
   TARGET mint_common 

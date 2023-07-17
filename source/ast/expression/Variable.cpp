@@ -95,7 +95,17 @@ Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {
   if (!binding.hasRuntimeValue())
     return handleUseBeforeDef(env);
 
-  return binding.runtimeValueOrAssert();
+  auto type = binding.type()->toLLVM(env);
+  auto value = binding.runtimeValueOrAssert();
+
+  if (auto global = mint::cast<llvm::GlobalVariable>(value)) {
+    return global->getInitializer();
+  } else {
+    // #NOTE: given that runtime variables are stored
+    // in memory we need to load the value,
+    // such that it can be used in expressions.
+    return env.createLLVMLoad(type, value);
+  }
 }
 } // namespace ast
 } // namespace mint

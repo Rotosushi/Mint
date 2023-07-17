@@ -14,30 +14,23 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include <cstdlib>
+#pragma once
+#include "utility/Config.hpp"
 #include <iostream>
 
-#include "adt/Environment.hpp"
-#include "utility/CommandLineOptions.hpp"
-
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/InitLLVM.h"
-#include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/raw_ostream.h"
 
-auto main(int argc, char **argv) -> int {
-  llvm::InitLLVM llvm{argc, argv};
-  llvm::cl::SetVersionPrinter(mint::printVersion);
-  llvm::cl::ParseCommandLineOptions(argc, argv);
+/*
+  https://llvm.org/docs/CommandLine.html#quick-start-guide
+*/
+namespace mint {
+llvm::cl::opt<std::string> input_filename(llvm::cl::Positional,
+                                          llvm::cl::desc("<input file>"));
 
-  llvm::InitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmParser();
-  llvm::InitializeNativeTargetAsmPrinter();
-  llvm::InitializeNativeTargetDisassembler();
-
-  mint::Environment env = mint::Environment::create();
-
-  if (mint::input_filename.empty())
-    return env.repl();
-  else
-    return env.compile(mint::input_filename.c_str());
+inline void printVersion(llvm::raw_ostream &out) noexcept {
+  out << "mint version: " << MINT_VERSION_MAJOR << "." << MINT_VERSION_MINOR
+      << "." << MINT_VERSION_PATCH << "\n git revision [" << MINT_GIT_REVISION
+      << "]\n Compiled on " << __DATE__ << " at " << __TIME__ << "\n";
 }
+} // namespace mint

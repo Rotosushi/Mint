@@ -232,7 +232,6 @@ auto Environment::getQualifiedNameForLLVM(Identifier name) noexcept
   auto qualified = getQualifiedName(name);
   auto view = qualified.view();
   std::string llvm_name;
-  llvm_name.resize(view.size() + 1);
 
   // the llvm_name is the same as the given name,
   // where "::" is replaced with "."
@@ -241,11 +240,11 @@ auto Environment::getQualifiedNameForLLVM(Identifier name) noexcept
   while (cursor != end) {
     auto c = *cursor;
     if (c == ':') {
-      llvm_name.append(1, '.');
+      llvm_name += '.';
       ++cursor; // eat "::"
       ++cursor;
     } else {
-      llvm_name.append(1, c);
+      llvm_name += c;
       ++cursor; // eat the char
     }
   }
