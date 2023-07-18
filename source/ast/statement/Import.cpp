@@ -24,6 +24,11 @@ Ptr Import::clone(Environment &env) const noexcept {
 }
 
 Result<type::Ptr> Import::typecheck(Environment &env) const noexcept {
+  if (env.alreadyImported(m_filename)) {
+    setCachedType(env.getNilType());
+    return env.getNilType();
+  }
+
   auto exists = env.fileExists(m_filename);
   if (!exists)
     return {Error::Kind::FileNotFound, location(), m_filename};
@@ -33,6 +38,10 @@ Result<type::Ptr> Import::typecheck(Environment &env) const noexcept {
 }
 
 Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
+  if (env.alreadyImported(m_filename)) {
+    return env.getNilAst({}, {});
+  }
+
   auto found = env.fileSearch(m_filename);
   if (!found)
     return {Error::Kind::FileNotFound, location(), m_filename};
@@ -77,6 +86,14 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
     env.addAstToModule(ast);
   }
 
+  // #NOTE: since we just imported this file into
+  // the environment, we already have it's definitions.
+  // so in order to prevent redefining anything we
+  // add this file to the set of imported files.
+  // thus, we can later check to see if we need to
+  // perform the import of this file.
+  // #NOTE: this only works in a single threaded context.
+  env.addImport(m_filename);
   return env.getNilAst({}, {});
 }
 

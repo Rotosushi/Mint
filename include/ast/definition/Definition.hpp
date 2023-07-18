@@ -24,20 +24,29 @@ namespace mint {
 namespace ast {
 /*
   #NOTE: the common base class of all Ast's which
-  define a new name of some type within the program.
+  define a new name within the program.
 
-  #NOTE: technically speaking, Definitions are also
+  #NOTE: theoretically speaking, Definitions are
   Statements. That is, Definitions are Expressions
   which are only evaluated for their side effects.
+  however it didn't seem necessary to make the inheritance
+  tree model that. (though it wouldn't hurt anything to do so.)
 
   #NOTE: technically, this is the only abstract interior
   node which we need to have such that we can ask questions
-  of any given definition within the program.
+  of any given definition within the program, in order to
+  solve the problem of use-before-def given definitions more
+  generally, instead of one at a time. theoretically speaking
+  the use-before-def solution only relies on the aspects of
+  definitions defined within the definition class, and not on
+  any particular definition.
   and I didn't need to add the other interior nodes.
   it seemed like a good idea more for organization reasons.
   as it splits up the many kinds of nodes in the Ast into
   separate folders. (though that could have been done without
   the more complex inheritance heirarchy.)
+  the one benefiet is that some virtual methods are a bit simpler
+  to implement if they don't need to make use of sepcific Asts.
 */
 class Definition : public Ast {
   mutable Error::Data m_use_before_def;

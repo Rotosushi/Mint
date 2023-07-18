@@ -27,6 +27,7 @@
 #include "adt/BinopTable.hpp"
 #include "adt/DirectorySearch.hpp"
 #include "adt/Identifier.hpp"
+#include "adt/ImportSet.hpp"
 #include "adt/Scope.hpp"
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
@@ -36,6 +37,7 @@
 namespace mint {
 class Environment {
   DirectorySearcher directory_searcher;
+  ImportSet import_set;
   IdentifierSet identifier_set;
   TypeInterner type_interner;
   AstAllocator ast_allocator;
@@ -94,6 +96,9 @@ public:
                                    std::ostream *errout = &std::cerr) noexcept
       -> Environment;
 
+  // #TODO: reorganize environment methods more clearly into
+  // groups. according to which member they access.
+
   auto repl() noexcept -> int;
 
   auto compile(std::filesystem::path file) noexcept -> int;
@@ -149,6 +154,14 @@ public:
 
   auto getIdentifier(std::string_view name) noexcept {
     return identifier_set.emplace(name);
+  }
+
+  auto alreadyImported(fs::path const &filename) noexcept -> bool {
+    return import_set.contains(filename);
+  }
+
+  void addImport(fs::path const &filename) noexcept {
+    import_set.insert(filename);
   }
 
   auto emitLLVMIR(fs::path filename) noexcept -> int {
