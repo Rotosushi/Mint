@@ -87,9 +87,9 @@ class Ast;
   from the tree entirely. storing all smart pointers in a separate
   structure, and constructing the tree itself out of raw pointers.
 */
-using Ptr = std::shared_ptr<Ast>;
+using Ptr = Ast *;
 
-class Ast : public std::enable_shared_from_this<Ast> {
+class Ast {
 public:
   enum class Kind {
     // Definitions
@@ -165,7 +165,7 @@ public:
   [[nodiscard]] auto attributes() const noexcept { return m_attributes; }
   [[nodiscard]] auto location() const noexcept { return m_location; }
 
-  [[nodiscard]] virtual Ptr clone() const noexcept = 0;
+  [[nodiscard]] virtual Ptr clone(Environment &env) const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
 
   // #NOTE: walk up the Ast, iff we find an definition,

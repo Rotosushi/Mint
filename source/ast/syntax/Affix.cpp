@@ -15,9 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "ast/syntax/Affix.hpp"
+#include "adt/Environment.hpp"
 
 namespace mint {
 namespace ast {
+Ptr Affix::clone(Environment &env) const noexcept {
+  return env.getAffixAst(attributes(), location(), m_ast->clone(env));
+}
+
 Result<type::Ptr> Affix::typecheck(Environment &env) const noexcept {
   auto result = m_ast->typecheck(env);
   if (!result)

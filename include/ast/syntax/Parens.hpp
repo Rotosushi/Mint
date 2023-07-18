@@ -30,18 +30,11 @@ public:
   }
   ~Parens() noexcept override = default;
 
-  static auto create(Attributes attributes, Location location, Ptr ast) noexcept
-      -> Ptr {
-    return std::make_shared<Parens>(attributes, location, std::move(ast));
-  }
-
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Parens;
   }
 
-  Ptr clone() const noexcept override {
-    return create(attributes(), location(), m_ast->clone());
-  }
+  Ptr clone(Environment &env) const noexcept override;
 
   void print(std::ostream &out) const noexcept override {
     out << "(" << m_ast << ")";

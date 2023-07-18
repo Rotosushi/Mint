@@ -73,19 +73,11 @@ public:
   }
   ~Let() noexcept override = default;
 
-  static auto create(Attributes attributes, Location location,
-                     std::optional<type::Ptr> annotation, Identifier name,
-                     Ptr ast) noexcept -> Ptr {
-    return std::make_shared<Let>(attributes, location, annotation, name, ast);
-  }
-
   static auto classof(Ast const *ast) noexcept -> bool {
     return Ast::Kind::Let == ast->kind();
   }
 
-  Ptr clone() const noexcept override {
-    return create(attributes(), location(), annotation(), name(), m_ast);
-  }
+  Ptr clone(Environment &env) const noexcept override;
 
   void print(std::ostream &out) const noexcept override {
     if (attributes().isPublic()) {

@@ -31,8 +31,8 @@ namespace mint {
 
 auto eval_binop_add(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
-  auto *left_integer = cast<ast::Integer>(left.get());
-  auto *right_integer = cast<ast::Integer>(right.get());
+  auto *left_integer = cast<ast::Integer>(left);
+  auto *right_integer = cast<ast::Integer>(right);
   return env.getIntegerAst({}, {},
                            left_integer->value() + right_integer->value());
 }
@@ -44,8 +44,8 @@ auto gen_binop_add(llvm::Value *left, llvm::Value *right, Environment &env)
 
 auto eval_binop_sub(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
-  auto *left_integer = cast<ast::Integer>(left.get());
-  auto *right_integer = cast<ast::Integer>(right.get());
+  auto *left_integer = cast<ast::Integer>(left);
+  auto *right_integer = cast<ast::Integer>(right);
   return env.getIntegerAst({}, {},
                            left_integer->value() - right_integer->value());
 }
@@ -57,8 +57,8 @@ auto gen_binop_sub(llvm::Value *left, llvm::Value *right, Environment &env)
 
 auto eval_binop_mult(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
-  auto *left_integer = cast<ast::Integer>(left.get());
-  auto *right_integer = cast<ast::Integer>(right.get());
+  auto *left_integer = cast<ast::Integer>(left);
+  auto *right_integer = cast<ast::Integer>(right);
   return env.getIntegerAst({}, {},
                            left_integer->value() * right_integer->value());
 }
@@ -70,8 +70,8 @@ auto gen_binop_mult(llvm::Value *left, llvm::Value *right, Environment &env)
 
 auto eval_binop_div(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
-  auto *left_integer = cast<ast::Integer>(left.get());
-  auto *right_integer = cast<ast::Integer>(right.get());
+  auto *left_integer = cast<ast::Integer>(left);
+  auto *right_integer = cast<ast::Integer>(right);
   return env.getIntegerAst({}, {},
                            left_integer->value() / right_integer->value());
 }
@@ -83,8 +83,8 @@ auto gen_binop_div(llvm::Value *left, llvm::Value *right, Environment &env)
 
 auto eval_binop_mod(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
-  auto *left_integer = cast<ast::Integer>(left.get());
-  auto *right_integer = cast<ast::Integer>(right.get());
+  auto *left_integer = cast<ast::Integer>(left);
+  auto *right_integer = cast<ast::Integer>(right);
   return env.getIntegerAst({}, {},
                            left_integer->value() % right_integer->value());
 }
@@ -96,8 +96,8 @@ auto gen_binop_mod(llvm::Value *left, llvm::Value *right, Environment &env)
 
 auto eval_binop_and(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
-  auto *left_boolean = cast<ast::Boolean>(left.get());
-  auto *right_boolean = cast<ast::Boolean>(right.get());
+  auto *left_boolean = cast<ast::Boolean>(left);
+  auto *right_boolean = cast<ast::Boolean>(right);
   return env.getBooleanAst({}, {},
                            left_boolean->value() && right_boolean->value());
 }
@@ -109,8 +109,8 @@ auto gen_binop_and(llvm::Value *left, llvm::Value *right, Environment &env)
 
 auto eval_binop_or(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
-  auto *left_boolean = cast<ast::Boolean>(left.get());
-  auto *right_boolean = cast<ast::Boolean>(right.get());
+  auto *left_boolean = cast<ast::Boolean>(left);
+  auto *right_boolean = cast<ast::Boolean>(right);
   return env.getBooleanAst({}, {},
                            left_boolean->value() || right_boolean->value());
 }
@@ -122,8 +122,8 @@ auto gen_binop_or(llvm::Value *left, llvm::Value *right, Environment &env)
 
 auto eval_binop_integer_equality(ast::Ptr &left, ast::Ptr &right,
                                  Environment &env) -> Result<ast::Ptr> {
-  auto *left_integer = cast<ast::Integer>(left.get());
-  auto *right_integer = cast<ast::Integer>(right.get());
+  auto *left_integer = cast<ast::Integer>(left);
+  auto *right_integer = cast<ast::Integer>(right);
   return env.getBooleanAst({}, {},
                            left_integer->value() == right_integer->value());
 }
@@ -135,8 +135,8 @@ auto gen_binop_integer_equality(llvm::Value *left, llvm::Value *right,
 
 auto eval_binop_boolean_equality(ast::Ptr &left, ast::Ptr &right,
                                  Environment &env) -> Result<ast::Ptr> {
-  auto *left_boolean = cast<ast::Boolean>(left.get());
-  auto *right_boolean = cast<ast::Boolean>(right.get());
+  auto *left_boolean = cast<ast::Boolean>(left);
+  auto *right_boolean = cast<ast::Boolean>(right);
   return env.getBooleanAst({}, {},
                            left_boolean->value() == right_boolean->value());
 }
@@ -148,8 +148,8 @@ auto gen_binop_boolean_equality(llvm::Value *left, llvm::Value *right,
 
 auto eval_binop_integer_inequality(ast::Ptr &left, ast::Ptr &right,
                                    Environment &env) -> Result<ast::Ptr> {
-  auto *left_integer = cast<ast::Integer>(left.get());
-  auto *right_integer = cast<ast::Integer>(right.get());
+  auto *left_integer = cast<ast::Integer>(left);
+  auto *right_integer = cast<ast::Integer>(right);
   return env.getBooleanAst({}, {},
                            left_integer->value() != right_integer->value());
 }
@@ -161,8 +161,8 @@ auto gen_binop_integer_inequality(llvm::Value *left, llvm::Value *right,
 
 auto eval_binop_boolean_inequality(ast::Ptr &left, ast::Ptr &right,
                                    Environment &env) -> Result<ast::Ptr> {
-  auto *left_boolean = cast<ast::Boolean>(left.get());
-  auto *right_boolean = cast<ast::Boolean>(right.get());
+  auto *left_boolean = cast<ast::Boolean>(left);
+  auto *right_boolean = cast<ast::Boolean>(right);
   return env.getBooleanAst({}, {},
                            left_boolean->value() != right_boolean->value());
 }
@@ -174,8 +174,8 @@ auto gen_binop_boolean_inequality(llvm::Value *left, llvm::Value *right,
 
 auto eval_binop_less_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
-  auto *left_integer = cast<ast::Integer>(left.get());
-  auto *right_integer = cast<ast::Integer>(right.get());
+  auto *left_integer = cast<ast::Integer>(left);
+  auto *right_integer = cast<ast::Integer>(right);
   return env.getBooleanAst({}, {},
                            left_integer->value() < right_integer->value());
 }
@@ -187,8 +187,8 @@ auto gen_binop_less_than(llvm::Value *left, llvm::Value *right,
 
 auto eval_binop_less_than_or_equal(ast::Ptr &left, ast::Ptr &right,
                                    Environment &env) -> Result<ast::Ptr> {
-  auto *left_integer = cast<ast::Integer>(left.get());
-  auto *right_integer = cast<ast::Integer>(right.get());
+  auto *left_integer = cast<ast::Integer>(left);
+  auto *right_integer = cast<ast::Integer>(right);
   return env.getBooleanAst({}, {},
                            left_integer->value() <= right_integer->value());
 }
@@ -200,8 +200,8 @@ auto gen_binop_less_than_or_equal(llvm::Value *left, llvm::Value *right,
 
 auto eval_binop_greater_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
     -> Result<ast::Ptr> {
-  auto *left_integer = cast<ast::Integer>(left.get());
-  auto *right_integer = cast<ast::Integer>(right.get());
+  auto *left_integer = cast<ast::Integer>(left);
+  auto *right_integer = cast<ast::Integer>(right);
   return env.getBooleanAst({}, {},
                            left_integer->value() > right_integer->value());
 }
@@ -213,8 +213,8 @@ auto gen_binop_greater_than(llvm::Value *left, llvm::Value *right,
 
 auto eval_binop_greater_than_or_equal(ast::Ptr &left, ast::Ptr &right,
                                       Environment &env) -> Result<ast::Ptr> {
-  auto *left_integer = cast<ast::Integer>(left.get());
-  auto *right_integer = cast<ast::Integer>(right.get());
+  auto *left_integer = cast<ast::Integer>(left);
+  auto *right_integer = cast<ast::Integer>(right);
   return env.getBooleanAst({}, {},
                            left_integer->value() >= right_integer->value());
 }

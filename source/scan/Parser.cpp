@@ -203,7 +203,7 @@ auto Parser::parseTerm() noexcept -> Result<ast::Ptr> {
 
   auto right_loc = location();
   Location term_loc = {left_loc, right_loc};
-  return env->getTermAst(default_attributes, term_loc, affix);
+  return env->getAffixAst(default_attributes, term_loc, affix);
 }
 
 auto Parser::parseAffix() noexcept -> Result<ast::Ptr> {

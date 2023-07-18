@@ -26,17 +26,11 @@ public:
       : Value{Ast::Kind::Nil, attributes, location} {}
   ~Nil() noexcept override = default;
 
-  static auto create(Attributes attributes, Location location) noexcept -> Ptr {
-    return std::make_shared<Nil>(attributes, location);
-  }
-
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Nil;
   }
 
-  Ptr clone() const noexcept override {
-    return create(attributes(), location());
-  }
+  Ptr clone(Environment &env) const noexcept override;
 
   void print(std::ostream &out) const noexcept override { out << "nil"; }
 

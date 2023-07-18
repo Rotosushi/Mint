@@ -19,13 +19,17 @@
 
 namespace mint {
 namespace ast {
+Ptr Nil::clone(Environment &env) const noexcept {
+  return env.getNilAst(attributes(), location());
+}
+
 Result<type::Ptr> Nil::typecheck(Environment &env) const noexcept {
   setCachedType(env.getNilType());
   return env.getNilType();
 }
 
 Result<ast::Ptr> Nil::evaluate([[maybe_unused]] Environment &env) noexcept {
-  return shared_from_this();
+  return this;
 }
 
 Result<llvm::Value *> Nil::codegen(Environment &env) noexcept {

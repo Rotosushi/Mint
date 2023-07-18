@@ -77,7 +77,7 @@ public:
     return m_name;
   }
 
-  virtual Ptr clone() const noexcept = 0;
+  virtual Ptr clone(Environment &env) const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
 
   virtual Result<type::Ptr> typecheck(Environment &env) const noexcept = 0;

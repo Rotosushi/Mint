@@ -23,6 +23,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Target/TargetMachine.h"
 
+#include "adt/AstAllocator.hpp"
 #include "adt/BinopTable.hpp"
 #include "adt/DirectorySearch.hpp"
 #include "adt/Identifier.hpp"
@@ -30,7 +31,6 @@
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
-#include "ast/All.hpp"
 #include "scan/Parser.hpp"
 
 namespace mint {
@@ -38,6 +38,7 @@ class Environment {
   DirectorySearcher directory_searcher;
   IdentifierSet identifier_set;
   TypeInterner type_interner;
+  AstAllocator ast_allocator;
   BinopTable binop_table;
   UnopTable unop_table;
   UseBeforeDefMap use_before_def_map;
@@ -286,60 +287,61 @@ public:
   auto getLetAst(Attributes attributes, Location location,
                  std::optional<type::Ptr> annotation, Identifier name,
                  ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast::Let::create(attributes, location, annotation, name,
-                            std::move(ast));
+    return ast_allocator.createLet(attributes, location, annotation, name,
+                                   std::move(ast));
   }
 
   auto getNilAst(Attributes attributes, Location location) noexcept
       -> ast::Ptr {
-    return ast::Nil::create(attributes, location);
+    return ast_allocator.createNil(attributes, location);
   }
 
   auto getBooleanAst(Attributes attributes, Location location,
                      bool value) noexcept -> ast::Ptr {
-    return ast::Boolean::create(attributes, location, value);
+    return ast_allocator.createBoolean(attributes, location, value);
   }
 
   auto getIntegerAst(Attributes attributes, Location location,
                      int value) noexcept -> ast::Ptr {
-    return ast::Integer::create(attributes, location, value);
+    return ast_allocator.createInteger(attributes, location, value);
   }
 
   auto getParensAst(Attributes attributes, Location location,
                     ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast::Parens::create(attributes, location, std::move(ast));
+    return ast_allocator.createParens(attributes, location, std::move(ast));
   }
 
-  auto getTermAst(Attributes attributes, Location location,
-                  ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast::Affix::create(attributes, location, std::move(ast));
+  auto getAffixAst(Attributes attributes, Location location,
+                   ast::Ptr ast) noexcept -> ast::Ptr {
+    return ast_allocator.createAffix(attributes, location, std::move(ast));
   }
 
   auto getBinopAst(Attributes attributes, Location location, Token op,
                    ast::Ptr left, ast::Ptr right) noexcept -> ast::Ptr {
-    return ast::Binop::create(attributes, location, op, std::move(left),
-                              std::move(right));
+    return ast_allocator.createBinop(attributes, location, op, std::move(left),
+                                     std::move(right));
   }
 
   auto getImportAst(Attributes attributes, Location location,
                     std::string filename) noexcept -> ast::Ptr {
-    return ast::Import::create(attributes, location, std::move(filename));
+    return ast_allocator.createImport(attributes, location,
+                                      std::move(filename));
   }
 
   auto getModuleAst(Attributes attributes, Location location, Identifier name,
                     ast::Module::Expressions expressions) noexcept -> ast::Ptr {
-    return ast::Module::create(attributes, location, name,
-                               std::move(expressions));
+    return ast_allocator.createModule(attributes, location, name,
+                                      std::move(expressions));
   }
 
   auto getUnopAst(Attributes attributes, Location location, Token op,
                   ast::Ptr right) noexcept -> ast::Ptr {
-    return ast::Unop::create(attributes, location, op, std::move(right));
+    return ast_allocator.createUnop(attributes, location, op, std::move(right));
   }
 
   auto getVariableAst(Attributes attributes, Location location,
                       Identifier name) noexcept -> ast::Ptr {
-    return ast::Variable::create(attributes, location, name);
+    return ast_allocator.createVariable(attributes, location, name);
   }
 
   /* LLVM interface */

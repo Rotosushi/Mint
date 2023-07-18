@@ -19,6 +19,10 @@
 
 namespace mint {
 namespace ast {
+Ptr Import::clone(Environment &env) const noexcept {
+  return env.getImportAst(attributes(), location(), m_filename);
+}
+
 Result<type::Ptr> Import::typecheck(Environment &env) const noexcept {
   auto exists = env.fileExists(m_filename);
   if (!exists)

@@ -29,11 +29,6 @@ public:
       : Expression{Ast::Kind::Variable, attributes, location}, m_name{name} {}
   ~Variable() noexcept override = default;
 
-  static auto create(Attributes attributes, Location location,
-                     Identifier name) noexcept -> Ptr {
-    return std::make_shared<Variable>(attributes, location, name);
-  }
-
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Variable;
   }
@@ -47,9 +42,7 @@ public:
   // lookup. so there is no error to process.
   auto handleUseBeforeDef(Environment &env) const noexcept -> Error;
 
-  Ptr clone() const noexcept override {
-    return create(attributes(), location(), m_name);
-  }
+  Ptr clone(Environment &env) const noexcept override;
 
   void print(std::ostream &out) const noexcept override { out << m_name; }
 

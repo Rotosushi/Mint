@@ -30,18 +30,11 @@ public:
         m_filename{std::move(filename)} {}
   ~Import() noexcept override = default;
 
-  static auto create(Attributes attributes, Location location,
-                     std::string filename) noexcept -> Ptr {
-    return std::make_shared<Import>(attributes, location, std::move(filename));
-  }
-
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Import;
   }
 
-  Ptr clone() const noexcept override {
-    return create(attributes(), location(), m_filename);
-  }
+  Ptr clone(Environment &env) const noexcept override;
 
   void print(std::ostream &out) const noexcept override {
     out << "import " << m_filename << ";";

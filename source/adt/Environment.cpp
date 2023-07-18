@@ -262,7 +262,7 @@ Environment::bindUseBeforeDef(const Error &error,
   // sanity check that the Ast we are currently processing
   // is a Definition itself. as it only makes sense
   // to bind a Definition in the use-before-def-map
-  auto def_ast = dynCast<ast::Definition>(ast.get());
+  auto def_ast = dynCast<ast::Definition>(ast);
   MINT_ASSERT(def_ast != nullptr);
   // sanity check that the name of the Definition is the same
   // as the name returned by the use-before-def Error.
@@ -274,7 +274,7 @@ Environment::bindUseBeforeDef(const Error &error,
   // own definition, thus they form the trivial loop.
   // however a function definition can.
   // a new type can, but only under certain circumstances.
-  if (auto *let_ast = dynCast<ast::Let>(ast.get()); let_ast != nullptr) {
+  if (auto *let_ast = dynCast<ast::Let>(ast); let_ast != nullptr) {
     if (undef_name == def_name) {
       std::stringstream message;
       message << "Definition [" << ast << "] relies upon itself [" << undef_name
@@ -312,7 +312,7 @@ Environment::resolveTypeOfUseBeforeDef(Identifier def) noexcept {
     // sanity check that the Ast we are currently processing
     // is a Definition itself. as it only makes sense
     // to bind a Definition in the use-before-def-map
-    auto def_ast = cast<ast::Definition>(ast.get());
+    auto def_ast = cast<ast::Definition>(ast);
     // since we are attempting to resolve this UseBeforeDef
     // we clear the current UseBeforeDef error during the
     // attempt.
@@ -389,7 +389,7 @@ Environment::resolveComptimeValueOfUseBeforeDef(Identifier def) noexcept {
     // sanity check that the Ast we are currently processing
     // is a Definition itself. as it only makes sense
     // to bind a Definition in the use-before-def-map
-    auto def_ast = cast<ast::Definition>(ast.get());
+    auto def_ast = cast<ast::Definition>(ast);
     // since we are attempting to resolve this UseBeforeDef
     // we clear the current UseBeforeDef error during the
     // attempt.
@@ -470,7 +470,7 @@ Environment::resolveRuntimeValueOfUseBeforeDef(Identifier def) noexcept {
     // sanity check that the Ast we are currently processing
     // is a Definition itself. as it only makes sense
     // to bind a Definition in the use-before-def-map
-    auto def_ast = cast<ast::Definition>(ast.get());
+    auto def_ast = cast<ast::Definition>(ast);
     // since we are attempting to resolve this UseBeforeDef
     // we clear the current UseBeforeDef error during the
     // attempt.

@@ -19,6 +19,11 @@
 
 namespace mint {
 namespace ast {
+Ptr Binop::clone(Environment &env) const noexcept {
+  return env.getBinopAst(attributes(), location(), m_op, m_left->clone(env),
+                         m_right->clone(env));
+}
+
 Result<type::Ptr> Binop::typecheck(Environment &env) const noexcept {
   auto overloads = env.lookupBinop(m_op);
   if (!overloads)

@@ -40,23 +40,11 @@ public:
   }
   ~Module() noexcept override = default;
 
-  static auto create(Attributes attributes, Location location, Identifier name,
-                     Expressions expressions) noexcept -> Ptr {
-    return std::make_shared<Module>(attributes, location, name,
-                                    std::move(expressions));
-  }
-
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Module;
   }
 
-  Ptr clone() const noexcept override {
-    Expressions expressions;
-    for (auto &expression : m_expressions)
-      expressions.emplace_back(expression->clone());
-
-    return create(attributes(), location(), m_name, std::move(expressions));
-  }
+  Ptr clone(Environment &env) const noexcept override;
 
   void print(std::ostream &out) const noexcept override {
     out << "module " << m_name << " { \n";

@@ -22,6 +22,11 @@
 
 namespace mint {
 namespace ast {
+Ptr Let::clone(Environment &env) const noexcept {
+  return env.getLetAst(attributes(), location(), annotation(), name(),
+                       m_ast->clone(env));
+}
+
 Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   if (isUseBeforeDef())
     return {getUseBeforeDef()};
@@ -108,7 +113,7 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
   // this is not the meaning of let, which introduces a
   // new variable. and as such must model the semantics of
   // a new value.
-  binding.setComptimeValue(value->clone());
+  binding.setComptimeValue(value->clone(env));
 
   // #NOTE: we just created the comptime value for this binding,
   // so we can evaluate any partial bindings

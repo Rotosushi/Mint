@@ -19,6 +19,16 @@
 
 namespace mint {
 namespace ast {
+Ptr Module::clone(Environment &env) const noexcept {
+  Expressions expressions;
+  for (auto &expression : m_expressions) {
+    expressions.emplace_back(expression->clone(env));
+  }
+
+  return env.getModuleAst(attributes(), location(), m_name,
+                          std::move(expressions));
+}
+
 Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
   env.pushScope(m_name);
 

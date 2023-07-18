@@ -20,7 +20,7 @@
 
 namespace mint {
 auto eval_unop_minus(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {
-  auto *integer = cast<ast::Integer>(right.get());
+  auto *integer = cast<ast::Integer>(right);
   return env.getIntegerAst({}, {}, -(integer->value()));
 }
 
@@ -30,7 +30,7 @@ auto codegen_unop_minus(llvm::Value *right, Environment &env)
 }
 
 auto eval_unop_not(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {
-  auto *boolean = cast<ast::Boolean>(right.get());
+  auto *boolean = cast<ast::Boolean>(right);
   return env.getBooleanAst({}, {}, !(boolean->value()));
 }
 

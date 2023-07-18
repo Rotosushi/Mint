@@ -19,6 +19,10 @@
 
 namespace mint {
 namespace ast {
+Ptr Unop::clone(Environment &env) const noexcept {
+  return env.getUnopAst(attributes(), location(), m_op, m_right->clone(env));
+}
+
 Result<type::Ptr> Unop::typecheck(Environment &env) const noexcept {
   auto overloads = env.lookupUnop(m_op);
   if (!overloads)

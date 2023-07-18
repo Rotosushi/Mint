@@ -19,6 +19,10 @@
 
 namespace mint {
 namespace ast {
+Ptr Boolean::clone(Environment &env) const noexcept {
+  return env.getBooleanAst(attributes(), location(), m_value);
+}
+
 Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {
   setCachedType(env.getBooleanType());
   return env.getBooleanType();
@@ -27,18 +31,10 @@ Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {
 // we don't really need to 'evaluate' scalar values.
 // however, we must be able to return a valid scalar
 // value from calling 'evaluate' on a scalar value.
-// since we manage Ast objects by shared_ptrs,
-// we must return a valid std::shared_ptr to the same
-// scalar value we are currently 'evaluating'
-// this forces us to perform a memory allocation here.
-// even though theoretically this isn't required.
-// we must either return a new Scalar value object within
-// a new shared_ptr control block, or we can use
-// shared_from_this to return a shared_ptr to the
-// same control block. either way, this is inefficient in
-// the long run.
+// since we manage Ast objects by an allocation list,
+// we can simply return this.
 Result<ast::Ptr> Boolean::evaluate([[maybe_unused]] Environment &env) noexcept {
-  return shared_from_this();
+  return this;
 }
 
 Result<llvm::Value *> Boolean::codegen(Environment &env) noexcept {

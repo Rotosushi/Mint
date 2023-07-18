@@ -29,20 +29,12 @@ public:
   ~Integer() noexcept override = default;
 
   auto value() const noexcept { return m_value; }
-
-  static auto create(Attributes attributes, Location location,
-                     int value) noexcept -> Ptr {
-    return std::make_shared<Integer>(attributes, location, value);
-  }
-
+  
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Integer;
   }
 
-  Ptr clone() const noexcept override {
-    return create(attributes(), location(), m_value);
-  }
-
+  Ptr clone(Environment &env) const noexcept override;
   void print(std::ostream &out) const noexcept override { out << m_value; }
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

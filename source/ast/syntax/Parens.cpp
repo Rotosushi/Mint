@@ -15,9 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "ast/syntax/Parens.hpp"
+#include "adt/Environment.hpp"
 
 namespace mint {
 namespace ast {
+Ptr Parens::clone(Environment &env) const noexcept {
+  return env.getParensAst(attributes(), location(), m_ast->clone(env));
+}
+
 Result<type::Ptr> Parens::typecheck(Environment &env) const noexcept {
   auto result = m_ast->typecheck(env);
   if (!result)

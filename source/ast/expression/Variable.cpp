@@ -19,6 +19,10 @@
 
 namespace mint {
 namespace ast {
+Ptr Variable::clone(Environment &env) const noexcept {
+  return env.getVariableAst(attributes(), location(), m_name);
+}
+
 auto Variable::handleUseBeforeDef(Error &error, Environment &env) const noexcept
     -> Error {
   // if this is not a use-before-def variable
@@ -98,6 +102,11 @@ Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {
   auto type = binding.type()->toLLVM(env);
   auto value = binding.runtimeValueOrAssert();
 
+  // #TODO: this only makes sense when codegening
+  // in a global context. as otherwise we want to
+  // load/store the global variable itself.
+  // however in the global context there is nowhere
+  // to execute instructions.
   if (auto global = mint::cast<llvm::GlobalVariable>(value)) {
     return global->getInitializer();
   } else {

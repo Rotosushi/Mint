@@ -36,20 +36,11 @@ public:
   }
   ~Binop() noexcept override = default;
 
-  static auto create(Attributes attributes, Location location, Token op,
-                     Ptr left, Ptr right) noexcept -> Ptr {
-    return std::make_shared<Binop>(attributes, location, op, std::move(left),
-                                   std::move(right));
-  }
-
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Binop;
   }
 
-  Ptr clone() const noexcept override {
-    return create(attributes(), location(), m_op, m_left->clone(),
-                  m_right->clone());
-  }
+  Ptr clone(Environment &env) const noexcept override;
 
   void print(std::ostream &out) const noexcept override {
     out << m_left << " " << m_op << " " << m_right;

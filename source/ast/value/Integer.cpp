@@ -19,13 +19,17 @@
 
 namespace mint {
 namespace ast {
+Ptr Integer::clone(Environment &env) const noexcept {
+  return env.getIntegerAst(attributes(), location(), m_value);
+}
+
 Result<type::Ptr> Integer::typecheck(Environment &env) const noexcept {
   setCachedType(env.getIntegerType());
   return env.getIntegerType();
 }
 
 Result<ast::Ptr> Integer::evaluate([[maybe_unused]] Environment &env) noexcept {
-  return shared_from_this();
+  return this;
 }
 
 Result<llvm::Value *> Integer::codegen(Environment &env) noexcept {
