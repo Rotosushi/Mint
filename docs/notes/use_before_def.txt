@@ -1,0 +1,513 @@
+// Copyright (C) 2023 Cade Weinberg
+// 
+// This file is part of Mint.
+// 
+// Mint is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Mint is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+
+the main question is how do we interpret/compile definitions which 
+rely upon names which are defined after they are used?
+
+we can already typecheck this:
+
+let x = 10;
+let y = x;
+
+this is because we can fully typecheck and evaluate 1.
+then 2 relies on 1 and can also be typechecked and evalauted.
+
+so how do we typecheck the reverse:
+
+0)
+let y = x;
+let x = 10;
+
+we will fail to type y with a use-before-def error. 
+This error will hold the definition name reliant upon 
+the undef name, as well as the undef name.
+we store the definition itself (the ast) into a map with the undef name as 
+the key.
+
+then we encounter x, fully typecheck and evaluate it, then since we 
+just created a new definition we try and resolve any use-before-def 
+definitions held within the map under the newly defined name. since 
+the definition of y is within the map under the name x the definition 
+of y gets resolved here.
+
+this works! :)
+
+yet it only accounts for names defined at global scope.
+
+so, how about use-before-def names within a module:
+
+1)
+module A {
+  let a = b;
+  let b = 1;
+}
+
+the issues here are:
+A) we typecheck the entire module with a single function call,
+  this means that we cannot rely on catching the use-before-def 
+  error at the repl scope, we have to handle the use-before-def 
+  error while we are attempting to typecheck the module itself.
+
+B) the names we are defining and being used before they are defined 
+  are qualified by the modules namespace. so how do we know what definition 
+  of the undef name should be used to resolve the definition of a?
+  I think it is obvious that the name that is used must be reachable by 
+  lookup from the modules scope.
+
+we can handle A by separating resolution of use-before-def into two parts.
+we resolve the type, then the value. this however raises another issue 
+with the typing of modules, we don't evaluate the terms within the module 
+during typechecking, so we cannot rely on the evaluation step to create the 
+bindings such that variable lookup can resolve types of variable usage within 
+the module. said another way 
+
+module A {
+  let a = 1;
+  let b = a;
+}
+
+also doesn't typecheck under the current strategy unless we create partial
+bindings during typechecking for the subsequent definitions within the 
+module to rely upon for their typechecking
+
+we can naively address B by qualifying the names that are used before they are 
+defined. thus: [let a = b;] will be mapped under [A::b] and not simply [b].
+and subsequently when we resolve [let b = 1;] we lookup [A::b] and not simply [b].
+
+and use-before-def names between modules:
+
+2)
+module A {
+  let a = B::b;
+}
+
+module B {
+  let b = 1;
+}
+
+or 
+3)
+module A {
+  let a = b;
+}
+
+let b = 1;
+
+2,3 raise a few issues, 
+
+how do we resolve [let a = B::b] when we are currently 
+processing module B? (and thus are within scope B)
+
+how do we know when to qualify the use-before-def name?
+if we are only considering cases 0,1, we can always qualify a 
+use-before-def name with the namespace it appears in, because
+that is the namespace the definition also appears in.
+
+in the case of 2,3, we don't want to qualify the name,
+and thus we don't want to lookup a qualified name.
+
+however, there is not a difference between 3, and 1 
+when all we see is 
+
+module A {
+  let a = b;
+
+if we use
+"the undef name as it was written"
+
+then we need to revert back to using the unqualified names 
+for storing and retreiving the use-before-def definitions.
+
+this allows case 2 to naturally store the given name,
+however we subsequently will not resolve the use-before-def 
+unless we search for the unqualified name when we resolve
+the definition of B::b. but then, how do we handle the case 
+where we have 
+
+4)
+module A {
+  let b = a;
+}
+
+module B {
+  let c = a;
+}
+
+...
+
+as both A::b and B::c would be stored within the use-before-def 
+under "a". though is this a problem? now both would be resolved 
+when we resolve "a"?
+
+but what if we then saw 
+
+module A {
+  let a = 1;
+}
+
+do both A::b and B::c resolve at this point?
+well, no, only A::b should be resolved, because 
+normal lookup does not find "A::a" within module 
+B unless they explicitly use "A::a"
+just "a" should only attempt to lookup in global scope,
+so unless the case is that we see
+
+let a = 1;
+
+after case 4 we should not resolve both A::b and B::c at 
+this point.
+
+if we further consider the case of 
+5)
+module A {
+  let a = b;
+}
+
+let b = 1;
+
+module A {
+  let b = 2;
+}
+
+do we want a = 1 or a = 2?
+
+if we have a solution to case 3. that is, a resolves to 1 in case 3,
+then that would force a = 1 in this case as well
+
+this is the reverse of 
+
+module A {
+  let b = 2;
+}
+
+let b = 1;
+
+module A {
+  let a = b;
+}
+
+where we would unambiguously select a = 2.
+due to the fact that we attempt to resolve 
+unqualified names in the local scope before 
+we try and resolve an unqualified name in any 
+higher scope. Part of the reason for 
+having local scopes at all is name shadowing.
+
+
+so I would say that a = 2; in the reverse case as well.
+to maintain consistency with the behavior of the compiler 
+against your code no matter how you arrange the definitions.
+the entire point of use-before-definition at all is to 
+provide that.
+
+this means that we only resolve a use-before-def to a 
+higher scopes binding after we have read in the entire 
+module. 
+however, you cannot ever know what the end of the 
+module is when you are in a repl.
+because you can always ask for more input from the 
+user.
+
+if we only process files then we can say that once all 
+the given input files are read in, that is when we assume 
+that all module definitions are complete.
+and then resolve the use-before-defs to the global and higher 
+scopes.
+
+
+but that doesn't fix the bug if we consider linking modules together from 
+different calls to the compiler to produce
+object files which are then linked into an executable.
+so we would have to do something different to handle constructing 
+the set of object files. as now the different compiler instances 
+have to agree upon what is present within each module, 
+without seeing the entire definition of the module.
+in order to resolve use before definition.
+
+lets see, we just have to consider these four cases applied 
+across one or more input files. and in the case of a repl.
+
+so, the first thing i notice is that case 1 (within a module) and the case where 
+you have case 1 split across two input files are solved by 
+the solution to case 1 iff the compiler reads both input files
+one after the other.
+ditto for case 0, in the global module. 
+
+yeah, as long as we are talking about the same instance of the compiler 
+reading both files, the solutions presented will work on the mutliple file 
+case, because the input is being read into the environment sequentially 
+no matter if it's from the repl, one file, or multiple files.
+
+if we further assume a single thread for the set of input files, then 
+we know this solution works for the whole set. as long as it works between 
+two files. (as you can simply apply it working to two files to each new input 
+file you read in for each file in the set)
+
+the issue comes when considering two compiler instances (threads) or two 
+compiler processes (calls), and stitching together object files which are 
+independant of eachother. and the issue I can think of is this:
+
+a use-before-def definition in file one which is processed only by compiler 1.
+and the undef definition in file two, which is only processed by compiler 2.
+
+the only way out of this situation is by forward declaration. that is the only 
+way that we can get at least the type of the undef definition into compiler 1.
+either the programmer supplies the forward declaration, or somehow compiler 2 
+injects the definition into compiler 1.
+the linker can be relied upon to connect the definition to it's usages in any 
+file present in the emitted object files.
+however this says nothing for the compiler which must generate the code that 
+uses the definition.
+
+
+okay, to save on scrolling back up:
+
+2)
+module A {
+  let a = B::b;
+}
+
+module B {
+  let b = 1;
+}
+
+or 
+3)
+module A {
+  let a = b;
+}
+
+let b = 1;
+
+
+how specifically do we imagine solving this?
+
+well, i think we can solve 2 with minimal effort if 
+we add an if check. if the undef variable is already 
+qualified, then we do not add qualifications. thus, when 
+we use the variable for binding we store "B::b" and then 
+when we resolveUseBeforeDef we pass in the name "B::b"
+
+
+in case 3, we may solve this by way of assuming that 
+an unqualified use-before-def name is reffering to a 
+local definition. (as we already do). Thus requiring 
+programmers to spell 
+
+module A {
+  let a = ::b;
+}
+
+if they want a non-local binding.
+
+this, you will note solves case 5, in such a 
+way that both alternatives are sayable within 
+the syntax:
+
+5-1)
+module A {
+  let a = b;
+}
+
+let b = 1;
+
+module A {
+  let b = 2;
+}
+
+assigns a = 2
+
+5-2)
+module A {
+  let a = ::b;
+}
+
+let b = 1;
+
+module A {
+  let b = 2;
+}
+
+assigns a = 1
+
+additionally, it removes the ambiguity from the expectations 
+of the compiler. we are no longer unsure if we want to expect 
+more of module A to be defined or not. 5-1 implies that yes 
+this definition within A is going to be resolved with more of 
+module A later.
+and 5-2 implies that no this definition is relying on global scope.
+
+well what about case:
+6)
+module A {
+  let a = B::b;
+
+  module B {
+    let b = 1;
+  }
+}
+
+in this case we do want to add the namespace qualification 
+to the undef name, because when "b" is defined it has the 
+full name of "A::B::b".
+in case:
+2)
+module A {
+  let a = B::b;
+}
+
+module B {
+  let b = 1;
+}
+
+we do not want to add namespace qualifications to 
+the undef variable. because when b is defined it has 
+the full name of "B::b" exactly what the programmer typed.
+
+we have to pick one of them to be the reasonable default.
+ideally we allow for both somehow.
+
+well, we could default to case 6, and make the 
+programmer have to specify case 2, by way of 
+globally qualifying the undef name.
+2)
+module A {
+  let a = ::B::b;
+}
+
+module B {
+  let b = 1;
+}
+
+again we imply that unless the qualification says so, we assume 
+that names appearing undef in a local scope are 
+defined within that local scope, unless globally qualified.
+
+
+if we make the assumption that the nearest reachable name 
+which matches what the programmer typed is what get's bound 
+to the use-before-def name. then we are back where we started,
+as it now matters what order you specify your declarations,
+just in a more subtle way. and the solution of use-before-def 
+does not provide the stated goal, "it shouldn't matter what 
+order I declare names, just that all names are given a declaration"
+in order to meet that statement we have to allow for arbitrary 
+reordering of program declarations without changing the underlying 
+semantics of the program itself. 
+in order to meet that goal, we have to assume that the programmer is 
+going to type in the exact name they want to reference in use-before-def 
+fashion. or, that lacking full qualification that they are typing in 
+a name which is defined relative to the local module.
+
+okay, so now we know how it is that names within multiple scopes 
+with different qualifications and potentially the same variable 
+name can all live in a single use-before-def table, without having 
+to split that table exactly the way scopes are split.
+(though, that might also solve this issue, it's just harder to 
+think about for me.)
+so now, how is it that we are going to be able to define the 
+use-before-def definition when we encounter the definition of 
+the undef name within another scope enitrely?
+the only way i can think to solve this problem is by storing a 
+pointer to the scope of the use-before-def definition 
+in the use-before-def table alongside the use-before-def definition,
+then when resolving the definition we simply enter that scope. 
+
+-----------------------------------------------------------------------
+so, given that name lookup automatically walks up the scope tree,
+then we can already imagine situations where reordering declarations 
+produces different semantics.
+
+module A {
+  let a = b;
+  let b = 1;
+}
+
+let b = 2;
+
+ => A::a = 1
+
+vs.
+
+let b = 2;
+
+module A {
+  let a = b;
+  let b = 1;
+}
+
+ => A::a = 2
+
+do we want order independant definitions?
+yes.
+
+i think that means we never automatically traverse up a scope when 
+resolving a name. 
+
+instead, a programmer can type ::x to start lookup from global scope,
+and then we resolve names by walking down the scope tree, directed by 
+the qualifications of the name of the variable.
+
+local lookup may also do the same. allowing for something like a detail 
+namespace to be easily accessed from within the local scope.
+
+we could add a 'using' statement to provide aliases for names.
+this would allow convenient naming in a local scope of public 
+names defined in an outer scope.
+or add such a feature to the import statement.
+
+this adds a slight inconveinence to accessing global names from within 
+modules (or functions), however, this is worth it in my opionion. as 
+1) the names are still accessable
+2) global name access is called out as such syntactically, making such 
+  usage obvious to those reading the program.
+
+
+
+case 7)
+module A {
+  let a = b;
+}
+
+module A {
+  let b = 1;
+}
+
+case 7 is a slight simplification of case 2. 
+where it's the same scope. however, it raises an issue (that 
+is also present in case 2)
+namely, we have relied on the definition of the undef name 
+also being present within the modules definition, such that 
+when we typecheck the module, we typecheck both definitions, 
+this partially resolves the use-before-def of definition a.
+removing it from the map.
+which allows the evaluation of the module to fail with 
+use-before-def of a, and rebind it into the map. 
+however, when the definition of b appears after the module 
+block that a appears in ends, then we are going to typecheck 
+and then evaluate the definition of a without ever partially 
+resolving the use-before-def, meaning we add the definition to 
+the map twice. 
+we need to stop adding the term twice. or turn that into a no-op.
+however, either way, we still need to both typecheck and evaluate 
+the term.
+
+what if we change partial resolve to not remove the binding, and instead 
+only remove the use-before-def binding when we fully resolve the use-before-def.
+well, this means that we need to not add the binding back again when 
+it fails to evaluate, but only if it's a use before def?
+

@@ -17,7 +17,11 @@
 #include "adt/Identifier.hpp"
 
 namespace mint {
-[[nodiscard]] auto Identifier::first_scope() noexcept -> Identifier {
+auto Identifier::globalNamespace() const noexcept -> Identifier {
+  return set->emplace("");
+}
+
+[[nodiscard]] auto Identifier::firstScope() const noexcept -> Identifier {
   auto cursor = data.begin();
   auto end = data.end();
   while (cursor != end) {
@@ -33,7 +37,7 @@ namespace mint {
   return set->emplace("");
 }
 
-[[nodiscard]] auto Identifier::rest_scope() noexcept -> Identifier {
+[[nodiscard]] auto Identifier::restScope() const noexcept -> Identifier {
   // walk from the beginning of the view until the end,
   // if we see a "::" then walk just past the "::" and
   // return an identifier from there until the end of
@@ -52,10 +56,10 @@ namespace mint {
     cursor++;
   }
 
-  return set->emplace("");
+  return *this;
 }
 
-[[nodiscard]] auto Identifier::variable() noexcept -> Identifier {
+[[nodiscard]] auto Identifier::variable() const noexcept -> Identifier {
   // walk from the end of the identifier until
   // we see the first ':' character, then
   // return a view to the identifier one back
@@ -65,7 +69,7 @@ namespace mint {
   auto end = data.rend();
   while (cursor != end) {
     if (*cursor == ':') {
-      --cursor;
+      //--cursor;
       return set->emplace(cursor.base(),
                           static_cast<std::string_view::size_type>(
                               std::distance(cursor.base(), data.end())));
@@ -74,5 +78,22 @@ namespace mint {
   }
 
   return *this;
+}
+
+[[nodiscard]] auto Identifier::prependScope(Identifier scope) const noexcept
+    -> Identifier {
+  // name doesn't begin with "::"
+  if (!isGloballyQualified()) {
+    std::string new_name{scope};
+    new_name += "::";
+    new_name += data;
+    return set->emplace(std::move(new_name));
+  }
+  // data begins with "::", place the new scope qualifier
+  // between the global qualifier and the rest of the qualifications
+  std::string new_name{"::"};
+  new_name += scope;
+  new_name += data;
+  return set->emplace(std::move(new_name));
 }
 } // namespace mint

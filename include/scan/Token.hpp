@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <ostream>
 #include <string_view>
 
-#include "utility/FatalError.hpp"
+#include "utility/Abort.hpp"
 
 namespace mint {
 enum struct Token : int {
@@ -71,7 +72,7 @@ enum struct Token : int {
   // regular-expressions
   Identifier,
   Integer,
-  String,
+  Text,
 };
 
 using BinopPrecedence = int8_t;
@@ -173,7 +174,7 @@ inline auto isUnop(Token token) noexcept -> bool {
   }
 }
 
-inline auto toString(Token token) noexcept -> std::string_view {
+inline auto tokenToView(Token token) noexcept -> std::string_view {
   switch (token) {
   case Token::Error:
     return "Token::Error";
@@ -255,13 +256,19 @@ inline auto toString(Token token) noexcept -> std::string_view {
     return "Token::Identifier";
   case Token::Integer:
     return "Token::Integer";
-  case Token::String:
-    return "Token::String";
+  case Token::Text:
+    return "Token::Text";
 
   default:
-    fatalError("Unknown Token");
+    abort("Unknown Token");
     break;
   }
+}
+
+inline auto operator<<(std::ostream &out, Token token) noexcept
+    -> std::ostream & {
+  out << tokenToView(token);
+  return out;
 }
 
 } // namespace mint

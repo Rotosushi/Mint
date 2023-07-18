@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <cstring>
 #include <ostream>
 #include <string>
 #include <unordered_set>
 
-#include "utility/Allocator.hpp"
 #include "utility/Assert.hpp"
 
 namespace mint {
@@ -27,13 +27,9 @@ class Identifier;
 
 class IdentifierSet {
 private:
-  std::unordered_set<std::string, std::hash<std::string>,
-                     std::equal_to<std::string>, PolyAllocator<std::string>>
-      set;
+  std::unordered_set<std::string> set;
 
 public:
-  IdentifierSet(Allocator &allocator) noexcept : set(allocator) {}
-
   template <class... Args>
   [[nodiscard]] auto emplace(Args &&...args) noexcept -> Identifier;
 };
@@ -71,7 +67,7 @@ public:
   operator std::string_view() const noexcept { return data; }
   auto view() const noexcept -> std::string_view { return data; }
   auto empty() const noexcept -> bool { return data.empty(); }
-  // auto get(std::string_view data) noexcept -> Identifier;
+  auto globalNamespace() const noexcept -> Identifier;
 
   /*
   does this identifier begin with a scope?
@@ -97,7 +93,7 @@ public:
   "a::x"           -> false
   "a0::...::aN::x" -> false
   */
-  [[nodiscard]] auto globallyQualified() const noexcept -> bool {
+  [[nodiscard]] auto isGloballyQualified() const noexcept -> bool {
     if (*data.begin() == ':') {
       return true;
     }
@@ -110,7 +106,7 @@ public:
   "a::x"           -> "a"
   "a0::...::aN::x" -> "a0"
 */
-  [[nodiscard]] auto first_scope() noexcept -> Identifier;
+  [[nodiscard]] auto firstScope() const noexcept -> Identifier;
 
   /*
     "x"              -> ""
@@ -118,7 +114,7 @@ public:
     "a::x"           -> ""
     "a0::...::aN::x" -> "a1::...::aN::x"
   */
-  [[nodiscard]] auto rest_scope() noexcept -> Identifier;
+  [[nodiscard]] auto restScope() const noexcept -> Identifier;
 
   /*
     "x"              -> "x"
@@ -126,7 +122,16 @@ public:
     "a::x"           -> "x"
     "a0::...::aN::x" -> "x"
   */
-  [[nodiscard]] auto variable() noexcept -> Identifier;
+  [[nodiscard]] auto variable() const noexcept -> Identifier;
+
+  /*
+    "x",   "a"           -> "a::x"
+    "::x", "a"           -> "::x"
+    "a::x", "b"          -> "b::a::x"
+    "a0::...::aN::x"     -> "b::a0::...::aN::x"
+  */
+  [[nodiscard]] auto prependScope(Identifier scope) const noexcept
+      -> Identifier;
 };
 
 inline auto operator<<(std::ostream &out, Identifier const &id) noexcept
@@ -145,14 +150,32 @@ template <class... Args>
 } // namespace mint
 
 namespace std {
+template <> struct less<mint::Identifier> {
+  auto operator()(mint::Identifier const &l, mint::Identifier const &r) const
+      -> bool {
+    auto left = l.view();
+    auto right = r.view();
+    auto llen = left.length();
+    auto rlen = right.length();
+    // is left is a shorter string, it's less than
+    if (llen < rlen) {
+      return true;
+    } // if left is a longer string, it's not less than
+    else if (llen > rlen) {
+      return false;
+    } else { // llen == rlen
+      return strncmp(left.begin(), right.begin(), llen) < 0;
+    }
+  }
+};
 /*
   specialize std::hash to work with identifiers,
   so we can use identifiers directly in maps and sets
 */
-template <> class hash<mint::Identifier> {
-public:
+template <> struct hash<mint::Identifier> {
   auto operator()(mint::Identifier const &id) const -> std::size_t {
     return std::hash<std::string_view>{}(id.view());
   }
 };
+
 } // namespace std

@@ -20,39 +20,43 @@
 #include <vector>
 
 #include "ast/Ast.hpp"
-
-#include "error/Error.hpp"
-
-#include "utility/Allocator.hpp"
+#include "error/Result.hpp"
+#include "scan/Token.hpp"
 
 namespace mint {
 class Environment;
-/*
 
-*/
-using BinopEvalFn = Result<Ast::Ptr> (*)(Ast *left, Ast *right,
-                                         Environment *env);
+using BinopEvalFn = Result<ast::Ptr> (*)(ast::Ptr &left, ast::Ptr &right,
+                                         Environment &env);
+using BinopCodegenFn = Result<llvm::Value *> (*)(llvm::Value *left,
+                                                 llvm::Value *right,
+                                                 Environment &env);
 
 struct BinopOverload {
-  Type::Pointer left_type;
-  Type::Pointer right_type;
-  Type::Pointer result_type;
+  type::Ptr left_type;
+  type::Ptr right_type;
+  type::Ptr result_type;
   BinopEvalFn eval;
+  BinopCodegenFn gen;
 
-  [[nodiscard]] auto operator()(Ast *left, Ast *right, Environment *env) {
+  [[nodiscard]] auto evaluate(ast::Ptr &left, ast::Ptr &right,
+                              Environment &env) {
     return eval(left, right, env);
+  }
+
+  [[nodiscard]] auto codegen(llvm::Value *left, llvm::Value *right,
+                             Environment &env) {
+    return gen(left, right, env);
   }
 };
 
 class BinopOverloads {
-  std::vector<BinopOverload, PolyAllocator<BinopOverload>> overloads;
+  std::vector<BinopOverload> overloads;
 
 public:
-  BinopOverloads(Allocator &allocator) noexcept : overloads(allocator) {
-    overloads.reserve(2);
-  }
+  BinopOverloads() noexcept { overloads.reserve(2); }
 
-  auto lookup(Type::Pointer left_type, Type::Pointer right_type) noexcept
+  auto lookup(type::Ptr left_type, type::Ptr right_type) noexcept
       -> std::optional<BinopOverload> {
     for (auto &overload : overloads) {
       if (left_type == overload.left_type &&
@@ -63,16 +67,15 @@ public:
     return std::nullopt;
   }
 
-  auto emplace(Type::Pointer left_type, Type::Pointer right_type,
-               Type::Pointer result_type, BinopEvalFn eval) noexcept
-      -> BinopOverload {
+  auto emplace(type::Ptr left_type, type::Ptr right_type, type::Ptr result_type,
+               BinopEvalFn eval, BinopCodegenFn gen) noexcept -> BinopOverload {
     auto found = lookup(left_type, right_type);
     if (found) {
       return found.value();
     }
 
-    return overloads.emplace_back(
-        BinopOverload{left_type, right_type, result_type, eval});
+    return overloads.emplace_back(left_type, right_type, result_type, eval,
+                                  gen);
   }
 };
 
@@ -81,9 +84,7 @@ public:
   using Key = Token;
   using Value = BinopOverloads;
   using Pair = std::pair<const Key, Value>;
-  using Table =
-      std::unordered_map<Key, Value, std::hash<Key>, std::equal_to<Key>,
-                         PolyAllocator<Pair>>;
+  using Table = std::unordered_map<Key, Value>;
 
   class Binop {
     Table::iterator iter;
@@ -91,25 +92,24 @@ public:
   public:
     Binop(Table::iterator iter) noexcept : iter(iter) {}
 
-    auto lookup(Type::Pointer left_type, Type::Pointer right_type) noexcept
+    auto lookup(type::Ptr left_type, type::Ptr right_type) noexcept
         -> std::optional<BinopOverload> {
       return iter->second.lookup(left_type, right_type);
     }
 
-    auto emplace(Type::Pointer left_type, Type::Pointer right_type,
-                 Type::Pointer result_type, BinopEvalFn eval) noexcept
-        -> BinopOverload {
-      return iter->second.emplace(left_type, right_type, result_type, eval);
+    auto emplace(type::Ptr left_type, type::Ptr right_type,
+                 type::Ptr result_type, BinopEvalFn eval,
+                 BinopCodegenFn gen) noexcept -> BinopOverload {
+      return iter->second.emplace(left_type, right_type, result_type, eval,
+                                  gen);
     }
   };
 
 private:
-  Allocator *allocator;
   Table table;
 
 public:
-  BinopTable(Allocator &allocator) noexcept
-      : allocator(&allocator), table(PolyAllocator<Pair>(allocator)) {}
+  BinopTable() noexcept = default;
 
   auto lookup(Token op) noexcept -> std::optional<Binop> {
     auto found = table.find(op);
@@ -125,7 +125,7 @@ public:
       return found;
     }
 
-    return table.emplace(std::make_pair(op, BinopOverloads{*allocator})).first;
+    return table.emplace(std::make_pair(op, BinopOverloads{})).first;
   }
 };
 

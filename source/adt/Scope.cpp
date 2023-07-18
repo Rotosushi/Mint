@@ -31,9 +31,17 @@ namespace mint {
 }
 
 auto ScopeTable::Entry::bind(Identifier name, Attributes attributes,
-                             Type::Pointer type, Ast::Ptr value) noexcept
-    -> Bindings::Binding {
-  return iter->second->bindName(std::move(name), attributes, type, value);
+                             type::Ptr type, ast::Ptr comptime_value,
+                             llvm::Value *runtime_value) noexcept
+    -> Result<Bindings::Binding> {
+  return iter->second->bindName(name, attributes, type, comptime_value,
+                                runtime_value);
+}
+
+auto ScopeTable::Entry::partialBind(Identifier name, Attributes attributes,
+                                    type::Ptr type) noexcept
+    -> Result<Bindings::Binding> {
+  return iter->second->partialBindName(name, attributes, type);
 }
 
 [[nodiscard]] auto ScopeTable::Entry::lookup(Identifier name) noexcept
@@ -41,9 +49,14 @@ auto ScopeTable::Entry::bind(Identifier name, Attributes attributes,
   return iter->second->lookup(name);
 }
 
+[[nodiscard]] auto ScopeTable::Entry::qualifiedLookup(Identifier name) noexcept
+    -> Result<Bindings::Binding> {
+  return iter->second->qualifiedLookup(name);
+}
+
 auto ScopeTable::emplace(Identifier name,
                          std::weak_ptr<Scope> prev_scope) noexcept -> Entry {
-  auto pair = table.emplace(name, Scope::createScope(name, prev_scope));
+  auto pair = table.try_emplace(name, Scope::createScope(name, prev_scope));
   return pair.first;
 }
 
@@ -53,60 +66,39 @@ auto ScopeTable::emplace(Identifier name,
 [[nodiscard]] auto Scope::qualifiedScopeLookup(Identifier name) noexcept
     -> Result<Bindings::Binding> {
   /*
-    if name begins with "::"
-  */
-  if (name.globallyQualified()) {
-    auto g = global.lock();
-    return g->qualifiedLookup(name.variable());
-  }
-
-  /*
     "a0::...::aN::x" -> "a0"
   */
-  auto first = name.first_scope();
-  auto scope = scopes.lookup(first);
-  if (!scope) {
-    // lookup in the above scope.
-    if (!isGlobal()) {
-      auto p = prev_scope.lock();
-      return p->qualifiedLookup(name);
-    }
-    // there is no scope matching the name,
-    // and there are no larger scopes to query.
-    return {std::move(scope.error())};
+  auto first = name.firstScope();
+  auto found = scopes->lookup(first);
+  if (!found) {
+    return {std::move(found.error())};
   }
+  auto &scope = found.value();
 
   /*
     lookup "a1::...::aN::x" in scope "a0"
   */
-  return scope.value().lookup(name.rest_scope());
+  return scope.qualifiedLookup(name.restScope());
 }
 
 /*
-  lookup name while traversing up the scope tree
+  lookup name while traversing down the scope tree
 */
 [[nodiscard]] auto Scope::qualifiedLookup(Identifier name) noexcept
     -> Result<Bindings::Binding> {
   // if name is of the form "x"
   if (!name.isScoped()) {
     // lookup "x" in current scope
-    auto found = bindings.lookup(name);
+    auto found = bindings->lookup(name);
     if (found) {
-      // note: this check prevents a module within a module
-      // from accessing the outer modules private variables.
       if (found.value().isPrivate()) {
-        return Error{Error::NameIsPrivateInScope, Location{}, name.view()};
+        return Error{Error::Kind::NameIsPrivateInScope, Location{},
+                     name.view()};
       }
 
       return found;
     }
 
-    // since we didn't find "x" in local
-    // scope, try and search the prev_scope.
-    if (!isGlobal()) {
-      auto p = prev_scope.lock();
-      return p->qualifiedLookup(name);
-    }
     // "x" isn't in scope.
     return {std::move(found.error())};
   }
@@ -114,4 +106,27 @@ auto ScopeTable::emplace(Identifier name,
   // name is of the form "a0::...::aN::x"
   return qualifiedScopeLookup(name);
 }
+
+// #NOTE: walk up to global scope, building up the
+// qualified name as we return to the local scope.
+[[nodiscard]] auto Scope::getQualifiedNameImpl(Identifier name) noexcept
+    -> Identifier {
+  if (isGlobal()) {
+    auto qualified = name.prependScope(name.globalNamespace());
+    return qualified;
+  }
+
+  Identifier base = [&]() {
+    if (this->name.has_value()) {
+      return name.prependScope(this->name.value());
+    } else {
+      return name;
+    }
+  }();
+
+  // qualify the name with the previous scope
+  auto prev = prev_scope.lock();
+  return prev->getQualifiedNameImpl(base);
+}
+
 } // namespace mint

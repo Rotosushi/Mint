@@ -15,21 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "type/Type.hpp"
+#include "type/All.hpp"
 
 namespace mint {
-// #TODO use an allocator to perform allocations.
 class TypeInterner {
-  Type boolean_type;
-  Type integer_type;
-  Type nil_type;
+  type::Boolean boolean_type;
+  type::Integer integer_type;
+  type::Nil nil_type;
 
 public:
-  TypeInterner() noexcept
-      : boolean_type{std::in_place_type<Type::Boolean>},
-        integer_type{std::in_place_type<Type::Integer>},
-        nil_type{std::in_place_type<Type::Nil>} {}
-
   auto getBooleanType() const noexcept { return &boolean_type; }
   auto getIntegerType() const noexcept { return &integer_type; }
   auto getNilType() const noexcept { return &nil_type; }

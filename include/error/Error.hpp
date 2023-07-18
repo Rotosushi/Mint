@@ -15,18 +15,34 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <expected>
+#include <memory>
 #include <optional>
 #include <ostream>
 #include <string>
 #include <system_error>
+#include <variant>
 
+#include "adt/Identifier.hpp"
 #include "scan/Location.hpp"
 
 namespace mint {
+class Scope;
 class Error {
 public:
-  enum Kind {
+  struct Default {
+    Location location;
+    std::string message;
+  };
+
+  struct UseBeforeDef {
+    Identifier def;
+    Identifier undef;
+    std::shared_ptr<Scope> scope;
+  };
+
+  using Data = std::variant<std::monostate, Default, UseBeforeDef>;
+
+  enum class Kind {
     // parser errors
     EndOfInput,
 
@@ -43,44 +59,72 @@ public:
     ExpectedAClosingParen,
     ExpectedABeginBrace,
     ExpectedAEndBrace,
-    ExpectedAString,
+    ExpectedText,
 
     // typecheck errors
+    // import errors
     FileNotFound,
     ImportFailed,
-
+    // definition errors
     LetTypeMismatch,
 
+    UseBeforeDef,
+    TypeCannotBeResolved,
+
+    // variable errors
     NameUnboundInScope,
     NameAlreadyBoundInScope,
     NameIsPrivateInScope,
 
+    // operator errors
     UnopTypeMismatch,
     BinopTypeMismatch,
+
+    // codegen errors
+    GlobalInitNotConstant,
   };
 
 private:
-  Kind kind;
-  std::optional<Location> location;
-  std::optional<std::string> message;
+  Kind m_kind;
+  Data m_data;
 
   static auto KindToView(Kind kind) noexcept -> std::string_view;
 
 public:
-  Error(Kind kind) noexcept
-      : kind(kind), location(std::nullopt), message(std::nullopt) {}
+  Error(Kind kind) noexcept : m_kind(kind) {}
   Error(Kind kind, Location location, std::string_view message) noexcept
-      : kind(kind), location(location), message(message) {}
+      : m_kind(kind),
+        m_data(std::in_place_type<Default>, location, std::string(message)) {}
+  Error(Kind kind, Identifier def, Identifier undef,
+        std::shared_ptr<Scope> scope) noexcept
+      : m_kind(kind),
+        m_data(std::in_place_type<UseBeforeDef>, def, undef, scope) {}
+  Error(UseBeforeDef const &usedef) noexcept
+      : m_kind(Kind::UseBeforeDef), m_data(usedef) {}
 
-  void underline(std::ostream &out,
-                 std::string_view bad_source) const noexcept {
-    if (!location.has_value()) {
-      return;
-    }
-    auto loc = location.value();
+  [[nodiscard]] auto isMonostate() const noexcept -> bool {
+    return std::holds_alternative<std::monostate>(m_data);
+  }
+  [[nodiscard]] auto isDefault() const noexcept -> bool {
+    return std::holds_alternative<Default>(m_data);
+  }
+  [[nodiscard]] auto isUseBeforeDef() const noexcept -> bool {
+    return std::holds_alternative<UseBeforeDef>(m_data);
+  }
 
+  [[nodiscard]] auto getDefault() const noexcept -> const Default & {
+    MINT_ASSERT(isDefault());
+    return std::get<Default>(m_data);
+  }
+  [[nodiscard]] auto getUseBeforeDef() const noexcept -> const UseBeforeDef & {
+    MINT_ASSERT(isUseBeforeDef());
+    return std::get<UseBeforeDef>(m_data);
+  }
+
+  static void underline(std::ostream &out, Location location,
+                        std::string_view bad_source) noexcept {
     for (std::size_t i = 0; i <= bad_source.size(); ++i) {
-      if ((i < loc.fcolumn) || (i > loc.lcolumn))
+      if ((i < location.fcolumn) || (i > location.lcolumn))
         out << " ";
       else
         out << "^";
@@ -90,62 +134,31 @@ public:
 
   void print(std::ostream &out,
              std::string_view bad_source = "") const noexcept {
-    out << KindToView(kind);
+    out << KindToView(m_kind);
 
-    if (location.has_value()) {
-      auto &loc = location.value();
+    // we don't print anything extra for other kinds of error
+    if (std::holds_alternative<Default>(m_data)) {
+      auto &default_data = std::get<Default>(m_data);
+
+      auto &loc = default_data.location;
+      auto &msg = default_data.message;
+
       out << " -- [" << loc.fline << ":" << loc.fcolumn << "]";
-    }
+      out << " -- " << msg << "\n";
 
-    if (message.has_value()) {
-      out << " -- " << message.value() << "\n";
-    }
-
-    if (!bad_source.empty()) {
-      out << bad_source << "\n";
-      underline(out, bad_source);
+      if (!bad_source.empty()) {
+        out << bad_source << "\n";
+        underline(out, loc, bad_source);
+      }
+      out << "\n";
     }
   }
 
-  auto getKind() const noexcept { return kind; }
-  auto getLocation() const noexcept { return location; }
-  auto getMessage() const noexcept -> std::optional<std::string_view> {
-    if (message.has_value())
-      return static_cast<std::string_view>(message.value());
-    else
-      return {};
-  }
+  auto kind() const noexcept { return m_kind; }
 };
 
 inline auto operator<<(std::ostream &out, Error &error) -> std::ostream & {
   error.print(out);
   return out;
 }
-// TODO: factor Result into it's own file
-template <class T> class Result {
-  std::expected<T, Error> data;
-
-public:
-  Result(T t) noexcept : data(std::move(t)) {}
-  Result(Error e) noexcept : data(std::unexpect, std::move(e)) {}
-  Result(Error::Kind kind) noexcept : data(std::unexpect, kind) {}
-  Result(Error::Kind kind, Location location, std::string_view message) noexcept
-      : data(std::unexpect, kind, location, message) {}
-
-  operator bool() const noexcept { return data.has_value(); }
-
-  [[nodiscard]] auto has_value() const noexcept -> bool {
-    return data.has_value();
-  }
-
-  [[nodiscard]] auto value() noexcept -> T & {
-    MINT_ASSERT(data.has_value());
-    return data.value();
-  }
-  [[nodiscard]] auto error() noexcept -> Error & {
-    MINT_ASSERT(!data.has_value());
-    return data.error();
-  }
-};
-
 } // namespace mint

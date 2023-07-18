@@ -16,11 +16,9 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <istream>
-// #include <stack>
-// #include <vector>
 
 #include "ast/Ast.hpp"
-#include "error/Error.hpp"
+#include "error/Result.hpp"
 #include "scan/Scanner.hpp"
 
 /*
@@ -45,7 +43,7 @@ module = "module" identifier "{" top* "}"
 affix = basic (binop precedence-parser)?
 
 binop = "+" |"-" | "*" | "/" | "%" | "!" | "&" | "|"
-        "<" | "<=" | "?=" | "!=" | "=>" | ">"
+        "<" | "<=" | "==" | "!=" | "=>" | ">"
 
 basic = literal
       | integer
@@ -83,10 +81,22 @@ private:
   Token current;
   Attributes default_attributes;
 
+public:
+  void setIstream(std::istream *in) noexcept {
+    MINT_ASSERT(in != nullptr);
+    this->in = in;
+  }
+
   auto text() const noexcept { return scanner.getText(); }
   auto location() const noexcept { return scanner.getLocation(); }
-  void next() noexcept { current = scanner.scan(); }
 
+  auto endOfInput() const noexcept { return scanner.endOfInput() && in->eof(); }
+
+  [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
+      -> std::string_view;
+
+private:
+  void next() noexcept { current = scanner.scan(); }
   void append(std::string_view text) noexcept { scanner.append(text); }
 
   void fill() noexcept {
@@ -161,17 +171,17 @@ private:
     return {kind, location, message};
   }
 
-  auto parseTop() noexcept -> Result<Ast::Ptr>;
-  auto parseDeclaration(bool is_public) noexcept -> Result<Ast::Ptr>;
-  auto parseModule(bool is_public) noexcept -> Result<Ast::Ptr>;
-  auto parseLet(bool is_public) noexcept -> Result<Ast::Ptr>;
-  auto parseImport() noexcept -> Result<Ast::Ptr>;
-  auto parseTerm() noexcept -> Result<Ast::Ptr>;
-  auto parseAffix() noexcept -> Result<Ast::Ptr>;
-  auto precedenceParser(Ast::Ptr left, BinopPrecedence prec) noexcept
-      -> Result<Ast::Ptr>;
-  auto parseBasic() noexcept -> Result<Ast::Ptr>;
-  auto parseType() noexcept -> Result<Type::Pointer>;
+  auto parseTop() noexcept -> Result<ast::Ptr>;
+  auto parseDeclaration(bool is_public) noexcept -> Result<ast::Ptr>;
+  auto parseModule(bool is_public) noexcept -> Result<ast::Ptr>;
+  auto parseLet(bool is_public) noexcept -> Result<ast::Ptr>;
+  auto parseImport() noexcept -> Result<ast::Ptr>;
+  auto parseTerm() noexcept -> Result<ast::Ptr>;
+  auto parseAffix() noexcept -> Result<ast::Ptr>;
+  auto precedenceParser(ast::Ptr left, BinopPrecedence prec) noexcept
+      -> Result<ast::Ptr>;
+  auto parseBasic() noexcept -> Result<ast::Ptr>;
+  auto parseType() noexcept -> Result<type::Ptr>;
 
 public:
   Parser(Environment *env, std::istream *in)
@@ -180,11 +190,6 @@ public:
     MINT_ASSERT(in != nullptr);
   }
 
-  auto endOfInput() const noexcept { return scanner.endOfInput() && in->eof(); }
-
-  [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
-      -> std::string_view;
-
-  auto parse() -> Result<Ast::Ptr> { return parseTop(); }
+  auto parse() -> Result<ast::Ptr> { return parseTop(); }
 };
 } // namespace mint

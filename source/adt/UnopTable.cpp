@@ -16,25 +16,36 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/UnopTable.hpp"
 #include "adt/Environment.hpp"
+#include "utility/Casting.hpp"
 
 namespace mint {
-auto unop_minus(Ast *right, Environment *env) -> Result<Ast::Ptr> {
-  auto *value = get<Ast::Value>(right);
-  auto *integer = get<Ast::Value::Integer>(value);
-  return env->getIntegerAst(Attributes{}, Location{}, -integer->value);
+auto eval_unop_minus(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {
+  auto *integer = cast<ast::Integer>(right);
+  return env.getIntegerAst({}, {}, -(integer->value()));
 }
 
-auto unop_not(Ast *right, Environment *env) -> Result<Ast::Ptr> {
-  auto *value = get<Ast::Value>(right);
-  auto *boolean = get<Ast::Value::Boolean>(value);
-  return env->getBooleanAst(Attributes{}, Location{}, !boolean->value);
+auto codegen_unop_minus(llvm::Value *right, Environment &env)
+    -> Result<llvm::Value *> {
+  return env.createLLVMNeg(right);
+}
+
+auto eval_unop_not(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {
+  auto *boolean = cast<ast::Boolean>(right);
+  return env.getBooleanAst({}, {}, !(boolean->value()));
+}
+
+auto codegen_unop_not(llvm::Value *right, Environment &env)
+    -> Result<llvm::Value *> {
+  return env.createLLVMNot(right);
 }
 
 void InitializeBuiltinUnops(Environment *env) {
   auto minus = env->createUnop(Token::Minus);
-  minus.emplace(env->getIntegerType(), env->getIntegerType(), unop_minus);
+  minus.emplace(env->getIntegerType(), env->getIntegerType(), eval_unop_minus,
+                codegen_unop_minus);
 
   auto negate = env->createUnop(Token::Not);
-  negate.emplace(env->getBooleanType(), env->getBooleanType(), unop_not);
+  negate.emplace(env->getBooleanType(), env->getBooleanType(), eval_unop_not,
+                 codegen_unop_not);
 }
 } // namespace mint

@@ -15,63 +15,70 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "error/Error.hpp"
-
-#include "utility/FatalError.hpp"
+#include "utility/Abort.hpp"
 
 namespace mint {
 auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
   switch (kind) {
-  case Error::EndOfInput:
+  case Error::Kind::EndOfInput:
     return "End of input";
 
-  case Error::UnknownToken:
+  case Error::Kind::UnknownToken:
     return "Unknown Token";
-  case Error::UnknownBinop:
+  case Error::Kind::UnknownBinop:
     return "Unknown Binop";
 
-  case Error::ExpectedABasicTerm:
+  case Error::Kind::ExpectedABasicTerm:
     return "Expected a basic term [nil, true, false, [0-9]+, ...]";
-  case Error::ExpectedADeclaration:
+  case Error::Kind::ExpectedADeclaration:
     return "Expected a declaration [module, let]";
-  case Error::ExpectedAType:
+  case Error::Kind::ExpectedAType:
     return "Expected a type [Nil, Boolean, Integer]";
-  case Error::ExpectedAnEquals:
+  case Error::Kind::ExpectedAnEquals:
     return "Expected a '='";
-  case Error::ExpectedASemicolon:
+  case Error::Kind::ExpectedASemicolon:
     return "Expected a ';'";
-  case Error::ExpectedAnIdentifier:
+  case Error::Kind::ExpectedAnIdentifier:
     return "Expected an identifier";
-  case Error::ExpectedAClosingParen:
+  case Error::Kind::ExpectedAClosingParen:
     return "Expected a ')'";
-  case Error::ExpectedABeginBrace:
+  case Error::Kind::ExpectedABeginBrace:
     return "Expected a '{'";
-  case Error::ExpectedAEndBrace:
+  case Error::Kind::ExpectedAEndBrace:
     return "Expected a '}'";
-  case Error::ExpectedAString:
-    return "Expected a string [\"...\"]";
+  case Error::Kind::ExpectedText:
+    return "Expected text [\"...\"]";
 
-  case Error::FileNotFound:
+  case Error::Kind::FileNotFound:
     return "File not found";
-  case Error::ImportFailed:
+  case Error::Kind::ImportFailed:
     return "Import failed";
 
-  case Error::LetTypeMismatch:
+  case Error::Kind::LetTypeMismatch:
     return "Bound type does not equal type annotation";
 
-  case Error::NameUnboundInScope:
+  case Error::Kind::UseBeforeDef:
+    return "Name use before Definition";
+  case Error::Kind::TypeCannotBeResolved:
+    return "Type of expression cannot be resolved";
+
+  case Error::Kind::NameUnboundInScope:
     return "Name not bound in scope";
-  case Error::NameAlreadyBoundInScope:
+  case Error::Kind::NameAlreadyBoundInScope:
     return "Name already bound in scope";
-  case Error::NameIsPrivateInScope:
+  case Error::Kind::NameIsPrivateInScope:
     return "Name is private and unaccessable from this scope";
 
-  case Error::UnopTypeMismatch:
+  case Error::Kind::UnopTypeMismatch:
     return "Unop argument type mismatch";
-  case Error::BinopTypeMismatch:
+  case Error::Kind::BinopTypeMismatch:
     return "Binop argument types mismatch";
 
+  case Error::Kind::GlobalInitNotConstant:
+    return "Global initializer not a constant";
+
   default:
-    fatalError("Unknown Error::Kind");
+    abort("Unknown Error::Kind");
   }
 }
 } // namespace mint

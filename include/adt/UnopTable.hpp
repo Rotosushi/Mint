@@ -20,36 +20,39 @@
 #include <vector>
 
 #include "ast/Ast.hpp"
+#include "error/Result.hpp"
+#include "scan/Token.hpp"
 
-#include "error/Error.hpp"
-
-#include "utility/Allocator.hpp"
+#include "llvm/IR/Value.h"
 
 namespace mint {
 class Environment;
 
-using UnopEvalFn = Result<Ast::Ptr> (*)(Ast *right, Environment *env);
+using UnopEvalFn = Result<ast::Ptr> (*)(ast::Ptr &right, Environment &env);
+using UnopCodegenFn = Result<llvm::Value *> (*)(llvm::Value *right,
+                                                Environment &env);
 
 struct UnopOverload {
-  Type::Pointer right_type;
-  Type::Pointer result_type;
+  type::Ptr right_type;
+  type::Ptr result_type;
   UnopEvalFn eval;
+  UnopCodegenFn gen;
 
-  [[nodiscard]] auto operator()(Ast *right, Environment *env) {
+  [[nodiscard]] auto evaluate(ast::Ptr &right, Environment &env) {
     return eval(right, env);
+  }
+  [[nodiscard]] auto codegen(llvm::Value *right, Environment &env) {
+    return gen(right, env);
   }
 };
 
 class UnopOverloads {
-  std::vector<UnopOverload, PolyAllocator<UnopOverload>> overloads;
+  std::vector<UnopOverload> overloads;
 
 public:
-  UnopOverloads(Allocator &allocator) noexcept : overloads(allocator) {
-    overloads.reserve(2);
-  }
+  UnopOverloads() noexcept { overloads.reserve(2); }
 
-  auto lookup(Type::Pointer right_type) noexcept
-      -> std::optional<UnopOverload> {
+  auto lookup(type::Ptr right_type) noexcept -> std::optional<UnopOverload> {
     for (auto &overload : overloads) {
       if (right_type == overload.right_type) {
         return overload;
@@ -58,14 +61,14 @@ public:
     return std::nullopt;
   }
 
-  auto emplace(Type::Pointer right_type, Type::Pointer result_type,
-               UnopEvalFn eval) noexcept -> UnopOverload {
+  auto emplace(type::Ptr right_type, type::Ptr result_type, UnopEvalFn eval,
+               UnopCodegenFn codegen) noexcept -> UnopOverload {
     auto found = lookup(right_type);
     if (found) {
       return found.value();
     }
 
-    return overloads.emplace_back(UnopOverload{right_type, result_type, eval});
+    return overloads.emplace_back(right_type, result_type, eval, codegen);
   }
 };
 
@@ -74,8 +77,7 @@ public:
   using Key = Token;
   using Value = UnopOverloads;
   using Pair = std::pair<const Key, Value>;
-  using Table = std::unordered_map<Key, Value, std::hash<Key>,
-                                   std::equal_to<Key>, PolyAllocator<Pair>>;
+  using Table = std::unordered_map<Key, Value>;
 
   class Unop {
     Table::iterator iter;
@@ -83,25 +85,20 @@ public:
   public:
     Unop(Table::iterator iter) noexcept : iter(iter) {}
 
-    auto lookup(Type::Pointer right_type) noexcept
-        -> std::optional<UnopOverload> {
+    auto lookup(type::Ptr right_type) noexcept -> std::optional<UnopOverload> {
       return iter->second.lookup(right_type);
     }
 
-    auto emplace(Type::Pointer right_type, Type::Pointer result_type,
-                 UnopEvalFn eval) noexcept -> UnopOverload {
-      return iter->second.emplace(right_type, result_type, eval);
+    auto emplace(type::Ptr right_type, type::Ptr result_type, UnopEvalFn eval,
+                 UnopCodegenFn codegen) noexcept -> UnopOverload {
+      return iter->second.emplace(right_type, result_type, eval, codegen);
     }
   };
 
 private:
-  Allocator *allocator;
   Table table;
 
 public:
-  UnopTable(Allocator &allocator) noexcept
-      : allocator(&allocator), table(PolyAllocator(allocator)) {}
-
   auto lookup(Token op) noexcept -> std::optional<Unop> {
     auto found = table.find(op);
     if (found != table.end()) {
@@ -116,7 +113,7 @@ public:
       return found;
     }
 
-    return table.emplace(op, UnopOverloads{*allocator}).first;
+    return table.emplace(op, UnopOverloads{}).first;
   }
 };
 

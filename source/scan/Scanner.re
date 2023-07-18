@@ -91,7 +91,7 @@ auto Scanner::scan() noexcept -> Token {
 
       id     { UpdateLocation(); return Token::Identifier; }
       int    { UpdateLocation(); return Token::Integer; }
-      string { UpdateLocation(); return Token::String; }
+      string { UpdateLocation(); return Token::Text; }
 
       [ \t\n]+ { UpdateLocation(); continue; } // whitespace
       *        { UpdateLocation(); return Token::Error; } // unknown token

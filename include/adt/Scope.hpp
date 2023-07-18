@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <map>
 #include <optional>
+#include <set>
 #include <tuple>
-#include <unordered_map>
 
 #include "adt/Attributes.hpp"
-
+#include "adt/Identifier.hpp"
 #include "ast/Ast.hpp"
-
-#include "error/Error.hpp"
+#include "error/Result.hpp"
 /*
   #TODO:
     ) implement a field in bindings to
@@ -44,23 +44,24 @@ namespace mint {
 class Bindings {
 public:
   using Key = Identifier;
-  using Value = std::tuple<Attributes, Type::Pointer, Ast::Ptr>;
-  using Table = std::unordered_map<Key, Value>;
+  using Value = std::tuple<Attributes, type::Ptr, std::optional<ast::Ptr>,
+                           std::optional<llvm::Value *>>;
+  using Table = std::map<Key, Value>;
   using iterator = typename Table::iterator;
 
-  class Binding {
-  private:
-    iterator binding;
-
-    [[nodiscard]] auto attributes() const noexcept -> Attributes & {
-      return std::get<0>(binding->second);
-    }
-
+  class Binding : public Table::iterator {
   public:
-    Binding(iterator binding) noexcept : binding(binding) {}
+    Binding(iterator binding) noexcept : Table::iterator(binding) {}
 
-    [[nodiscard]] auto name() const noexcept -> const Key & {
-      return binding->first;
+    [[nodiscard]] auto key() const noexcept -> Key const & {
+      return (*this)->first;
+    }
+    [[nodiscard]] auto value() const noexcept -> Value const & {
+      return (*this)->second;
+    }
+    [[nodiscard]] auto value() noexcept -> Value & { return (*this)->second; }
+    [[nodiscard]] auto attributes() const noexcept -> Attributes const & {
+      return std::get<Attributes>(value());
     }
     [[nodiscard]] auto isPublic() const noexcept -> bool {
       return attributes().isPublic();
@@ -68,18 +69,43 @@ public:
     [[nodiscard]] auto isPrivate() const noexcept -> bool {
       return attributes().isPrivate();
     }
-    [[nodiscard]] auto type() const noexcept -> Type::Pointer {
-      return std::get<1>(binding->second);
+    [[nodiscard]] auto type() const noexcept -> type::Ptr {
+      return std::get<type::Ptr>(value());
     }
-    /*
-      note: it might be good to return an Ast* here, as it saves
-      copying a shared ptr, and anything manipulating an Ast is
-      usually only reading it. and in the cases where the code
-      isn't Ast inherits from std::shared_from_this, so we can
-      call ast->shared_from_this();
-    */
-    [[nodiscard]] auto value() const noexcept -> Ast::Ptr {
-      return std::get<2>(binding->second);
+
+    [[nodiscard]] auto comptimeValue() const noexcept
+        -> std::optional<ast::Ptr> const & {
+      return std::get<std::optional<ast::Ptr>>(value());
+    }
+    [[nodiscard]] auto comptimeValue() noexcept -> std::optional<ast::Ptr> & {
+      return std::get<std::optional<ast::Ptr>>(value());
+    }
+    [[nodiscard]] auto hasComptimeValue() const noexcept -> bool {
+      return comptimeValue().has_value();
+    }
+    [[nodiscard]] auto comptimeValueOrAssert() const noexcept -> ast::Ptr {
+      MINT_ASSERT(hasComptimeValue());
+      return comptimeValue().value();
+    }
+    void setComptimeValue(ast::Ptr ast) noexcept { comptimeValue() = ast; }
+
+    [[nodiscard]] auto runtimeValue() noexcept
+        -> std::optional<llvm::Value *> & {
+      return std::get<std::optional<llvm::Value *>>(value());
+    }
+    [[nodiscard]] auto runtimeValue() const noexcept
+        -> std::optional<llvm::Value *> const & {
+      return std::get<std::optional<llvm::Value *>>(value());
+    }
+    [[nodiscard]] auto hasRuntimeValue() const noexcept -> bool {
+      return runtimeValue().has_value();
+    }
+    [[nodiscard]] auto runtimeValueOrAssert() const noexcept -> llvm::Value * {
+      MINT_ASSERT(hasRuntimeValue());
+      return runtimeValue().value();
+    }
+    void setRuntimeValue(llvm::Value *value) noexcept {
+      runtimeValue() = value;
     }
   };
 
@@ -89,18 +115,34 @@ private:
 public:
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
 
-  auto bind(Key key, Attributes attributes, Type::Pointer type,
-            Ast::Ptr value) noexcept -> Binding {
-    // use insert or assign to allow the caller to update
-    // the values being kept track of within the table.
-    auto pair = table.insert_or_assign(key, Value{attributes, type, value});
-    return pair.first;
+  void unbind(Key name) noexcept { table.erase(name); }
+
+  auto bind(Key key, Attributes attributes, type::Ptr type,
+            ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
+      -> Result<Binding> {
+    auto found = lookup(key);
+    if (found) {
+      return {Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
+    }
+    auto pair = table.try_emplace(
+        key, Value{attributes, type, comptime_value, runtime_value});
+    return Binding{pair.first};
+  }
+
+  auto partialBind(Key key, Attributes attributes, type::Ptr type) noexcept
+      -> Result<Binding> {
+    if (auto found = lookup(key))
+      return {Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
+
+    auto pair = table.try_emplace(
+        key, Value{attributes, type, std::nullopt, std::nullopt});
+    return Binding{pair.first};
   }
 
   [[nodiscard]] auto lookup(Key key) noexcept -> Result<Binding> {
     auto found = table.find(key);
     if (found == table.end()) {
-      return Error{Error::NameUnboundInScope, Location{}, key.view()};
+      return {Error::Kind::NameUnboundInScope, {}, key.view()};
     }
     return {found};
   }
@@ -112,7 +154,7 @@ class ScopeTable {
 public:
   using Key = Identifier;
   using Value = std::shared_ptr<Scope>;
-  using Table = std::unordered_map<Key, Value>;
+  using Table = std::map<Key, Value>;
 
   class Entry {
     Table::iterator iter;
@@ -126,10 +168,17 @@ public:
 
     [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
 
-    auto bind(Identifier name, Attributes attributes, Type::Pointer type,
-              Ast::Ptr value) noexcept -> Bindings::Binding;
+    auto bind(Identifier name, Attributes attributes, type::Ptr type,
+              ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
+        -> Result<Bindings::Binding>;
+
+    auto partialBind(Identifier name, Attributes attributes,
+                     type::Ptr type) noexcept -> Result<Bindings::Binding>;
 
     [[nodiscard]] auto lookup(Identifier name) noexcept
+        -> Result<Bindings::Binding>;
+
+    [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept
         -> Result<Bindings::Binding>;
   };
 
@@ -152,7 +201,7 @@ public:
   [[nodiscard]] auto lookup(Identifier name) noexcept -> Result<Entry> {
     auto found = table.find(name);
     if (found == table.end()) {
-      return Error{Error::NameUnboundInScope, Location{}, name.view()};
+      return Error{Error::Kind::NameUnboundInScope, Location{}, name.view()};
     }
     return Entry{found};
   }
@@ -163,37 +212,53 @@ private:
   std::optional<Identifier> name;
   std::weak_ptr<Scope> prev_scope;
   std::weak_ptr<Scope> global;
-  Bindings bindings;
-  ScopeTable scopes;
+  std::unique_ptr<Bindings> bindings;
+  std::unique_ptr<ScopeTable> scopes;
 
-  Scope() noexcept = default;
+public:
+  Scope() noexcept
+      : bindings(std::make_unique<Bindings>()),
+        scopes(std::make_unique<ScopeTable>()) {}
   Scope(std::optional<Identifier> name,
         std::weak_ptr<Scope> prev_scope) noexcept
-      : name(name), prev_scope(prev_scope) {}
+      : name(name), prev_scope(prev_scope),
+        bindings(std::make_unique<Bindings>()),
+        scopes(std::make_unique<ScopeTable>()) {
+    auto ptr = prev_scope.lock();
+    global = ptr->global;
+  }
   Scope(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
-      : name(std::move(name)), prev_scope(prev_scope) {
+      : name(std::move(name)), prev_scope(prev_scope),
+        bindings(std::make_unique<Bindings>()),
+        scopes(std::make_unique<ScopeTable>()) {
     auto ptr = prev_scope.lock();
     global = ptr->global;
   }
 
+  friend class ScopeTable;
+
+private:
   [[nodiscard]] auto qualifiedScopeLookup(Identifier name) noexcept
       -> Result<Bindings::Binding>;
   [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept
       -> Result<Bindings::Binding>;
 
+  [[nodiscard]] auto getQualifiedNameImpl(Identifier name) noexcept
+      -> Identifier;
+
   void setGlobal(std::weak_ptr<Scope> scope) noexcept { global = scope; }
 
 public:
   [[nodiscard]] static auto createGlobalScope() -> std::shared_ptr<Scope> {
-    auto global = std::shared_ptr<Scope>(new Scope());
-    global->setGlobal(global->weak_from_this());
-    return global;
+    auto scope = std::make_shared<Scope>();
+    scope->setGlobal(scope->weak_from_this());
+    return scope;
   }
 
   [[nodiscard]] static auto createScope(std::optional<Identifier> name,
                                         std::weak_ptr<Scope> prev_scope)
       -> std::shared_ptr<Scope> {
-    return std::shared_ptr<Scope>(new Scope(name, prev_scope));
+    return std::make_shared<Scope>(name, prev_scope);
   }
 
   [[nodiscard]] auto isGlobal() const noexcept -> bool {
@@ -213,31 +278,41 @@ public:
   }
 
   [[nodiscard]] auto bindingsEmpty() const noexcept -> bool {
-    return bindings.empty();
+    return bindings->empty();
   }
 
   [[nodiscard]] auto scopesEmpty() const noexcept -> bool {
-    return scopes.empty();
+    return scopes->empty();
   }
 
-  auto bindName(Identifier name, Attributes attributes, Type::Pointer type,
-                Ast::Ptr value) -> Bindings::Binding {
-    return bindings.bind(name, attributes, type, value);
+  [[nodiscard]] auto getQualifiedName(Identifier name) noexcept -> Identifier {
+    // auto variable = name.restScope();
+    return getQualifiedNameImpl(name);
   }
 
-  auto bindScope(Identifier name) -> ScopeTable::Entry {
-    return scopes.emplace(name, weak_from_this());
+  auto bindName(Identifier name, Attributes attributes, type::Ptr type,
+                ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept {
+    return bindings->bind(name, attributes, type, comptime_value,
+                          runtime_value);
   }
 
-  void unbindScope(Identifier name) { return scopes.unbind(name); }
+  auto partialBindName(Identifier name, Attributes attributes,
+                       type::Ptr type) noexcept {
+    return bindings->partialBind(name, attributes, type);
+  }
+
+  auto bindScope(Identifier name) {
+    return scopes->emplace(name, weak_from_this());
+  }
+
+  void unbindScope(Identifier name) { return scopes->unbind(name); }
 
   [[nodiscard]] auto lookupScope(Identifier name) noexcept {
-    return scopes.lookup(name);
+    return scopes->lookup(name);
   }
 
-  [[nodiscard]] auto lookupLocal(Identifier name) noexcept
-      -> Result<Bindings::Binding> {
-    return bindings.lookup(name);
+  [[nodiscard]] auto lookupLocal(Identifier name) noexcept {
+    return bindings->lookup(name);
   }
 
   /*
@@ -262,22 +337,25 @@ public:
     "a0,a1,...,aN" are all considered scopes,
     "x" is considered a variable local to scope "aN"
 
-    both scope lookup, and variable lookup first search
-    the local scope, and if the variable/scope is not found,
-    lookup one scope higher. if we are at global scope
-    and we fail to find the binding then lookup fails.
+    #NOTE: to make order independant definitions possible,
+    traversing up the scope tree must be done explicitly
+    the by programmer.
+    this means that lookup only needs to resolve names
+    within the local scope or lower, unless the name
+    given explicitly asks to be resolved from global scope.
   */
   [[nodiscard]] auto lookup(Identifier name) noexcept
       -> Result<Bindings::Binding> {
-    auto found = lookupLocal(name);
-    if (!found) {
-      if (isGlobal()) {
-        return qualifiedLookup(name);
-      }
-      auto prev = prev_scope.lock();
-      return prev->qualifiedLookup(name);
+    if (name.isGloballyQualified()) {
+      auto global_scope = global.lock();
+      return global_scope->qualifiedLookup(name.restScope());
     }
-    return found;
+
+    if (!name.isScoped()) {
+      return lookupLocal(name);
+    }
+
+    return qualifiedLookup(name);
   }
 };
 

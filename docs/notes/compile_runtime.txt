@@ -1,0 +1,103 @@
+// Copyright (C) 2023 Cade Weinberg
+// 
+// This file is part of Mint.
+// 
+// Mint is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Mint is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+
+"anything that can be done at compile time is done at compile time"
+
+Compile time (Comptime) is in essence interpreted. 
+Runtime is in essence generated assembly.
+
+so, what can be done at compile time, and what cannot?
+
+Theoretically it is possible to interpret any information which 
+is known at compile time. And Definitions must be made available 
+to the runtime, for the runtime to make any sense at all.
+
+the important thing to consider is what happens to a term which 
+cannot be evaluated, only compiled. Due to that terms reliance upon 
+data which is only knowable at runtime.
+
+Comptime:
+  Definitions
+    Let 
+    Module, Import 
+
+  Expressions 
+    Variables
+    Binops 
+    Unops
+
+  Types 
+    Nil 
+    Boolean 
+    Integer
+
+  Values 
+    nil 
+    true, false 
+    [0-9]+
+
+Runtime:
+  Definitions 
+    Let 
+    Module, Import
+
+okay, all currently implemented values are scalars.
+at comptime values are represented as Ast nodes.
+at runtime values are represented as their equivalent llvm::Values.
+at runtime:
+  Nil     -> llvm::ConstantInt(1, false)
+  Boolean -> llvm::ConstantInt(1, value)
+  Integer -> llvm::ConstantInt(32, value)
+
+next to translate are the syntax ast's, 
+these can just pass through at comptime and runtime.
+
+next are expressions:
+at comptime expressions operate on Asts
+at runtime expressions operator on llvm::Values
+at runtime:
+  Binop  -> BinopCodegenFn(llvm::Value *, llvm::Value *, Environment &)
+  Unop   -> UnopCodegenFn(llvm::Value *, Environment &)
+  Variable -> Bindings stores a llvm::Value * that is retrieved,
+              if the variable is use-before-def of the runtime value 
+              that needs to be handled the same as we handle use-before-def 
+              of the comptime value.
+
+next are definitions:
+at comptime definitions bind Types and Asts.
+at runtime definitions bind global variables.
+at runtime:
+  Let -> must create a global variable within the module.
+         needs to use it's fully qualified name in the module 
+         symbol table, and needs to convert the qualified name 
+         to something that llvm accepts.
+         (convert any "::" to ".")
+
+next are statements:
+at comptime statements operate on Asts 
+at runtime statements operate on llvm::Values 
+at runtime:
+  Import -> is a no-op, as evaluation brought all definitions into 
+            the current environment already. so as long as codegen 
+            is done after we fully typecheck and evaluate all source 
+            code, we will codegen anything that the import statement 
+            would bring in.
+  Module -> needs to codegen each of it's subexpressions.
+            and handle any use-before-def as usual.
+
+
+

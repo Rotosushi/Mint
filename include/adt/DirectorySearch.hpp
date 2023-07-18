@@ -19,13 +19,13 @@
 #include <optional>
 #include <vector>
 
-#include "utility/FatalError.hpp"
+#include "utility/Abort.hpp"
 
 namespace fs = std::filesystem;
 
 namespace mint {
 class DirectorySearcher {
-  std::vector<fs::path> known;
+  std::vector<fs::path> m_known_paths;
 
   auto existsWithinDirectory(fs::path &directory, fs::path &file) noexcept
       -> bool {
@@ -35,7 +35,7 @@ class DirectorySearcher {
     std::error_code ec;
     auto result = fs::exists(path, ec);
     if (ec != std::error_code{}) {
-      fatalError(ec);
+      abort(ec);
     }
     return result;
   };
@@ -55,21 +55,21 @@ class DirectorySearcher {
 
 public:
   DirectorySearcher() noexcept {
-    known.emplace_back(fs::current_path());
+    m_known_paths.emplace_back(fs::current_path());
     // #TODO: add the mint standard library path to the space.
   }
 
   /*
     add another directory to the search space
   */
-  void append(fs::path directory) noexcept { known.push_back(directory); }
+  void append(fs::path directory) noexcept { m_known_paths.push_back(directory); }
 
   /*
     check that we can find the given file within
     the search space.
   */
   auto exists(fs::path file) noexcept -> bool {
-    for (auto &directory : known) {
+    for (auto &directory : m_known_paths) {
       if (existsWithinDirectory(directory, file))
         return true;
     }
@@ -78,10 +78,10 @@ public:
 
   /*
     attempt to open the file given, checking each
-    directory known.
+    directory m_known_paths.
   */
   auto search(fs::path file) noexcept -> std::optional<std::fstream> {
-    for (auto &directory : known) {
+    for (auto &directory : m_known_paths) {
       auto found = searchWithinDirectory(directory, file);
       if (found) {
         return found;

@@ -16,303 +16,181 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <memory>
-#include <optional>
-#include <variant>
 
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
-
+#include "error/Result.hpp"
 #include "scan/Location.hpp"
-#include "scan/Token.hpp"
-
 #include "type/Type.hpp"
+#include "utility/Assert.hpp"
+
+#include "llvm/IR/Value.h"
 
 namespace mint {
-struct Ast {
-  using Ptr = std::shared_ptr<Ast>;
+class Environment;
 
-  struct Let {
-    Attributes attributes;
-    Location location;
-    Identifier id;
-    std::optional<Type::Pointer> annotation;
-    Ast::Ptr term;
-
-    Let(Attributes attributes, Location location, Identifier id,
-        std::optional<Type::Pointer> annotation, Ast::Ptr term) noexcept
-        : attributes(attributes), location(location), id(id),
-          annotation(annotation), term(term) {}
-  };
-
-  struct Binop {
-    Attributes attributes;
-    Location location;
-    Token op;
-    Ast::Ptr left;
-    Ast::Ptr right;
-
-    Binop(Attributes attributes, Location location, Token op, Ast::Ptr left,
-          Ast::Ptr right) noexcept
-        : attributes(attributes), location(location), op(op), left(left),
-          right(right) {}
-  };
-
-  struct Unop {
-    Attributes attributes;
-    Location location;
-    Token op;
-    Ast::Ptr right;
-
-    Unop(Attributes attributes, Location location, Token op,
-         Ast::Ptr right) noexcept
-        : attributes(attributes), location(location), op(op), right(right) {}
-  };
-
-  struct Term {
-    Attributes attributes;
-    Location location;
-    std::optional<Ast::Ptr> ast;
-
-    Term(Attributes attributes, Location location,
-         std::optional<Ast::Ptr> ast) noexcept
-        : attributes(attributes), location(location), ast{ast} {}
-  };
-
-  struct Parens {
-    Attributes attributes;
-    Location location;
-    Ast::Ptr ast;
-
-    Parens(Attributes attributes, Location location, Ast::Ptr ast) noexcept
-        : attributes(attributes), location(location), ast{ast} {}
-  };
-
-  struct Variable {
-    Attributes attributes;
-    Location location;
-    Identifier name;
-
-    Variable(Attributes attributes, Location location, Identifier name) noexcept
-        : attributes(attributes), location(location), name{name} {}
-  };
-
-  struct Module {
-    Attributes attributes;
-    Location location;
-    Identifier name;
-    std::vector<Ast::Ptr> expressions;
-
-    Module(Attributes attributes, Location location, Identifier name,
-           std::vector<Ast::Ptr> expressions) noexcept
-        : attributes(attributes), location(location), name(name),
-          expressions(std::move(expressions)) {}
-  };
-
-  struct Import {
-    Attributes attributes;
-    Location location;
-    std::string file;
-    // #NOTE: #FUTURE: the 'from' mechanism seems like a
-    // great candidate to implement pattern matching
-    // in order to make import more expressive.
-    // std::optional<Identifier> second;
-
-    Import(Attributes attributes, Location location, std::string_view file
-           /*,std::optional<Identifier> second = std::nullopt*/) noexcept
-        : attributes(attributes), location(location), file(file)
-    /*,second(second)*/ {}
-  };
-
-  struct Value {
-    struct Boolean {
-      Attributes attributes;
-      Location location;
-      bool value;
-
-      Boolean(Attributes attributes, Location location, bool value) noexcept
-          : attributes(attributes), location(location), value{value} {}
-    };
-
-    struct Integer {
-      Attributes attributes;
-      Location location;
-      int value;
-
-      Integer(Attributes attributes, Location location, int value) noexcept
-          : attributes(attributes), location(location), value{value} {}
-    };
-
-    struct Nil {
-      Attributes attributes;
-      Location location;
-      bool value = false;
-
-      Nil(Attributes attributes, Location location) noexcept
-          : attributes(attributes), location(location) {}
-    };
-
-    using Data = std::variant<Boolean, Integer, Nil>;
-    Data data;
-
-    template <class T, class... Args>
-    constexpr explicit Value(std::in_place_type_t<T> type, Args &&...args)
-        : data(type, std::forward<Args>(args)...) {}
-  };
-
-  using Data = std::variant<Let, Module, Import, Binop, Unop, Term, Parens,
-                            Variable, Value>;
-  Data data;
-
-private:
-  //  mutable mint::Type::Pointer type_cache;
-
-public:
-  template <class T, class... Args>
-  constexpr explicit Ast(std::in_place_type_t<T> type, Args &&...args) noexcept
-      : data(type, std::forward<Args>(args)...) {}
-
-  template <class T, class Alloc, class... Args>
-  static auto create(Alloc const &allocator, Args &&...args) noexcept {
-    return std::allocate_shared<Ast, Alloc>(allocator, std::in_place_type<T>,
-                                            std::forward<Args>(args)...);
-  }
-
-  /*
-    void setCachedType(mint::Type::Pointer type) const noexcept {
-      MINT_ASSERT(type != nullptr);
-      type_cache = type;
-    }
-    std::optional<mint::Type::Pointer> cached_type() noexcept {
-      if (type_cache == nullptr) {
-        return std::nullopt;
-      }
-      return type_cache;
-    }
-  */
-};
-
-template <typename T> auto isa(Ast const *ast) -> bool {
-  MINT_ASSERT(ast != nullptr);
-  return std::holds_alternative<T>(ast->data);
-}
-
-template <typename T> auto isa(Ast::Value const *value) -> bool {
-  MINT_ASSERT(value != nullptr);
-  return std::holds_alternative<T>(value->data);
-}
+namespace ast {
+class Ast;
 
 /*
-  it is a bit idiosyncratic to return a pointer
-  when we are asserting that the get needs to succeed.
-  when we could return a nullptr.
-  however, I like this usage of pointers more, as
-  we aren't creating nullptrs to unintentionally deref later.
+  what are the advantages of
+  using Ptr = std::unique_ptr<Ast>;
+  instead?
+
+  overall the differences are minimal,
+  so I am unable to say one is a better
+  choice as of right now.
+
+  either way we need and want a clone method.
+  (with unique_ptr it is necessary in all cases
+  that the data within a given Ast is needed across
+  multiple Ast's, with shared_ptr it is not necessary
+  in all cases, but still needed in specific circumstances.
+  such as declaring a new variable with the same value as
+  another existing variable. a circumstance where we could
+  avoid a clone is reference semantics within
+  the interpreter, as two shared_ptrs could literally
+  refer to the same value allocation.
+  however, just as easily we can simply construct a
+  reference ast::Value which points to another value
+  and store that in a unique_ptr. so again, the
+  differences between these two are minimal)
+
+  unique_ptr is strict about enforcing move semantics,
+  which is more efficient from a speed perspective,
+  and with no control block it is more efficient from
+  a memory perspective. additionally, there is no need
+  for atomic instructions, which are another potential
+  speed bottleneck. However this implementation of the
+  language is not intended to be the fastest (yet).
+  as currently the goal is correctness, and new features.
+
+  either way, data synchronization is manual.
+  (atomic increment only synchronizes the
+  sharing itself accross threads, not access to
+  the stored data.)
+
+  I'd say that the biggest advantage shared_ptr has
+  as of right now during development is that it has
+  copy-semantics. which makes implementing an interpreter
+  with shared_ptrs slightly easier to get right.
+  but I could also argue that enforced move semantics
+  would force the implementation to be aware
+  of what part of the interpreter owns what, and that
+  could be more efficient.
+  the issue there is that the goal is currently
+  correctness and not performance.
+  so shared_ptr is what we are going with for the
+  forseeable future.
+
+  #NOTE(7/15/23): it might be best to disconnect the allocation
+  from the tree entirely. storing all smart pointers in a separate
+  structure, and constructing the tree itself out of raw pointers.
 */
-template <typename T> auto get(Ast *ast) -> T * {
-  MINT_ASSERT(isa<T>(ast));
-  return std::get_if<T>(&ast->data);
-}
+using Ptr = Ast *;
 
-template <typename T> auto get(Ast const *ast) -> T const * {
-  MINT_ASSERT(isa<T>(ast));
-  return std::get_if<T>(&ast->data);
-}
-
-template <typename T> auto get(Ast::Value *value) -> T * {
-  MINT_ASSERT(isa<T>(value));
-  return std::get_if<T>(&value->data);
-}
-
-template <typename T> auto get(Ast::Value const *value) -> T const * {
-  MINT_ASSERT(isa<T>(value));
-  return std::get_if<T>(&value->data);
-}
-
-template <typename T> auto get_value(Ast *ast) -> T * {
-  auto value = get<Ast::Value>(ast);
-  return get<T>(value);
-}
-
-template <typename T> auto get_value(Ast const *ast) -> T const * {
-  auto value = get<Ast::Value>(ast);
-  return get<T>(value);
-}
-
-class AstValueLocationVisitor {
+class Ast {
 public:
-  constexpr auto operator()(Ast::Value const &value) const noexcept
-      -> Location {
-    return std::visit(*this, value.data);
+  enum class Kind {
+    // Definitions
+    Definition,
+    Let,
+    // Function,
+    EndDefinition,
+
+    // Values
+    Value,
+    Nil,
+    Boolean,
+    Integer,
+    EndValue,
+
+    // Syntax
+    Syntax,
+    Affix,
+    Parens,
+    EndSyntax,
+
+    // Expression
+    Expression,
+    Binop,
+    Unop,
+    Variable,
+    EndExpression,
+
+    // Statement
+    Statement,
+    Module,
+    Import,
+    EndStatement,
+  };
+
+private:
+  mutable Ast *m_prev_ast;
+  mutable type::Ptr m_cached_type;
+  Kind m_kind;
+  Attributes m_attributes;
+  Location m_location;
+
+protected:
+  Ast(Kind kind, Attributes attributes, Location location) noexcept
+      : m_prev_ast{nullptr}, m_cached_type{nullptr}, m_kind{kind},
+        m_attributes{attributes}, m_location{location} {}
+
+  bool havePrevAst() const noexcept { return m_prev_ast != nullptr; }
+
+  Ast *getPrevAst() const noexcept {
+    MINT_ASSERT(havePrevAst());
+    return m_prev_ast;
   }
 
-  constexpr auto operator()(Ast::Value::Boolean const &boolean) const noexcept
-      -> Location {
-    return boolean.location;
+public:
+  virtual ~Ast() noexcept = default;
+
+  void setPrevAst(Ast *prev_ast) const noexcept {
+    MINT_ASSERT(prev_ast != nullptr);
+    m_prev_ast = prev_ast;
+  }
+  void setCachedType(type::Ptr type) const noexcept {
+    MINT_ASSERT(type != nullptr);
+    m_cached_type = type;
   }
 
-  constexpr auto operator()(Ast::Value::Integer const &integer) const noexcept
-      -> Location {
-    return integer.location;
+  [[nodiscard]] auto cachedType() const noexcept { return m_cached_type; }
+  [[nodiscard]] auto cachedTypeOrAssert() const noexcept {
+    MINT_ASSERT(m_cached_type != nullptr);
+    return m_cached_type;
   }
+  [[nodiscard]] auto kind() const noexcept { return m_kind; }
+  [[nodiscard]] auto attributes() const noexcept { return m_attributes; }
+  [[nodiscard]] auto location() const noexcept { return m_location; }
 
-  constexpr auto operator()(Ast::Value::Nil const &nil) const noexcept
-      -> Location {
-    return nil.location;
-  }
+  [[nodiscard]] virtual Ptr clone(Environment &env) const noexcept = 0;
+  virtual void print(std::ostream &out) const noexcept = 0;
+
+  // #NOTE: walk up the Ast, iff we find an definition,
+  // then return the definitions name.
+  // if we reach the top the return std::nullopt.
+  // #NOTE: use-before-def relies in part on there being
+  // no way of constructing an Ast which holds a
+  // definition within another definition, by the
+  // grammar.
+  // #TODO: this isn't a name I am totally happy with.
+  [[nodiscard]] virtual std::optional<Identifier>
+  getDefinitionName() const noexcept = 0;
+
+  [[nodiscard]] virtual Result<type::Ptr>
+  typecheck(Environment &env) const noexcept = 0;
+  [[nodiscard]] virtual Result<ast::Ptr>
+  evaluate(Environment &env) noexcept = 0;
+  [[nodiscard]] virtual Result<llvm::Value *>
+  codegen(Environment &env) noexcept = 0;
 };
 
-inline constexpr AstValueLocationVisitor ast_value_location{};
-
-class AstLocationVisitor {
-public:
-  constexpr auto operator()(Ast::Ptr const &ast) const noexcept -> Location {
-    return std::visit(*this, ast->data);
-  }
-
-  constexpr auto operator()(Ast const &ast) const noexcept -> Location {
-    return std::visit(*this, ast.data);
-  }
-
-  constexpr auto operator()(Ast::Let const &let) const noexcept -> Location {
-    return let.location;
-  }
-
-  constexpr auto operator()(Ast::Module const &m) const noexcept -> Location {
-    return m.location;
-  }
-
-  constexpr auto operator()(Ast::Import const &i) const noexcept -> Location {
-    return i.location;
-  }
-
-  constexpr auto operator()(Ast::Binop const &binop) const noexcept
-      -> Location {
-    return binop.location;
-  }
-
-  constexpr auto operator()(Ast::Unop const &unop) const noexcept -> Location {
-    return unop.location;
-  }
-
-  constexpr auto operator()(Ast::Term const &term) const noexcept -> Location {
-    return term.location;
-  }
-
-  constexpr auto operator()(Ast::Parens const &parens) const noexcept
-      -> Location {
-    return parens.location;
-  }
-
-  constexpr auto operator()(Ast::Variable const &variable) const noexcept
-      -> Location {
-    return variable.location;
-  }
-
-  constexpr auto operator()(Ast::Value const &value) const noexcept
-      -> Location {
-    return ast_value_location(value);
-  }
-};
-
-inline constexpr AstLocationVisitor ast_location{};
+inline auto operator<<(std::ostream &out, ast::Ptr const &ast) noexcept
+    -> std::ostream & {
+  ast->print(out);
+  return out;
+}
+} // namespace ast
 } // namespace mint

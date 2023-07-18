@@ -17,24 +17,27 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "utility/Assert.hpp"
-#include "utility/FatalError.hpp"
-#include "utility/OptionsParser.hpp"
-
 #include "adt/Environment.hpp"
+#include "utility/CommandLineOptions.hpp"
+
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/InitLLVM.h"
+#include "llvm/Support/TargetSelect.h"
 
 auto main(int argc, char **argv) -> int {
-  try {
-    mint::OptionsParser options_parser{argc, argv};
+  llvm::InitLLVM llvm{argc, argv};
+  llvm::cl::SetVersionPrinter(mint::printVersion);
+  llvm::cl::ParseCommandLineOptions(argc, argv);
 
-    options_parser.parse();
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmParser();
+  llvm::InitializeNativeTargetAsmPrinter();
+  llvm::InitializeNativeTargetDisassembler();
 
-    std::pmr::polymorphic_allocator<> alloc = std::pmr::new_delete_resource();
+  mint::Environment env = mint::Environment::create();
 
-    mint::Environment env(alloc);
-
+  if (mint::input_filename.empty())
     return env.repl();
-  } catch (const std::exception &e) {
-    mint::fatalError(e.what());
-  }
+  else
+    return env.compile(mint::input_filename.c_str());
 }

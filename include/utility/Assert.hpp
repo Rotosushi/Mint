@@ -17,20 +17,21 @@
 #pragma once
 
 #if defined(__clang__) || defined(__GNUC__)
-#  define MINT_HALT() __builtin_trap()
+#  define MINT_BREAKPOINT() __builtin_trap()
 #elif defined(__MSC_VER__)
 #  include <intrin.h>
-#  define MINT_HALT() __debugbreak()
+#  define MINT_BREAKPOINT() __debugbreak()
 #else
 #  include <cstdlib>
-#  define MINT_HALT() std::abort()
+#  define MINT_BREAKPOINT() std::abort()
 #endif
 
 #if !defined(NDEBUG)
 #  include "utility/Log.hpp" // mint::log
 #  include <iostream>        // std::cerr
 #  define MINT_ASSERT(condition)                                               \
-    (condition) ? (1) : (mint::log(std::cerr, #condition), (MINT_HALT(), 1))
+    (condition) ? (1)                                                          \
+                : (mint::log(std::cerr, #condition), (MINT_BREAKPOINT(), 0))
 #else
 #  define MINT_ASSERT(condition)
 #endif

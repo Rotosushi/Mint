@@ -1,0 +1,226 @@
+// Copyright (C) 2023 Cade Weinberg
+// 
+// This file is part of Mint.
+// 
+// Mint is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Mint is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+
+this is simply a listing of all of the current features available in the langauge,
+in the form of code snippets that must compile and have some given meaning.
+
+
+/* the basics */
+
+// values
+
+nil; : Nil => nil 
+
+1024; : Integer => 1024
+
+true; : Boolean => true
+
+
+// operators 
+
+1 + 1; : Integer => 2 
+// more arithmentic [- * / %]
+1 == 0; : Boolean => false 
+// more comparisons [!= < <= >= >]
+
+
+//let bindings and variable references:
+
+let a = 1; : Nil => nil
+a; : Integer => 1
+// any value with concrete type can be bound [nil, true, false, etc]
+
+let b = a; : Nil => nil 
+b; : Integer => 1 
+
+// reordering let bindings does not change their meaning
+let c = d; : Nil => nil 
+let d = 1; : Nil => nil 
+c; : Integer => 1;
+d; : Integer => 1;
+
+// you cannot use an undefined name in an expression.
+let e = f; : Nil => nil 
+e; => Error::NameUnboundInScope 
+let f = 5; : Nil => nil 
+e; : Integer => 5
+f; : Integer => 5
+
+// let expressions can be declared public or private 
+private let g = 10; : Nil => nil 
+public let h = 20; : Nil => nil 
+
+// let expressions may have an explicit type annotation 
+let i : Integer = 1; : Nil => nil
+i; : Integer => 1
+let j : Boolean = 1; => Error::LetTypeMismatch
+
+// modules and namespaces 
+
+// - modules define a new namespace 
+// - variables in that namespace can be accessed by prefixing 
+//   the namespace name to the variable.
+// - the global namespace can be specified with "::" prefix 
+// - definitions within the namespace are by default private,
+// - variable lookup only considers the current namespace.
+//   except when the global namespace is specified.
+
+module A {
+  public let a = 1;
+  public let b = 2;
+  let c = 3;
+  private let d = 4;
+}
+
+A::a; : Integer => 1
+A::b; : Integer => 2;
+A::a + A::b; : Integer => 3
+A::c; => Error::NameIsPrivateInScope
+A::d; => Error::NameIsPrivateInScope
+
+// modules can span multiple syntactic blocks 
+
+module A {
+  public let a = 1;
+}
+
+module A {
+  public let b = 2;
+}
+
+A::a; : Integer => 1
+A::b; : Integer => 2
+
+// modules can be nested 
+
+module A {
+  public let a = 1;
+  module B {
+    public let a = 2;
+  }
+}
+
+A::a; : Integer => 1
+A::B::a; : Integer => 2
+
+// let bindings within a module can be reordered without changing their meaning 
+module A {
+  public let a = b;
+  public let b = 1;
+}
+
+-or- 
+
+module A {
+  public let b = 1;
+  public let a = b;
+}
+
+
+A::a; : Integer => 1
+A::b; : Integer => 1
+
+
+module B {
+  public let a = b;
+}
+
+module B {
+  public let b = 2;
+}
+
+-or- 
+
+module B {
+  public let b = 2;
+}
+
+module B {
+  public let a = b;
+}
+
+B::a; : Integer => 2
+B::b; : Integer => 2
+
+
+module C {
+  public let a = D::b;
+  module D {
+    public let b = 3;
+  }
+}
+
+-or-
+
+module C {
+  module D {
+    public let b = 3;
+  }
+  public let a = D::b;
+}
+
+C::a; : Integer => 3 
+C::D::b; : Integer => 3 
+
+
+module E {
+  public let a = ::F::b;
+}
+
+module F {
+  public let b = 4;
+}
+
+-or-
+
+module F {
+  public let b = 4;
+}
+
+module E {
+  public let a = ::F::b;
+}
+
+E::a; : Integer => 4
+F::b; : Integer => 4
+
+
+public let a = 10;
+
+module G {
+  public let b = a;
+}
+
+module G {
+  public let a = 5;
+}
+
+-or-
+
+module G {
+  public let b = a;
+}
+
+public let a = 10;
+
+module G {
+  public let a = 5;
+}
+
+G::b; : Integer => 5
+G::a; : Integer => 5
+::a; : Integer => 10

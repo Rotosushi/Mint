@@ -21,37 +21,35 @@
 #include <limits>   // std::numeric_limits<T>::digits10
 #include <string>   // std::string
 
-#include "utility/FatalError.hpp"
+#include "utility/Abort.hpp"
 
 namespace mint {
 template <std::integral Integral>
-[[nodiscard]] inline auto StringFromNumber(Integral number) noexcept
-    -> std::string {
+[[nodiscard]] inline auto toString(Integral number) noexcept -> std::string {
   std::array<char, std::numeric_limits<Integral>::digits10 + 1> buffer{};
-  auto [ptr, errc] = std::to_chars(buffer.begin(), buffer.end(), number);
-  if (errc != std::errc{}) {
-    fatalError(std::make_error_code(errc).message());
+  auto [ptr, ec] = std::to_chars(buffer.begin(), buffer.end(), number);
+  if (ec != std::errc{}) {
+    abort(ec);
   }
   return {buffer.begin(), buffer.size()};
 }
 
 template <std::floating_point Floating>
-[[nodiscard]] inline auto StringFromNumber(Floating number) noexcept
-    -> std::string {
+[[nodiscard]] inline auto toString(Floating number) noexcept -> std::string {
   std::array<char, std::numeric_limits<Floating>::max_digits10 + 1> buffer{};
-  auto [ptr, errc] = std::to_chars(buffer.begin(), buffer.end(), number);
-  if (errc != std::errc{}) {
-    fatalError(std::make_error_code(errc).message());
+  auto [ptr, ec] = std::to_chars(buffer.begin(), buffer.end(), number);
+  if (ec != std::errc{}) {
+    abort(ec);
   }
   return {buffer.begin(), buffer.size()};
 }
 
 template <typename Number>
-[[nodiscard]] inline auto StringToNumber(std::string_view string) -> Number {
+[[nodiscard]] inline auto fromString(std::string_view string) -> Number {
   Number number;
-  auto [ptr, errc] = std::from_chars(string.begin(), string.end(), number);
-  if (errc != std::errc{}) {
-    fatalError(std::make_error_code(errc).message());
+  auto [ptr, ec] = std::from_chars(string.begin(), string.end(), number);
+  if (ec != std::errc{}) {
+    abort(ec);
   }
   return number;
 }
