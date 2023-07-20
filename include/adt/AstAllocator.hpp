@@ -25,6 +25,11 @@ namespace mint {
   #TODO: this is a natural place to swap make_unique with allocate_unique.
   as long as we can provide a deleter structure which also references the
   allocator, such that delete works properly.
+
+  #TODO: this strategy is fine for ast's which live for the lifetime of
+  the program. however, when we call a function, we construct new arguments,
+  this will waste memory if we don't clean up these copies. trouble is,
+  how do we do that?
 */
 class AstAllocator {
   std::forward_list<std::unique_ptr<ast::Ast>> m_list;

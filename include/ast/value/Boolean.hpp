@@ -30,6 +30,11 @@ public:
 
   auto value() const noexcept { return m_value; }
 
+  [[nodiscard]] static auto create(Attributes attributes, Location location,
+                                   bool value) noexcept {
+    return std::make_unique<Boolean>(attributes, location, value);
+  }
+
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Boolean;
   }

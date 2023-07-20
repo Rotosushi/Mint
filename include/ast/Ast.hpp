@@ -87,7 +87,7 @@ class Ast;
   from the tree entirely. storing all smart pointers in a separate
   structure, and constructing the tree itself out of raw pointers.
 */
-using Ptr = Ast *;
+using Ptr = std::unique_ptr<Ast>;
 
 class Ast {
 public:
@@ -95,7 +95,7 @@ public:
     // Definitions
     Definition,
     Let,
-    // Function,
+    Function,
     EndDefinition,
 
     // Values
@@ -114,6 +114,7 @@ public:
     // Expression
     Expression,
     Binop,
+    Call,
     Unop,
     Variable,
     EndExpression,

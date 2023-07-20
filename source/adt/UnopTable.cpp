@@ -19,7 +19,7 @@
 #include "utility/Casting.hpp"
 
 namespace mint {
-auto eval_unop_minus(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {
+auto eval_unop_minus(ast::Ast *right, Environment &env) -> Result<ast::Ptr> {
   auto *integer = cast<ast::Integer>(right);
   return env.getIntegerAst({}, {}, -(integer->value()));
 }
@@ -29,7 +29,7 @@ auto codegen_unop_minus(llvm::Value *right, Environment &env)
   return env.createLLVMNeg(right);
 }
 
-auto eval_unop_not(ast::Ptr &right, Environment &env) -> Result<ast::Ptr> {
+auto eval_unop_not(ast::Ast *right, Environment &env) -> Result<ast::Ptr> {
   auto *boolean = cast<ast::Boolean>(right);
   return env.getBooleanAst({}, {}, !(boolean->value()));
 }

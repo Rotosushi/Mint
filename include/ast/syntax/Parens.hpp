@@ -30,6 +30,11 @@ public:
   }
   ~Parens() noexcept override = default;
 
+  [[nodiscard]] static auto create(Attributes attributes, Location location,
+                                   Ptr ast) noexcept {
+    return std::make_unique<Parens>(attributes, location, std::move(ast));
+  }
+
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Parens;
   }

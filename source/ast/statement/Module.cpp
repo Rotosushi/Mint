@@ -44,8 +44,11 @@ Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
 
       // all we need to do to handle use-before-def at this point
       // is attempt to bind this use-before-def term to the map.
-      // binding the same definition to the map
-      if (auto failed = env.bindUseBeforeDef(error, expression)) {
+      // #NOTE: we clone here, because we don't want to leave the
+      // module itself in an undefined state. if we move, then
+      // the next time we iterate we will run into a null unique-ptr
+      // at this definition.
+      if (auto failed = env.bindUseBeforeDef(error, expression->clone(env))) {
         env.unbindScope(m_name);
         env.popScope();
         return failed.value();
@@ -72,7 +75,7 @@ Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {
         return result;
       }
 
-      if (auto failed = env.bindUseBeforeDef(error, expression)) {
+      if (auto failed = env.bindUseBeforeDef(error, expression->clone(env))) {
         env.unbindScope(m_name);
         env.popScope();
         return failed.value();
@@ -98,7 +101,7 @@ Result<llvm::Value *> Module::codegen(Environment &env) noexcept {
         return result;
       }
 
-      if (auto failed = env.bindUseBeforeDef(error, expression)) {
+      if (auto failed = env.bindUseBeforeDef(error, expression->clone(env))) {
         env.unbindScope(m_name);
         env.popScope();
         return failed.value();

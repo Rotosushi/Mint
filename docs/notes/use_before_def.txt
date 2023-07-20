@@ -465,6 +465,32 @@ the qualifications of the name of the variable.
 local lookup may also do the same. allowing for something like a detail 
 namespace to be easily accessed from within the local scope.
 
+so this has a conflict with the idea of a local block of code.
+that is, functions, conditionals, loops, things of that nature.
+namely, any time we open up an anonymous local scope.
+we are prevented from resolving names defined in the scope above.
+if we want to allow the upwards traversal, then we come up against 
+another problem, when we define a use-before-def, we use a specific 
+undef name as the key. the question is do we qualify that key 
+or not? if we qualify it with the scope it appears in, then we are 
+assuming that the undef name is going to be local, meaning it is immaterial 
+if we do upwards resolution or not, the only way to resolve the use-before-def 
+is to define a local name. if we do not qualify the undef name, then 
+similarly we are assuming a global name will resolve the use-before-def,
+and only global names will resolve the conflict.
+to provide the most flexibility we need to allow either a global name 
+or a local name to resolve the conflict. (unless the undef name is 
+specifically globally qualified of course).
+however this means we cannot easily use the standard library map as the 
+use-before-def-map. further complicatig things.
+the issue essentially boils down to the fact that in order for a variable 
+to be used within a block of code appearing within a function body (for instance)
+it needs to be predicated with the function scopes name, yet function scopes 
+are by definition anonymous. meaning that this is impossible. 
+and we cannot easily add names to these scopes, because named scopes are 
+intended to live for long periods of time. whereas function scopes can 
+be cleaned up after evaluation. (which saves on memory)
+
 we could add a 'using' statement to provide aliases for names.
 this would allow convenient naming in a local scope of public 
 names defined in an outer scope.

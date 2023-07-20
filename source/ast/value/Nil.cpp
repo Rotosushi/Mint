@@ -28,9 +28,15 @@ Result<type::Ptr> Nil::typecheck(Environment &env) const noexcept {
   return env.getNilType();
 }
 
-Result<ast::Ptr> Nil::evaluate([[maybe_unused]] Environment &env) noexcept {
-  return this;
-}
+/*
+  #NOTE: we don't need to do anything to evaluate a scalar value,
+  however the type signature forces us to return a ast::Ptr,
+  meaning we have to return a clone of the scalar value.
+  this is not very efficient. a different evaluation strategy
+  might be better suited to interpretation. over evaluating
+  asts directly.
+*/
+Result<ast::Ptr> Nil::evaluate(Environment &env) noexcept { return clone(env); }
 
 Result<llvm::Value *> Nil::codegen(Environment &env) noexcept {
   return env.getLLVMNil();

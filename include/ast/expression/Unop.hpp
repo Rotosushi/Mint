@@ -33,6 +33,11 @@ public:
   }
   ~Unop() noexcept override = default;
 
+  [[nodiscard]] static auto create(Attributes attributes, Location location,
+                                   Token op, Ptr right) {
+    return std::make_unique<Unop>(attributes, location, op, std::move(right));
+  }
+
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Unop;
   }

@@ -14,11 +14,5 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 2
-#define MINT_GIT_REVISION "4127f19e62f4a561b2151ad7829de1d37a0f4f1d"
-#define MINT_DEBUG 1
-// clang-format on
+#include "ast/definition/Function.hpp"
+#include "adt/Environment.hpp"

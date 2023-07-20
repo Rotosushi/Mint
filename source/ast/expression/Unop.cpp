@@ -55,7 +55,7 @@ Result<ast::Ptr> Unop::evaluate(Environment &env) noexcept {
   auto right_result = m_right->evaluate(env);
   if (!right_result)
     return right_result;
-  auto right_value = right_result.value();
+  auto &right_value = right_result.value();
 
   auto instance = overloads->lookup(right_type);
   if (!instance) {
@@ -65,7 +65,7 @@ Result<ast::Ptr> Unop::evaluate(Environment &env) noexcept {
     return {Error::Kind::UnopTypeMismatch, m_right->location(), message.view()};
   }
 
-  return instance->evaluate(right_value, env);
+  return instance->evaluate(right_value.get(), env);
 }
 
 Result<llvm::Value *> Unop::codegen(Environment &env) noexcept {

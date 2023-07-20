@@ -63,7 +63,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
     if (!typecheck_result) {
       auto &error = typecheck_result.error();
       if (error.isUseBeforeDef()) {
-        if (auto failed = env.bindUseBeforeDef(error, ast)) {
+        if (auto failed = env.bindUseBeforeDef(error, std::move(ast))) {
           env.printErrorWithSource(failed.value());
           return {Error::Kind::ImportFailed, location(), m_filename};
         }
@@ -72,7 +72,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
         return {Error::Kind::ImportFailed, location(), m_filename};
       }
 
-      env.addAstToModule(ast);
+      env.addAstToModule(std::move(ast));
       continue;
     }
 
@@ -83,7 +83,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
       return {Error::Kind::ImportFailed, location(), m_filename};
     }
 
-    env.addAstToModule(ast);
+    env.addAstToModule(std::move(ast));
   }
 
   // #NOTE: since we just imported this file into

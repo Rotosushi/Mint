@@ -112,7 +112,7 @@ auto Environment::repl() noexcept -> int {
         continue;
       }
 
-      if (auto failed = bindUseBeforeDef(error, ast)) {
+      if (auto failed = bindUseBeforeDef(error, std::move(ast))) {
         printErrorWithSource(failed.value());
       }
       continue;
@@ -169,7 +169,7 @@ auto Environment::compile(fs::path filename) noexcept -> int {
         return EXIT_FAILURE;
       }
 
-      if (auto failed = bindUseBeforeDef(error, ast)) {
+      if (auto failed = bindUseBeforeDef(error, std::move(ast))) {
         printErrorWithSource(failed.value());
         return EXIT_FAILURE;
       }
@@ -177,7 +177,7 @@ auto Environment::compile(fs::path filename) noexcept -> int {
       // if the error was use-before-def, then this ast is
       // still potentially good, so we still place it into
       // the current module.
-      m_module.push_back(ast);
+      addAstToModule(std::move(ast));
       continue;
     }
 
@@ -189,16 +189,16 @@ auto Environment::compile(fs::path filename) noexcept -> int {
         return EXIT_FAILURE;
       }
 
-      if (auto failed = bindUseBeforeDef(error, ast)) {
+      if (auto failed = bindUseBeforeDef(error, std::move(ast))) {
         printErrorWithSource(failed.value());
         return EXIT_FAILURE;
       }
 
-      m_module.push_back(ast);
+      addAstToModule(std::move(ast));
       continue;
     }
 
-    m_module.push_back(ast);
+    addAstToModule(std::move(ast));
   }
 
   /*
@@ -206,7 +206,7 @@ auto Environment::compile(fs::path filename) noexcept -> int {
     this populates the llvm_module with
     the llvm equivalent of all terms.
   */
-  for (auto ast : m_module) {
+  for (auto &ast : m_module) {
     auto codegen_result = ast->codegen(*this);
     if (!codegen_result) {
       printErrorWithSource(codegen_result.error());
@@ -252,9 +252,8 @@ auto Environment::getQualifiedNameForLLVM(Identifier name) noexcept
   return identifier_set.emplace(std::move(llvm_name));
 }
 
-std::optional<Error>
-Environment::bindUseBeforeDef(const Error &error,
-                              const ast::Ptr &ast) noexcept {
+std::optional<Error> Environment::bindUseBeforeDef(const Error &error,
+                                                   ast::Ptr ast) noexcept {
   auto &use_before_def = error.getUseBeforeDef();
   auto &undef_name = use_before_def.undef;
   auto &def_name = use_before_def.def;
@@ -262,7 +261,7 @@ Environment::bindUseBeforeDef(const Error &error,
   // sanity check that the Ast we are currently processing
   // is a Definition itself. as it only makes sense
   // to bind a Definition in the use-before-def-map
-  auto def_ast = dynCast<ast::Definition>(ast);
+  auto def_ast = dynCast<ast::Definition>(ast.get());
   MINT_ASSERT(def_ast != nullptr);
   // sanity check that the name of the Definition is the same
   // as the name returned by the use-before-def Error.
@@ -274,7 +273,7 @@ Environment::bindUseBeforeDef(const Error &error,
   // own definition, thus they form the trivial loop.
   // however a function definition can.
   // a new type can, but only under certain circumstances.
-  if (auto *let_ast = dynCast<ast::Let>(ast); let_ast != nullptr) {
+  if (auto *let_ast = dynCast<ast::Let>(ast.get()); let_ast != nullptr) {
     if (undef_name == def_name) {
       std::stringstream message;
       message << "Definition [" << ast << "] relies upon itself [" << undef_name
@@ -286,7 +285,7 @@ Environment::bindUseBeforeDef(const Error &error,
   }
   // create an entry within the use-before-def-map for this
   // use-before-def Error
-  bindUseBeforeDef(undef_name, def_name, ast, scope);
+  bindUseBeforeDef(undef_name, def_name, std::move(ast), scope);
   return std::nullopt;
 }
 
@@ -303,7 +302,7 @@ Environment::resolveTypeOfUseBeforeDef(Identifier def) noexcept {
   while (cursor != end) {
     [[maybe_unused]] auto undef = cursor.undef();
     [[maybe_unused]] auto definition = cursor.definition();
-    auto &ast = cursor.ast();
+    auto ast = cursor.ast().get();
     [[maybe_unused]] auto &def_scope = cursor.scope();
     // save the current scope, and enter the scope
     // that the definition appears in
@@ -358,7 +357,8 @@ Environment::resolveTypeOfUseBeforeDef(Identifier def) noexcept {
   if (!stage.empty())
     for (auto &usedef : stage)
       use_before_def_map.insert(std::get<0>(usedef), std::get<1>(usedef),
-                                std::get<2>(usedef), std::get<3>(usedef));
+                                std::move(std::get<2>(usedef)),
+                                std::get<3>(usedef));
 
   return std::nullopt;
 }
@@ -382,7 +382,7 @@ Environment::resolveComptimeValueOfUseBeforeDef(Identifier def) noexcept {
   while (cursor != end) {
     [[maybe_unused]] auto undef = cursor.undef();
     [[maybe_unused]] auto def = cursor.definition();
-    auto &ast = cursor.ast();
+    auto ast = cursor.ast().get();
     [[maybe_unused]] auto def_scope = cursor.scope();
     [[maybe_unused]] auto temp_scope = local_scope;
     local_scope = def_scope;
@@ -444,7 +444,8 @@ Environment::resolveComptimeValueOfUseBeforeDef(Identifier def) noexcept {
   if (!stage.empty()) {
     for (auto &usedef : stage)
       use_before_def_map.insert(std::get<0>(usedef), std::get<1>(usedef),
-                                std::get<2>(usedef), std::get<3>(usedef));
+                                std::move(std::get<2>(usedef)),
+                                std::get<3>(usedef));
   }
 
   return std::nullopt;
@@ -463,7 +464,7 @@ Environment::resolveRuntimeValueOfUseBeforeDef(Identifier def) noexcept {
   while (cursor != end) {
     [[maybe_unused]] auto undef = cursor.undef();
     [[maybe_unused]] auto def = cursor.definition();
-    auto &ast = cursor.ast();
+    auto ast = cursor.ast().get();
     [[maybe_unused]] auto def_scope = cursor.scope();
     [[maybe_unused]] auto temp_scope = local_scope;
     local_scope = def_scope;
@@ -526,7 +527,8 @@ Environment::resolveRuntimeValueOfUseBeforeDef(Identifier def) noexcept {
   if (!stage.empty()) {
     for (auto &usedef : stage)
       use_before_def_map.insert(std::get<0>(usedef), std::get<1>(usedef),
-                                std::get<2>(usedef), std::get<3>(usedef));
+                                std::move(std::get<2>(usedef)),
+                                std::get<3>(usedef));
   }
 
   return std::nullopt;

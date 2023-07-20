@@ -17,7 +17,6 @@
 #pragma once
 #include <optional>
 
-#include "adt/Identifier.hpp"
 #include "ast/definition/Definition.hpp"
 
 namespace mint {
@@ -72,6 +71,13 @@ public:
     m_ast->setPrevAst(this);
   }
   ~Let() noexcept override = default;
+
+  [[nodiscard]] static auto create(Attributes attributes, Location location,
+                                   std::optional<type::Ptr> annotation,
+                                   Identifier name, Ptr ast) {
+    return std::make_unique<Let>(attributes, location, annotation, name,
+                                 std::move(ast));
+  }
 
   static auto classof(Ast const *ast) noexcept -> bool {
     return Ast::Kind::Let == ast->kind();

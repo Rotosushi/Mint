@@ -29,7 +29,12 @@ public:
   ~Integer() noexcept override = default;
 
   auto value() const noexcept { return m_value; }
-  
+
+  [[nodiscard]] static auto create(Attributes attributes, Location location,
+                                   int value) noexcept {
+    return std::make_unique<Integer>(attributes, location, value);
+  }
+
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Integer;
   }

@@ -85,7 +85,7 @@ Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {
   if (!binding.hasComptimeValue())
     return handleUseBeforeDef(env);
 
-  return binding.comptimeValueOrAssert();
+  return binding.comptimeValueOrAssert()->clone(env);
 }
 
 Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {

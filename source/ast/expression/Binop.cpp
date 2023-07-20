@@ -60,13 +60,13 @@ Result<ast::Ptr> Binop::evaluate(Environment &env) noexcept {
   auto left_result = m_left->evaluate(env);
   if (!left_result)
     return left_result;
-  auto left_value = left_result.value();
+  auto &left_value = left_result.value();
   auto left_type = m_left->cachedTypeOrAssert();
 
   auto right_result = m_right->evaluate(env);
   if (!right_result)
     return right_result;
-  auto right_value = right_result.value();
+  auto &right_value = right_result.value();
   auto right_type = m_right->cachedTypeOrAssert();
 
   auto instance = overloads->lookup(left_type, right_type);
@@ -78,7 +78,7 @@ Result<ast::Ptr> Binop::evaluate(Environment &env) noexcept {
     return {Error::Kind::BinopTypeMismatch, location(), message.view()};
   }
 
-  return instance->evaluate(left_value, right_value, env);
+  return instance->evaluate(left_value.get(), right_value.get(), env);
 }
 
 Result<llvm::Value *> Binop::codegen(Environment &env) noexcept {

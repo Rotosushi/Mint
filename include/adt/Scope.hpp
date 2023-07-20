@@ -83,11 +83,14 @@ public:
     [[nodiscard]] auto hasComptimeValue() const noexcept -> bool {
       return comptimeValue().has_value();
     }
-    [[nodiscard]] auto comptimeValueOrAssert() const noexcept -> ast::Ptr {
+    [[nodiscard]] auto comptimeValueOrAssert() const noexcept
+        -> ast::Ptr const & {
       MINT_ASSERT(hasComptimeValue());
       return comptimeValue().value();
     }
-    void setComptimeValue(ast::Ptr ast) noexcept { comptimeValue() = ast; }
+    void setComptimeValue(ast::Ptr ast) noexcept {
+      comptimeValue() = std::move(ast);
+    }
 
     [[nodiscard]] auto runtimeValue() noexcept
         -> std::optional<llvm::Value *> & {
@@ -124,8 +127,8 @@ public:
     if (found) {
       return {Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
     }
-    auto pair = table.try_emplace(
-        key, Value{attributes, type, comptime_value, runtime_value});
+    auto pair = table.try_emplace(key, attributes, type,
+                                  std::move(comptime_value), runtime_value);
     return Binding{pair.first};
   }
 
@@ -292,7 +295,7 @@ public:
 
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
                 ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept {
-    return bindings->bind(name, attributes, type, comptime_value,
+    return bindings->bind(name, attributes, type, std::move(comptime_value),
                           runtime_value);
   }
 

@@ -29,6 +29,11 @@ public:
       : Expression{Ast::Kind::Variable, attributes, location}, m_name{name} {}
   ~Variable() noexcept override = default;
 
+  [[nodiscard]] static auto create(Attributes attributes, Location location,
+                                   Identifier name) {
+    return std::make_unique<Variable>(attributes, location, name);
+  }
+
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Variable;
   }

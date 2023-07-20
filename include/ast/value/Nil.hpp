@@ -26,6 +26,11 @@ public:
       : Value{Ast::Kind::Nil, attributes, location} {}
   ~Nil() noexcept override = default;
 
+  [[nodiscard]] static auto create(Attributes attributes,
+                                   Location location) noexcept {
+    return std::make_unique<Nil>(attributes, location);
+  }
+
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Nil;
   }

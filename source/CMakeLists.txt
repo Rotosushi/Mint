@@ -37,6 +37,8 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/ast/All.hpp 
   ${MINT_INCLUDE_DIR}/ast/Ast.hpp 
   ${MINT_INCLUDE_DIR}/ast/definition/Definition.hpp 
+  ${MINT_INCLUDE_DIR}/ast/definition/Function.hpp 
+  ${MINT_SOURCE_DIR}/ast/definition/Function.cpp 
   ${MINT_INCLUDE_DIR}/ast/definition/Let.hpp
   ${MINT_SOURCE_DIR}/ast/definition/Let.cpp
   ${MINT_INCLUDE_DIR}/ast/expression/Expression.hpp 

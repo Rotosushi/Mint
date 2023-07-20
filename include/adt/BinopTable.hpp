@@ -26,7 +26,7 @@
 namespace mint {
 class Environment;
 
-using BinopEvalFn = Result<ast::Ptr> (*)(ast::Ptr &left, ast::Ptr &right,
+using BinopEvalFn = Result<ast::Ptr> (*)(ast::Ast *left, ast::Ast *right,
                                          Environment &env);
 using BinopCodegenFn = Result<llvm::Value *> (*)(llvm::Value *left,
                                                  llvm::Value *right,
@@ -39,7 +39,7 @@ struct BinopOverload {
   BinopEvalFn eval;
   BinopCodegenFn gen;
 
-  [[nodiscard]] auto evaluate(ast::Ptr &left, ast::Ptr &right,
+  [[nodiscard]] auto evaluate(ast::Ast *left, ast::Ast *right,
                               Environment &env) {
     return eval(left, right, env);
   }

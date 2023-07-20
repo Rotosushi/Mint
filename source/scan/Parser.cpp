@@ -203,7 +203,7 @@ auto Parser::parseTerm() noexcept -> Result<ast::Ptr> {
 
   auto right_loc = location();
   Location term_loc = {left_loc, right_loc};
-  return env->getAffixAst(default_attributes, term_loc, affix);
+  return env->getAffixAst(default_attributes, term_loc, std::move(affix));
 }
 
 auto Parser::parseAffix() noexcept -> Result<ast::Ptr> {
@@ -231,7 +231,7 @@ auto Parser::parseAffix() noexcept -> Result<ast::Ptr> {
 
 auto Parser::precedenceParser(ast::Ptr left, BinopPrecedence prec) noexcept
     -> Result<ast::Ptr> {
-  Result<ast::Ptr> result = left;
+  Result<ast::Ptr> result = std::move(left);
   Location op_loc;
   Token op{Token::Error};
 
@@ -278,7 +278,7 @@ auto Parser::precedenceParser(ast::Ptr left, BinopPrecedence prec) noexcept
       if (!temp)
         return temp;
 
-      right = temp;
+      right = std::move(temp);
     }
 
     auto rhs_loc = right.value()->location();
@@ -353,11 +353,12 @@ auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
     auto right = parseBasic();
     if (!right)
       return right;
+    auto &ast = right.value();
 
     auto rhs_loc = location();
     Location unop_loc{lhs_loc, rhs_loc};
 
-    return env->getUnopAst(default_attributes, unop_loc, op, right.value());
+    return env->getUnopAst(default_attributes, unop_loc, op, std::move(ast));
     break;
   }
 
@@ -367,13 +368,14 @@ auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
     auto affix = parseAffix();
     if (!affix)
       return affix;
+    auto &ast = affix.value();
 
     if (!expect(Token::EndParen)) {
       return handle_error(Error::Kind::ExpectedAClosingParen);
     }
 
     return env->getParensAst(default_attributes, affix.value()->location(),
-                             affix.value());
+                             std::move(ast));
     break;
   }
 

@@ -29,7 +29,7 @@ namespace mint {
   new values being created
 */
 
-auto eval_binop_add(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto eval_binop_add(ast::Ast *left, ast::Ast *right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left);
   auto *right_integer = cast<ast::Integer>(right);
@@ -42,7 +42,7 @@ auto gen_binop_add(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMAdd(left, right);
 }
 
-auto eval_binop_sub(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto eval_binop_sub(ast::Ast *left, ast::Ast *right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left);
   auto *right_integer = cast<ast::Integer>(right);
@@ -55,7 +55,7 @@ auto gen_binop_sub(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMSub(left, right);
 }
 
-auto eval_binop_mult(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto eval_binop_mult(ast::Ast *left, ast::Ast *right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left);
   auto *right_integer = cast<ast::Integer>(right);
@@ -68,7 +68,7 @@ auto gen_binop_mult(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMMul(left, right);
 }
 
-auto eval_binop_div(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto eval_binop_div(ast::Ast *left, ast::Ast *right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left);
   auto *right_integer = cast<ast::Integer>(right);
@@ -81,7 +81,7 @@ auto gen_binop_div(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMSDiv(left, right);
 }
 
-auto eval_binop_mod(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto eval_binop_mod(ast::Ast *left, ast::Ast *right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left);
   auto *right_integer = cast<ast::Integer>(right);
@@ -94,7 +94,7 @@ auto gen_binop_mod(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMSRem(left, right);
 }
 
-auto eval_binop_and(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto eval_binop_and(ast::Ast *left, ast::Ast *right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_boolean = cast<ast::Boolean>(left);
   auto *right_boolean = cast<ast::Boolean>(right);
@@ -107,7 +107,7 @@ auto gen_binop_and(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMAnd(left, right);
 }
 
-auto eval_binop_or(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto eval_binop_or(ast::Ast *left, ast::Ast *right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_boolean = cast<ast::Boolean>(left);
   auto *right_boolean = cast<ast::Boolean>(right);
@@ -120,7 +120,7 @@ auto gen_binop_or(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMOr(left, right);
 }
 
-auto eval_binop_integer_equality(ast::Ptr &left, ast::Ptr &right,
+auto eval_binop_integer_equality(ast::Ast *left, ast::Ast *right,
                                  Environment &env) -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left);
   auto *right_integer = cast<ast::Integer>(right);
@@ -133,7 +133,7 @@ auto gen_binop_integer_equality(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpEQ(left, right);
 }
 
-auto eval_binop_boolean_equality(ast::Ptr &left, ast::Ptr &right,
+auto eval_binop_boolean_equality(ast::Ast *left, ast::Ast *right,
                                  Environment &env) -> Result<ast::Ptr> {
   auto *left_boolean = cast<ast::Boolean>(left);
   auto *right_boolean = cast<ast::Boolean>(right);
@@ -146,7 +146,7 @@ auto gen_binop_boolean_equality(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpEQ(left, right);
 }
 
-auto eval_binop_integer_inequality(ast::Ptr &left, ast::Ptr &right,
+auto eval_binop_integer_inequality(ast::Ast *left, ast::Ast *right,
                                    Environment &env) -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left);
   auto *right_integer = cast<ast::Integer>(right);
@@ -159,7 +159,7 @@ auto gen_binop_integer_inequality(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpNE(left, right);
 }
 
-auto eval_binop_boolean_inequality(ast::Ptr &left, ast::Ptr &right,
+auto eval_binop_boolean_inequality(ast::Ast *left, ast::Ast *right,
                                    Environment &env) -> Result<ast::Ptr> {
   auto *left_boolean = cast<ast::Boolean>(left);
   auto *right_boolean = cast<ast::Boolean>(right);
@@ -172,7 +172,7 @@ auto gen_binop_boolean_inequality(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpNE(left, right);
 }
 
-auto eval_binop_less_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto eval_binop_less_than(ast::Ast *left, ast::Ast *right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left);
   auto *right_integer = cast<ast::Integer>(right);
@@ -185,7 +185,7 @@ auto gen_binop_less_than(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpSLT(left, right);
 }
 
-auto eval_binop_less_than_or_equal(ast::Ptr &left, ast::Ptr &right,
+auto eval_binop_less_than_or_equal(ast::Ast *left, ast::Ast *right,
                                    Environment &env) -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left);
   auto *right_integer = cast<ast::Integer>(right);
@@ -198,7 +198,7 @@ auto gen_binop_less_than_or_equal(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpSLE(left, right);
 }
 
-auto eval_binop_greater_than(ast::Ptr &left, ast::Ptr &right, Environment &env)
+auto eval_binop_greater_than(ast::Ast *left, ast::Ast *right, Environment &env)
     -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left);
   auto *right_integer = cast<ast::Integer>(right);
@@ -211,7 +211,7 @@ auto gen_binop_greater_than(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpSGT(left, right);
 }
 
-auto eval_binop_greater_than_or_equal(ast::Ptr &left, ast::Ptr &right,
+auto eval_binop_greater_than_or_equal(ast::Ast *left, ast::Ast *right,
                                       Environment &env) -> Result<ast::Ptr> {
   auto *left_integer = cast<ast::Integer>(left);
   auto *right_integer = cast<ast::Integer>(right);

@@ -28,8 +28,8 @@ Result<type::Ptr> Integer::typecheck(Environment &env) const noexcept {
   return env.getIntegerType();
 }
 
-Result<ast::Ptr> Integer::evaluate([[maybe_unused]] Environment &env) noexcept {
-  return this;
+Result<ast::Ptr> Integer::evaluate(Environment &env) noexcept {
+  return clone(env);
 }
 
 Result<llvm::Value *> Integer::codegen(Environment &env) noexcept {

@@ -40,6 +40,12 @@ public:
   }
   ~Module() noexcept override = default;
 
+  [[nodiscard]] static auto create(Attributes attributes, Location location,
+                                   Identifier name, Expressions expressions) {
+    return std::make_unique<Module>(attributes, location, name,
+                                    std::move(expressions));
+  }
+
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Module;
   }

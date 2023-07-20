@@ -28,13 +28,8 @@ Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {
   return env.getBooleanType();
 }
 
-// we don't really need to 'evaluate' scalar values.
-// however, we must be able to return a valid scalar
-// value from calling 'evaluate' on a scalar value.
-// since we manage Ast objects by an allocation list,
-// we can simply return this.
-Result<ast::Ptr> Boolean::evaluate([[maybe_unused]] Environment &env) noexcept {
-  return this;
+Result<ast::Ptr> Boolean::evaluate(Environment &env) noexcept {
+  return clone(env);
 }
 
 Result<llvm::Value *> Boolean::codegen(Environment &env) noexcept {

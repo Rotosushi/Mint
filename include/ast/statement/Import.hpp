@@ -30,6 +30,11 @@ public:
         m_filename{std::move(filename)} {}
   ~Import() noexcept override = default;
 
+  [[nodiscard]] static auto create(Attributes attributes, Location location,
+                                   std::string filename) {
+    return std::make_unique<Import>(attributes, location, std::move(filename));
+  }
+
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Import;
   }

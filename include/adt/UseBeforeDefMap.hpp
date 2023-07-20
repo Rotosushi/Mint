@@ -88,7 +88,7 @@ public:
       ++cursor;
     }
 
-    map.emplace(undef, std::make_tuple(definition, ast, scope));
+    map.emplace(undef, std::make_tuple(definition, std::move(ast), scope));
   }
 };
 } // namespace mint

@@ -36,6 +36,12 @@ public:
   }
   ~Binop() noexcept override = default;
 
+  [[nodiscard]] static auto create(Attributes attributes, Location location,
+                                   Token op, Ptr left, Ptr right) {
+    return std::make_unique<Binop>(attributes, location, op, std::move(left),
+                                   std::move(right));
+  }
+
   static auto classof(Ast const *ast) noexcept -> bool {
     return ast->kind() == Ast::Kind::Binop;
   }

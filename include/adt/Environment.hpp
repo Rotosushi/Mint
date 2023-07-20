@@ -23,7 +23,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Target/TargetMachine.h"
 
-#include "adt/AstAllocator.hpp"
+// #include "adt/AstAllocator.hpp"
 #include "adt/BinopTable.hpp"
 #include "adt/DirectorySearch.hpp"
 #include "adt/Identifier.hpp"
@@ -32,6 +32,7 @@
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
+#include "ast/All.hpp"
 #include "scan/Parser.hpp"
 
 namespace mint {
@@ -40,7 +41,7 @@ class Environment {
   ImportSet import_set;
   IdentifierSet identifier_set;
   TypeInterner type_interner;
-  AstAllocator ast_allocator;
+  // AstAllocator ast_allocator;
   BinopTable binop_table;
   UnopTable unop_table;
   UseBeforeDefMap use_before_def_map;
@@ -124,7 +125,7 @@ public:
     }
   }
 
-  void addAstToModule(ast::Ptr ast) noexcept { m_module.push_back(ast); }
+  void addAstToModule(ast::Ptr ast) noexcept { m_module.push_back(std::move(ast)); }
 
   /*
     #NOTE:
@@ -231,7 +232,7 @@ public:
     be type'd because it used a name before that name was defined.
   */
   std::optional<Error> bindUseBeforeDef(const Error &error,
-                                        const ast::Ptr &ast) noexcept;
+                                        ast::Ptr ast) noexcept;
 
   /*
     #NOTE: called when we successfully typecheck a new definition.
@@ -269,8 +270,8 @@ public:
 
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
                 ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept {
-    return local_scope->bindName(name, attributes, type, comptime_value,
-                                 runtime_value);
+    return local_scope->bindName(name, attributes, type,
+                                 std::move(comptime_value), runtime_value);
   }
 
   auto partialBindName(Identifier name, Attributes attributes,
@@ -300,61 +301,60 @@ public:
   auto getLetAst(Attributes attributes, Location location,
                  std::optional<type::Ptr> annotation, Identifier name,
                  ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast_allocator.createLet(attributes, location, annotation, name,
-                                   std::move(ast));
+    return ast::Let::create(attributes, location, annotation, name,
+                            std::move(ast));
   }
 
   auto getNilAst(Attributes attributes, Location location) noexcept
       -> ast::Ptr {
-    return ast_allocator.createNil(attributes, location);
+    return ast::Nil::create(attributes, location);
   }
 
   auto getBooleanAst(Attributes attributes, Location location,
                      bool value) noexcept -> ast::Ptr {
-    return ast_allocator.createBoolean(attributes, location, value);
+    return ast::Boolean::create(attributes, location, value);
   }
 
   auto getIntegerAst(Attributes attributes, Location location,
                      int value) noexcept -> ast::Ptr {
-    return ast_allocator.createInteger(attributes, location, value);
+    return ast::Integer::create(attributes, location, value);
   }
 
   auto getParensAst(Attributes attributes, Location location,
                     ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast_allocator.createParens(attributes, location, std::move(ast));
+    return ast::Parens::create(attributes, location, std::move(ast));
   }
 
   auto getAffixAst(Attributes attributes, Location location,
                    ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast_allocator.createAffix(attributes, location, std::move(ast));
-  }
-
-  auto getBinopAst(Attributes attributes, Location location, Token op,
-                   ast::Ptr left, ast::Ptr right) noexcept -> ast::Ptr {
-    return ast_allocator.createBinop(attributes, location, op, std::move(left),
-                                     std::move(right));
+    return ast::Affix::create(attributes, location, std::move(ast));
   }
 
   auto getImportAst(Attributes attributes, Location location,
                     std::string filename) noexcept -> ast::Ptr {
-    return ast_allocator.createImport(attributes, location,
-                                      std::move(filename));
+    return ast::Import::create(attributes, location, std::move(filename));
   }
 
   auto getModuleAst(Attributes attributes, Location location, Identifier name,
                     ast::Module::Expressions expressions) noexcept -> ast::Ptr {
-    return ast_allocator.createModule(attributes, location, name,
-                                      std::move(expressions));
+    return ast::Module::create(attributes, location, name,
+                               std::move(expressions));
+  }
+
+  auto getBinopAst(Attributes attributes, Location location, Token op,
+                   ast::Ptr left, ast::Ptr right) noexcept -> ast::Ptr {
+    return ast::Binop::create(attributes, location, op, std::move(left),
+                              std::move(right));
   }
 
   auto getUnopAst(Attributes attributes, Location location, Token op,
                   ast::Ptr right) noexcept -> ast::Ptr {
-    return ast_allocator.createUnop(attributes, location, op, std::move(right));
+    return ast::Unop::create(attributes, location, op, std::move(right));
   }
 
   auto getVariableAst(Attributes attributes, Location location,
                       Identifier name) noexcept -> ast::Ptr {
-    return ast_allocator.createVariable(attributes, location, name);
+    return ast::Variable::create(attributes, location, name);
   }
 
   /* LLVM interface */

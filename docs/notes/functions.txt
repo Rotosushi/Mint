@@ -1,0 +1,91 @@
+// Copyright (C) 2023 Cade Weinberg
+// 
+// This file is part of Mint.
+// 
+// Mint is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Mint is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+
+functions interact with all of the peices of the language currently implemented.
+
+they introduce new keywords and parsers.
+
+they are definitions, meaning they interact with use-before-def,
+in addition the current use-before-def solution does not solve mutual dependence 
+between two definitions. (mostly because only functions have this issue)
+
+they are anonymous local scopes meaning they interact with lookup, 
+and other definitions can potentially occur within them.
+
+they are runtime evaluation contexts, (a first for the language so far) 
+meaning they interact with both the comptime/runtime dichotomy and provide 
+a directed graph of basic blocks to place llvm ir instructions. meaning 
+they are going to effect the code generation of both definitions (let) 
+and variables (need to contend with global/local).
+and, once we have functions, they serve as the entry point to the 
+program itself, meaning they allow the program to generate executables.
+instead of just llvm-ir.
+
+theoretically they effect the other expressions (binop, unop), however 
+there is not a way to construct a runtime only variable yet. so there is 
+no way of spelling out an expression which cannot be resolved at comptime. (yet)
+
+they come in two parts: function definitions, and call expressions. 
+further, it might be a good idea to add a third component. Blocks.
+which form both the function body. and anonymous local scopes themselves.
+
+definitions can only appear at global scope or module scope.
+
+so, the TODO list:
+  - Ast for a Function
+    - is a Definition
+  - Ast for a Call 
+    - is a Expression
+  - parse a Function Ast 
+  - parse a Call Ast 
+  - typecheck a Function
+    - the type of a function is the type of it's arguments to the 
+      type of it's body. Within a new type, FunctionType
+      - zero or more arguments are allowed
+    - if the function is use-before-def, and mutually relies on another
+      use-before-def function, (the functions call eachother), then the 
+      type of the given function can only be resolved iff one (or both) function 
+      has a filled type annotation.
+  - typecheck a Call
+    - the type of a call is the return type of the function being 
+      called, iff the argument types match in number, order, and type.
+  - evaluate a Function
+    - defines the function in the current scope 
+    - if this function is a mutual use-before-def, then we have to resolve 
+      the value of the function in the local scope somehow.
+      that is, we have to bind the definition to the function Ast, so it 
+      can be called later. however when we call evaluate on the function 
+      body, it is going to create a use-before-def error.
+  - evaluate a Call
+    - resolve the variable to a function ast, and then apply the arguments 
+      to a new local scope, before evaluating the body of of the function 
+      under that local scope, returning the result of evaluation as the 
+      result of the call expression.
+  - codegen a Function
+    - generate a llvm function within the module, then generate that 
+      functions basic block tree and generate the body of the function 
+      within that basic block tree.
+    - let defines a local variable inside a function 
+      or a global variable outside a function 
+    - variable creates a load instruction inside a function 
+      or accesses the global constant outside a function
+  - codegen a Call
+    - generate the code for the arguments, then
+      generate a llvm function call to the llvm function the variable is 
+      bound to, passing in the arguments.
+    - we can only generate the runtime code for a call expression within 
+      an evaluation context.

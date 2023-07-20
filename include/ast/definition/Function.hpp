@@ -15,10 +15,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 2
-#define MINT_GIT_REVISION "4127f19e62f4a561b2151ad7829de1d37a0f4f1d"
-#define MINT_DEBUG 1
-// clang-format on
+#include <vector>
+
+#include "ast/definition/Definition.hpp"
+
+namespace mint {
+namespace ast {
+/*
+class Function : public Definition {
+public:
+using Argument = std::pair<Identifier, type::Ptr>;
+using Arguments = std::vector<Argument>;
+
+private:
+Arguments m_arguments;
+Ptr m_body;
+
+public:
+Function(Attributes attributes, Location location,
+         std::optional<type::Ptr> annotation, Identifier name,
+         Arguments arguments, Ptr body) noexcept
+    : Definition{Ast::Kind::Function, attributes, location, annotation, name},
+      m_arguments{std::move(arguments)}, m_body{std::move(body)} {
+  m_body->setPrevAst(this);
+}
+};
+*/
+} // namespace ast
+} // namespace mint
