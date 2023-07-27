@@ -22,20 +22,9 @@
 
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
+#include "adt/UseBeforeDefMap.hpp"
 #include "ast/Ast.hpp"
 #include "error/Result.hpp"
-/*
-  #TODO:
-    ) implement a field in bindings to
-      allow for public/private visibility.
-    ) refactor lookup to return Result<T>
-      and construct errors within lookup,
-      such that we can distinguish between
-      lookup failing due to visibility vs
-      name existance.
-    ) lookup can only return a private variable
-      from it's local scope.
-*/
 
 namespace mint {
 /* Bindings are a map from Identifiers to (Attributes, Type::Pointer,
@@ -129,7 +118,7 @@ public:
     }
     auto pair = table.try_emplace(key, attributes, type,
                                   std::move(comptime_value), runtime_value);
-    return Binding{pair.first};
+    return {Binding{pair.first}};
   }
 
   auto partialBind(Key key, Attributes attributes, type::Ptr type) noexcept
@@ -139,7 +128,7 @@ public:
 
     auto pair = table.try_emplace(
         key, Value{attributes, type, std::nullopt, std::nullopt});
-    return Binding{pair.first};
+    return {Binding{pair.first}};
   }
 
   [[nodiscard]] auto lookup(Key key) noexcept -> Result<Binding> {
@@ -190,6 +179,8 @@ private:
 
 public:
   [[nodiscard]] auto empty() const noexcept -> bool { return table.empty(); }
+  [[nodiscard]] auto begin() noexcept { return table.begin(); }
+  [[nodiscard]] auto end() noexcept { return table.end(); }
 
   auto emplace(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
       -> Entry;
@@ -204,38 +195,39 @@ public:
   [[nodiscard]] auto lookup(Identifier name) noexcept -> Result<Entry> {
     auto found = table.find(name);
     if (found == table.end()) {
-      return Error{Error::Kind::NameUnboundInScope, Location{}, name.view()};
+      return {Error{Error::Kind::NameUnboundInScope, Location{}, name.view()}};
     }
-    return Entry{found};
+    return {Entry{found}};
   }
 };
 
 class Scope : public std::enable_shared_from_this<Scope> {
 private:
-  std::optional<Identifier> name;
-  std::weak_ptr<Scope> prev_scope;
-  std::weak_ptr<Scope> global;
-  std::unique_ptr<Bindings> bindings;
-  std::unique_ptr<ScopeTable> scopes;
+  std::optional<Identifier> m_name;
+  std::weak_ptr<Scope> m_prev_scope;
+  std::weak_ptr<Scope> m_global;
+  std::unique_ptr<Bindings> m_bindings;
+  std::unique_ptr<ScopeTable> m_scopes;
+  UseBeforeDefMap m_use_before_def_map;
 
 public:
   Scope() noexcept
-      : bindings(std::make_unique<Bindings>()),
-        scopes(std::make_unique<ScopeTable>()) {}
+      : m_bindings(std::make_unique<Bindings>()),
+        m_scopes(std::make_unique<ScopeTable>()) {}
   Scope(std::optional<Identifier> name,
         std::weak_ptr<Scope> prev_scope) noexcept
-      : name(name), prev_scope(prev_scope),
-        bindings(std::make_unique<Bindings>()),
-        scopes(std::make_unique<ScopeTable>()) {
+      : m_name(name), m_prev_scope(prev_scope),
+        m_bindings(std::make_unique<Bindings>()),
+        m_scopes(std::make_unique<ScopeTable>()) {
     auto ptr = prev_scope.lock();
-    global = ptr->global;
+    m_global = ptr->m_global;
   }
   Scope(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
-      : name(std::move(name)), prev_scope(prev_scope),
-        bindings(std::make_unique<Bindings>()),
-        scopes(std::make_unique<ScopeTable>()) {
+      : m_name(std::move(name)), m_prev_scope(prev_scope),
+        m_bindings(std::make_unique<Bindings>()),
+        m_scopes(std::make_unique<ScopeTable>()) {
     auto ptr = prev_scope.lock();
-    global = ptr->global;
+    m_global = ptr->m_global;
   }
 
   friend class ScopeTable;
@@ -246,10 +238,27 @@ private:
   [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept
       -> Result<Bindings::Binding>;
 
-  [[nodiscard]] auto getQualifiedNameImpl(Identifier name) noexcept
-      -> Identifier;
+  [[nodiscard]] auto lookupUseBeforeDefAtLocalScope(Identifier undef,
+                                                    Identifier q_undef) noexcept
+      -> std::vector<UseBeforeDefMap::Range>;
+  [[nodiscard]] auto
+  lookupUseBeforeDefAboveLocalScope(Identifier q_undef,
+                                    Identifier local_scope_name) noexcept
+      -> std::vector<UseBeforeDefMap::Range>;
+  [[nodiscard]] auto
+  lookupUseBeforeDefBelowLocalScope(Identifier undef,
+                                    Identifier q_undef) noexcept
+      -> std::vector<UseBeforeDefMap::Range>;
+  [[nodiscard]] auto lookupLocalUseBeforeDef(Identifier name) noexcept
+      -> std::optional<UseBeforeDefMap::Range> {
+    auto result = m_use_before_def_map.lookup(name);
+    if (result.begin() == result.end())
+      return std::nullopt;
+    else
+      return result;
+  }
 
-  void setGlobal(std::weak_ptr<Scope> scope) noexcept { global = scope; }
+  void setGlobal(std::weak_ptr<Scope> scope) noexcept { m_global = scope; }
 
 public:
   [[nodiscard]] static auto createGlobalScope() -> std::shared_ptr<Scope> {
@@ -265,57 +274,95 @@ public:
   }
 
   [[nodiscard]] auto isGlobal() const noexcept -> bool {
-    return prev_scope.expired();
+    return m_prev_scope.expired();
   }
 
   [[nodiscard]] auto getPrevScope() const noexcept -> std::shared_ptr<Scope> {
     // #QUESTION is asserting the precondition the best solution?
     // I like it better than returning a nullptr.
-    MINT_ASSERT(!prev_scope.expired());
-    return prev_scope.lock();
+    MINT_ASSERT(!m_prev_scope.expired());
+    return m_prev_scope.lock();
   }
 
   [[nodiscard]] auto scopeName() const noexcept
       -> std::optional<std::string_view> {
-    return name;
+    return m_name;
   }
 
   [[nodiscard]] auto bindingsEmpty() const noexcept -> bool {
-    return bindings->empty();
+    return m_bindings->empty();
   }
 
   [[nodiscard]] auto scopesEmpty() const noexcept -> bool {
-    return scopes->empty();
+    return m_scopes->empty();
   }
 
-  [[nodiscard]] auto getQualifiedName(Identifier name) noexcept -> Identifier {
-    // auto variable = name.restScope();
-    return getQualifiedNameImpl(name);
-  }
+  /*
+  #NOTE: undef is the name which caused the use-before-def error.
+    definition is the name of the definition which failed to typecheck.
+    that is, undef is the name which needs to be defined for the
+    definition to be able to typecheck. (or at least, make it past this
+    single use-before-def type error.)
+*/
+
+  [[nodiscard]] auto lookupUseBeforeDef(Identifier undef,
+                                        Identifier q_undef) noexcept
+      -> std::vector<UseBeforeDefMap::Range>;
+
+  /*
+  #NOTE: called when we just encountered a term that could not
+  be type'd because it used a name before that name was defined.
+
+  Binds the use-before-def error to the ast within the local
+  use-before-def map.
+*/
+  [[nodiscard]] std::optional<Error> bindUseBeforeDef(const Error &error,
+                                                      ast::Ptr ast) noexcept;
+
+  /*
+    #NOTE: called when we successfully typecheck a new definition.
+    creates partial bindings for any definitions that are in the
+    use-before-def-map relying on the given definition.
+  */
+  [[nodiscard]] std::optional<Error>
+  resolveTypeOfUseBeforeDef(Identifier def, Environment &env) noexcept;
+
+  /*
+  #NOTE: called when we successfully evaluate a new definition.
+  creates full bindings for any definition that is in the
+  use-before-def map relying on the given definition.
+*/
+  [[nodiscard]] std::optional<Error>
+  resolveComptimeValueOfUseBeforeDef(Identifier def, Environment &env) noexcept;
+
+  [[nodiscard]] std::optional<Error>
+  resolveRuntimeValueOfUseBeforeDef(Identifier def, Environment &env) noexcept;
+
+  [[nodiscard]] auto getQualifiedName(Identifier name) noexcept -> Identifier;
 
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
                 ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept {
-    return bindings->bind(name, attributes, type, std::move(comptime_value),
-                          runtime_value);
+    return m_bindings->bind(name, attributes, type, std::move(comptime_value),
+                            runtime_value);
   }
 
   auto partialBindName(Identifier name, Attributes attributes,
                        type::Ptr type) noexcept {
-    return bindings->partialBind(name, attributes, type);
+    return m_bindings->partialBind(name, attributes, type);
   }
 
   auto bindScope(Identifier name) {
-    return scopes->emplace(name, weak_from_this());
+    return m_scopes->emplace(name, weak_from_this());
   }
 
-  void unbindScope(Identifier name) { return scopes->unbind(name); }
+  void unbindScope(Identifier name) { return m_scopes->unbind(name); }
 
   [[nodiscard]] auto lookupScope(Identifier name) noexcept {
-    return scopes->lookup(name);
+    return m_scopes->lookup(name);
   }
 
   [[nodiscard]] auto lookupLocal(Identifier name) noexcept {
-    return bindings->lookup(name);
+    return m_bindings->lookup(name);
   }
 
   /*
@@ -339,27 +386,9 @@ public:
     "a0::a1::...::aN::x"
     "a0,a1,...,aN" are all considered scopes,
     "x" is considered a variable local to scope "aN"
-
-    #NOTE: to make order independant definitions possible,
-    traversing up the scope tree must be done explicitly
-    the by programmer.
-    this means that lookup only needs to resolve names
-    within the local scope or lower, unless the name
-    given explicitly asks to be resolved from global scope.
   */
   [[nodiscard]] auto lookup(Identifier name) noexcept
-      -> Result<Bindings::Binding> {
-    if (name.isGloballyQualified()) {
-      auto global_scope = global.lock();
-      return global_scope->qualifiedLookup(name.restScope());
-    }
-
-    if (!name.isScoped()) {
-      return lookupLocal(name);
-    }
-
-    return qualifiedLookup(name);
-  }
+      -> Result<Bindings::Binding>;
 };
 
 } // namespace mint

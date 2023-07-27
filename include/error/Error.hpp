@@ -22,7 +22,7 @@
 #include <system_error>
 #include <variant>
 
-#include "adt/Identifier.hpp"
+#include "adt/UseBeforeDefNames.hpp"
 #include "scan/Location.hpp"
 
 namespace mint {
@@ -35,8 +35,7 @@ public:
   };
 
   struct UseBeforeDef {
-    Identifier def;
-    Identifier undef;
+    UseBeforeDefNames names;
     std::shared_ptr<Scope> scope;
   };
 
@@ -95,10 +94,9 @@ public:
   Error(Kind kind, Location location, std::string_view message) noexcept
       : m_kind(kind),
         m_data(std::in_place_type<Default>, location, std::string(message)) {}
-  Error(Kind kind, Identifier def, Identifier undef,
+  Error(Kind kind, UseBeforeDefNames names,
         std::shared_ptr<Scope> scope) noexcept
-      : m_kind(kind),
-        m_data(std::in_place_type<UseBeforeDef>, def, undef, scope) {}
+      : m_kind(kind), m_data(std::in_place_type<UseBeforeDef>, names, scope) {}
   Error(UseBeforeDef const &usedef) noexcept
       : m_kind(Kind::UseBeforeDef), m_data(usedef) {}
 

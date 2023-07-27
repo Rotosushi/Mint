@@ -34,7 +34,8 @@ Result<type::Ptr> Nil::typecheck(Environment &env) const noexcept {
   meaning we have to return a clone of the scalar value.
   this is not very efficient. a different evaluation strategy
   might be better suited to interpretation. over evaluating
-  asts directly.
+  asts directly. because it is unessesary to clone here, 
+  theoretically speaking.
 */
 Result<ast::Ptr> Nil::evaluate(Environment &env) noexcept { return clone(env); }
 

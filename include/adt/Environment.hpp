@@ -31,7 +31,7 @@
 #include "adt/Scope.hpp"
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
-#include "adt/UseBeforeDefMap.hpp"
+// #include "adt/UseBeforeDefMap.hpp"
 #include "ast/All.hpp"
 #include "scan/Parser.hpp"
 
@@ -44,12 +44,12 @@ class Environment {
   // AstAllocator ast_allocator;
   BinopTable binop_table;
   UnopTable unop_table;
-  UseBeforeDefMap use_before_def_map;
-  // #NOTE: since we only have std::weak_ptrs
-  // back up the tree of scopes, we must hold
-  // a shared_ptr to the top of the tree.
-  // so when we traverse to a new scope,
-  // all of the scopes stay alive.
+  // UseBeforeDefMap use_before_def_map;
+  //  #NOTE: since we only have std::weak_ptrs
+  //  back up the tree of scopes, we must hold
+  //  a shared_ptr to the top of the tree.
+  //  so when we traverse to a new scope,
+  //  all of the scopes stay alive.
   std::shared_ptr<Scope> global_scope;
   std::shared_ptr<Scope> local_scope;
   Parser parser;
@@ -70,7 +70,7 @@ class Environment {
               std::unique_ptr<llvm::Module> llvm_module,
               std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder,
               llvm::TargetMachine *llvm_target_machine) noexcept
-      : identifier_set(), binop_table(), unop_table(), use_before_def_map(),
+      : identifier_set(), binop_table(), unop_table(),
         global_scope(Scope::createGlobalScope()), local_scope(global_scope),
         parser(this, in), in(in), out(out), errout(errout),
         llvm_context(std::move(llvm_context)),
@@ -125,7 +125,9 @@ public:
     }
   }
 
-  void addAstToModule(ast::Ptr ast) noexcept { m_module.push_back(std::move(ast)); }
+  void addAstToModule(ast::Ptr ast) noexcept {
+    m_module.push_back(std::move(ast));
+  }
 
   /*
     #NOTE:
@@ -179,7 +181,14 @@ public:
     return EXIT_SUCCESS;
   }
 
-  auto localScope() noexcept -> std::shared_ptr<Scope> { return local_scope; }
+  auto localScope() noexcept { return local_scope; }
+
+  auto exchangeLocalScope(std::shared_ptr<Scope> scope) noexcept
+      -> std::shared_ptr<Scope> {
+    auto old_local = local_scope;
+    local_scope = scope;
+    return old_local;
+  }
 
   /*
     intended to be called when processing an Ast::Function,
@@ -227,47 +236,6 @@ public:
     local_scope = local_scope->getPrevScope();
   }
 
-  /*
-    #NOTE: called when we just encountered a term that could not
-    be type'd because it used a name before that name was defined.
-  */
-  std::optional<Error> bindUseBeforeDef(const Error &error,
-                                        ast::Ptr ast) noexcept;
-
-  /*
-    #NOTE: called when we successfully typecheck a new definition.
-    creates partial bindings for any definitions that are in the
-    use-before-def-map relying on the given definition.
-  */
-  std::optional<Error> resolveTypeOfUseBeforeDef(Identifier def) noexcept;
-
-  /*
-  #NOTE: called when we successfully evaluate a new definition.
-  creates full bindings for any definition that is in the
-  use-before-def map relying on the given definition.
-*/
-  std::optional<Error>
-  resolveComptimeValueOfUseBeforeDef(Identifier def) noexcept;
-
-  std::optional<Error>
-  resolveRuntimeValueOfUseBeforeDef(Identifier def) noexcept;
-
-  /*
-    #NOTE: undef is the name which caused the use-before-def error.
-      definition is the name of the definition which failed to typecheck.
-      that is, undef is the name which needs to be defined for the
-      definition to be able to typecheck. (or at least, make it past this
-      single use-before-def type error.)
-  */
-  void bindUseBeforeDef(Identifier undef, Identifier definition, ast::Ptr ast,
-                        std::shared_ptr<Scope> scope) noexcept {
-    use_before_def_map.insert(undef, definition, std::move(ast), scope);
-  }
-  [[nodiscard]] auto lookupUseBeforeDef(Identifier undef) noexcept
-      -> UseBeforeDefMap::Range {
-    return use_before_def_map.lookup(undef);
-  }
-
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
                 ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept {
     return local_scope->bindName(name, attributes, type,
@@ -285,6 +253,23 @@ public:
   auto getQualifiedName(Identifier name) noexcept {
     return local_scope->getQualifiedName(name);
   }
+
+  auto bindUseBeforeDef(Error const &error, ast::Ptr ast) noexcept {
+    return local_scope->bindUseBeforeDef(error, std::move(ast));
+  }
+
+  auto resolveTypeOfUseBeforeDef(Identifier def) noexcept {
+    return local_scope->resolveTypeOfUseBeforeDef(def, *this);
+  }
+
+  auto resolveComptimeValueOfUseBeforeDef(Identifier def) noexcept {
+    return local_scope->resolveComptimeValueOfUseBeforeDef(def, *this);
+  }
+
+  auto resolveRuntimeValueOfUseBeforeDef(Identifier def) noexcept {
+    return local_scope->resolveRuntimeValueOfUseBeforeDef(def, *this);
+  }
+
   /* https://llvm.org/docs/LangRef.html#identifiers */
   auto getQualifiedNameForLLVM(Identifier name) noexcept -> Identifier;
 

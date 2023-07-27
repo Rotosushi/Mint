@@ -15,10 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 2
-#define MINT_GIT_REVISION "12d52bfeb54c3562913d3a8815d824addc3ebe6f"
-#define MINT_DEBUG 1
-// clang-format on
+#include "adt/Identifier.hpp"
+
+namespace mint {
+  struct UseBeforeDefNames {
+  Identifier def;
+  Identifier qualified_def;
+  Identifier undef;
+  Identifier qualified_undef;
+};
+} // namespace mint

@@ -40,20 +40,27 @@ auto Variable::handleUseBeforeDef(Environment &env) const noexcept -> Error {
     return {Error::Kind::NameUnboundInScope, location(), m_name.view()};
   }
 
-  auto def = env.getQualifiedName(found.value());
-  // #NOTE: if the undef name is globally qualified, we
-  // assume the programmer specified the correct name of
-  // the use-before-def. otherwise we assume that the
-  // undef name refers to a binding that is going to be
-  // created within the scope local to this definition.
-  auto undef =
-      m_name.isGloballyQualified() ? m_name : env.getQualifiedName(m_name);
+  auto def = found.value();
+  auto q_def = env.getQualifiedName(found.value());
 
-  // does it work to call bindUseBeforeDef here instead of when we
-  // ignore the UseBeforeDef Error during the loop?
-  // not easily, we need a shared_ptr to the definition, which
-  // requires walking up the Ast to the top.
-  return Error{Error::Kind::UseBeforeDef, def, undef, env.localScope()};
+  // #NOTE: if the undef name is qualified, we
+  // assume the programmer specified the correct name of
+  // the use-before-def. meaning that the definition which
+  // resolves this use-before-def must have a qualified name
+  // which matches.
+  // if the name is unqualified then we only want names which
+  // when looked up from this local scope could be found by
+  // unqualified lookup. that is a locally qualified name, or
+  // an above scope qualified name.
+  auto [undef, q_undef] = [&]() {
+    if (m_name.isQualified()) {
+      return std::make_pair(m_name.variable(), m_name);
+    }
+    return std::make_pair(m_name, env.getQualifiedName(m_name));
+  }();
+
+  return Error{Error::Kind::UseBeforeDef,
+               UseBeforeDefNames{def, q_def, undef, q_undef}, env.localScope()};
 }
 
 /*

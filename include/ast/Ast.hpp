@@ -33,59 +33,14 @@ namespace ast {
 class Ast;
 
 /*
-  what are the advantages of
-  using Ptr = std::unique_ptr<Ast>;
-  instead?
+  #NOTE: we are using unique_ptr because it forces the
+  interpreter to clean up unused memory as soon as possible.
+  avoiding an issue with disconnecting storage of the ast with
+  the structure of the ast itself.
 
-  overall the differences are minimal,
-  so I am unable to say one is a better
-  choice as of right now.
-
-  either way we need and want a clone method.
-  (with unique_ptr it is necessary in all cases
-  that the data within a given Ast is needed across
-  multiple Ast's, with shared_ptr it is not necessary
-  in all cases, but still needed in specific circumstances.
-  such as declaring a new variable with the same value as
-  another existing variable. a circumstance where we could
-  avoid a clone is reference semantics within
-  the interpreter, as two shared_ptrs could literally
-  refer to the same value allocation.
-  however, just as easily we can simply construct a
-  reference ast::Value which points to another value
-  and store that in a unique_ptr. so again, the
-  differences between these two are minimal)
-
-  unique_ptr is strict about enforcing move semantics,
-  which is more efficient from a speed perspective,
-  and with no control block it is more efficient from
-  a memory perspective. additionally, there is no need
-  for atomic instructions, which are another potential
-  speed bottleneck. However this implementation of the
-  language is not intended to be the fastest (yet).
-  as currently the goal is correctness, and new features.
-
-  either way, data synchronization is manual.
-  (atomic increment only synchronizes the
-  sharing itself accross threads, not access to
-  the stored data.)
-
-  I'd say that the biggest advantage shared_ptr has
-  as of right now during development is that it has
-  copy-semantics. which makes implementing an interpreter
-  with shared_ptrs slightly easier to get right.
-  but I could also argue that enforced move semantics
-  would force the implementation to be aware
-  of what part of the interpreter owns what, and that
-  could be more efficient.
-  the issue there is that the goal is currently
-  correctness and not performance.
-  so shared_ptr is what we are going with for the
-  forseeable future.
-
-  #NOTE(7/15/23): it might be best to disconnect the allocation
-  from the tree entirely. storing all smart pointers in a separate
-  structure, and constructing the tree itself out of raw pointers.
+  and we use unique_ptr because it enforces move semantics.
+  explicitly calling out the places where clones are necessary.
+  something that shared_ptr hides.
 */
 using Ptr = std::unique_ptr<Ast>;
 

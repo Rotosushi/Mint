@@ -147,6 +147,12 @@ module B {
   let c = a;
 }
 
+module A {
+  let a = 1;
+}
+
+let a = 2;
+
 ...
 
 as both A::b and B::c would be stored within the use-before-def 
@@ -155,9 +161,7 @@ when we resolve "a"?
 
 but what if we then saw 
 
-module A {
-  let a = 1;
-}
+
 
 do both A::b and B::c resolve at this point?
 well, no, only A::b should be resolved, because 
@@ -453,43 +457,125 @@ module A {
  => A::a = 2
 
 do we want order independant definitions?
-yes.
-
-i think that means we never automatically traverse up a scope when 
-resolving a name. 
-
-instead, a programmer can type ::x to start lookup from global scope,
-and then we resolve names by walking down the scope tree, directed by 
-the qualifications of the name of the variable.
-
-local lookup may also do the same. allowing for something like a detail 
-namespace to be easily accessed from within the local scope.
+yes. but, we are just going to have to accept this 
+quirk if we want anonymous local scopes to work.
+that is, functions, conditionals, loops, etc.
 
 so this has a conflict with the idea of a local block of code.
 that is, functions, conditionals, loops, things of that nature.
 namely, any time we open up an anonymous local scope.
 we are prevented from resolving names defined in the scope above.
 if we want to allow the upwards traversal, then we come up against 
-another problem, when we define a use-before-def, we use a specific 
-undef name as the key. the question is do we qualify that key 
-or not? if we qualify it with the scope it appears in, then we are 
-assuming that the undef name is going to be local, meaning it is immaterial 
-if we do upwards resolution or not, the only way to resolve the use-before-def 
-is to define a local name. if we do not qualify the undef name, then 
-similarly we are assuming a global name will resolve the use-before-def,
-and only global names will resolve the conflict.
+another problem. stemming from when we define a use-before-def we 
+must use a specific undef name as the key. 
+the question is do we qualify that key or not? 
+- if we qualify it with the scope it appears in, then we are 
+  assuming that the undef name is going to be local, meaning it is immaterial 
+  if we do upwards resolution or not, the only way to resolve the use-before-def 
+  is to define a local name. 
+
+- if we do not qualify the undef name, then 
+  similarly we are assuming a global name will resolve the use-before-def,
+  and only global names will resolve the conflict.
+
 to provide the most flexibility we need to allow either a global name 
 or a local name to resolve the conflict. (unless the undef name is 
-specifically globally qualified of course).
+specifically globally qualified of course, or I suppose if it is 
+namespace qualified, we also do not want to qualify it,
+this implies to me that working with an unqualified name might be 
+easier).
+
 however this means we cannot easily use the standard library map as the 
-use-before-def-map. further complicatig things.
-the issue essentially boils down to the fact that in order for a variable 
-to be used within a block of code appearing within a function body (for instance)
-it needs to be predicated with the function scopes name, yet function scopes 
-are by definition anonymous. meaning that this is impossible. 
-and we cannot easily add names to these scopes, because named scopes are 
-intended to live for long periods of time. whereas function scopes can 
-be cleaned up after evaluation. (which saves on memory)
+use-before-def-map, because it requires a single name as the key,
+further complicatig things.
+
+if we bind to the unqualified undef name, then how does a local definition (which 
+defines a qualified name) ever resolve the use-before-def?
+
+well, we could lookup twice? that is, when we define a new name we lookup 
+it's qualified name in the map, resolve those use-before-defs, then lookup 
+it's unqualified name and resolve those use-before-defs. 
+does this do anything weird?
+
+not for case 0 or 1.
+however, consider this:
+
+module A {
+  public let a = b;
+}
+
+module B {
+  public let b = 1;
+}
+
+let b = 2;
+
+if we resolve use-before-defs relying on unqualified "b" when we define "B::b"
+then A::a will resolve to 1, despite the fact that a namespace qualifier is 
+normally needed in order to resolve B::b.
+
+when we encounter an unqualified undef name, we only want names 
+defined in that scope or higher to resolve the name. that is we only want 
+A::b or ::b to resolve A::a. and not B::b or any other modules definition of b.
+however, since we store the qualified undef name, only A::b will currently 
+resolve A::a.
+
+in order to have ::b resolve a definition in the map relying on A::b, we 
+would need to either add the qualification to ::b (makes little if any sense)
+or remove the qualification from A::b.
+if we choose to store the definition under the unqualified undef name,
+then we naturally allow ::b to resolve A::b, however, now we have the 
+reverse problem, where A::b does not resolve A::a.
+in this situation we can have A::b resolve A::a only if we add a qualification 
+to the undef name b, or we can remove the qualification of the definition 
+A::b. 
+this is just how we get the map lookup to resolve to the definition.
+what we really want however, is to allow for either A::b or ::b to resolve 
+A::a. whichever comes first. 
+
+what if we never qualified any names. and instead we stored the use-before-def-map 
+within the scope itself. then, whenever a name was defined in a given scope,
+that definition was used to resolve the use-before-defs in the local ubd map 
+and each subscopes ubd map.
+in this way, when b was defined at global scope, it would be used to resolve 
+"A::a" relying on b within the scope A. 
+well, how would this work with the ability of the programmer to specify 
+a qualified name? if the programmer specifies a qualified name, then 
+resolution needs to use the qualified name. but that would mean that 
+when a name was defined in a module, the name resolutiion would need to 
+walk up a scope, and resolve any names relying on the qualified name.
+
+unless the undef name is explicitly qualified that is. then we assume that the 
+programmer knows which name that they want the definition to resolve to.
+
+so, to resolve a use-before-def, in steps:
+0) some local definition of x fails to typecheck with a use-before-def error.
+    relying on the definition of y
+1) we bind the definition of x in the local use-before-def map under the name y.
+  this is along with the locally qualified and unqualified names of x, and the 
+  locally qualified and unqualified names of y. 
+then later:
+2) y is typechecked, and thus we start trying to resolve any use-before-defs 
+  in the local scope depending on y. 
+ 2a) iff x was in the local scope, then it's type is resolved here,
+  allowing us to repeat step 2 with x now that we know it's type.
+3) attempt to resolve any use-before-def defs in scopes lower than the local 
+  scope relying on the def of y. 
+  3a) if anything is resolved repeat from step 2 starting from that scope
+  this step is meant to resolve use-before-def names which would be resolved 
+  by normal lookup if the definitions appeared in another order.
+  in this situation, the current definition would be matched by lookup of 
+  unqualified y, or qualified y.
+  i.e. a name in a lower scope defined relative to a name in a higher scope.
+4) attempt to resolve any use-before-def defs in scopes higher than the local 
+  scope relying on the def of y.
+    this step is meant to resolve use-before-def names which would be resolved 
+    by explicit name qualification if the definitions appeared in another order.
+  4a) if anything is resolved repeat from step 2 starting from that scope 
+  in this situation, the only way that lookup would resolve the current local 
+  def would be in the outer scope qualified the name.
+
+
 
 we could add a 'using' statement to provide aliases for names.
 this would allow convenient naming in a local scope of public 
@@ -536,4 +622,297 @@ what if we change partial resolve to not remove the binding, and instead
 only remove the use-before-def binding when we fully resolve the use-before-def.
 well, this means that we need to not add the binding back again when 
 it fails to evaluate, but only if it's a use before def?
+
+------------------------------------------------------------------------------
+
+0)
+let y = x;
+let x = 10;
+
+def y
+q_def ::y
+undef x
+q_undef ::x
+
+resolves when ::x is defined, at this point we find the 
+use-before-def in the local map, which happens to be the 
+global map as well. this means it works to 
+bind and lookup by the unqualified name.
+
+x => 10 
+y => 10
+
+
+
+
+1)
+module A {
+  let a = b;
+  let b = 1;
+}
+
+def a
+q_def ::A::a
+undef b
+q_undef A::b
+
+resolves when A::b is defined. 
+at that point we find the ubd in the local map. this 
+means it works to bind and lookup by the unqualified name.
+we can resolve this exactly the same if we start the search 
+from global scope.
+
+a => 1 
+b => 1
+
+
+
+2)
+module A {
+  let a = B::b;
+}
+
+module B {
+  let b = 1;
+}
+
+def a
+q_def ::A::a
+undef B::b
+q_undef B::b
+
+resolves when B::b is defined
+at that point we have to fail to find a ubd in the 
+local map of B, traverse up to global scope, fail to find 
+a ubd for B::b in the global scope map, and traverse down to 
+the scope A 
+(#NOTE: given no information that we need to do so,
+implying we need to do full search of the scope tree to resolve 
+all potential ubds) 
+and there find the ubd, A::a relying on B::b
+in this situation we have to search for the qualified name B::b to 
+match the ubd in the map of A. 
+(#QUESTION: how do we resolve based on the qualified name, only sometimes?
+well, note that this case is different in that the undef name itself 
+is qualified. maybe that can serve as the indicator that we match against 
+the qualified name instead of the unqualified name?)
+
+
+
+3)
+module A {
+  let a = b;
+}
+
+let b = 1;
+
+def a
+q_def ::A::a
+undef b
+q_undef A::b
+
+resolves when ::b is defined. 
+at that point we have to fail to find any ubd's in global scope,
+traverse down to the scope A, and search for the unqualified name b 
+to resolve the ubd.
+
+
+4)
+module A {
+  let b = a;
+}
+
+module B {
+  let c = a;
+}
+
+module A {
+  let a = 1;
+}
+
+let a = 2;
+
+resolves A::b when A::a is defined.
+resolves B::c when ::a is defined.
+
+when A::a is defined, we search in local scope for ubds, and 
+find A::b. resolve that. then we go up to global scope find none,
+traverse down to scope B and find B::c. which we don't resolve,
+because this would not resolve under normal order. (how is this done?
+we don't want to resolve it because the undef name is unqualified.)
+
+then when ::a is defined, we search in global scope, find none,
+search in scope A, find none, search in scope B find B::c, resolve it 
+then.
+
+4a)
+module A {
+  let b = a;
+}
+
+module B {
+  let c = a;
+}
+
+let a = 2;
+
+module A {
+  let a = 1;
+}
+
+resolves A::b when ::a is defined,
+resolves B::c when ::a is defined.
+when ::a is defined, the search starts from global scope, finds none,
+then moves to scope A, finds one, resolves it, then moves to scope B,
+finds one, resolves it.
+this is because both of these definitions would resolve to this 
+in normal ordering.
+
+(side note: this concept of normal ordering is incoherent when 
+considering parallel compilation. how does use-before-def work 
+when multiple files are compiled simultaneously? it would seem 
+that each compilier instance would need access to the full definition 
+of everything, implying that each compiler would fully process 
+the entire dependency tree from a given file. implying duplicate work 
+if two files being compiled have the same dependency.)
+
+
+5)
+module A {
+  let a = b;
+}
+
+let b = 1;
+
+module A {
+  let b = 2;
+}
+
+5a)
+module A {
+  let a = b;
+}
+
+module A {
+  let b = 2;
+}
+
+let b = 1;
+
+
+
+
+
+
+
+6)
+module A {
+  let a = B::b;
+
+  module B {
+    let b = 1;
+  }
+}
+
+6a)
+module A {
+  let a = B::b;
+
+  module B {
+    let b = 1;
+  }
+}
+
+module B {
+  let b = 1;
+}
+
+6b)
+module B {
+  let b = 1;
+}
+
+module A {
+  let a = B::b;
+
+  module B {
+    let b = 1;
+  }
+}
+
+6c)
+module A {
+  let a = B::b;
+}
+
+module A {
+  module B {
+    let b = 1;
+  }
+}
+
+
+7)
+module A {
+  let a = A::A::a;
+  let b = A::a;
+  let c = 1;
+  module A {
+    module A {
+      let a = A::a;
+    }
+    let a = c;
+  }
+}
+
+
+algorithm:
+part one:
+when a definition fails to typecheck with a use-before-def error 
+we save that definition in it's local scope's ubd-map.
+the map stores one key, the identifier typed by the programmer 
+which was not yet defined.
+
+part two:
+when a definition succeeds typechecking, we search for any potential 
+ubds within the current scope tree, and attempt to resolve them.
+(ditto for when a definition succeeds evaluation and code-generation.)
+
+the search procceeds starting at local scope.
+we must be careful so we don't search the local scope twice,
+or recurse indefinitely.
+
+the search process should closely match the usual name resolution process.
+as if a given ubd in a given scope is resolving the current definition 
+by normal lookup.
+
+thus, an unqualified ubd can only match the current definition if the ubd 
+appears in the same or a lower scope from the local scope.
+
+and a qualified ubd can only match the current definition by following the 
+path defined by the qualifications given.
+
+we must add qualifications to the current definition when we attempt to resolve 
+ubds in scopes defined above the local scope. because usages of the name occuring 
+in parallel scopes or in children of parallel scopes must be qualified 
+in order to traverse into the local scope.
+whereas usages within lower scopes may or may not use qualifications which 
+will resolve to the local definition.
+
+1) search the local scope for any ubd's which rely on the unqualified name,
+add all results to the list.
+
+2) search any and all lower scopes for any ubds' which rely on the 
+unqualified name. add all results to the list 
+
+3) search any and all higher scopes for any ubds' which rely on the 
+qualified name. add all results to the list. 
+
+4) return the list of results.
+ 
+
+
+
+
+
 

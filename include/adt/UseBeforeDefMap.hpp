@@ -15,80 +15,108 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <map>
+#include <list>
 
-#include "adt/Identifier.hpp"
 #include "adt/Scope.hpp"
+#include "adt/UseBeforeDefNames.hpp"
 #include "ast/Ast.hpp"
 
 namespace mint {
+
 class UseBeforeDefMap {
 public:
-  using Key = Identifier;
-  using Value = std::tuple<Identifier, ast::Ptr, std::shared_ptr<Scope>>;
-  using Pair = std::pair<Key, Value>;
-  using Map = std::multimap<Key, Value>;
+  using Element =
+      std::tuple<UseBeforeDefNames, ast::Ptr, std::shared_ptr<Scope>>;
+  using Elements = std::list<Element>;
 
-  class Entry : public Map::iterator {
+  class iterator : public Elements::iterator {
   public:
-    Entry(Map::iterator iter) noexcept : Map::iterator(iter) {}
+    iterator(Elements::iterator iter) noexcept : Elements::iterator(iter) {}
 
-    auto undef() noexcept -> Identifier { return (*this)->first; }
-    auto definition() noexcept -> Identifier {
-      return std::get<0>((*this)->second);
+    [[nodiscard]] auto names() noexcept -> UseBeforeDefNames & {
+      return std::get<0>(**this);
     }
-    auto ast() noexcept -> ast::Ptr & { return std::get<1>((*this)->second); }
-    auto scope() noexcept -> std::shared_ptr<Scope> & {
-      return std::get<2>((*this)->second);
+    [[nodiscard]] auto undef() noexcept -> Identifier { return names().undef; }
+    [[nodiscard]] auto qualified_undef() noexcept -> Identifier {
+      return names().qualified_undef;
+    }
+    [[nodiscard]] auto def() noexcept -> Identifier { return names().def; }
+    [[nodiscard]] auto qualified_def() noexcept -> Identifier {
+      return names().qualified_def;
+    }
+    [[nodiscard]] auto ast() noexcept -> ast::Ptr & {
+      return std::get<1>(**this);
+    }
+    [[nodiscard]] auto scope() noexcept -> std::shared_ptr<Scope> & {
+      return std::get<2>(**this);
     }
   };
 
   class Range {
-    std::pair<Map::iterator, Map::iterator> range;
+    iterator m_first;
+    iterator m_last;
 
   public:
-    Range(std::pair<Map::iterator, Map::iterator> range) noexcept
-        : range(range) {}
+    Range(iterator first, iterator last) noexcept
+        : m_first(first), m_last(last) {}
 
-    auto pair() noexcept -> std::pair<Map::iterator, Map::iterator> & {
-      return range;
-    }
-    auto begin() noexcept -> Entry { return range.first; }
-    auto end() noexcept -> Entry { return range.second; }
+    [[nodiscard]] auto begin() noexcept { return m_first; }
+    [[nodiscard]] auto end() noexcept { return m_last; }
   };
 
 private:
-  Map map;
+  Elements elements;
 
 public:
   [[nodiscard]] auto lookup(Identifier undef) noexcept -> Range {
-    return map.equal_range(undef);
+    iterator cursor = elements.begin();
+    iterator end = elements.end();
+    while (cursor != end) {
+      if (cursor.undef() == undef) {
+        iterator range_end = cursor;
+        do {
+          ++range_end;
+        } while ((range_end.undef() == undef) && (range_end != end));
+        return {cursor, range_end};
+      }
+
+      ++cursor;
+    }
+    return {end, end};
   }
 
-  void erase(Entry entry) noexcept { map.erase(entry); }
-  void erase(Range range) noexcept { map.erase(range.begin(), range.end()); }
+  void erase(iterator iter) noexcept {
+    if (iter != elements.end())
+      elements.erase(iter);
+  }
+  void erase(Range range) noexcept {
+    elements.erase(range.begin(), range.end());
+  }
 
-  void insert(Identifier undef, Identifier definition, ast::Ptr ast,
+  void insert(UseBeforeDefNames names, ast::Ptr ast,
               std::shared_ptr<Scope> scope) noexcept {
-    // #NOTE:
-    // while multiple definitions can be allowed to rely on
-    // the same undef name, we cannot allow the same definition
-    // to be added to the map twice, depending on the same variable
-    // twice.
-    // and the opposite case (a definition using more than
-    // one name before it is defined) is handled within the
-    // resolve*UseBeforeDef functions.
-    auto range = lookup(undef);
+    // #NOTE: this is considered a local use-before-def,
+    // so we bind it to the unqualified undef name.
+    // #NOTE: we allow multiple definitions to be bound to
+    // the same undef name, however we want to prevent the
+    // same definition being bound in the table under the
+    // same undef name twice.
+    auto range = lookup(names.undef);
     auto cursor = range.begin();
     auto end = range.end();
     while (cursor != end) {
-      if (cursor.definition() == definition)
+      if (cursor.def() == names.def)
         return;
 
       ++cursor;
     }
 
-    map.emplace(undef, std::make_tuple(definition, std::move(ast), scope));
+    // #NOTE that due to the above check, iff we reach here
+    // then cursor points to the end of the equal range of
+    // values stored within the map. thus we can simply
+    // insert there to maintain the equal range.
+    elements.emplace(cursor, names, std::move(ast), scope);
   }
 };
+
 } // namespace mint

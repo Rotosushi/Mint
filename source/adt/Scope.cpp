@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/Scope.hpp"
+#include "adt/Environment.hpp"
+#include "ast/All.hpp"
 
 namespace mint {
 [[nodiscard]] auto ScopeTable::Entry::ptr() const noexcept
@@ -60,6 +62,28 @@ auto ScopeTable::emplace(Identifier name,
   return pair.first;
 }
 
+// #NOTE: walk up to global scope, building up the
+// qualified name as we return to the local scope.
+[[nodiscard]] auto Scope::getQualifiedName(Identifier name) noexcept
+    -> Identifier {
+  if (isGlobal()) {
+    auto qualified = name.prependScope(name.globalNamespace());
+    return qualified;
+  }
+
+  Identifier base = [&]() {
+    if (this->m_name.has_value()) {
+      return name.prependScope(this->m_name.value());
+    } else {
+      return name;
+    }
+  }();
+
+  // qualify the name with the previous scope
+  auto prev = m_prev_scope.lock();
+  return prev->getQualifiedName(base);
+}
+
 /*
   lookup scope "a0" from name of the form "a0::...::aN::x"
 */
@@ -69,7 +93,7 @@ auto ScopeTable::emplace(Identifier name,
     "a0::...::aN::x" -> "a0"
   */
   auto first = name.firstScope();
-  auto found = scopes->lookup(first);
+  auto found = m_scopes->lookup(first);
   if (!found) {
     return {std::move(found.error())};
   }
@@ -87,13 +111,13 @@ auto ScopeTable::emplace(Identifier name,
 [[nodiscard]] auto Scope::qualifiedLookup(Identifier name) noexcept
     -> Result<Bindings::Binding> {
   // if name is of the form "x"
-  if (!name.isScoped()) {
+  if (!name.isQualified()) {
     // lookup "x" in current scope
-    auto found = bindings->lookup(name);
+    auto found = m_bindings->lookup(name);
     if (found) {
       if (found.value().isPrivate()) {
-        return Error{Error::Kind::NameIsPrivateInScope, Location{},
-                     name.view()};
+        return {
+            Error{Error::Kind::NameIsPrivateInScope, Location{}, name.view()}};
       }
 
       return found;
@@ -107,26 +131,423 @@ auto ScopeTable::emplace(Identifier name,
   return qualifiedScopeLookup(name);
 }
 
-// #NOTE: walk up to global scope, building up the
-// qualified name as we return to the local scope.
-[[nodiscard]] auto Scope::getQualifiedNameImpl(Identifier name) noexcept
-    -> Identifier {
-  if (isGlobal()) {
-    auto qualified = name.prependScope(name.globalNamespace());
-    return qualified;
+auto Scope::lookup(Identifier name) noexcept -> Result<Bindings::Binding> {
+  if (name.isGloballyQualified()) {
+    auto global_scope = m_global.lock();
+    return global_scope->qualifiedLookup(name.restScope());
   }
 
-  Identifier base = [&]() {
-    if (this->name.has_value()) {
-      return name.prependScope(this->name.value());
-    } else {
-      return name;
-    }
-  }();
+  auto found_locally =
+      name.isQualified() ? qualifiedLookup(name) : lookupLocal(name);
+  // if we found the name return the binding
+  if (found_locally)
+    return found_locally;
+  // if we cannot search a higher scope return
+  // the name unfound error.
+  if (isGlobal())
+    return found_locally;
+  // search the higher scope for the name.
+  auto scope = m_prev_scope.lock();
+  return scope->qualifiedLookup(name);
+}
 
-  // qualify the name with the previous scope
-  auto prev = prev_scope.lock();
-  return prev->getQualifiedNameImpl(base);
+[[nodiscard]] auto
+Scope::lookupUseBeforeDefAtLocalScope(Identifier undef,
+                                      Identifier q_undef) noexcept
+    -> std::vector<UseBeforeDefMap::Range> {
+  std::vector<UseBeforeDefMap::Range> results;
+  // search the local scope for ubds
+  {
+    auto result = lookupLocalUseBeforeDef(undef);
+    if (result)
+      results.push_back(result.value());
+  }
+  {
+    auto result = lookupLocalUseBeforeDef(q_undef);
+    if (result)
+      results.push_back(result.value());
+  }
+
+  // search the lower scopes for ubds
+  for (auto &pair : *m_scopes) {
+    auto &scope = pair.second;
+    auto result = scope->lookupUseBeforeDefBelowLocalScope(undef, q_undef);
+    if (!result.empty())
+      results.insert(results.end(), result.begin(), result.end());
+  }
+
+  // search the higher scopes for ubds
+  if (!isGlobal()) {
+    MINT_ASSERT(m_name.has_value());
+    auto local_scope_name = m_name.value();
+    auto scope = m_prev_scope.lock();
+    auto result =
+        scope->lookupUseBeforeDefAboveLocalScope(q_undef, local_scope_name);
+    if (!result.empty())
+      results.insert(results.end(), result.begin(), result.end());
+  }
+
+  return results;
+}
+
+[[nodiscard]] auto
+Scope::lookupUseBeforeDefAboveLocalScope(Identifier q_undef,
+                                         Identifier local_scope_name) noexcept
+    -> std::vector<UseBeforeDefMap::Range> {
+  std::vector<UseBeforeDefMap::Range> results;
+  // only search for qualified ubds. as that is the only
+  // way to traverse into the scope local to the definition
+  // and use it
+  auto result = lookupLocalUseBeforeDef(q_undef);
+  if (result)
+    results.push_back(result.value());
+
+  for (auto &pair : *m_scopes) {
+    auto &scope = pair.second;
+    auto &scope_name = pair.first;
+    // don't traverse back into the local scope
+    // #TODO: if a parallel scope has within it a
+    // scope with the same name as the original local
+    // scope, this check will naively filter results
+    // from that scope. thus, we only need this check
+    // in the scope immediately proceeding the local
+    // scope.
+    if (scope_name != local_scope_name) {
+      auto result =
+          scope->lookupUseBeforeDefAboveLocalScope(q_undef, local_scope_name);
+      if (!result.empty())
+        results.insert(results.end(), result.begin(), result.end());
+    }
+  }
+
+  if (!isGlobal()) {
+    // we don't want to recurse back down into the current
+    // scope when we traverse upwards within this algorithm.
+    MINT_ASSERT(m_name.has_value());
+    auto current_scope_name = m_name.value();
+    auto scope = m_prev_scope.lock();
+    auto result =
+        scope->lookupUseBeforeDefAboveLocalScope(q_undef, current_scope_name);
+    if (!result.empty())
+      results.insert(results.end(), result.begin(), result.end());
+  }
+  return results;
+}
+
+[[nodiscard]] auto
+Scope::lookupUseBeforeDefBelowLocalScope(Identifier undef,
+                                         Identifier q_undef) noexcept
+    -> std::vector<UseBeforeDefMap::Range> {
+  std::vector<UseBeforeDefMap::Range> results;
+  // search for either qualified or unqualified ubds as
+  // either will allow a lower scope to access the local definition
+  {
+    auto result = lookupLocalUseBeforeDef(undef);
+    if (result)
+      results.push_back(result.value());
+  }
+  {
+    auto result = lookupLocalUseBeforeDef(q_undef);
+    if (result)
+      results.push_back(result.value());
+  }
+
+  // search the lower scopes for any ubds
+  for (auto &pair : *m_scopes) {
+    auto &scope = pair.second;
+    auto result = scope->lookupUseBeforeDefBelowLocalScope(undef, q_undef);
+    if (!result.empty())
+      results.insert(results.end(), result.begin(), result.end());
+  }
+  return results;
+}
+
+/*
+  search the entire scope tree for all ubds which
+  rely on the given name. returning a list of ranges
+  for each range of ubds found which rely on the given
+  name.
+*/
+auto Scope::lookupUseBeforeDef(Identifier undef, Identifier q_undef) noexcept
+    -> std::vector<UseBeforeDefMap::Range> {
+  return lookupUseBeforeDefAtLocalScope(undef, q_undef);
+}
+
+std::optional<Error> Scope::bindUseBeforeDef(const Error &error,
+                                             ast::Ptr ast) noexcept {
+  auto &use_before_def = error.getUseBeforeDef();
+  auto &undef_name = use_before_def.names.undef;
+  auto &def_name = use_before_def.names.def;
+  auto &scope = use_before_def.scope;
+  // sanity check that the Ast we are currently processing
+  // is a Definition itself. as it only makes sense
+  // to bind a Definition in the use-before-def-map
+  auto def_ast = dynCast<ast::Definition>(ast.get());
+  MINT_ASSERT(def_ast != nullptr);
+  // sanity check that the name of the Definition is the same
+  // as the name returned by the use-before-def Error.
+  MINT_ASSERT(def_name == getQualifiedName(def_ast->name()));
+  // sanity check that the use-before-def is not
+  // an unresolvable trivial loop.
+  // #TODO: this check needs to be made more robust moving forward.
+  // let expressions obviously cannot rely upon their
+  // own definition, thus they form the trivial loop.
+  // however a function definition can.
+  // a new type can, but only under certain circumstances.
+  if (auto *let_ast = dynCast<ast::Let>(ast.get()); let_ast != nullptr) {
+    if (undef_name == def_name) {
+      std::stringstream message;
+      message << "Definition [" << ast << "] relies upon itself [" << undef_name
+              << "]";
+      return Error{Error::Kind::TypeCannotBeResolved, ast->location(),
+                   message.view()};
+    }
+  }
+  // create an entry within the use-before-def-map for this
+  // use-before-def Error
+  m_use_before_def_map.insert(use_before_def.names, std::move(ast), scope);
+  return std::nullopt;
+}
+
+std::optional<Error>
+Scope::resolveTypeOfUseBeforeDef(Identifier def, Environment &env) noexcept {
+  std::vector<std::tuple<UseBeforeDefNames, ast::Ptr, std::shared_ptr<Scope>>>
+      stage;
+  std::vector<UseBeforeDefMap::iterator> old_entries;
+
+  auto range = lookupUseBeforeDef(def);
+  auto cursor = range.begin();
+  auto end = range.end();
+  while (cursor != end) {
+    [[maybe_unused]] auto undef = cursor.undef();
+    [[maybe_unused]] auto definition = cursor.def();
+    auto ast = cursor.ast().get();
+    [[maybe_unused]] auto &def_scope = cursor.scope();
+    // save the current scope, and enter the scope
+    // that the definition appears in
+    auto old_local = env.exchangeLocalScope(def_scope);
+    // sanity check that the Ast we are currently processing
+    // is a Definition itself. as it only makes sense
+    // to bind a Definition in the use-before-def-map
+    auto def_ast = cast<ast::Definition>(ast);
+    // since we are attempting to resolve this UseBeforeDef
+    // we clear the current UseBeforeDef error during the
+    // attempt.
+    def_ast->clearUseBeforeDef();
+    //  #NOTE:
+    //  create the partial binding if we can now
+    //  typecheck this definition after def was
+    //  partially defined.
+    auto typecheck_result = ast->typecheck(env);
+
+    if (!typecheck_result) {
+      auto &error = typecheck_result.error();
+      if (!error.isUseBeforeDef()) {
+        env.exchangeLocalScope(old_local); // restore scope
+        return error;
+      }
+      // since the ast failed to typecheck due to another
+      // use-before-def we want to handle that here.
+      auto &usedef = error.getUseBeforeDef();
+      // sanity check that this undef name is not
+      // the same as the original undef name
+      MINT_ASSERT(usedef.names.undef != undef);
+
+      // stage the use-before-def to be inserted into the map.
+      // (so we are not inserting as we are iterating)
+      stage.emplace_back(usedef.names, ast, usedef.scope);
+      // since this entry in the use-before-def map failed
+      // with another use-before-def error, it's entry in the
+      // map is out of date, thus we need to remove it.
+      old_entries.emplace_back(cursor);
+    }
+
+    env.exchangeLocalScope(old_local); // restore scope
+    ++cursor;
+  }
+
+  // remove any out of date entries in the map
+  if (!old_entries.empty())
+    for (auto &entry : old_entries)
+      m_use_before_def_map.erase(entry);
+  // reinsert any definitions which failed to type
+  // because of another use-before-def
+  if (!stage.empty())
+    for (auto &usedef : stage)
+      m_use_before_def_map.insert(std::get<0>(usedef),
+                                  std::move(std::get<1>(usedef)),
+                                  std::get<2>(usedef));
+
+  return std::nullopt;
+}
+
+/*
+  called when a new name is defined.
+  any use-before-def definitions that rely
+  upon the name that was just defined are
+  attempted to be resolved here.
+*/
+std::optional<Error>
+Scope::resolveComptimeValueOfUseBeforeDef(Identifier def,
+                                          Environment &env) noexcept {
+  std::vector<std::tuple<UseBeforeDefNames, ast::Ptr, std::shared_ptr<Scope>>>
+      stage;
+  std::vector<UseBeforeDefMap::iterator> old_entries;
+
+  auto range = lookupUseBeforeDef(def);
+  auto cursor = range.begin();
+  auto end = range.end();
+  while (cursor != end) {
+    [[maybe_unused]] auto undef = cursor.undef();
+    [[maybe_unused]] auto def = cursor.def();
+    auto ast = cursor.ast().get();
+    [[maybe_unused]] auto def_scope = cursor.scope();
+    auto old_local = env.exchangeLocalScope(def_scope);
+    // sanity check that the Ast we are currently processing
+    // is a Definition itself. as it only makes sense
+    // to bind a Definition in the use-before-def-map
+    auto def_ast = cast<ast::Definition>(ast);
+    // since we are attempting to resolve this UseBeforeDef
+    // we clear the current UseBeforeDef error during the
+    // attempt.
+    def_ast->clearUseBeforeDef();
+
+    /*
+      when we resolve a use before def, we are now in a situation
+      where we have already created a partial binding of the
+      use before def term to it's type. via resolveTypeOfUseBeforeDef.
+      thus we have already typechecked the term being fully resolved.
+      thus all that is needed is to fully resolve the definition.
+    */
+    // sanity check that we have already called typecheck on
+    // this ast and it succeeded.
+    [[maybe_unused]] auto type = ast->cachedTypeOrAssert();
+
+    // create the full binding. resolving the use-before-def
+    auto evaluate_result = ast->evaluate(env);
+    if (!evaluate_result) {
+      auto &error = evaluate_result.error();
+      if (!error.isUseBeforeDef()) {
+        env.exchangeLocalScope(old_local);
+        return error;
+      }
+      // since the ast failed to typecheck due to another
+      // use-before-def we want to handle that here.
+      auto &usedef = error.getUseBeforeDef();
+      // sanity check that this undef name is not
+      // the same as the original undef name
+      MINT_ASSERT(usedef.names.undef != undef);
+
+      // stage the use-before-def to be inserted into the map.
+      // (so we are not inserting as we are iterating)
+      stage.emplace_back(usedef.names, ast, usedef.scope);
+      // since this entry in the use-before-def map failed
+      // with another use-before-def error, it's entry in the
+      // map is out of date, thus we need to remove it.
+      old_entries.emplace_back(cursor);
+    }
+
+    env.exchangeLocalScope(old_local);
+    ++cursor;
+  }
+
+  // remove the old use before defs
+  if (!old_entries.empty())
+    for (auto &entry : old_entries)
+      m_use_before_def_map.erase(entry);
+
+  // reinsert any definitions which failed to type
+  // because of another use-before-def
+  if (!stage.empty()) {
+    for (auto &usedef : stage)
+      m_use_before_def_map.insert(std::get<0>(usedef),
+                                  std::move(std::get<1>(usedef)),
+                                  std::get<2>(usedef));
+  }
+
+  return std::nullopt;
+}
+
+std::optional<Error>
+Scope::resolveRuntimeValueOfUseBeforeDef(Identifier def,
+                                         Environment &env) noexcept {
+  std::vector<std::tuple<UseBeforeDefNames, ast::Ptr, std::shared_ptr<Scope>>>
+      stage;
+  std::vector<UseBeforeDefMap::iterator> old_entries;
+
+  auto range = lookupUseBeforeDef(def);
+  auto cursor = range.begin();
+  auto end = range.end();
+  while (cursor != end) {
+    [[maybe_unused]] auto undef = cursor.undef();
+    [[maybe_unused]] auto def = cursor.def();
+    auto ast = cursor.ast().get();
+    [[maybe_unused]] auto def_scope = cursor.scope();
+    auto old_local = env.exchangeLocalScope(def_scope);
+    // sanity check that the Ast we are currently processing
+    // is a Definition itself. as it only makes sense
+    // to bind a Definition in the use-before-def-map
+    auto def_ast = cast<ast::Definition>(ast);
+    // since we are attempting to resolve this UseBeforeDef
+    // we clear the current UseBeforeDef error during the
+    // attempt.
+    def_ast->clearUseBeforeDef();
+
+    /*
+      when we resolve a use before def, we are now in a situation
+      where we have already created a partial binding of the
+      use before def term to it's type. via resolveTypeOfUseBeforeDef.
+      thus we have already typechecked the term being fully resolved.
+      thus all that is needed is to fully resolve the definition.
+    */
+    // sanity check that we have already called typecheck on
+    // this ast and it succeeded.
+    [[maybe_unused]] auto type = ast->cachedTypeOrAssert();
+
+    // create the full binding. resolving the use-before-def
+    auto codegen_result = ast->codegen(env);
+    if (!codegen_result) {
+      auto &error = codegen_result.error();
+      if (!error.isUseBeforeDef()) {
+        env.exchangeLocalScope(old_local);
+        return error;
+      }
+      // since the ast failed to typecheck due to another
+      // use-before-def we want to handle that here.
+      auto &usedef = error.getUseBeforeDef();
+      // sanity check that this undef name is not
+      // the same as the original undef name
+      MINT_ASSERT(usedef.names.undef != undef);
+
+      // stage the use-before-def to be inserted into the map.
+      // (so we are not inserting as we are iterating)
+      stage.emplace_back(usedef.names, ast, usedef.scope);
+      // since this entry in the use-before-def map failed
+      // with another use-before-def error, it's entry in the
+      // map is out of date, thus we need to remove it.
+      old_entries.emplace_back(cursor);
+    }
+
+    env.exchangeLocalScope(old_local);
+    ++cursor;
+  }
+
+  // remove the resolved use before defs
+  // #NOTE: once the runtime value has
+  // been resolved, there is nothing more
+  // to resolve for a given binding.
+  m_use_before_def_map.erase(range);
+
+  // reinsert any definitions which failed to type
+  // because of another use-before-def
+  if (!stage.empty()) {
+    for (auto &usedef : stage)
+      m_use_before_def_map.insert(std::get<0>(usedef),
+                                  std::move(std::get<1>(usedef)),
+                                  std::get<2>(usedef));
+  }
+
+  return std::nullopt;
 }
 
 } // namespace mint

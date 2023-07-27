@@ -77,7 +77,7 @@ public:
   "a::x"           -> true
   "a0::...::aN::x" -> true
   */
-  [[nodiscard]] auto isScoped() const noexcept -> bool {
+  [[nodiscard]] auto isQualified() const noexcept -> bool {
     for (auto c : data) {
       if (c == ':')
         return true;
