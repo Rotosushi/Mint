@@ -17,6 +17,7 @@
 #include "adt/Scope.hpp"
 #include "adt/Environment.hpp"
 #include "ast/All.hpp"
+#include "utility/VectorHelpers.hpp"
 
 namespace mint {
 [[nodiscard]] auto ScopeTable::Entry::ptr() const noexcept
@@ -158,12 +159,12 @@ Scope::lookupUseBeforeDefAtLocalScope(Identifier undef,
   std::vector<UseBeforeDefMap::Range> results;
   // search the local scope for ubds
   {
-    auto result = lookupLocalUseBeforeDef(undef);
+    auto result = lookupUseBeforeDefWithinThisScope(undef);
     if (result)
       results.push_back(result.value());
   }
   {
-    auto result = lookupLocalUseBeforeDef(q_undef);
+    auto result = lookupUseBeforeDefWithinThisScope(q_undef);
     if (result)
       results.push_back(result.value());
   }
@@ -173,7 +174,7 @@ Scope::lookupUseBeforeDefAtLocalScope(Identifier undef,
     auto &scope = pair.second;
     auto result = scope->lookupUseBeforeDefBelowLocalScope(undef, q_undef);
     if (!result.empty())
-      results.insert(results.end(), result.begin(), result.end());
+      append(results, result);
   }
 
   // search the higher scopes for ubds
@@ -184,7 +185,7 @@ Scope::lookupUseBeforeDefAtLocalScope(Identifier undef,
     auto result =
         scope->lookupUseBeforeDefAboveLocalScope(q_undef, local_scope_name);
     if (!result.empty())
-      results.insert(results.end(), result.begin(), result.end());
+      append(results, result);
   }
 
   return results;
@@ -192,31 +193,27 @@ Scope::lookupUseBeforeDefAtLocalScope(Identifier undef,
 
 [[nodiscard]] auto
 Scope::lookupUseBeforeDefAboveLocalScope(Identifier q_undef,
-                                         Identifier local_scope_name) noexcept
+                                         Identifier prev_scope_name) noexcept
     -> std::vector<UseBeforeDefMap::Range> {
   std::vector<UseBeforeDefMap::Range> results;
   // only search for qualified ubds. as that is the only
   // way to traverse into the scope local to the definition
   // and use it
-  auto result = lookupLocalUseBeforeDef(q_undef);
+
+  // search in the current scope
+  auto result = lookupUseBeforeDefWithinThisScope(q_undef);
   if (result)
     results.push_back(result.value());
 
+  // search in each scope within this scope
   for (auto &pair : *m_scopes) {
     auto &scope = pair.second;
     auto &scope_name = pair.first;
-    // don't traverse back into the local scope
-    // #TODO: if a parallel scope has within it a
-    // scope with the same name as the original local
-    // scope, this check will naively filter results
-    // from that scope. thus, we only need this check
-    // in the scope immediately proceeding the local
-    // scope.
-    if (scope_name != local_scope_name) {
-      auto result =
-          scope->lookupUseBeforeDefAboveLocalScope(q_undef, local_scope_name);
+    // don't traverse back into the scope we just came from
+    if (scope_name != prev_scope_name) {
+      auto result = scope->lookupUseBeforeDefAtParallelScope(q_undef);
       if (!result.empty())
-        results.insert(results.end(), result.begin(), result.end());
+        append(results, result);
     }
   }
 
@@ -229,8 +226,36 @@ Scope::lookupUseBeforeDefAboveLocalScope(Identifier q_undef,
     auto result =
         scope->lookupUseBeforeDefAboveLocalScope(q_undef, current_scope_name);
     if (!result.empty())
-      results.insert(results.end(), result.begin(), result.end());
+      append(results, result);
   }
+  return results;
+}
+
+[[nodiscard]] auto
+Scope::lookupUseBeforeDefAtParallelScope(Identifier q_undef) noexcept
+    -> std::vector<UseBeforeDefMap::Range> {
+  std::vector<UseBeforeDefMap::Range> results;
+  // we are looking within a scope which is sitting to the side of
+  // the scope of the definition we are resolving ubds reliant upon.
+  // thus, any names defined within this scope must use the
+  // qualified name to resolve the definition, and any scopes defined
+  // within the current scope are local to the current scope.
+
+  // search in the local scope
+  auto result = lookupUseBeforeDefWithinThisScope(q_undef);
+  if (result)
+    results.push_back(result.value());
+
+  // search in any subscopes
+  for (auto &pair : *m_scopes) {
+    auto &scope = pair.second;
+    auto result = scope->lookupUseBeforeDefAtParallelScope(q_undef);
+    if (!result.empty())
+      append(results, result);
+  }
+
+  // we have to have come from the above scope,
+  // so there is no need to search there
   return results;
 }
 
@@ -242,12 +267,12 @@ Scope::lookupUseBeforeDefBelowLocalScope(Identifier undef,
   // search for either qualified or unqualified ubds as
   // either will allow a lower scope to access the local definition
   {
-    auto result = lookupLocalUseBeforeDef(undef);
+    auto result = lookupUseBeforeDefWithinThisScope(undef);
     if (result)
       results.push_back(result.value());
   }
   {
-    auto result = lookupLocalUseBeforeDef(q_undef);
+    auto result = lookupUseBeforeDefWithinThisScope(q_undef);
     if (result)
       results.push_back(result.value());
   }
@@ -257,9 +282,19 @@ Scope::lookupUseBeforeDefBelowLocalScope(Identifier undef,
     auto &scope = pair.second;
     auto result = scope->lookupUseBeforeDefBelowLocalScope(undef, q_undef);
     if (!result.empty())
-      results.insert(results.end(), result.begin(), result.end());
+      append(results, result);
   }
   return results;
+}
+
+[[nodiscard]] auto
+Scope::lookupUseBeforeDefWithinThisScope(Identifier name) noexcept
+    -> std::optional<UseBeforeDefMap::Range> {
+  auto result = m_use_before_def_map.lookup(name);
+  if (result.begin() == result.end())
+    return std::nullopt;
+  else
+    return result;
 }
 
 /*
@@ -310,12 +345,23 @@ std::optional<Error> Scope::bindUseBeforeDef(const Error &error,
 }
 
 std::optional<Error>
-Scope::resolveTypeOfUseBeforeDef(Identifier def, Environment &env) noexcept {
+Scope::resolveTypeOfUseBeforeDef(Identifier def, Identifier q_def,
+                                 Environment &env) noexcept {
+  auto ubds = lookupUseBeforeDef(def, q_def);
+  for (UseBeforeDefMap::Range &range : ubds) {
+    auto result = resolveTypeOfUseBeforeDef(range, env);
+    if (!result)
+      return result;
+  }
+  return std::nullopt;
+}
+
+[[nodiscard]] std::optional<Error>
+Scope::resolveTypeOfUseBeforeDef(UseBeforeDefMap::Range &range,
+                                 Environment &env) noexcept {
   std::vector<std::tuple<UseBeforeDefNames, ast::Ptr, std::shared_ptr<Scope>>>
       stage;
   std::vector<UseBeforeDefMap::iterator> old_entries;
-
-  auto range = lookupUseBeforeDef(def);
   auto cursor = range.begin();
   auto end = range.end();
   while (cursor != end) {
@@ -334,10 +380,10 @@ Scope::resolveTypeOfUseBeforeDef(Identifier def, Environment &env) noexcept {
     // we clear the current UseBeforeDef error during the
     // attempt.
     def_ast->clearUseBeforeDef();
-    //  #NOTE:
-    //  create the partial binding if we can now
-    //  typecheck this definition after def was
-    //  partially defined.
+
+    // attempt to typecheck the definition, in the
+    // current environment. (where the undef name
+    // has just been defined.)
     auto typecheck_result = ast->typecheck(env);
 
     if (!typecheck_result) {
@@ -388,13 +434,24 @@ Scope::resolveTypeOfUseBeforeDef(Identifier def, Environment &env) noexcept {
   attempted to be resolved here.
 */
 std::optional<Error>
-Scope::resolveComptimeValueOfUseBeforeDef(Identifier def,
+Scope::resolveComptimeValueOfUseBeforeDef(Identifier def, Identifier q_def,
+                                          Environment &env) noexcept {
+  auto ubds = lookupUseBeforeDef(def, q_def);
+  for (auto &range : ubds) {
+    auto error = resolveComptimeValueOfUseBeforeDef(range, env);
+    if (error)
+      return error;
+  }
+  return std::nullopt;
+}
+
+[[nodiscard]] std::optional<Error>
+Scope::resolveComptimeValueOfUseBeforeDef(UseBeforeDefMap::Range &range,
                                           Environment &env) noexcept {
   std::vector<std::tuple<UseBeforeDefNames, ast::Ptr, std::shared_ptr<Scope>>>
       stage;
   std::vector<UseBeforeDefMap::iterator> old_entries;
 
-  auto range = lookupUseBeforeDef(def);
   auto cursor = range.begin();
   auto end = range.end();
   while (cursor != end) {
@@ -469,13 +526,24 @@ Scope::resolveComptimeValueOfUseBeforeDef(Identifier def,
 }
 
 std::optional<Error>
-Scope::resolveRuntimeValueOfUseBeforeDef(Identifier def,
+Scope::resolveRuntimeValueOfUseBeforeDef(Identifier def, Identifier q_def,
+                                         Environment &env) noexcept {
+  auto ubds = lookupUseBeforeDef(def, q_def);
+  for (auto &range : ubds) {
+    auto error = resolveRuntimeValueOfUseBeforeDef(range, env);
+    if (error)
+      return error;
+  }
+  return std::nullopt;
+}
+
+[[nodiscard]] std::optional<Error>
+Scope::resolveRuntimeValueOfUseBeforeDef(UseBeforeDefMap::Range &range,
                                          Environment &env) noexcept {
   std::vector<std::tuple<UseBeforeDefNames, ast::Ptr, std::shared_ptr<Scope>>>
       stage;
   std::vector<UseBeforeDefMap::iterator> old_entries;
 
-  auto range = lookupUseBeforeDef(def);
   auto cursor = range.begin();
   auto end = range.end();
   while (cursor != end) {

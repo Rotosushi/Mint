@@ -246,17 +246,26 @@ private:
                                     Identifier local_scope_name) noexcept
       -> std::vector<UseBeforeDefMap::Range>;
   [[nodiscard]] auto
+  lookupUseBeforeDefAtParallelScope(Identifier q_undef) noexcept
+      -> std::vector<UseBeforeDefMap::Range>;
+  [[nodiscard]] auto
   lookupUseBeforeDefBelowLocalScope(Identifier undef,
                                     Identifier q_undef) noexcept
       -> std::vector<UseBeforeDefMap::Range>;
-  [[nodiscard]] auto lookupLocalUseBeforeDef(Identifier name) noexcept
-      -> std::optional<UseBeforeDefMap::Range> {
-    auto result = m_use_before_def_map.lookup(name);
-    if (result.begin() == result.end())
-      return std::nullopt;
-    else
-      return result;
-  }
+  [[nodiscard]] auto lookupUseBeforeDefWithinThisScope(Identifier name) noexcept
+      -> std::optional<UseBeforeDefMap::Range>;
+
+  [[nodiscard]] std::optional<Error>
+  resolveTypeOfUseBeforeDef(UseBeforeDefMap::Range &range,
+                            Environment &env) noexcept;
+
+  [[nodiscard]] std::optional<Error>
+  resolveComptimeValueOfUseBeforeDef(UseBeforeDefMap::Range &range,
+                                     Environment &env) noexcept;
+
+  [[nodiscard]] std::optional<Error>
+  resolveRuntimeValueOfUseBeforeDef(UseBeforeDefMap::Range &range,
+                                    Environment &env) noexcept;
 
   void setGlobal(std::weak_ptr<Scope> scope) noexcept { m_global = scope; }
 
@@ -322,10 +331,12 @@ public:
   /*
     #NOTE: called when we successfully typecheck a new definition.
     creates partial bindings for any definitions that are in the
-    use-before-def-map relying on the given definition.
+    use-before-def-map relying on the given definition, by retypechecking
+    any use-before-def definitions bound to the given name.
   */
   [[nodiscard]] std::optional<Error>
-  resolveTypeOfUseBeforeDef(Identifier def, Environment &env) noexcept;
+  resolveTypeOfUseBeforeDef(Identifier def, Identifier q_def,
+                            Environment &env) noexcept;
 
   /*
   #NOTE: called when we successfully evaluate a new definition.
@@ -333,10 +344,12 @@ public:
   use-before-def map relying on the given definition.
 */
   [[nodiscard]] std::optional<Error>
-  resolveComptimeValueOfUseBeforeDef(Identifier def, Environment &env) noexcept;
+  resolveComptimeValueOfUseBeforeDef(Identifier def, Identifier q_def,
+                                     Environment &env) noexcept;
 
   [[nodiscard]] std::optional<Error>
-  resolveRuntimeValueOfUseBeforeDef(Identifier def, Environment &env) noexcept;
+  resolveRuntimeValueOfUseBeforeDef(Identifier def, Identifier q_def,
+                                    Environment &env) noexcept;
 
   [[nodiscard]] auto getQualifiedName(Identifier name) noexcept -> Identifier;
 

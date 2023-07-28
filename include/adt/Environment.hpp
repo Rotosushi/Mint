@@ -258,16 +258,18 @@ public:
     return local_scope->bindUseBeforeDef(error, std::move(ast));
   }
 
-  auto resolveTypeOfUseBeforeDef(Identifier def) noexcept {
-    return local_scope->resolveTypeOfUseBeforeDef(def, *this);
+  auto resolveTypeOfUseBeforeDef(Identifier def, Identifier q_def) noexcept {
+    return local_scope->resolveTypeOfUseBeforeDef(def, q_def, *this);
   }
 
-  auto resolveComptimeValueOfUseBeforeDef(Identifier def) noexcept {
-    return local_scope->resolveComptimeValueOfUseBeforeDef(def, *this);
+  auto resolveComptimeValueOfUseBeforeDef(Identifier def,
+                                          Identifier q_def) noexcept {
+    return local_scope->resolveComptimeValueOfUseBeforeDef(def, q_def, *this);
   }
 
-  auto resolveRuntimeValueOfUseBeforeDef(Identifier def) noexcept {
-    return local_scope->resolveRuntimeValueOfUseBeforeDef(def, *this);
+  auto resolveRuntimeValueOfUseBeforeDef(Identifier def,
+                                         Identifier q_def) noexcept {
+    return local_scope->resolveRuntimeValueOfUseBeforeDef(def, q_def, *this);
   }
 
   /* https://llvm.org/docs/LangRef.html#identifiers */
