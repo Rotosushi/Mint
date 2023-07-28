@@ -31,7 +31,7 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   if (isUseBeforeDef())
     return {getUseBeforeDef()};
 
-  auto found = env.lookupBinding(name());
+  auto found = env.lookupLocalBinding(name());
   if (found) {
     return {Error::Kind::NameAlreadyBoundInScope, location(), name().view()};
   }
@@ -95,7 +95,7 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
     expect the name to be bound already in scope.
     thus we assert that the binding exists.
   */
-  auto found = env.lookupBinding(name());
+  auto found = env.lookupLocalBinding(name());
   MINT_ASSERT(found);
 
   auto binding = found.value();
@@ -134,7 +134,7 @@ Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
   if (isUseBeforeDef())
     return {getUseBeforeDef()};
 
-  auto found = env.lookupBinding(name());
+  auto found = env.lookupLocalBinding(name());
   MINT_ASSERT(found);
 
   auto binding = found.value();

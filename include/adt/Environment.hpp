@@ -248,7 +248,10 @@ public:
   }
 
   auto lookupBinding(Identifier name) noexcept {
-    return local_scope->lookup(name);
+    return local_scope->lookupBinding(name);
+  }
+  auto lookupLocalBinding(Identifier name) noexcept {
+    return local_scope->lookupLocalBinding(name);
   }
   auto getQualifiedName(Identifier name) noexcept {
     return local_scope->getQualifiedName(name);

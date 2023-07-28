@@ -69,14 +69,18 @@ private:
 
 public:
   [[nodiscard]] auto lookup(Identifier undef) noexcept -> Range {
+    auto names_match = [](iterator cursor, Identifier undef) {
+      return (cursor.undef() == undef) || (cursor.qualified_undef() == undef);
+    };
+
     iterator cursor = elements.begin();
     iterator end = elements.end();
     while (cursor != end) {
-      if (cursor.undef() == undef) {
+      if (names_match(cursor, undef)) {
         iterator range_end = cursor;
         do {
           ++range_end;
-        } while ((range_end.undef() == undef) && (range_end != end));
+        } while (names_match(cursor, undef) && (range_end != end));
         return {cursor, range_end};
       }
 

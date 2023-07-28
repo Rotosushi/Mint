@@ -374,7 +374,7 @@ public:
     return m_scopes->lookup(name);
   }
 
-  [[nodiscard]] auto lookupLocal(Identifier name) noexcept {
+  [[nodiscard]] auto lookupLocalBinding(Identifier name) noexcept {
     return m_bindings->lookup(name);
   }
 
@@ -400,7 +400,7 @@ public:
     "a0,a1,...,aN" are all considered scopes,
     "x" is considered a variable local to scope "aN"
   */
-  [[nodiscard]] auto lookup(Identifier name) noexcept
+  [[nodiscard]] auto lookupBinding(Identifier name) noexcept
       -> Result<Bindings::Binding>;
 };
 

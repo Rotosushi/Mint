@@ -49,7 +49,7 @@ auto ScopeTable::Entry::partialBind(Identifier name, Attributes attributes,
 
 [[nodiscard]] auto ScopeTable::Entry::lookup(Identifier name) noexcept
     -> Result<Bindings::Binding> {
-  return iter->second->lookup(name);
+  return iter->second->lookupBinding(name);
 }
 
 [[nodiscard]] auto ScopeTable::Entry::qualifiedLookup(Identifier name) noexcept
@@ -68,17 +68,12 @@ auto ScopeTable::emplace(Identifier name,
 [[nodiscard]] auto Scope::getQualifiedName(Identifier name) noexcept
     -> Identifier {
   if (isGlobal()) {
-    auto qualified = name.prependScope(name.globalNamespace());
-    return qualified;
+    return name;
   }
 
-  Identifier base = [&]() {
-    if (this->m_name.has_value()) {
-      return name.prependScope(this->m_name.value());
-    } else {
-      return name;
-    }
-  }();
+  // prepend this scopes name
+  Identifier base =
+      m_name.has_value() ? name.prependScope(m_name.value()) : name;
 
   // qualify the name with the previous scope
   auto prev = m_prev_scope.lock();
@@ -132,14 +127,15 @@ auto ScopeTable::emplace(Identifier name,
   return qualifiedScopeLookup(name);
 }
 
-auto Scope::lookup(Identifier name) noexcept -> Result<Bindings::Binding> {
+auto Scope::lookupBinding(Identifier name) noexcept
+    -> Result<Bindings::Binding> {
   if (name.isGloballyQualified()) {
     auto global_scope = m_global.lock();
     return global_scope->qualifiedLookup(name.restScope());
   }
 
   auto found_locally =
-      name.isQualified() ? qualifiedLookup(name) : lookupLocal(name);
+      name.isQualified() ? qualifiedLookup(name) : lookupLocalBinding(name);
   // if we found the name return the binding
   if (found_locally)
     return found_locally;
@@ -311,8 +307,10 @@ auto Scope::lookupUseBeforeDef(Identifier undef, Identifier q_undef) noexcept
 std::optional<Error> Scope::bindUseBeforeDef(const Error &error,
                                              ast::Ptr ast) noexcept {
   auto &use_before_def = error.getUseBeforeDef();
-  auto &undef_name = use_before_def.names.undef;
-  auto &def_name = use_before_def.names.def;
+  auto &undef = use_before_def.names.undef;
+  auto &q_undef = use_before_def.names.qualified_undef;
+  auto &def = use_before_def.names.def;
+  auto &q_def = use_before_def.names.qualified_def;
   auto &scope = use_before_def.scope;
   // sanity check that the Ast we are currently processing
   // is a Definition itself. as it only makes sense
@@ -321,7 +319,7 @@ std::optional<Error> Scope::bindUseBeforeDef(const Error &error,
   MINT_ASSERT(def_ast != nullptr);
   // sanity check that the name of the Definition is the same
   // as the name returned by the use-before-def Error.
-  MINT_ASSERT(def_name == getQualifiedName(def_ast->name()));
+  MINT_ASSERT(def == def_ast->name());
   // sanity check that the use-before-def is not
   // an unresolvable trivial loop.
   // #TODO: this check needs to be made more robust moving forward.
@@ -330,9 +328,9 @@ std::optional<Error> Scope::bindUseBeforeDef(const Error &error,
   // however a function definition can.
   // a new type can, but only under certain circumstances.
   if (auto *let_ast = dynCast<ast::Let>(ast.get()); let_ast != nullptr) {
-    if (undef_name == def_name) {
+    if (q_undef == q_def) {
       std::stringstream message;
-      message << "Definition [" << ast << "] relies upon itself [" << undef_name
+      message << "Definition [" << ast << "] relies upon itself [" << undef
               << "]";
       return Error{Error::Kind::TypeCannotBeResolved, ast->location(),
                    message.view()};

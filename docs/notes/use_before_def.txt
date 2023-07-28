@@ -697,7 +697,29 @@ well, note that this case is different in that the undef name itself
 is qualified. maybe that can serve as the indicator that we match against 
 the qualified name instead of the unqualified name?)
 
+2a)
+module A {
+  public let a = B::a;
+}
 
+module B {
+  public let a = 1;
+}
+
+this solution works up until we typecheck A::a for the second time.
+we successfully typecheck the definition of A::a, and go to resolve any ubds 
+relying on the definition of A::a, and the lookupUseBeforeDef algorithm
+finds A::a itself. this is because the algorithm looks for matches to 
+the definition name or the qualified name. and since both symbols are 
+the same variable, with different qualifications, they match.
+thus, the check within the ubd map has to be made to tell the difference between 
+this case, while still allowing for this case:
+module B {
+  module A {
+    public let a = B::a;
+  }
+  public let a = 10;
+}
 
 3)
 module A {
