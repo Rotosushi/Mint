@@ -22,14 +22,11 @@
 
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
-#include "adt/UseBeforeDefMap.hpp"
+// #include "adt/UseBeforeDefMap.hpp"
 #include "ast/Ast.hpp"
 #include "error/Result.hpp"
 
 namespace mint {
-/* Bindings are a map from Identifiers to (Attributes, Type::Pointer,
-  Ast::Pointer) with a more convenient interface.
-*/
 class Bindings {
 public:
   using Key = Identifier;
@@ -208,11 +205,11 @@ private:
   std::weak_ptr<Scope> m_global;
   std::unique_ptr<Bindings> m_bindings;
   std::unique_ptr<ScopeTable> m_scopes;
-  UseBeforeDefMap m_use_before_def_map;
+  // UseBeforeDefMap m_use_before_def_map;
 
 public:
-  Scope() noexcept
-      : m_bindings(std::make_unique<Bindings>()),
+  Scope(Identifier name) noexcept
+      : m_name(name), m_bindings(std::make_unique<Bindings>()),
         m_scopes(std::make_unique<ScopeTable>()) {}
   Scope(std::optional<Identifier> name,
         std::weak_ptr<Scope> prev_scope) noexcept
@@ -238,40 +235,49 @@ private:
   [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept
       -> Result<Bindings::Binding>;
 
-  [[nodiscard]] auto lookupUseBeforeDefAtLocalScope(Identifier undef,
-                                                    Identifier q_undef) noexcept
-      -> std::vector<UseBeforeDefMap::Range>;
-  [[nodiscard]] auto
-  lookupUseBeforeDefAboveLocalScope(Identifier q_undef,
-                                    Identifier local_scope_name) noexcept
-      -> std::vector<UseBeforeDefMap::Range>;
-  [[nodiscard]] auto
-  lookupUseBeforeDefAtParallelScope(Identifier q_undef) noexcept
-      -> std::vector<UseBeforeDefMap::Range>;
-  [[nodiscard]] auto
-  lookupUseBeforeDefBelowLocalScope(Identifier undef,
-                                    Identifier q_undef) noexcept
-      -> std::vector<UseBeforeDefMap::Range>;
-  [[nodiscard]] auto lookupUseBeforeDefWithinThisScope(Identifier name) noexcept
-      -> std::optional<UseBeforeDefMap::Range>;
+  // [[nodiscard]] auto lookupUseBeforeDefAtLocalScope(Identifier undef,
+  //                                                   Identifier q_undef)
+  //                                                   noexcept
+  //     -> std::vector<UseBeforeDefMap::Range>;
+  // [[nodiscard]] auto
+  // lookupUseBeforeDefAboveLocalScope(Identifier undef, Identifier q_undef,
+  //                                   Identifier local_scope_name) noexcept
+  //     -> std::vector<UseBeforeDefMap::Range>;
+  // [[nodiscard]] auto
+  // lookupUseBeforeDefAtParallelScope(Identifier undef,
+  //                                   Identifier q_undef) noexcept
+  //     -> std::vector<UseBeforeDefMap::Range>;
+  // [[nodiscard]] auto
+  // lookupUseBeforeDefBelowLocalScope(Identifier undef,
+  //                                   Identifier q_undef) noexcept
+  //     -> std::vector<UseBeforeDefMap::Range>;
+  // [[nodiscard]] auto
+  // lookupUseBeforeDefWithinThisScope(Identifier undef,
+  //                                   Identifier q_undef) noexcept
+  //     -> std::optional<UseBeforeDefMap::Range>;
 
-  [[nodiscard]] std::optional<Error>
-  resolveTypeOfUseBeforeDef(UseBeforeDefMap::Range &range,
-                            Environment &env) noexcept;
+  // [[nodiscard]] std::optional<Error>
+  // resolveTypeOfUseBeforeDef(UseBeforeDefMap::Range &range,
+  //                           Environment &env) noexcept;
 
-  [[nodiscard]] std::optional<Error>
-  resolveComptimeValueOfUseBeforeDef(UseBeforeDefMap::Range &range,
-                                     Environment &env) noexcept;
+  // [[nodiscard]] std::optional<Error>
+  // resolveComptimeValueOfUseBeforeDef(UseBeforeDefMap::Range &range,
+  //                                    Environment &env) noexcept;
 
-  [[nodiscard]] std::optional<Error>
-  resolveRuntimeValueOfUseBeforeDef(UseBeforeDefMap::Range &range,
-                                    Environment &env) noexcept;
+  // [[nodiscard]] std::optional<Error>
+  // resolveRuntimeValueOfUseBeforeDef(UseBeforeDefMap::Range &range,
+  //                                   Environment &env) noexcept;
 
   void setGlobal(std::weak_ptr<Scope> scope) noexcept { m_global = scope; }
 
 public:
-  [[nodiscard]] static auto createGlobalScope() -> std::shared_ptr<Scope> {
-    auto scope = std::make_shared<Scope>();
+  // #NOTE: global scope has the name "", and this must be
+  // provided to this method because Identifiers are interned,
+  // so there is no way of statically constructing one.
+  [[nodiscard]] static auto createGlobalScope(Identifier name)
+      -> std::shared_ptr<Scope> {
+    MINT_ASSERT(name.view() == "");
+    auto scope = std::make_shared<Scope>(name);
     scope->setGlobal(scope->weak_from_this());
     return scope;
   }
@@ -293,9 +299,14 @@ public:
     return m_prev_scope.lock();
   }
 
-  [[nodiscard]] auto scopeName() const noexcept
-      -> std::optional<std::string_view> {
-    return m_name;
+  [[nodiscard]] auto hasName() const noexcept { return m_name.has_value(); }
+  // #TODO: if there is no scope name, and this is not global scope
+  // walk up the scope tree until we find a scope name. That name is
+  // the name of the local named scope. (anonymous scopes are not
+  // 'real' scopes, in the sense that they can be named. I think.)
+  [[nodiscard]] auto scopeName() const noexcept {
+    MINT_ASSERT(hasName());
+    return m_name.value();
   }
 
   [[nodiscard]] auto bindingsEmpty() const noexcept -> bool {
@@ -305,51 +316,6 @@ public:
   [[nodiscard]] auto scopesEmpty() const noexcept -> bool {
     return m_scopes->empty();
   }
-
-  /*
-  #NOTE: undef is the name which caused the use-before-def error.
-    definition is the name of the definition which failed to typecheck.
-    that is, undef is the name which needs to be defined for the
-    definition to be able to typecheck. (or at least, make it past this
-    single use-before-def type error.)
-*/
-
-  [[nodiscard]] auto lookupUseBeforeDef(Identifier undef,
-                                        Identifier q_undef) noexcept
-      -> std::vector<UseBeforeDefMap::Range>;
-
-  /*
-  #NOTE: called when we just encountered a term that could not
-  be type'd because it used a name before that name was defined.
-
-  Binds the use-before-def error to the ast within the local
-  use-before-def map.
-*/
-  [[nodiscard]] std::optional<Error> bindUseBeforeDef(const Error &error,
-                                                      ast::Ptr ast) noexcept;
-
-  /*
-    #NOTE: called when we successfully typecheck a new definition.
-    creates partial bindings for any definitions that are in the
-    use-before-def-map relying on the given definition, by retypechecking
-    any use-before-def definitions bound to the given name.
-  */
-  [[nodiscard]] std::optional<Error>
-  resolveTypeOfUseBeforeDef(Identifier def, Identifier q_def,
-                            Environment &env) noexcept;
-
-  /*
-  #NOTE: called when we successfully evaluate a new definition.
-  creates full bindings for any definition that is in the
-  use-before-def map relying on the given definition.
-*/
-  [[nodiscard]] std::optional<Error>
-  resolveComptimeValueOfUseBeforeDef(Identifier def, Identifier q_def,
-                                     Environment &env) noexcept;
-
-  [[nodiscard]] std::optional<Error>
-  resolveRuntimeValueOfUseBeforeDef(Identifier def, Identifier q_def,
-                                    Environment &env) noexcept;
 
   [[nodiscard]] auto getQualifiedName(Identifier name) noexcept -> Identifier;
 

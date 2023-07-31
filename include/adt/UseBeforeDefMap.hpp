@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <list>
+#include <vector>
 
 #include "adt/Scope.hpp"
 #include "adt/UseBeforeDefNames.hpp"
@@ -25,68 +26,113 @@ namespace mint {
 
 class UseBeforeDefMap {
 public:
-  using Element =
-      std::tuple<UseBeforeDefNames, ast::Ptr, std::shared_ptr<Scope>>;
+  struct Element {
+    Identifier m_ubd_name;
+    Identifier m_ubd_def_name;
+    Identifier m_scope_name;
+    ast::Ptr m_ubd_def_ast;
+    std::shared_ptr<Scope> m_scope;
+    bool m_being_resolved;
+  };
   using Elements = std::list<Element>;
 
   class iterator : public Elements::iterator {
   public:
     iterator(Elements::iterator iter) noexcept : Elements::iterator(iter) {}
 
-    [[nodiscard]] auto names() noexcept -> UseBeforeDefNames & {
-      return std::get<0>(**this);
+    [[nodiscard]] auto ubd_name() noexcept -> Identifier {
+      return (*this)->m_ubd_name;
     }
-    [[nodiscard]] auto undef() noexcept -> Identifier { return names().undef; }
-    [[nodiscard]] auto qualified_undef() noexcept -> Identifier {
-      return names().qualified_undef;
+    [[nodiscard]] auto ubd_def_name() noexcept -> Identifier {
+      return (*this)->m_ubd_def_name;
     }
-    [[nodiscard]] auto def() noexcept -> Identifier { return names().def; }
-    [[nodiscard]] auto qualified_def() noexcept -> Identifier {
-      return names().qualified_def;
+    [[nodiscard]] auto ubd_def_ast() noexcept -> ast::Ptr & {
+      return (*this)->m_ubd_def_ast;
     }
-    [[nodiscard]] auto ast() noexcept -> ast::Ptr & {
-      return std::get<1>(**this);
+    [[nodiscard]] auto scope_name() noexcept -> Identifier {
+      return (*this)->m_scope_name;
     }
     [[nodiscard]] auto scope() noexcept -> std::shared_ptr<Scope> & {
-      return std::get<2>(**this);
+      return (*this)->m_scope;
+    }
+    [[nodiscard]] auto being_resolved() noexcept -> bool {
+      return (*this)->m_being_resolved;
+    }
+    auto being_resolved(bool state) noexcept -> bool {
+      return ((*this)->m_being_resolved = state);
     }
   };
 
   class Range {
-    iterator m_first;
-    iterator m_last;
+    std::vector<iterator> m_range;
 
   public:
-    Range(iterator first, iterator last) noexcept
-        : m_first(first), m_last(last) {}
-
-    [[nodiscard]] auto begin() noexcept { return m_first; }
-    [[nodiscard]] auto end() noexcept { return m_last; }
+    [[nodiscard]] auto empty() const noexcept { return m_range.empty(); }
+    void append(iterator iter) noexcept { m_range.push_back(iter); }
+    [[nodiscard]] auto begin() noexcept { return m_range.begin(); }
+    [[nodiscard]] auto end() noexcept { return m_range.end(); }
   };
 
 private:
   Elements elements;
 
+  [[nodiscard]] static auto contains_definition(Range &range, Identifier name,
+                                                Identifier def_name) noexcept
+      -> bool {
+    auto cursor = range.begin();
+    auto end = range.end();
+    while (cursor != end) {
+      auto it = *cursor;
+      if ((it.ubd_name() == name) && (it.ubd_def_name() == def_name))
+        return true;
+
+      ++cursor;
+    }
+    return false;
+  }
+
 public:
-  [[nodiscard]] auto lookup(Identifier undef) noexcept -> Range {
-    auto names_match = [](iterator cursor, Identifier undef) {
-      return (cursor.undef() == undef) || (cursor.qualified_undef() == undef);
-    };
+  // lookup ubds in the map which are bound to the given name.
+  // name is the name of the definition which was just created.
+  // scope name is the name of the scope of the definition just created.
+  [[nodiscard]] auto lookup(Identifier name, Identifier scope_name) noexcept
+      -> Range {
+    Range result;
 
     iterator cursor = elements.begin();
     iterator end = elements.end();
     while (cursor != end) {
-      if (names_match(cursor, undef)) {
-        iterator range_end = cursor;
-        do {
-          ++range_end;
-        } while (names_match(cursor, undef) && (range_end != end));
-        return {cursor, range_end};
+      // iff this cursor is currently being resolved, we
+      // don't want to match on it. as this causes erroneous
+      // symbol redefinition errors.
+      if (cursor.being_resolved()) {
+        ++cursor;
+        continue;
+      }
+
+      if (cursor.ubd_name() == name) {
+        result.append(cursor);
+        ++cursor;
+        continue;
+      }
+
+      // the name doesn't match. however, if the scope names match,
+      // we can rely on the weaker comparison of the unqualified names
+      // to resolve local use before definition.
+      if (cursor.scope_name() != scope_name) {
+        ++cursor;
+        continue;
+      }
+
+      auto unqualified_ubd_name = cursor.ubd_name().variable();
+      auto unqualified_name = name.variable();
+      if (unqualified_ubd_name == unqualified_name) {
+        result.append(cursor);
       }
 
       ++cursor;
     }
-    return {end, end};
+    return result;
   }
 
   void erase(iterator iter) noexcept {
@@ -94,32 +140,37 @@ public:
       elements.erase(iter);
   }
   void erase(Range range) noexcept {
-    elements.erase(range.begin(), range.end());
+    for (auto it : range) {
+      erase(it);
+    }
   }
 
-  void insert(UseBeforeDefNames names, ast::Ptr ast,
+  void insert(Identifier ubd_name, Identifier ubd_def_name,
+              Identifier scope_name, ast::Ptr ast,
               std::shared_ptr<Scope> scope) noexcept {
-    // #NOTE: this is considered a local use-before-def,
-    // so we bind it to the unqualified undef name.
     // #NOTE: we allow multiple definitions to be bound to
     // the same undef name, however we want to prevent the
     // same definition being bound in the table under the
     // same undef name twice.
-    auto range = lookup(names.undef);
-    auto cursor = range.begin();
-    auto end = range.end();
-    while (cursor != end) {
-      if (cursor.def() == names.def)
-        return;
+    auto range = lookup(ubd_name, ubd_def_name);
+    if (contains_definition(range, ubd_name, ubd_def_name))
+      return;
 
-      ++cursor;
-    }
+    elements.emplace(elements.end(), ubd_name, ubd_def_name, scope_name,
+                     std::move(ast), scope, false);
+  }
 
-    // #NOTE that due to the above check, iff we reach here
-    // then cursor points to the end of the equal range of
-    // values stored within the map. thus we can simply
-    // insert there to maintain the equal range.
-    elements.emplace(cursor, names, std::move(ast), scope);
+  void insert(Element &&element) noexcept {
+    auto range = lookup(element.m_ubd_name, element.m_ubd_def_name);
+    if (contains_definition(range, element.m_ubd_name, element.m_ubd_def_name))
+      return;
+
+    elements.emplace(elements.end(), std::move(element));
+  }
+
+  void insert(Elements &&elements) noexcept {
+    for (auto &&element : elements)
+      insert(std::move(element));
   }
 };
 

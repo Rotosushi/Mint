@@ -639,6 +639,32 @@ use-before-def in the local map, which happens to be the
 global map as well. this means it works to 
 bind and lookup by the unqualified name.
 
+when we search for the qualified or the unqualified name, 
+we erroneously find the same entry twice, in two ways.
+we first found it twice because of a false equivalence between 
+names within two separate modules. that is, A::a and B::a match 
+without qualifications, so when we search for more ubds, after 
+resolving a ubd, we will find our own ubd, which is already being 
+resolved, and attempt to resolve it again.
+I think I solved this problem by adding a flag in the ubd entries
+which says if this entry is currently being resolved. then lookup 
+can simply filter these entries from the results list.
+which works as far as I can see.
+
+the second way in which we find the smae entry twice is that since 
+lookup within the ubd map is that since lookup within the ubd map 
+has to search for either qualified or unqualified names
+when we attempt to search twice, once for the qualified name and 
+once for the unqualified name, both searches find the smae entry, 
+and we falsely return both. this is also simple to fix, I think,
+we can just enforce that the ubd map itself takes the qualfied 
+and unqualified names and resolves both simultaneously.
+
+however I have a suspicion that this is still not the full solution.
+I think there is still an issue with looking up both the 
+qualified and unqualified name in the map.
+
+
 x => 10 
 y => 10
 
@@ -711,7 +737,7 @@ we successfully typecheck the definition of A::a, and go to resolve any ubds
 relying on the definition of A::a, and the lookupUseBeforeDef algorithm
 finds A::a itself. this is because the algorithm looks for matches to 
 the definition name or the qualified name. and since both symbols are 
-the same variable, with different qualifications, they match.
+the same variable, with different qualifications, they match unqualified.
 thus, the check within the ubd map has to be made to tell the difference between 
 this case, while still allowing for this case:
 module B {
@@ -796,7 +822,10 @@ when multiple files are compiled simultaneously? it would seem
 that each compilier instance would need access to the full definition 
 of everything, implying that each compiler would fully process 
 the entire dependency tree from a given file. implying duplicate work 
-if two files being compiled have the same dependency.)
+if two files being compiled have the same dependency.
+note that there is this same duplicate work when considering bringing 
+forward declarations into files in a c style compilation where the text 
+of each file is similarly brought into each separate compilation process.)
 
 
 5)
@@ -900,37 +929,90 @@ when a definition succeeds typechecking, we search for any potential
 ubds within the current scope tree, and attempt to resolve them.
 (ditto for when a definition succeeds evaluation and code-generation.)
 
-the search procceeds starting at local scope.
-we must be careful so we don't search the local scope twice,
-or recurse indefinitely.
 
-the search process should closely match the usual name resolution process.
-as if a given ubd in a given scope is resolving the current definition 
-by normal lookup.
+we are going to have a single global ubd map, what are the consequences?
 
-thus, an unqualified ubd can only match the current definition if the ubd 
-appears in the same or a lower scope from the local scope.
+well, we only need a single key: the qualified name.
+(and can only have a single key, as there is no other way of 
+distinguishing between entries within a single map.)
 
-and a qualified ubd can only match the current definition by following the 
-path defined by the qualifications given.
+it simplifies lookup from it's current state, as it removes 
+the need to traverse a tree when doing ubd resolution. 
 
-we must add qualifications to the current definition when we attempt to resolve 
-ubds in scopes defined above the local scope. because usages of the name occuring 
-in parallel scopes or in children of parallel scopes must be qualified 
-in order to traverse into the local scope.
-whereas usages within lower scopes may or may not use qualifications which 
-will resolve to the local definition.
+it adds a wrinkle to cases 1)
+module A {
+  public let a = b;
+  public let b = 1;
+}
 
-1) search the local scope for any ubd's which rely on the unqualified name,
-add all results to the list.
+and 3)
+module A {
+  public let a = b;
+}
 
-2) search any and all lower scopes for any ubds' which rely on the 
-unqualified name. add all results to the list 
+public let b = 1;
 
-3) search any and all higher scopes for any ubds' which rely on the 
-qualified name. add all results to the list. 
+as here we want the local definitions to bind together.
+but we will not find the local definition when searching using the 
+qualified name of the local definition.
 
-4) return the list of results.
+how do we resolve a local ubd definition to another local definition.
+
+this comes down to what we assume about an unqualified ubd.
+if we give it no qualifications, then we will never resolve
+it to a qualified definition. (1)
+
+we can resolve case 1 by matching the name of the scope the def 
+appears in to the name of the scope the ubd def appears in. 
+since it is the same scope, we can allow an unqualified match to 
+be found by ubd lookup.
+
+then, by the fact that the qualified global variable matches the 
+unqualified local name, ubd lookup will resolve case 3 naturally.
+
+if we give it qualifications then we will never resolve it
+to an unqualified definition. (3)
+
+
+
+()()()()()()()()()()()()()
+()()()()()()()()()()()()()
+()()()()()()()()()()()()()
+()()()()()()()()()()()()()
+()()()()()()()()()()()()()
+
+((((((((((((()))))))))))))
+((((((((((((()))))))))))))
+((((((((((((()))))))))))))
+((((((((((((()))))))))))))
+((((((((((((()))))))))))))
+
+(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )
+ )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )( 
+(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )
+ )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )( 
+(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )
+ )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )( 
+(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )
+ )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )( 
+(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )
+ )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )( 
+(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )
+ )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )( 
+(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )
+ )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )( 
+(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )
+ )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )( 
+(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )
+ )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )( 
+(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )
+ )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )( 
+(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )
+ )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )( 
+(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )
+ )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )(  )( 
+
+
  
 
 

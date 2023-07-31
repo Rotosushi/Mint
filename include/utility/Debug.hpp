@@ -15,20 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <ostream>         // std::ostream
-#include <source_location> // std::source_location
-#include <string_view>     // std::string_view
 
-#include "utility/Debug.hpp"
-
-namespace mint {
-inline void
-log(std::ostream &out, std::string_view message,
-    std::source_location location = std::source_location::current()) noexcept {
-  out << "file: " << location.file_name() << "(" << location.line() << ":"
-      << location.column() << ")\n"
-      << "function: " << location.function_name() << "\n [" << message << "]\n";
-}
-} // namespace mint
-
-#define MINT_LOG(stream, message) DEBUG(mint::log((stream), (message)))
+#if !defined(NDEBUG)
+#  define DEBUG(x) (x)
+#else
+#  define DEBUG(x)
+#endif

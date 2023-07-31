@@ -57,7 +57,8 @@ namespace mint {
 }
 
 [[nodiscard]] auto Environment::create(std::istream *in, std::ostream *out,
-                                       std::ostream *errout) noexcept
+                                       std::ostream *errout,
+                                       std::ostream *log) noexcept
     -> Environment {
   auto context = std::make_unique<llvm::LLVMContext>();
   auto target_triple = llvm::sys::getProcessTriple();
@@ -83,6 +84,7 @@ namespace mint {
   return Environment{in,
                      out,
                      errout,
+                     log,
                      std::move(context),
                      std::move(llvm_module),
                      std::move(ir_builder),
@@ -91,9 +93,9 @@ namespace mint {
 
 auto Environment::repl() noexcept -> int {
   while (true) {
-    *out << "# ";
+    *m_output << "# ";
 
-    auto parse_result = parser.parse();
+    auto parse_result = m_parser.parse();
     if (!parse_result) {
       auto &error = parse_result.error();
       if (error.kind() == Error::Kind::EndOfInput)
@@ -126,7 +128,7 @@ auto Environment::repl() noexcept -> int {
     }
     auto &value = evaluate_result.value();
 
-    *out << ast << " : " << type << " => " << value << "\n";
+    *m_output << ast << " : " << type << " => " << value << "\n";
   }
 
   return EXIT_SUCCESS;
@@ -136,11 +138,11 @@ auto Environment::compile(fs::path filename) noexcept -> int {
   auto found = fileSearch(filename);
   if (!found) {
     Error e{Error::Kind::FileNotFound, Location{}, filename.c_str()};
-    e.print(*errout);
+    e.print(*m_error_output);
     return EXIT_FAILURE;
   }
   auto &file = found.value();
-  parser.setIstream(&file);
+  m_parser.setIstream(&file);
 
   /*
     Parse, Typecheck, and Evaluate each ast within the source file
@@ -150,7 +152,7 @@ auto Environment::compile(fs::path filename) noexcept -> int {
     file given. then generating the code from there.
   */
   while (true) {
-    auto parse_result = parser.parse();
+    auto parse_result = m_parser.parse();
     if (!parse_result) {
       auto &error = parse_result.error();
       if (error.kind() == Error::Kind::EndOfInput)
@@ -227,7 +229,204 @@ auto Environment::compile(fs::path filename) noexcept -> int {
   return EXIT_SUCCESS;
 }
 
-auto Environment::getQualifiedNameForLLVM(Identifier name) noexcept
+std::optional<Error> Environment::bindUseBeforeDef(Error const &error,
+                                                   ast::Ptr ast) noexcept {
+  MINT_ASSERT(error.isUseBeforeDef());
+  auto ubd = error.getUseBeforeDef();
+  auto &names = ubd.names;
+  auto &scope = ubd.scope;
+  auto ubd_name = names.qualified_undef;
+  auto ubd_def_name = names.qualified_def;
+  Identifier scope_name =
+      scope->hasName() ? scope->scopeName() : m_identifier_set.empty_id();
+
+  // sanity check: the ast passed in is-a Definition.
+  auto ubd_def_ast = mint::cast<ast::Definition>(ast.get());
+  // sanity check: the name of the definition is the same
+  // as the name which was returned via the error.
+  MINT_ASSERT(ubd_def_name ==
+              m_local_scope->getQualifiedName(ubd_def_ast->name()));
+
+  // sanity check: the use-before-def is resolvable
+  // #TODO: this check should be made more robust, and moved
+  // inside of the given definition ast. such that it may
+  // be specialized within each particular definition, and
+  // this method does not need to know the partiulars.
+  if (auto let = dynCast<ast::Let>(ubd_def_ast); let != nullptr) {
+    if (names.qualified_undef == names.qualified_def) {
+      std::stringstream message;
+      message << "Let expression [" << ast << "] relies on itself";
+      return Error{Error::Kind::TypeCannotBeResolved, ast->location(),
+                   message.view()};
+    }
+  }
+
+  m_use_before_def_map.insert(ubd_name, ubd_def_name, scope_name,
+                              std::move(ast), scope);
+  return std::nullopt;
+}
+
+std::optional<Error>
+Environment::bindUseBeforeDef(UseBeforeDefMap::Elements &elements,
+                              Error const &error, ast::Ptr ast) noexcept {
+  MINT_ASSERT(error.isUseBeforeDef());
+  auto ubd = error.getUseBeforeDef();
+  auto &names = ubd.names;
+  auto &scope = ubd.scope;
+  auto ubd_name = names.qualified_undef;
+  auto ubd_def_name = names.qualified_def;
+  auto scope_name = scope->scopeName();
+
+  // sanity check: the ast passed in is-a Definition.
+  auto ubd_def_ast = mint::cast<ast::Definition>(ast.get());
+  // sanity check: the name of the definition is the same
+  // as the name which was returned via the error.
+  MINT_ASSERT(ubd_def_name ==
+              m_local_scope->getQualifiedName(ubd_def_ast->name()));
+
+  // sanity check: the use-before-def is resolvable
+  // #TODO: this check should be made more robust, and moved
+  // inside of the given definition ast. such that it may
+  // be specialized within each particular definition, and
+  // this method does not need to know the partiulars.
+  if (auto let = dynCast<ast::Let>(ubd_def_ast); let != nullptr) {
+    if (names.qualified_undef == names.qualified_def) {
+      std::stringstream message;
+      message << "Let expression [" << ast << "] relies on itself";
+      return Error{Error::Kind::TypeCannotBeResolved, ast->location(),
+                   message.view()};
+    }
+  }
+
+  elements.emplace_back(ubd_name, ubd_def_name, scope_name, std::move(ast),
+                        scope);
+  return std::nullopt;
+}
+
+std::optional<Error>
+Environment::resolveTypeOfUseBeforeDef(Identifier def_name,
+                                       Identifier scope_name) noexcept {
+  UseBeforeDefMap::Elements stage;
+  UseBeforeDefMap::Range old_entries;
+
+  auto range = m_use_before_def_map.lookup(def_name, scope_name);
+  for (auto it : range) {
+    it.being_resolved(true);
+    // #NOTE: we enter the local scope of the ubd definition
+    // so we know that when we construct it's binding we
+    // construct it in the correct scope.
+    auto old_local_scope = exchangeLocalScope(it.scope());
+
+    auto ubd_def_ast = cast<ast::Definition>(it.ubd_def_ast().get());
+    // #NOTE: since we are resolving the ubd here, we can clear the error
+    ubd_def_ast->clearUseBeforeDef();
+
+    auto result = ubd_def_ast->typecheck(*this);
+    if (!result) {
+      auto &error = result.error();
+      if (!error.isUseBeforeDef()) {
+        it.being_resolved(false);
+        exchangeLocalScope(old_local_scope);
+        return error;
+      }
+
+      // handle another use before def error.
+      bindUseBeforeDef(stage, error, std::move(it.ubd_def_ast()));
+      old_entries.append(it);
+    }
+
+    exchangeLocalScope(old_local_scope);
+    it.being_resolved(false);
+  }
+
+  if (!old_entries.empty())
+    m_use_before_def_map.erase(old_entries);
+
+  if (!stage.empty())
+    m_use_before_def_map.insert(std::move(stage));
+
+  return std::nullopt;
+}
+
+std::optional<Error> Environment::resolveComptimeValueOfUseBeforeDef(
+    Identifier def_name, Identifier scope_name) noexcept {
+  UseBeforeDefMap::Elements stage;
+  UseBeforeDefMap::Range old_entries;
+
+  auto range = m_use_before_def_map.lookup(def_name, scope_name);
+  for (auto it : range) {
+    it.being_resolved(true);
+    auto old_local_scope = exchangeLocalScope(it.scope());
+
+    auto ubd_def_ast = cast<ast::Definition>(it.ubd_def_ast().get());
+    ubd_def_ast->clearUseBeforeDef();
+
+    // sanity check that we have called typecheck on this definition.
+    MINT_ASSERT(ubd_def_ast->cachedTypeOrAssert() != nullptr);
+
+    auto result = ubd_def_ast->evaluate(*this);
+    if (!result) {
+      auto &error = result.error();
+      if (!error.isUseBeforeDef()) {
+        it.being_resolved(false);
+        exchangeLocalScope(old_local_scope);
+        return error;
+      }
+
+      // handle another use before def error.
+      bindUseBeforeDef(stage, error, std::move(it.ubd_def_ast()));
+      old_entries.append(it);
+    }
+
+    exchangeLocalScope(old_local_scope);
+    it.being_resolved(false);
+  }
+
+  if (!old_entries.empty())
+    m_use_before_def_map.erase(old_entries);
+
+  if (!stage.empty())
+    m_use_before_def_map.insert(std::move(stage));
+
+  return std::nullopt;
+}
+
+std::optional<Error>
+Environment::resolveRuntimeValueOfUseBeforeDef(Identifier def_name,
+                                               Identifier scope_name) noexcept {
+  UseBeforeDefMap::Elements stage;
+
+  auto range = m_use_before_def_map.lookup(def_name, scope_name);
+  for (auto it : range) {
+    it.being_resolved(true);
+    auto old_local_scope = exchangeLocalScope(it.scope());
+
+    auto ubd_def_ast = cast<ast::Definition>(it.ubd_def_ast().get());
+    ubd_def_ast->clearUseBeforeDef();
+
+    // sanity check that we have called typecheck on this definition.
+    MINT_ASSERT(ubd_def_ast->cachedTypeOrAssert() != nullptr);
+
+    auto result = ubd_def_ast->codegen(*this);
+    if (!result) {
+      return result.error();
+    }
+
+    exchangeLocalScope(old_local_scope);
+    it.being_resolved(false);
+  }
+
+  // #NOTE: codegen is the last step when processing an ast.
+  // so we can safely remove these entries from the ubd map
+  m_use_before_def_map.erase(range);
+
+  if (!stage.empty())
+    m_use_before_def_map.insert(std::move(stage));
+
+  return std::nullopt;
+}
+
+auto Environment::createQualifiedNameForLLVM(Identifier name) noexcept
     -> Identifier {
   auto qualified = getQualifiedName(name);
   auto view = qualified.view();
@@ -249,7 +448,7 @@ auto Environment::getQualifiedNameForLLVM(Identifier name) noexcept
     }
   }
 
-  return identifier_set.emplace(std::move(llvm_name));
+  return m_identifier_set.emplace(std::move(llvm_name));
 }
 
 auto Environment::createLLVMGlobalVariable(std::string_view name,

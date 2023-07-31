@@ -32,6 +32,8 @@ private:
 public:
   template <class... Args>
   [[nodiscard]] auto emplace(Args &&...args) noexcept -> Identifier;
+
+  [[nodiscard]] auto empty_id() noexcept -> Identifier;
 };
 
 /*
@@ -69,14 +71,14 @@ public:
   auto empty() const noexcept -> bool { return data.empty(); }
   auto globalNamespace() const noexcept -> Identifier;
 
-  /*
-  does this identifier begin with a scope?
+  // /*
+  // does this identifier begin with a scope?
 
-  "x"              -> false
-  "::x"            -> true
-  "a::x"           -> true
-  "a0::...::aN::x" -> true
-  */
+  // "x"              -> false
+  // "::x"            -> true
+  // "a::x"           -> true
+  // "a0::...::aN::x" -> true
+  // */
   [[nodiscard]] auto isQualified() const noexcept -> bool {
     for (auto c : data) {
       if (c == ':')
@@ -85,14 +87,14 @@ public:
     return false;
   }
 
-  /*
-  does this identifier begin with global scope?
+  // /*
+  // does this identifier begin with global scope?
 
-  "x"              -> false
-  "::x"            -> true
-  "a::x"           -> false
-  "a0::...::aN::x" -> false
-  */
+  // "x"              -> false
+  // "::x"            -> true
+  // "a::x"           -> false
+  // "a0::...::aN::x" -> false
+  // */
   [[nodiscard]] auto isGloballyQualified() const noexcept -> bool {
     if (*data.begin() == ':') {
       return true;
@@ -100,36 +102,43 @@ public:
     return false;
   }
 
-  /*
-  "x"              -> ""
-  "::x"            -> ""
-  "a::x"           -> "a"
-  "a0::...::aN::x" -> "a0"
-*/
+  // #NOTE: qualifications does not return an Identifier
+  // because the qualifications of an Identifier are not
+  // themselves a valid identifier.
+  //  "x"              -> ""
+  //  "::x"            -> ""
+  //  "a::x"           -> "a"
+  //  "a0::...::aN::x" -> "a0::...::aN"
+  [[nodiscard]] auto qualifications() const noexcept -> std::string_view;
+
+  //  "x"              -> ""
+  //  "::x"            -> ""
+  //  "a::x"           -> "a"
+  //  "a0::...::aN::x" -> "a0"
   [[nodiscard]] auto firstScope() const noexcept -> Identifier;
 
-  /*
-    "x"              -> ""
-    "::x"            -> ""
-    "a::x"           -> ""
-    "a0::...::aN::x" -> "a1::...::aN::x"
-  */
+  // /*
+  //   "x"              -> ""
+  //   "::x"            -> ""
+  //   "a::x"           -> ""
+  //   "a0::...::aN::x" -> "a1::...::aN::x"
+  // */
   [[nodiscard]] auto restScope() const noexcept -> Identifier;
 
-  /*
-    "x"              -> "x"
-    "::x"            -> "x"
-    "a::x"           -> "x"
-    "a0::...::aN::x" -> "x"
-  */
+  // /*
+  //   "x"              -> "x"
+  //   "::x"            -> "x"
+  //   "a::x"           -> "x"
+  //   "a0::...::aN::x" -> "x"
+  // */
   [[nodiscard]] auto variable() const noexcept -> Identifier;
 
-  /*
-    "x",   "a"           -> "a::x"
-    "::x", "a"           -> "::x"
-    "a::x", "b"          -> "b::a::x"
-    "a0::...::aN::x"     -> "b::a0::...::aN::x"
-  */
+  // /*
+  //   "x",   "a"           -> "a::x"
+  //   "::x", "a"           -> "::x"
+  //   "a::x", "b"          -> "b::a::x"
+  //   "a0::...::aN::x"     -> "b::a0::...::aN::x"
+  // */
   [[nodiscard]] auto prependScope(Identifier scope) const noexcept
       -> Identifier;
 };
@@ -140,6 +149,18 @@ inline auto operator<<(std::ostream &out, Identifier const &id) noexcept
   return out;
 }
 
+// #NOTE: does left appear in a scope which may be
+// reached by unqualified lookup from right?
+// this function answers the quenstion, is left within
+// a subscope of right?
+[[nodiscard]] auto subscopeOf(Identifier left, Identifier right) noexcept
+    -> bool;
+
+[[nodiscard]] auto subscopeOf(std::string_view left,
+                              std::string_view right) noexcept -> bool;
+
+// #TODO: why does this function have to be in the header file
+// to prevent linker errors?
 template <class... Args>
 [[nodiscard]] inline auto IdentifierSet::emplace(Args &&...args) noexcept
     -> Identifier {
@@ -147,6 +168,9 @@ template <class... Args>
   return Identifier(this, *pair.first);
 }
 
+[[nodiscard]] inline auto IdentifierSet::empty_id() noexcept -> Identifier {
+  return emplace("");
+}
 } // namespace mint
 
 namespace std {

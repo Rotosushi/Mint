@@ -18,7 +18,6 @@ re2c_generate_scanner(
 )
 
 add_library(mint_common STATIC 
-  ${MINT_INCLUDE_DIR}/adt/AstAllocator.hpp
   ${MINT_INCLUDE_DIR}/adt/Attributes.hpp
   ${MINT_INCLUDE_DIR}/adt/BinopTable.hpp
   ${MINT_SOURCE_DIR}/adt/BinopTable.cpp

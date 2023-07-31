@@ -73,8 +73,8 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   // since we could construct a partialBinding, we check
   // if we can resolve the type of any use-before-def
   // which rely upon this one.
-  if (auto failed =
-          env.resolveTypeOfUseBeforeDef(name(), env.getQualifiedName(name())))
+  if (auto failed = env.resolveTypeOfUseBeforeDef(
+          env.getQualifiedName(name()), env.localScope()->scopeName()))
     return failed.value();
 
   setCachedType(env.getNilType());
@@ -120,7 +120,7 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
   // so we can evaluate any partial bindings
   // that rely on this binding
   if (auto failed = env.resolveComptimeValueOfUseBeforeDef(
-          name(), env.getQualifiedName(name())))
+          env.getQualifiedName(name()), env.localScope()->scopeName()))
     return failed.value();
 
   return env.getNilAst({}, location());
@@ -151,7 +151,7 @@ Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
   auto llvm_type = type->toLLVM(env);
 
   // create a global variable for the binding
-  auto llvm_name = env.getQualifiedNameForLLVM(name());
+  auto llvm_name = env.createQualifiedNameForLLVM(name());
   llvm::GlobalVariable *variable = nullptr;
   if (auto constant = dynCast<llvm::Constant>(value)) {
     variable =
@@ -165,7 +165,7 @@ Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
 
   // resolve any use-before-def relying on this name
   if (auto failed = env.resolveRuntimeValueOfUseBeforeDef(
-          name(), env.getQualifiedName(name())))
+          env.getQualifiedName(name()), env.localScope()->scopeName()))
     return failed.value();
 
   return env.getLLVMNil();
