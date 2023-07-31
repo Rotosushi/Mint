@@ -73,8 +73,7 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   // since we could construct a partialBinding, we check
   // if we can resolve the type of any use-before-def
   // which rely upon this one.
-  if (auto failed = env.resolveTypeOfUseBeforeDef(
-          env.getQualifiedName(name()), env.localScope()->scopeName()))
+  if (auto failed = env.resolveTypeOfUseBeforeDef(env.getQualifiedName(name())))
     return failed.value();
 
   setCachedType(env.getNilType());
@@ -119,8 +118,8 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
   // #NOTE: we just created the comptime value for this binding,
   // so we can evaluate any partial bindings
   // that rely on this binding
-  if (auto failed = env.resolveComptimeValueOfUseBeforeDef(
-          env.getQualifiedName(name()), env.localScope()->scopeName()))
+  if (auto failed =
+          env.resolveComptimeValueOfUseBeforeDef(env.getQualifiedName(name())))
     return failed.value();
 
   return env.getNilAst({}, location());
@@ -164,8 +163,8 @@ Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
   binding.setRuntimeValue(variable);
 
   // resolve any use-before-def relying on this name
-  if (auto failed = env.resolveRuntimeValueOfUseBeforeDef(
-          env.getQualifiedName(name()), env.localScope()->scopeName()))
+  if (auto failed =
+          env.resolveRuntimeValueOfUseBeforeDef(env.getQualifiedName(name())))
     return failed.value();
 
   return env.getLLVMNil();

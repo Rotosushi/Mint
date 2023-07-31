@@ -237,15 +237,12 @@ std::optional<Error> Environment::bindUseBeforeDef(Error const &error,
   auto &scope = ubd.scope;
   auto ubd_name = names.qualified_undef;
   auto ubd_def_name = names.qualified_def;
-  Identifier scope_name =
-      scope->hasName() ? scope->scopeName() : m_identifier_set.empty_id();
 
   // sanity check: the ast passed in is-a Definition.
   auto ubd_def_ast = mint::cast<ast::Definition>(ast.get());
   // sanity check: the name of the definition is the same
   // as the name which was returned via the error.
-  MINT_ASSERT(ubd_def_name ==
-              m_local_scope->getQualifiedName(ubd_def_ast->name()));
+  MINT_ASSERT(ubd_def_name == m_local_scope->qualifyName(ubd_def_ast->name()));
 
   // sanity check: the use-before-def is resolvable
   // #TODO: this check should be made more robust, and moved
@@ -261,8 +258,9 @@ std::optional<Error> Environment::bindUseBeforeDef(Error const &error,
     }
   }
 
-  m_use_before_def_map.insert(ubd_name, ubd_def_name, scope_name,
-                              std::move(ast), scope);
+  m_use_before_def_map.insert(ubd_name, ubd_def_name,
+                              m_local_scope->qualifiedName(), std::move(ast),
+                              scope);
   return std::nullopt;
 }
 
@@ -275,14 +273,13 @@ Environment::bindUseBeforeDef(UseBeforeDefMap::Elements &elements,
   auto &scope = ubd.scope;
   auto ubd_name = names.qualified_undef;
   auto ubd_def_name = names.qualified_def;
-  auto scope_name = scope->scopeName();
+  auto scope_name = scope->qualifiedName();
 
   // sanity check: the ast passed in is-a Definition.
   auto ubd_def_ast = mint::cast<ast::Definition>(ast.get());
   // sanity check: the name of the definition is the same
   // as the name which was returned via the error.
-  MINT_ASSERT(ubd_def_name ==
-              m_local_scope->getQualifiedName(ubd_def_ast->name()));
+  MINT_ASSERT(ubd_def_name == m_local_scope->qualifyName(ubd_def_ast->name()));
 
   // sanity check: the use-before-def is resolvable
   // #TODO: this check should be made more robust, and moved
@@ -304,12 +301,11 @@ Environment::bindUseBeforeDef(UseBeforeDefMap::Elements &elements,
 }
 
 std::optional<Error>
-Environment::resolveTypeOfUseBeforeDef(Identifier def_name,
-                                       Identifier scope_name) noexcept {
+Environment::resolveTypeOfUseBeforeDef(Identifier def_name) noexcept {
   UseBeforeDefMap::Elements stage;
   UseBeforeDefMap::Range old_entries;
 
-  auto range = m_use_before_def_map.lookup(def_name, scope_name);
+  auto range = m_use_before_def_map.lookup(def_name);
   for (auto it : range) {
     it.being_resolved(true);
     // #NOTE: we enter the local scope of the ubd definition
@@ -348,12 +344,12 @@ Environment::resolveTypeOfUseBeforeDef(Identifier def_name,
   return std::nullopt;
 }
 
-std::optional<Error> Environment::resolveComptimeValueOfUseBeforeDef(
-    Identifier def_name, Identifier scope_name) noexcept {
+std::optional<Error>
+Environment::resolveComptimeValueOfUseBeforeDef(Identifier def_name) noexcept {
   UseBeforeDefMap::Elements stage;
   UseBeforeDefMap::Range old_entries;
 
-  auto range = m_use_before_def_map.lookup(def_name, scope_name);
+  auto range = m_use_before_def_map.lookup(def_name);
   for (auto it : range) {
     it.being_resolved(true);
     auto old_local_scope = exchangeLocalScope(it.scope());
@@ -392,11 +388,10 @@ std::optional<Error> Environment::resolveComptimeValueOfUseBeforeDef(
 }
 
 std::optional<Error>
-Environment::resolveRuntimeValueOfUseBeforeDef(Identifier def_name,
-                                               Identifier scope_name) noexcept {
+Environment::resolveRuntimeValueOfUseBeforeDef(Identifier def_name) noexcept {
   UseBeforeDefMap::Elements stage;
 
-  auto range = m_use_before_def_map.lookup(def_name, scope_name);
+  auto range = m_use_before_def_map.lookup(def_name);
   for (auto it : range) {
     it.being_resolved(true);
     auto old_local_scope = exchangeLocalScope(it.scope());

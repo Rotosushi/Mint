@@ -105,11 +105,13 @@ public:
   // #NOTE: qualifications does not return an Identifier
   // because the qualifications of an Identifier are not
   // themselves a valid identifier.
+  // #NOTE: this function assumes that it is given a valid
+  // Identifier
   //  "x"              -> ""
   //  "::x"            -> ""
   //  "a::x"           -> "a"
   //  "a0::...::aN::x" -> "a0::...::aN"
-  [[nodiscard]] auto qualifications() const noexcept -> std::string_view;
+  [[nodiscard]] auto qualifications() const noexcept -> Identifier;
 
   //  "x"              -> ""
   //  "::x"            -> ""
@@ -149,15 +151,12 @@ inline auto operator<<(std::ostream &out, Identifier const &id) noexcept
   return out;
 }
 
-// #NOTE: does left appear in a scope which may be
-// reached by unqualified lookup from right?
-// this function answers the quenstion, is left within
-// a subscope of right?
-[[nodiscard]] auto subscopeOf(Identifier left, Identifier right) noexcept
+// #NOTE: does name appear in a scope which may be
+// reached by unqualified lookup from scope?
+// this function answers the question:
+//  is scope a subscope of the scope of name?
+[[nodiscard]] auto subscopeOf(Identifier scope, Identifier name) noexcept
     -> bool;
-
-[[nodiscard]] auto subscopeOf(std::string_view left,
-                              std::string_view right) noexcept -> bool;
 
 // #TODO: why does this function have to be in the header file
 // to prevent linker errors?

@@ -95,8 +95,7 @@ public:
   // lookup ubds in the map which are bound to the given name.
   // name is the name of the definition which was just created.
   // scope name is the name of the scope of the definition just created.
-  [[nodiscard]] auto lookup(Identifier name, Identifier scope_name) noexcept
-      -> Range {
+  [[nodiscard]] auto lookup(Identifier name) noexcept -> Range {
     Range result;
 
     iterator cursor = elements.begin();
@@ -116,10 +115,14 @@ public:
         continue;
       }
 
-      // the name doesn't match. however, if the scope names match,
-      // we can rely on the weaker comparison of the unqualified names
-      // to resolve local use before definition.
-      if (cursor.scope_name() != scope_name) {
+      // the name doesn't match. however, if the scope of the
+      // ubd definition is a subscope of the definition that
+      // was just created, then unqualified lookup from the
+      // ubd definition's scope will resolve the definition
+      // that was just created, thus we can rely on the
+      // weaker comparison of the unqualified names
+      // to resolve use before definition.
+      if (!subscopeOf(cursor.scope_name(), name)) {
         ++cursor;
         continue;
       }
@@ -152,7 +155,7 @@ public:
     // the same undef name, however we want to prevent the
     // same definition being bound in the table under the
     // same undef name twice.
-    auto range = lookup(ubd_name, ubd_def_name);
+    auto range = lookup(ubd_name);
     if (contains_definition(range, ubd_name, ubd_def_name))
       return;
 
@@ -161,7 +164,7 @@ public:
   }
 
   void insert(Element &&element) noexcept {
-    auto range = lookup(element.m_ubd_name, element.m_ubd_def_name);
+    auto range = lookup(element.m_ubd_name);
     if (contains_definition(range, element.m_ubd_name, element.m_ubd_def_name))
       return;
 

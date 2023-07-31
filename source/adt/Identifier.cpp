@@ -44,44 +44,39 @@ namespace mint {
 // from a subscope of the defining scope of the variable.
 
 // thus, this function returns true if and only if the qualifications
-// of left are a subset of the qualifications of right.
-auto subscopeOf(Identifier left, Identifier right) noexcept -> bool {
-  auto q_left = left.qualifications();
-  auto q_right = right.qualifications();
-  return subscopeOf(q_left, q_right);
-}
-
-[[nodiscard]] auto subscopeOf(std::string_view left,
-                              std::string_view right) noexcept -> bool {
-
-  // if left is a longer string, then we know
-  // left is more qualified than right, so it
-  // cannot be a subscope of rights scope.
-  if (left.size() > right.size())
+// of scope are a subset of the qualifications of name.
+auto subscopeOf(Identifier scope, Identifier name) noexcept -> bool {
+  auto q_name = name.qualifications();
+  // if the qualifications of name is a longer string,
+  // than the scope. then we know name is more qualified
+  // than the scope, so it cannot be a subscope of left.
+  if (q_name.view().size() > scope.view().size())
     return false;
 
-  auto l_cursor = left.begin();
-  auto l_end = left.end();
-  auto r_cursor = right.begin();
-  // we know left <= right, so we only need to
-  // look for the end of left.
-  while (l_cursor != l_end) {
+  // we know right <= left, so we only need to
+  // look for the end of right.
+  auto s_cursor = scope.view().begin();
+  auto n_cursor = q_name.view().begin();
+  auto n_end = q_name.view().end();
+  while (n_cursor != n_end) {
     // if the characters are not equal, then we
-    // know that left is within a different scope
-    // than right, at a less qualified scope than
-    // right. meaning they are in parallel scopes.
-    if (*l_cursor != *r_cursor)
+    // know that the scopes diverge at a point
+    // before they reach their full specificity.
+    // meaning they are parallel scopes.
+    if (*s_cursor != *n_cursor)
       return false;
 
-    ++l_cursor;
-    ++r_cursor;
+    ++s_cursor;
+    ++n_cursor;
   }
 
   // we reach here in two cases, either the strings are equal,
-  // in which case left is the same scope as right.
-  // or they are equal for the entire length of left, which
-  // means that right is more qualified than left,
-  // meaning that right is a subscope of left.
+  // in which case scope is the same scope as name's scope.
+  // meaning they are subscopes. (because a set is a subset of itself)
+  // or they are equal for the entire length of names
+  // qualifications, which means that scope is more qualified
+  // than the scope of name meaning that scope is a subscope of
+  // names scope.
   return true;
 }
 
@@ -89,8 +84,7 @@ auto Identifier::globalNamespace() const noexcept -> Identifier {
   return set->empty_id();
 }
 
-[[nodiscard]] auto Identifier::qualifications() const noexcept
-    -> std::string_view {
+[[nodiscard]] auto Identifier::qualifications() const noexcept -> Identifier {
   // walk from the end until we see a ':'
   // if we do, eat the "::", then return an identifier from
   // the beginning of the string to that place
@@ -102,8 +96,9 @@ auto Identifier::globalNamespace() const noexcept -> Identifier {
       // #NOTE: cursor now points to the first ':' within the last
       // "::" within the given identifier. this is the end of the
       // identifier representing the qualifications of this identifier.
-      return {data.begin(), static_cast<std::string_view::size_type>(
-                                std::distance(data.begin(), cursor.base()))};
+      return set->emplace(data.begin(),
+                          static_cast<std::string_view::size_type>(
+                              std::distance(data.begin(), cursor.base())));
     }
 
     ++cursor;

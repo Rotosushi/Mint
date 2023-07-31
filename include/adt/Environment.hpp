@@ -250,7 +250,7 @@ public:
     return m_local_scope->lookupLocalBinding(name);
   }
   auto getQualifiedName(Identifier name) noexcept {
-    return m_local_scope->getQualifiedName(name);
+    return m_local_scope->qualifyName(name);
   }
 
   /**** Use Before Def Interface ****/
@@ -264,16 +264,13 @@ private:
 
 public:
   std::optional<Error>
-  resolveTypeOfUseBeforeDef(Identifier def_name,
-                            Identifier scope_name) noexcept;
+  resolveTypeOfUseBeforeDef(Identifier def_name) noexcept;
 
   std::optional<Error>
-  resolveComptimeValueOfUseBeforeDef(Identifier def_name,
-                                     Identifier scope_name) noexcept;
+  resolveComptimeValueOfUseBeforeDef(Identifier def_name) noexcept;
 
   std::optional<Error>
-  resolveRuntimeValueOfUseBeforeDef(Identifier def_name,
-                                    Identifier scope_name) noexcept;
+  resolveRuntimeValueOfUseBeforeDef(Identifier def_name) noexcept;
 
   /**** BinopTable Interface ****/
   auto createBinop(Token op) noexcept { return m_binop_table.emplace(op); }

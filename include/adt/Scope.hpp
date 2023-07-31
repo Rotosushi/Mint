@@ -235,39 +235,6 @@ private:
   [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept
       -> Result<Bindings::Binding>;
 
-  // [[nodiscard]] auto lookupUseBeforeDefAtLocalScope(Identifier undef,
-  //                                                   Identifier q_undef)
-  //                                                   noexcept
-  //     -> std::vector<UseBeforeDefMap::Range>;
-  // [[nodiscard]] auto
-  // lookupUseBeforeDefAboveLocalScope(Identifier undef, Identifier q_undef,
-  //                                   Identifier local_scope_name) noexcept
-  //     -> std::vector<UseBeforeDefMap::Range>;
-  // [[nodiscard]] auto
-  // lookupUseBeforeDefAtParallelScope(Identifier undef,
-  //                                   Identifier q_undef) noexcept
-  //     -> std::vector<UseBeforeDefMap::Range>;
-  // [[nodiscard]] auto
-  // lookupUseBeforeDefBelowLocalScope(Identifier undef,
-  //                                   Identifier q_undef) noexcept
-  //     -> std::vector<UseBeforeDefMap::Range>;
-  // [[nodiscard]] auto
-  // lookupUseBeforeDefWithinThisScope(Identifier undef,
-  //                                   Identifier q_undef) noexcept
-  //     -> std::optional<UseBeforeDefMap::Range>;
-
-  // [[nodiscard]] std::optional<Error>
-  // resolveTypeOfUseBeforeDef(UseBeforeDefMap::Range &range,
-  //                           Environment &env) noexcept;
-
-  // [[nodiscard]] std::optional<Error>
-  // resolveComptimeValueOfUseBeforeDef(UseBeforeDefMap::Range &range,
-  //                                    Environment &env) noexcept;
-
-  // [[nodiscard]] std::optional<Error>
-  // resolveRuntimeValueOfUseBeforeDef(UseBeforeDefMap::Range &range,
-  //                                   Environment &env) noexcept;
-
   void setGlobal(std::weak_ptr<Scope> scope) noexcept { m_global = scope; }
 
 public:
@@ -304,10 +271,11 @@ public:
   // walk up the scope tree until we find a scope name. That name is
   // the name of the local named scope. (anonymous scopes are not
   // 'real' scopes, in the sense that they can be named. I think.)
-  [[nodiscard]] auto scopeName() const noexcept {
+  [[nodiscard]] auto name() const noexcept {
     MINT_ASSERT(hasName());
     return m_name.value();
   }
+  [[nodiscard]] auto qualifiedName() const noexcept -> Identifier;
 
   [[nodiscard]] auto bindingsEmpty() const noexcept -> bool {
     return m_bindings->empty();
@@ -317,7 +285,7 @@ public:
     return m_scopes->empty();
   }
 
-  [[nodiscard]] auto getQualifiedName(Identifier name) noexcept -> Identifier;
+  [[nodiscard]] auto qualifyName(Identifier name) noexcept -> Identifier;
 
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
                 ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept {
