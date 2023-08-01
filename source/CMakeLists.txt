@@ -90,7 +90,6 @@ add_library(mint_common STATIC
   ${MINT_INCLUDE_DIR}/utility/Abort.hpp
   ${MINT_INCLUDE_DIR}/utility/Allocator.hpp 
   ${MINT_INCLUDE_DIR}/utility/Assert.hpp
-  ${MINT_INCLUDE_DIR}/utility/Casting.hpp 
   ${MINT_INCLUDE_DIR}/utility/Config.hpp
   ${MINT_INCLUDE_DIR}/utility/Log.hpp 
   ${MINT_INCLUDE_DIR}/utility/NumbersRoundTrip.hpp

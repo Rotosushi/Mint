@@ -1,5 +1,5 @@
 
-public let a = ::A::b;
+public let a = A::b;
 
 module A {
   public let a = 1;

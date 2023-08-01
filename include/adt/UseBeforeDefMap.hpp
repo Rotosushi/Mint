@@ -105,8 +105,8 @@ public:
       // don't want to match on it. as this causes erroneous
       // symbol redefinition errors.
       if (cursor.being_resolved()) {
-        ++cursor;
-        continue;
+        ++cursor; // #NOTE: we ++cursor because the continue skips
+        continue; // the ++cursor at the end of the loop body.
       }
 
       if (cursor.ubd_name() == name) {
@@ -122,15 +122,37 @@ public:
       // that was just created, thus we can rely on the
       // weaker comparison of the unqualified names
       // to resolve use before definition.
-      if (!subscopeOf(cursor.scope_name(), name)) {
-        ++cursor;
-        continue;
+      if (subscopeOf(cursor.scope_name(), name)) {
+        auto unqualified_ubd_name = cursor.ubd_name().variable();
+        auto unqualified_name = name.variable();
+        if (unqualified_ubd_name == unqualified_name) {
+          result.append(cursor);
+          ++cursor;
+          continue;
+        }
+        // else fallthrough
       }
 
-      auto unqualified_ubd_name = cursor.ubd_name().variable();
-      auto unqualified_name = name.variable();
-      if (unqualified_ubd_name == unqualified_name) {
-        result.append(cursor);
+      // the name won't be resolved through unqualified lookup,
+      // and the name doesn't match directly, however, we could
+      // still resolve by qualified lookup. so if name is qualified,
+      // then we want to resolve names in the map which are
+      // dependant on that name through qualified lookup.
+      // we assume what is looked up in the map is fully qualified,
+      // and we assume that the ubd_name is qualified such that
+      // it would resolve to the new definition from the scope
+      // in which the ubd_definition was defined, all we need to do
+      // is search for the composite name
+      if (name.isQualified()) {
+        auto local_qualifications = cursor.ubd_def_name().qualifications();
+        auto locally_qualified_name =
+            cursor.ubd_name().prependScope(local_qualifications);
+        if (name == locally_qualified_name) {
+          result.append(cursor);
+          ++cursor;
+          continue;
+        }
+        // else fallthrough
       }
 
       ++cursor;

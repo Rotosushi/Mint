@@ -114,7 +114,7 @@ Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {
   // load/store the global variable itself.
   // however in the global context there is nowhere
   // to execute instructions.
-  if (auto global = mint::cast<llvm::GlobalVariable>(value)) {
+  if (auto global = llvm::dyn_cast<llvm::GlobalVariable>(value)) {
     return global->getInitializer();
   } else {
     // #NOTE: given that runtime variables are stored

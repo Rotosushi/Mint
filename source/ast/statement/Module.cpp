@@ -47,7 +47,7 @@ Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
       // #NOTE: we clone here, because we don't want to leave the
       // module itself in an undefined state. if we move, then
       // the next time we iterate we will run into a null unique-ptr
-      // at this definition.
+      // at this definition. 
       if (auto failed = env.bindUseBeforeDef(error, expression->clone(env))) {
         env.unbindScope(m_name);
         env.popScope();

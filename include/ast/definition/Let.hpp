@@ -22,8 +22,7 @@
 namespace mint {
 namespace ast {
 /*
-  #TODO: #MAYBE:
-  do we want to allow expressions like
+  #TODO: do we want to allow expressions like
 
   if (let x = ...) { ...
 
@@ -33,9 +32,8 @@ namespace ast {
   let x = ...;
   if (... x ...) { ...
 
-
   except limiting the scope of the variable to the
-  if condition. (expressing a sublte intent implicitly)
+  if condition. (expressing a subtle intent implicitly)
   and reducing the line count by one.
 
   this kind of construct relies upon changing let expressions
@@ -82,6 +80,9 @@ public:
   static auto classof(Ast const *ast) noexcept -> bool {
     return Ast::Kind::Let == ast->kind();
   }
+
+  std::optional<Error>
+  checkUseBeforeDef(Error::UseBeforeDef &ubd) const noexcept override;
 
   Ptr clone(Environment &env) const noexcept override;
 

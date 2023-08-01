@@ -239,23 +239,13 @@ std::optional<Error> Environment::bindUseBeforeDef(Error const &error,
   auto ubd_def_name = names.qualified_def;
 
   // sanity check: the ast passed in is-a Definition.
-  auto ubd_def_ast = mint::cast<ast::Definition>(ast.get());
+  auto ubd_def_ast = llvm::cast<ast::Definition>(ast.get());
   // sanity check: the name of the definition is the same
   // as the name which was returned via the error.
   MINT_ASSERT(ubd_def_name == m_local_scope->qualifyName(ubd_def_ast->name()));
 
-  // sanity check: the use-before-def is resolvable
-  // #TODO: this check should be made more robust, and moved
-  // inside of the given definition ast. such that it may
-  // be specialized within each particular definition, and
-  // this method does not need to know the partiulars.
-  if (auto let = dynCast<ast::Let>(ubd_def_ast); let != nullptr) {
-    if (names.qualified_undef == names.qualified_def) {
-      std::stringstream message;
-      message << "Let expression [" << ast << "] relies on itself";
-      return Error{Error::Kind::TypeCannotBeResolved, ast->location(),
-                   message.view()};
-    }
+  if (auto failed = ubd_def_ast->checkUseBeforeDef(ubd)) {
+    return failed;
   }
 
   m_use_before_def_map.insert(ubd_name, ubd_def_name,
@@ -276,23 +266,13 @@ Environment::bindUseBeforeDef(UseBeforeDefMap::Elements &elements,
   auto scope_name = scope->qualifiedName();
 
   // sanity check: the ast passed in is-a Definition.
-  auto ubd_def_ast = mint::cast<ast::Definition>(ast.get());
+  auto ubd_def_ast = llvm::cast<ast::Definition>(ast.get());
   // sanity check: the name of the definition is the same
   // as the name which was returned via the error.
   MINT_ASSERT(ubd_def_name == m_local_scope->qualifyName(ubd_def_ast->name()));
 
-  // sanity check: the use-before-def is resolvable
-  // #TODO: this check should be made more robust, and moved
-  // inside of the given definition ast. such that it may
-  // be specialized within each particular definition, and
-  // this method does not need to know the partiulars.
-  if (auto let = dynCast<ast::Let>(ubd_def_ast); let != nullptr) {
-    if (names.qualified_undef == names.qualified_def) {
-      std::stringstream message;
-      message << "Let expression [" << ast << "] relies on itself";
-      return Error{Error::Kind::TypeCannotBeResolved, ast->location(),
-                   message.view()};
-    }
+  if (auto failed = ubd_def_ast->checkUseBeforeDef(ubd)) {
+    return failed;
   }
 
   elements.emplace_back(ubd_name, ubd_def_name, scope_name, std::move(ast),
@@ -313,7 +293,7 @@ Environment::resolveTypeOfUseBeforeDef(Identifier def_name) noexcept {
     // construct it in the correct scope.
     auto old_local_scope = exchangeLocalScope(it.scope());
 
-    auto ubd_def_ast = cast<ast::Definition>(it.ubd_def_ast().get());
+    auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
     // #NOTE: since we are resolving the ubd here, we can clear the error
     ubd_def_ast->clearUseBeforeDef();
 
@@ -354,7 +334,7 @@ Environment::resolveComptimeValueOfUseBeforeDef(Identifier def_name) noexcept {
     it.being_resolved(true);
     auto old_local_scope = exchangeLocalScope(it.scope());
 
-    auto ubd_def_ast = cast<ast::Definition>(it.ubd_def_ast().get());
+    auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
     ubd_def_ast->clearUseBeforeDef();
 
     // sanity check that we have called typecheck on this definition.
@@ -396,7 +376,7 @@ Environment::resolveRuntimeValueOfUseBeforeDef(Identifier def_name) noexcept {
     it.being_resolved(true);
     auto old_local_scope = exchangeLocalScope(it.scope());
 
-    auto ubd_def_ast = cast<ast::Definition>(it.ubd_def_ast().get());
+    auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
     ubd_def_ast->clearUseBeforeDef();
 
     // sanity check that we have called typecheck on this definition.
@@ -450,7 +430,7 @@ auto Environment::createLLVMGlobalVariable(std::string_view name,
                                            llvm::Type *type,
                                            llvm::Constant *init) noexcept
     -> llvm::GlobalVariable * {
-  auto variable = mint::cast<llvm::GlobalVariable>(
+  auto variable = llvm::cast<llvm::GlobalVariable>(
       llvm_module->getOrInsertGlobal(name, type));
 
   if (init != nullptr)

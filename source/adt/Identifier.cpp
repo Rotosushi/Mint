@@ -93,9 +93,7 @@ auto Identifier::globalNamespace() const noexcept -> Identifier {
   while (cursor != end) {
     if (*cursor == ':') {
       ++cursor; // eat ':'
-      // #NOTE: cursor now points to the first ':' within the last
-      // "::" within the given identifier. this is the end of the
-      // identifier representing the qualifications of this identifier.
+      ++cursor; // eat ':'
       return set->emplace(data.begin(),
                           static_cast<std::string_view::size_type>(
                               std::distance(data.begin(), cursor.base())));

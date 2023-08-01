@@ -80,7 +80,8 @@ auto ScopeTable::emplace(Identifier name,
   // return the qualified name of the previous scope prepended
   // to the name of this scope.
   auto base = name();
-  auto result = base.prependScope(prev->qualifiedName());
+  auto prev_name = prev->qualifiedName();
+  auto result = prev_name.empty() ? base : base.prependScope(prev_name);
   return result;
 }
 
@@ -88,7 +89,7 @@ auto ScopeTable::emplace(Identifier name,
 // walk up to global scope.
 [[nodiscard]] auto Scope::qualifyName(Identifier name) noexcept -> Identifier {
   if (isGlobal()) {
-    return name.prependScope(this->name());
+    return name;
   }
 
   // prepend this scopes name, handling the case

@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <array>
 #include <string_view>
-#include <vector>
 
 #include "Config.hpp"
 
@@ -25,20 +25,21 @@ struct TestCode {
   std::string_view test_code;
   std::string_view expected_result;
 
-  TestCode(std::string_view test_code,
-           std::string_view expected_result) noexcept
+  constexpr TestCode(std::string_view test_code,
+                     std::string_view expected_result) noexcept
       : setup(), test_code(test_code), expected_result(expected_result) {}
 
-  TestCode(std::string_view setup, std::string_view test_code,
-           std::string_view expected_result) noexcept
+  constexpr TestCode(std::string_view setup, std::string_view test_code,
+                     std::string_view expected_result) noexcept
       : setup(setup), test_code(test_code), expected_result(expected_result) {}
 };
 
 /*
-#TODO: generate random input
+#TODO: generate random input for test expressions
+#TODO: test edge cases and undefined behavior
 */
-std::vector<TestCode> getAllTestCode() noexcept {
-  std::vector<TestCode> expressions{
+constexpr inline auto getAllTestCode() noexcept {
+  TestCode expressions[] = {
       {"nil;", "nil"},
       {"1;", "1"},
       {"true;", "true"},
@@ -60,46 +61,43 @@ std::vector<TestCode> getAllTestCode() noexcept {
       {"false | true;", "true"},
       {"true == false;", "false"},
       {"false != false;", "false"},
-      {"public let a = 1;", "::a;", "1"},
-      {"public let a = 1;\n public let b = a;", "::b;", "1"},
-      {"public let b = a;\n public let a = 1;", "::b;", "1"},
-      {"public let b = a;\n public let a = c;\n public let c = 1;", "::b;",
-       "1"},
-      {"module A {\n public let a = 1; \n}", "::A::a;", "1"},
-      {"module A {\n public let a = 1; \n public let b = a; \n}", "::A::b;",
-       "1"},
-      {"module A {\n public let b = 1; \n public let a = 1; \n}", "::A::b;",
-       "1"},
+      {"public let a = 1;", "a;", "1"},
+      {"public let a = 1;\n public let b = a;", "b;", "1"},
+      {"public let b = a;\n public let a = 1;", "b;", "1"},
+      {"public let b = a;\n public let a = c;\n public let c = 1;", "b;", "1"},
+      {"module A {\n public let a = 1; \n}", "A::a;", "1"},
+      {"module A {\n public let a = 1; \n public let b = a; \n}", "A::b;", "1"},
+      {"module A {\n public let b = 1; \n public let a = 1; \n}", "A::b;", "1"},
       {"module A {\n public let b = a; \n public let a = c; \n public let c = "
        "1; \n}",
-       "::A::b;", "1"},
-      {"public let a = 1; \n module A {\n public let a = ::a; \n}", "::A::a;",
+       "A::b;", "1"},
+      {"public let a = 1; \n module A {\n public let a = ::a; \n}", "A::a;",
        "1"},
-      {"module A {\n public let a = ::a; \n}\n public let a = 1;", "::A::a;",
+      {"module A {\n public let a = ::a; \n}\n public let a = 1;", "A::a;",
        "1"},
       {"module A {\n public let b = 1; \n}\n module A {\n public let a = b; "
        "\n}",
-       "::A::a;", "1"},
+       "A::a;", "1"},
       {"module A {\n public let a = b; \n}\n module A {\n public let b = 1; "
        "\n}",
-       "::A::a;", "1"},
-      {"module A {\n public let a = ::B::a; \n}\n module B {\n public let a = "
+       "A::a;", "1"},
+      {"module A {\n public let a = B::a; \n}\n module B {\n public let a = "
        "1; \n}",
-       "::A::a;", "1"},
-      {"module B {\n public let a = 1; \n} module A {\n public let a = ::B::a; "
+       "A::a;", "1"},
+      {"module B {\n public let a = 1; \n} module A {\n public let a = B::a; "
        "\n}",
-       "::A::a;", "1"},
+       "A::a;", "1"},
       {"module A {\n module B {\n public let a = 1; }\n public let a = B::a; }",
-       "::A::a;", "1"},
+       "A::a;", "1"},
       {"module A {\n module B {\n public let a = 1; }\n } module A{ public let "
        "a = B::a; }",
-       "::A::a;", "1"},
+       "A::a;", "1"},
       {"module A {\n public let a = B::a; \n module B {\n public let a = 1; "
        "}\n}",
-       "::A::a;", "1"},
+       "A::a;", "1"},
       {"module A {\n public let a = B::a; \n} module A { module B { public let "
        "a = 1; }}",
-       "::A::a;", "1"},
+       "A::a;", "1"},
       {"import \"" MINT_TEST_RESOURCES_DIR "/module.mi\";", "::A::a;", "1"},
       {"import \"" MINT_TEST_RESOURCES_DIR "/module.mi\";", "::a;", "2"},
       {"import \"" MINT_TEST_RESOURCES_DIR "/module.mi\";", "::A::b;", "2"},
@@ -107,5 +105,5 @@ std::vector<TestCode> getAllTestCode() noexcept {
       {"import \"" MINT_TEST_RESOURCES_DIR "/module.mi\";", "::A::e;", "4"},
   };
 
-  return expressions;
+  return std::to_array(expressions);
 }

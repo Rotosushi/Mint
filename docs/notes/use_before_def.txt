@@ -623,53 +623,25 @@ only remove the use-before-def binding when we fully resolve the use-before-def.
 well, this means that we need to not add the binding back again when 
 it fails to evaluate, but only if it's a use before def?
 
+
+
+(side note: this concept of normal ordering is incoherent when 
+considering parallel compilation. how does use-before-def work 
+when multiple files are compiled simultaneously? it would seem 
+that each compilier instance would need access to the full definition 
+of everything, implying that each compiler would fully process 
+the entire dependency tree from a given file. implying duplicate work 
+if two files being compiled have the same dependency.
+note that there is this same duplicate work when considering bringing 
+forward declarations into files in a c style compilation where the text 
+of each file is similarly brought into each separate compilation process.)
 ------------------------------------------------------------------------------
 
 0)
 let y = x;
 let x = 10;
 
-def y
-q_def ::y
-undef x
-q_undef ::x
-
-resolves when ::x is defined, at this point we find the 
-use-before-def in the local map, which happens to be the 
-global map as well. this means it works to 
-bind and lookup by the unqualified name.
-
-when we search for the qualified or the unqualified name, 
-we erroneously find the same entry twice, in two ways.
-we first found it twice because of a false equivalence between 
-names within two separate modules. that is, A::a and B::a match 
-without qualifications, so when we search for more ubds, after 
-resolving a ubd, we will find our own ubd, which is already being 
-resolved, and attempt to resolve it again.
-I think I solved this problem by adding a flag in the ubd entries
-which says if this entry is currently being resolved. then lookup 
-can simply filter these entries from the results list.
-which works as far as I can see.
-
-the second way in which we find the smae entry twice is that since 
-lookup within the ubd map is that since lookup within the ubd map 
-has to search for either qualified or unqualified names
-when we attempt to search twice, once for the qualified name and 
-once for the unqualified name, both searches find the smae entry, 
-and we falsely return both. this is also simple to fix, I think,
-we can just enforce that the ubd map itself takes the qualfied 
-and unqualified names and resolves both simultaneously.
-
-however I have a suspicion that this is still not the full solution.
-I think there is still an issue with looking up both the 
-qualified and unqualified name in the map.
-
-
-x => 10 
-y => 10
-
-
-
+------------------------------------------------------------------------------
 
 1)
 module A {
@@ -677,21 +649,7 @@ module A {
   let b = 1;
 }
 
-def a
-q_def ::A::a
-undef b
-q_undef A::b
-
-resolves when A::b is defined. 
-at that point we find the ubd in the local map. this 
-means it works to bind and lookup by the unqualified name.
-we can resolve this exactly the same if we start the search 
-from global scope.
-
-a => 1 
-b => 1
-
-
+------------------------------------------------------------------------------
 
 2)
 module A {
@@ -702,27 +660,6 @@ module B {
   let b = 1;
 }
 
-def a
-q_def ::A::a
-undef B::b
-q_undef B::b
-
-resolves when B::b is defined
-at that point we have to fail to find a ubd in the 
-local map of B, traverse up to global scope, fail to find 
-a ubd for B::b in the global scope map, and traverse down to 
-the scope A 
-(#NOTE: given no information that we need to do so,
-implying we need to do full search of the scope tree to resolve 
-all potential ubds) 
-and there find the ubd, A::a relying on B::b
-in this situation we have to search for the qualified name B::b to 
-match the ubd in the map of A. 
-(#QUESTION: how do we resolve based on the qualified name, only sometimes?
-well, note that this case is different in that the undef name itself 
-is qualified. maybe that can serve as the indicator that we match against 
-the qualified name instead of the unqualified name?)
-
 2a)
 module A {
   public let a = B::a;
@@ -732,20 +669,7 @@ module B {
   public let a = 1;
 }
 
-this solution works up until we typecheck A::a for the second time.
-we successfully typecheck the definition of A::a, and go to resolve any ubds 
-relying on the definition of A::a, and the lookupUseBeforeDef algorithm
-finds A::a itself. this is because the algorithm looks for matches to 
-the definition name or the qualified name. and since both symbols are 
-the same variable, with different qualifications, they match unqualified.
-thus, the check within the ubd map has to be made to tell the difference between 
-this case, while still allowing for this case:
-module B {
-  module A {
-    public let a = B::a;
-  }
-  public let a = 10;
-}
+------------------------------------------------------------------------------
 
 3)
 module A {
@@ -754,16 +678,7 @@ module A {
 
 let b = 1;
 
-def a
-q_def ::A::a
-undef b
-q_undef A::b
-
-resolves when ::b is defined. 
-at that point we have to fail to find any ubd's in global scope,
-traverse down to the scope A, and search for the unqualified name b 
-to resolve the ubd.
-
+------------------------------------------------------------------------------
 
 4)
 module A {
@@ -780,19 +695,6 @@ module A {
 
 let a = 2;
 
-resolves A::b when A::a is defined.
-resolves B::c when ::a is defined.
-
-when A::a is defined, we search in local scope for ubds, and 
-find A::b. resolve that. then we go up to global scope find none,
-traverse down to scope B and find B::c. which we don't resolve,
-because this would not resolve under normal order. (how is this done?
-we don't want to resolve it because the undef name is unqualified.)
-
-then when ::a is defined, we search in global scope, find none,
-search in scope A, find none, search in scope B find B::c, resolve it 
-then.
-
 4a)
 module A {
   let b = a;
@@ -808,25 +710,7 @@ module A {
   let a = 1;
 }
 
-resolves A::b when ::a is defined,
-resolves B::c when ::a is defined.
-when ::a is defined, the search starts from global scope, finds none,
-then moves to scope A, finds one, resolves it, then moves to scope B,
-finds one, resolves it.
-this is because both of these definitions would resolve to this 
-in normal ordering.
-
-(side note: this concept of normal ordering is incoherent when 
-considering parallel compilation. how does use-before-def work 
-when multiple files are compiled simultaneously? it would seem 
-that each compilier instance would need access to the full definition 
-of everything, implying that each compiler would fully process 
-the entire dependency tree from a given file. implying duplicate work 
-if two files being compiled have the same dependency.
-note that there is this same duplicate work when considering bringing 
-forward declarations into files in a c style compilation where the text 
-of each file is similarly brought into each separate compilation process.)
-
+------------------------------------------------------------------------------
 
 5)
 module A {
@@ -850,11 +734,7 @@ module A {
 
 let b = 1;
 
-
-
-
-
-
+------------------------------------------------------------------------------
 
 6)
 module A {
@@ -902,6 +782,7 @@ module A {
   }
 }
 
+------------------------------------------------------------------------------
 
 7)
 module A {
@@ -972,6 +853,100 @@ unqualified local name, ubd lookup will resolve case 3 naturally.
 
 if we give it qualifications then we will never resolve it
 to an unqualified definition. (3)
+
+// #NOTE:
+// if we consider a set of scopes (x0, x1, ..., xN)
+// which are descending subscopes, defined as
+// module x0 {
+//   module x1 {
+//     ...
+//     module xN { ... } ... }}
+// then a variable appearing in scope xA
+// (where A is-in [0...N])
+// is reachable by unqualified lookup from any scope xB
+// (where B >= A and B <= N)
+
+// if we consider a set of sets of scopes
+// a0, a1, ..., aM
+// where each (a0, a1, ..., aM)
+// is-a set of descending subscopes (a0_0, a0_1, ..., a0_N)
+// then a variable within scope xA_B
+// (where A is-is [0...N] and B is-in [0...M])
+// is reachable by unqualified lookup from any scope xC_D
+// (where (A <= C <= N) and (B <= D <= M))
+
+// additionally, any possible scope is a subscope of global scope
+
+// that is, a variable is only reachable by unqualified lookup
+// from a subscope of the defining scope of the variable.
+
+so, we can solve this by computing if the ubd definition is within 
+a subscope of the new definition. because if it is, then unqualified 
+lookup will resolve the ubd definition given the new definition.
+
+This solution does not address qualified lookup however. where lookup 
+can traverse down the scope tree to resolve the ubd definition.
+in this case what we want to check is if by traversing the scope tree 
+via the undef name, we can resolve the new definition.
+
+case ?) 
+module A {
+  public let a = B::a;
+  module B {
+    public let a = 1;
+  }
+}
+
+when A::B::a is defined, it searches the UBD map for "A::B::a" 
+which does not match the undef name "B::a" that definition A::a
+relies on. however, we can notice that the undef name is within 
+the new definition name. 
+A::B::a 
+   B::a 
+as long as we ignore the first scope.
+
+can we leverage this?
+is there a way of writing modules which would give a false positive here?
+
+if we consider a set of scopes (x0, x1, ..., xN)
+which are descending subscopes, defined as
+module x0 {
+  module x1 {
+    ...
+    module xN { ... } ... }}
+then a variable a appearing in scope xA
+where 0 <= A <= N
+can resolve a variable b in a lower scope xB 
+where A <= B <= N 
+
+if the variable a uses the qualifications of scopes 
+between xA and xB 
+
+qualified a is: x0::x1::...::xA::a 
+qualified b is: x0::x1::...::xA::x(A+1)::...::xB::b 
+
+for a to be defined relative to b, a's reference to b 
+must include all qualifications between a and b,
+thus: x(A+1)::...::xB::b
+
+therefore, for a valid reference to be formed, we can assume 
+that the qualifications are there, if any qualifications are 
+there at all. thus, to resolve potential qualified lookups, we 
+can note that if a (x0::x1::...::xA::a) was the undef definition,
+and the reference to b (x(A+1)::...::xB::b) was the undef name,
+then when b (x0::x1::...::xA::x(A+1)::...::xB::b) was defined,
+the fully qualified name of b is what would be looked up in the map.
+
+
+
+
+#QUESTION how do we handle globally qualified names being used in the 
+ubd map?
+
+
+
+
+
 
 
 

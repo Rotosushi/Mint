@@ -22,6 +22,18 @@
 
 namespace mint {
 namespace ast {
+std::optional<Error>
+Let::checkUseBeforeDef(Error::UseBeforeDef &ubd) const noexcept {
+  if (ubd.names.qualified_undef == ubd.names.qualified_def) {
+    std::stringstream message;
+    message << "Let [";
+    print(message);
+    message << "] relies on it's own definition.";
+    return Error{Error::Kind::TypeCannotBeResolved, location(), message.view()};
+  }
+  return std::nullopt;
+}
+
 Ptr Let::clone(Environment &env) const noexcept {
   return env.getLetAst(attributes(), location(), annotation(), name(),
                        m_ast->clone(env));
@@ -152,7 +164,7 @@ Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
   // create a global variable for the binding
   auto llvm_name = env.createQualifiedNameForLLVM(name());
   llvm::GlobalVariable *variable = nullptr;
-  if (auto constant = dynCast<llvm::Constant>(value)) {
+  if (auto constant = llvm::dyn_cast<llvm::Constant>(value)) {
     variable =
         env.createLLVMGlobalVariable(llvm_name.view(), llvm_type, constant);
   } else {

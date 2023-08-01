@@ -147,16 +147,31 @@ std::string_view extractFinalLine(std::string_view view) noexcept {
 void testExpressionInREPL(TestCode &expression) {
   std::stringstream input;
   input << expression.setup << "\n" << expression.test_code;
+  // debug variable
   [[maybe_unused]] auto inview = input.view();
   std::stringstream output;
-  auto env = mint::Environment::create(&input, &output);
+  std::stringstream error_output;
+  std::stringstream log_output;
+  auto env =
+      mint::Environment::create(&input, &output, &error_output, &log_output);
 
   env.repl();
 
   auto line = extractFinalLine(output.view());
   auto result = extractResult(line);
 
-  BOOST_CHECK(result == expression.expected_result);
+  auto success = result == expression.expected_result;
+  BOOST_CHECK(success);
+  if (!success) {
+    std::cerr << "TestCase{\n";
+
+    if (expression.setup.size() > 0)
+      std::cerr << "Setup: " << expression.setup << "\n";
+
+    std::cerr << "Test Expression: " << expression.test_code
+              << "\n Expected Result: " << expression.expected_result
+              << "\n}\nError: " << error_output.view() << "\n";
+  }
 }
 
 BOOST_AUTO_TEST_CASE(mint_repl) {

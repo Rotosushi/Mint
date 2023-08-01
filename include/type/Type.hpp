@@ -18,9 +18,8 @@
 #include <optional>
 #include <ostream>
 
-#include "utility/Casting.hpp"
-
 #include "llvm/IR/Type.h"
+#include "llvm/Support/Casting.h"
 
 namespace mint {
 class Environment;
