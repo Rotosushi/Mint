@@ -22,8 +22,8 @@
 
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
+#include "adt/Result.hpp"
 #include "ast/Ast.hpp"
-#include "error/Result.hpp"
 
 namespace mint {
 class Bindings {

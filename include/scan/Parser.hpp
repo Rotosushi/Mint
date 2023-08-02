@@ -17,8 +17,8 @@
 #pragma once
 #include <istream>
 
+#include "adt/Result.hpp"
 #include "ast/Ast.hpp"
-#include "error/Result.hpp"
 #include "scan/Scanner.hpp"
 
 /*

@@ -19,7 +19,7 @@
 
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
-#include "error/Result.hpp"
+#include "adt/Result.hpp"
 #include "scan/Location.hpp"
 #include "type/Type.hpp"
 #include "utility/Assert.hpp"

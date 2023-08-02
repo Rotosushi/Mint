@@ -75,10 +75,13 @@ configure_file(
   ${MINT_INCLUDE_DIR}/utility/Config.hpp
 )
 
-# build the 'mint_common' library and the 'mint' executable
+set(WARNINGS -Wall -Wdeprecated -Wextra -Wpedantic -Wconversion -Werror)
+set(CXX_OPTIONS ${WARNINGS})
+
+# build the mint executable
 add_subdirectory(source)
 
+# build the mint_test executable
 if (MINT_BUILD_TESTS)
-  # build the 'mint_test' executable
   add_subdirectory(test)
 endif()

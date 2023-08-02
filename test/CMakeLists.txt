@@ -13,16 +13,19 @@ set(TEST_INCLUDE_DIR ${TEST_DIR}/include)
 set(TEST_SOURCE_DIR ${TEST_DIR}/source)
 
 add_executable(mint_test
-  ${TEST_INCLUDE_DIR}/TestExpressions.hpp
-
   ${TEST_SOURCE_DIR}/REPL.cpp 
 
   main.cpp
 )
 target_include_directories(mint_test PUBLIC
  ${TEST_INCLUDE_DIR}
+ ${MINT_INCLUDE_DIR}
 )
 target_link_libraries(mint_test
   ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-  mint_common
+  mint_scan
+  mint_type
+  mint_ast
+  mint_adt
+  mint_utility
 )
