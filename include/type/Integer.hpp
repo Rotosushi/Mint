@@ -22,18 +22,13 @@ namespace mint {
 namespace type {
 class Integer : public Type {
 public:
-  Integer() noexcept : Type{Type::Kind::Integer} {}
+  Integer() noexcept;
   ~Integer() noexcept override = default;
 
-  static auto classof(Ptr type) noexcept -> bool {
-    return Type::Kind::Integer == type->kind();
-  }
+  static auto classof(Ptr type) noexcept -> bool;
 
-  [[nodiscard]] bool equals(Ptr right) const noexcept override {
-    return llvm::dyn_cast<const Integer>(right) != nullptr;
-  }
-
-  void print(std::ostream &out) const noexcept override { out << "Integer"; }
+  [[nodiscard]] bool equals(Ptr right) const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   [[nodiscard]] llvm::Type *
   toLLVMImpl(Environment &env) const noexcept override;

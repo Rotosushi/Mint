@@ -53,5 +53,4 @@ template <typename Number>
   }
   return number;
 }
-
 } // namespace mint

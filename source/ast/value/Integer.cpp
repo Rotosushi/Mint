@@ -19,8 +19,25 @@
 
 namespace mint {
 namespace ast {
-Ptr Integer::clone(Environment &env) const noexcept {
-  return env.getIntegerAst(attributes(), location(), m_value);
+Integer::Integer(Attributes attributes, Location location, int value) noexcept
+    : Value{Ast::Kind::Integer, attributes, location}, m_value{value} {}
+
+auto Integer::value() const noexcept -> int { return m_value; }
+
+[[nodiscard]] auto Integer::create(Attributes attributes, Location location,
+                                   int value) noexcept -> ast::Ptr {
+  return static_cast<std::unique_ptr<Ast>>(
+      std::make_unique<Integer>(attributes, location, value));
+}
+
+auto Integer::classof(Ast const *ast) noexcept -> bool {
+  return ast->kind() == Ast::Kind::Integer;
+}
+
+void Integer::print(std::ostream &out) const noexcept { out << m_value; }
+
+Ptr Integer::clone() const noexcept {
+  return create(attributes(), location(), m_value);
 }
 
 Result<type::Ptr> Integer::typecheck(Environment &env) const noexcept {
@@ -28,8 +45,8 @@ Result<type::Ptr> Integer::typecheck(Environment &env) const noexcept {
   return env.getIntegerType();
 }
 
-Result<ast::Ptr> Integer::evaluate(Environment &env) noexcept {
-  return clone(env);
+Result<ast::Ptr> Integer::evaluate([[maybe_unused]] Environment &env) noexcept {
+  return clone();
 }
 
 Result<llvm::Value *> Integer::codegen(Environment &env) noexcept {

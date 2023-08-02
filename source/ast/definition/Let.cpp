@@ -18,13 +18,32 @@
 
 #include "adt/Environment.hpp"
 #include "ast/definition/Let.hpp"
-#include "utility/LLVMToString.hpp"
+#include "utility/LLVMUtility.hpp"
 
 namespace mint {
 namespace ast {
+Let::Let(Attributes attributes, Location location,
+         std::optional<type::Ptr> annotation, Identifier name, Ptr ast) noexcept
+    : Definition{Ast::Kind::Let, attributes, location, annotation, name},
+      m_ast{std::move(ast)} {
+  m_ast->setPrevAst(this);
+}
+
+[[nodiscard]] auto Let::create(Attributes attributes, Location location,
+                               std::optional<type::Ptr> annotation,
+                               Identifier name, Ptr ast) noexcept -> ast::Ptr {
+  return static_cast<std::unique_ptr<Ast>>(std::make_unique<Let>(
+      attributes, location, annotation, name, std::move(ast)));
+}
+
+auto Let::classof(Ast const *ast) noexcept -> bool {
+  return Ast::Kind::Let == ast->kind();
+}
+
 std::optional<Error>
 Let::checkUseBeforeDef(Error::UseBeforeDef &ubd) const noexcept {
-  if (ubd.names.qualified_undef == ubd.names.qualified_def) {
+  // #TODO: does this check work in all circumstances?
+  if (ubd.names.undef == ubd.names.def.variable()) {
     std::stringstream message;
     message << "Let [";
     print(message);
@@ -34,9 +53,20 @@ Let::checkUseBeforeDef(Error::UseBeforeDef &ubd) const noexcept {
   return std::nullopt;
 }
 
-Ptr Let::clone(Environment &env) const noexcept {
-  return env.getLetAst(attributes(), location(), annotation(), name(),
-                       m_ast->clone(env));
+Ptr Let::clone() const noexcept {
+  return create(attributes(), location(), annotation(), name(), m_ast->clone());
+}
+
+void Let::print(std::ostream &out) const noexcept {
+  if (attributes().isPublic()) {
+    out << "public ";
+  }
+
+  out << "let " << name();
+  auto anno = annotation();
+  if (anno.has_value())
+    out << " : " << anno.value();
+  out << " = " << m_ast;
 }
 
 Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
@@ -85,7 +115,8 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   // since we could construct a partialBinding, we check
   // if we can resolve the type of any use-before-def
   // which rely upon this one.
-  if (auto failed = env.resolveTypeOfUseBeforeDef(env.getQualifiedName(name())))
+  auto qualified_name = env.qualifyName(name());
+  if (auto failed = env.resolveTypeOfUseBeforeDef(qualified_name))
     return failed.value();
 
   setCachedType(env.getNilType());
@@ -125,16 +156,16 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
   // this is not the meaning of let, which introduces a
   // new variable. and as such must model the semantics of
   // a new value.
-  binding.setComptimeValue(value->clone(env));
+  binding.setComptimeValue(value->clone());
 
   // #NOTE: we just created the comptime value for this binding,
   // so we can evaluate any partial bindings
   // that rely on this binding
-  if (auto failed =
-          env.resolveComptimeValueOfUseBeforeDef(env.getQualifiedName(name())))
+  auto qualified_name = env.qualifyName(name());
+  if (auto failed = env.resolveComptimeValueOfUseBeforeDef(qualified_name))
     return failed.value();
 
-  return env.getNilAst({}, location());
+  return ast::Nil::create({}, location());
 }
 
 /*
@@ -175,8 +206,8 @@ Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
   binding.setRuntimeValue(variable);
 
   // resolve any use-before-def relying on this name
-  if (auto failed =
-          env.resolveRuntimeValueOfUseBeforeDef(env.getQualifiedName(name())))
+  auto qualified_name = env.qualifyName(name());
+  if (auto failed = env.resolveRuntimeValueOfUseBeforeDef(qualified_name))
     return failed.value();
 
   return env.getLLVMNil();

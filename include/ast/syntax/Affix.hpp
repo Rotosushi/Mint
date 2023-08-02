@@ -24,24 +24,16 @@ class Affix : public Syntax {
   Ptr m_ast;
 
 public:
-  Affix(Attributes attributes, Location location, Ptr ast) noexcept
-      : Syntax{Ast::Kind::Affix, attributes, location}, m_ast{std::move(ast)} {
-    m_ast->setPrevAst(this);
-  }
+  Affix(Attributes attributes, Location location, Ptr ast) noexcept;
   ~Affix() noexcept override = default;
 
   [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   Ptr ast) noexcept {
-    return std::make_unique<Affix>(attributes, location, std::move(ast));
-  }
+                                   Ptr ast) noexcept -> ast::Ptr;
 
-  static auto classof(Ast const *ast) noexcept -> bool {
-    return ast->kind() == Ast::Kind::Affix;
-  }
+  static auto classof(Ast const *ast) noexcept -> bool;
 
-  Ptr clone(Environment &env) const noexcept override;
-
-  void print(std::ostream &out) const noexcept override { out << m_ast << ";"; }
+  Ptr clone() const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;

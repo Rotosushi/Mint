@@ -19,8 +19,29 @@
 
 namespace mint {
 namespace ast {
-Ptr Unop::clone(Environment &env) const noexcept {
-  return env.getUnopAst(attributes(), location(), m_op, m_right->clone(env));
+Unop::Unop(Attributes attributes, Location location, Token op,
+           Ptr right) noexcept
+    : Expression{Ast::Kind::Unop, attributes, location}, m_op{op},
+      m_right{std::move(right)} {
+  m_right->setPrevAst(this);
+}
+
+[[nodiscard]] auto Unop::create(Attributes attributes, Location location,
+                                Token op, Ptr right) noexcept -> ast::Ptr {
+  return static_cast<std::unique_ptr<Ast>>(
+      std::make_unique<Unop>(attributes, location, op, std::move(right)));
+}
+
+auto Unop::classof(Ast const *ast) noexcept -> bool {
+  return ast->kind() == Ast::Kind::Unop;
+}
+
+Ptr Unop::clone() const noexcept {
+  return create(attributes(), location(), m_op, m_right->clone());
+}
+
+void Unop::print(std::ostream &out) const noexcept {
+  out << m_op << " " << m_right;
 }
 
 Result<type::Ptr> Unop::typecheck(Environment &env) const noexcept {

@@ -20,5 +20,12 @@
 #define MINT_VERSION_MINOR @Mint_VERSION_MINOR@
 #define MINT_VERSION_PATCH @Mint_VERSION_PATCH@
 #define MINT_GIT_REVISION "@Mint_GIT_REVISION@"
+#define MINT_RESOURCES_DIR "@MINT_RESOURCES_DIR@"
 #cmakedefine01 MINT_DEBUG
+
+// #TODO: the compiler flags include -std=c++23 so why does this error?
+// #if __cplusplus < 202302L
+//   #error "Not being compiled in c++23 mode"
+// #endif
+
 // clang-format on

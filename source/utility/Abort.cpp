@@ -14,7 +14,24 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-// clang-format off
-#define MINT_TEST_RESOURCES_DIR "@Mint_TEST_RESOURCES_DIR@"
-// clang-format on
+#include "utility/Abort.hpp"
+
+namespace mint {
+[[noreturn]] void abort(std::string_view message,
+                        std::source_location location) noexcept(true) {
+  log(std::cerr, message, location);
+
+  MINT_ASSERT(false && "abort");
+
+  std::abort();
+}
+
+[[noreturn]] void abort(std::error_code error_code,
+                        std::source_location location) noexcept {
+  abort(error_code.message(), location);
+}
+
+[[noreturn]] void abort(std::errc ec, std::source_location location) noexcept {
+  abort(std::make_error_code(ec), location);
+}
+} // namespace mint

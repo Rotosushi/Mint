@@ -19,6 +19,18 @@
 
 namespace mint {
 namespace type {
+Boolean::Boolean() noexcept : Type{Type::Kind::Boolean} {}
+
+auto Boolean::classof(Ptr type) noexcept -> bool {
+  return Type::Kind::Boolean == type->kind();
+}
+
+[[nodiscard]] bool Boolean::equals(Ptr right) const noexcept {
+  return llvm::dyn_cast<const Boolean>(right) != nullptr;
+}
+
+void Boolean::print(std::ostream &out) const noexcept { out << "Boolean"; }
+
 [[nodiscard]] llvm::Type *Boolean::toLLVMImpl(Environment &env) const noexcept {
   m_cached_llvm_type = env.getLLVMBooleanType();
   return m_cached_llvm_type;

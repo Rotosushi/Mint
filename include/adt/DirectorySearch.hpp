@@ -28,30 +28,10 @@ class DirectorySearcher {
   std::vector<fs::path> m_known_paths;
 
   auto existsWithinDirectory(fs::path &directory, fs::path &file) noexcept
-      -> bool {
-    auto path = directory;
-    path /= file;
-
-    std::error_code ec;
-    auto result = fs::exists(path, ec);
-    if (ec != std::error_code{}) {
-      abort(ec);
-    }
-    return result;
-  };
+      -> bool;
 
   auto searchWithinDirectory(fs::path &directory, fs::path &file) noexcept
-      -> std::optional<std::fstream> {
-    auto path = directory;
-    path /= file;
-
-    std::fstream file_stream{path};
-    if (file_stream.is_open()) {
-      return file_stream;
-    }
-
-    return std::nullopt;
-  }
+      -> std::optional<std::fstream>;
 
 public:
   DirectorySearcher() noexcept {
@@ -59,35 +39,10 @@ public:
     // #TODO: add the mint standard library path to the space.
   }
 
-  /*
-    add another directory to the search space
-  */
-  void append(fs::path directory) noexcept { m_known_paths.push_back(directory); }
+  void append(fs::path directory) noexcept;
 
-  /*
-    check that we can find the given file within
-    the search space.
-  */
-  auto exists(fs::path file) noexcept -> bool {
-    for (auto &directory : m_known_paths) {
-      if (existsWithinDirectory(directory, file))
-        return true;
-    }
-    return false;
-  }
+  auto exists(fs::path file) noexcept -> bool;
 
-  /*
-    attempt to open the file given, checking each
-    directory m_known_paths.
-  */
-  auto search(fs::path file) noexcept -> std::optional<std::fstream> {
-    for (auto &directory : m_known_paths) {
-      auto found = searchWithinDirectory(directory, file);
-      if (found) {
-        return found;
-      }
-    }
-    return std::nullopt;
-  }
+  auto search(fs::path file) noexcept -> std::optional<std::fstream>;
 };
 } // namespace mint

@@ -16,17 +16,46 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "ast/statement/Module.hpp"
 #include "adt/Environment.hpp"
+#include "ast/value/Nil.hpp"
 
 namespace mint {
 namespace ast {
-Ptr Module::clone(Environment &env) const noexcept {
+Module::Module(Attributes attributes, Location location, Identifier name,
+               Expressions expressions) noexcept
+    : Statement{Ast::Kind::Module, attributes, location}, m_name{name},
+      m_expressions{std::move(expressions)} {
+  for (auto &expression : m_expressions)
+    expression->setPrevAst(this);
+}
+
+[[nodiscard]] auto Module::create(Attributes attributes, Location location,
+                                  Identifier name,
+                                  Expressions expressions) noexcept
+    -> ast::Ptr {
+  return static_cast<std::unique_ptr<Ast>>(std::make_unique<Module>(
+      attributes, location, name, std::move(expressions)));
+}
+
+auto Module::classof(Ast const *ast) noexcept -> bool {
+  return ast->kind() == Ast::Kind::Module;
+}
+
+Ptr Module::clone() const noexcept {
   Expressions expressions;
   for (auto &expression : m_expressions) {
-    expressions.emplace_back(expression->clone(env));
+    expressions.emplace_back(expression->clone());
   }
 
-  return env.getModuleAst(attributes(), location(), m_name,
-                          std::move(expressions));
+  return create(attributes(), location(), m_name, std::move(expressions));
+}
+
+void Module::print(std::ostream &out) const noexcept {
+  out << "module " << m_name << " { \n";
+
+  for (auto &expression : m_expressions)
+    out << expression << "\n";
+
+  out << "}";
 }
 
 Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
@@ -47,8 +76,8 @@ Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
       // #NOTE: we clone here, because we don't want to leave the
       // module itself in an undefined state. if we move, then
       // the next time we iterate we will run into a null unique-ptr
-      // at this definition. 
-      if (auto failed = env.bindUseBeforeDef(error, expression->clone(env))) {
+      // at this definition.
+      if (auto failed = env.bindUseBeforeDef(error, expression->clone())) {
         env.unbindScope(m_name);
         env.popScope();
         return failed.value();
@@ -75,7 +104,7 @@ Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {
         return result;
       }
 
-      if (auto failed = env.bindUseBeforeDef(error, expression->clone(env))) {
+      if (auto failed = env.bindUseBeforeDef(error, expression->clone())) {
         env.unbindScope(m_name);
         env.popScope();
         return failed.value();
@@ -84,7 +113,7 @@ Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {
   }
 
   env.popScope();
-  return env.getNilAst({}, {});
+  return ast::Nil::create({}, {});
 }
 
 Result<llvm::Value *> Module::codegen(Environment &env) noexcept {
@@ -101,7 +130,7 @@ Result<llvm::Value *> Module::codegen(Environment &env) noexcept {
         return result;
       }
 
-      if (auto failed = env.bindUseBeforeDef(error, expression->clone(env))) {
+      if (auto failed = env.bindUseBeforeDef(error, expression->clone())) {
         env.unbindScope(m_name);
         env.popScope();
         return failed.value();

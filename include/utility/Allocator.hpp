@@ -25,23 +25,12 @@ template <class T> using PolyAllocator = std::pmr::polymorphic_allocator<T>;
 
 template <class T> struct Deleter {
   Allocator *allocator;
-  Deleter(Allocator &allocator) noexcept : allocator(&allocator) {}
-
-  void operator()(T *p) {
-    std::allocator_traits<Allocator>::destroy(*allocator, p);
-    std::allocator_traits<Allocator>::deallocate(
-        *allocator, reinterpret_cast<std::byte *>(p), sizeof(T));
-  }
+  Deleter(Allocator &allocator) noexcept;
+  void operator()(T *p);
 };
 
 template <class T> using allocator_unique = std::unique_ptr<T, Deleter<T>>;
 
 template <class T, class... Args>
-auto allocateUniquePtr(Allocator &allocator, Args &&...args) {
-  auto *alloc = reinterpret_cast<T *>(
-      std::allocator_traits<Allocator>::allocate(allocator, sizeof(T)));
-  std::allocator_traits<Allocator>::construct<T>(allocator, alloc,
-                                                 std::forward<Args>(args)...);
-  return allocator_unique(alloc, Deleter<T>{allocator});
-}
+auto allocateUniquePtr(Allocator &allocator, Args &&...args);
 } // namespace mint

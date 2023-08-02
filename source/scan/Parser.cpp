@@ -19,6 +19,16 @@
 #include "utility/NumbersRoundTrip.hpp"
 
 namespace mint {
+Parser::Parser(Environment *env, std::istream *in) noexcept
+    : env(env), in(in), current(Token::End) {
+  MINT_ASSERT(env != nullptr);
+  MINT_ASSERT(in != nullptr);
+}
+
+void Parser::setIstream(std::istream *in) noexcept {
+  MINT_ASSERT(in != nullptr);
+  this->in = in;
+}
 
 auto Parser::extractSourceLine(Location const &location) const noexcept
     -> std::string_view {
@@ -43,6 +53,79 @@ auto Parser::extractSourceLine(Location const &location) const noexcept
     return {cursor, eol};
   }
   return {};
+}
+
+auto Parser::endOfInput() const noexcept -> bool {
+  return scanner.endOfInput() && in->eof();
+}
+
+auto Parser::text() const noexcept -> std::string_view {
+  return scanner.getText();
+}
+auto Parser::location() const noexcept -> Location {
+  return scanner.getLocation();
+}
+
+void Parser::next() noexcept { current = scanner.scan(); }
+
+void Parser::append(std::string_view text) noexcept { scanner.append(text); }
+
+void Parser::fill() noexcept {
+  auto at_end = current == Token::End;
+  auto more_source = !in->eof();
+  auto in_good = in->good();
+  if (at_end && more_source && in_good) {
+    std::string line;
+    std::getline(*in, line, '\n');
+    line.push_back('\n');
+    append(line);
+
+    next();
+  }
+}
+
+auto Parser::peek(Token token) noexcept -> bool {
+  fill();
+  return current == token;
+}
+
+auto Parser::expect(Token token) noexcept -> bool {
+  fill();
+  if (current == token) {
+    next();
+    return true;
+  }
+  return false;
+}
+
+auto Parser::predictsDeclaration(Token token) noexcept -> bool {
+  fill();
+  switch (token) {
+  case Token::Let:
+  case Token::Module:
+    return true;
+  default:
+    return false;
+  }
+}
+
+void Parser::recover() noexcept {
+  while (!peek(Token::Semicolon) && !peek(Token::End)) {
+    next();
+  }
+
+  if (peek(Token::Semicolon)) {
+    next();
+  }
+}
+
+auto Parser::handle_error(Error::Kind kind) noexcept -> Error {
+  return handle_error(kind, location(), text());
+}
+auto Parser::handle_error(Error::Kind kind, Location location,
+                          std::string_view message) noexcept -> Error {
+  recover();
+  return {kind, location, message};
 }
 
 /*
@@ -121,8 +204,8 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<ast::Ptr> {
 
   auto right_loc = location();
   Location let_loc = {left_loc, right_loc};
-  return {env->getLetAst(attributes, let_loc, annotation, id,
-                         std::move(affix.value()))};
+  return ast::Let::create(attributes, let_loc, annotation, id,
+                          std::move(affix.value()));
 }
 
 /*
@@ -160,7 +243,7 @@ auto Parser::parseModule(bool is_public) noexcept -> Result<ast::Ptr> {
   auto right_loc = location();
   Location module_loc = {left_loc, right_loc};
   return {
-      env->getModuleAst(attributes, module_loc, id, std::move(expressions))};
+      ast::Module::create(attributes, module_loc, id, std::move(expressions))};
 }
 
 /*
@@ -175,7 +258,7 @@ auto Parser::parseImport() noexcept -> Result<ast::Ptr> {
     return handle_error(Error::Kind::ExpectedText);
   }
 
-  auto file = env->getText(text());
+  auto file = env->getTextFromTextLiteral(text());
   next(); // eat string
 
   if (!expect(Token::Semicolon)) {
@@ -184,7 +267,7 @@ auto Parser::parseImport() noexcept -> Result<ast::Ptr> {
 
   auto right_loc = location();
   Location import_loc = {left_loc, right_loc};
-  return env->getImportAst(default_attributes, import_loc, std::string{file});
+  return ast::Import::create(default_attributes, import_loc, std::string{file});
 }
 
 /* term = affix ";" */
@@ -203,7 +286,7 @@ auto Parser::parseTerm() noexcept -> Result<ast::Ptr> {
 
   auto right_loc = location();
   Location term_loc = {left_loc, right_loc};
-  return env->getAffixAst(default_attributes, term_loc, std::move(affix));
+  return ast::Affix::create(default_attributes, term_loc, std::move(affix));
 }
 
 auto Parser::parseAffix() noexcept -> Result<ast::Ptr> {
@@ -285,8 +368,8 @@ auto Parser::precedenceParser(ast::Ptr left, BinopPrecedence prec) noexcept
     Location binop_loc = {op_loc, rhs_loc};
     ast::Ptr &lhs = result.value();
     ast::Ptr &rhs = right.value();
-    result = env->getBinopAst(default_attributes, binop_loc, op, std::move(lhs),
-                              std::move(rhs));
+    result = ast::Binop::create(default_attributes, binop_loc, op,
+                                std::move(lhs), std::move(rhs));
   }
 
   return result;
@@ -308,21 +391,21 @@ auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
   case Token::Nil: {
     auto loc = location();
     next();
-    return env->getNilAst(default_attributes, loc);
+    return ast::Nil::create(default_attributes, loc);
     break;
   }
 
   case Token::True: {
     auto loc = location();
     next();
-    return env->getBooleanAst(default_attributes, loc, true);
+    return ast::Boolean::create(default_attributes, loc, true);
     break;
   }
 
   case Token::False: {
     auto loc = location();
     next();
-    return env->getBooleanAst(default_attributes, loc, false);
+    return ast::Boolean::create(default_attributes, loc, false);
     break;
   }
 
@@ -331,7 +414,7 @@ auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
     auto loc = location();
     next();
 
-    return env->getIntegerAst(default_attributes, loc, value);
+    return ast::Integer::create(default_attributes, loc, value);
     break;
   }
 
@@ -340,7 +423,7 @@ auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
     auto loc = location();
     next(); // eat 'id'
 
-    return env->getVariableAst(default_attributes, loc, name);
+    return ast::Variable::create(default_attributes, loc, name);
     break;
   }
 
@@ -358,7 +441,7 @@ auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
     auto rhs_loc = location();
     Location unop_loc{lhs_loc, rhs_loc};
 
-    return env->getUnopAst(default_attributes, unop_loc, op, std::move(ast));
+    return ast::Unop::create(default_attributes, unop_loc, op, std::move(ast));
     break;
   }
 
@@ -374,8 +457,8 @@ auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
       return handle_error(Error::Kind::ExpectedAClosingParen);
     }
 
-    return env->getParensAst(default_attributes, affix.value()->location(),
-                             std::move(ast));
+    return ast::Parens::create(default_attributes, affix.value()->location(),
+                               std::move(ast));
     break;
   }
 

@@ -63,40 +63,20 @@ class Let : public Definition {
 
 public:
   Let(Attributes attributes, Location location,
-      std::optional<type::Ptr> annotation, Identifier name, Ptr ast) noexcept
-      : Definition{Ast::Kind::Let, attributes, location, annotation, name},
-        m_ast{std::move(ast)} {
-    m_ast->setPrevAst(this);
-  }
+      std::optional<type::Ptr> annotation, Identifier name, Ptr ast) noexcept;
   ~Let() noexcept override = default;
 
   [[nodiscard]] static auto create(Attributes attributes, Location location,
                                    std::optional<type::Ptr> annotation,
-                                   Identifier name, Ptr ast) {
-    return std::make_unique<Let>(attributes, location, annotation, name,
-                                 std::move(ast));
-  }
-
-  static auto classof(Ast const *ast) noexcept -> bool {
-    return Ast::Kind::Let == ast->kind();
-  }
+                                   Identifier name, Ptr ast) noexcept
+      -> ast::Ptr;
+  static auto classof(Ast const *ast) noexcept -> bool;
 
   std::optional<Error>
   checkUseBeforeDef(Error::UseBeforeDef &ubd) const noexcept override;
 
-  Ptr clone(Environment &env) const noexcept override;
-
-  void print(std::ostream &out) const noexcept override {
-    if (attributes().isPublic()) {
-      out << "public ";
-    }
-
-    out << "let " << name();
-    auto anno = annotation();
-    if (anno.has_value())
-      out << " : " << anno.value();
-    out << " = " << m_ast;
-  }
+  Ptr clone() const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;

@@ -15,9 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <vector>
+#include <filesystem>
+#include <ostream>
+#include <string>
+
+namespace fs = std::filesystem;
+
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Value.h"
+#include "llvm/Support/Error.h"
 
 namespace mint {
-template <class T>
-void append(std::vector<T> &left, std::vector<T> &right) noexcept;
+auto emitLLVMIR(llvm::Module &module, fs::path filename,
+                std::ostream &error_output) noexcept -> int;
+
+auto toString(llvm::Error const &error) noexcept -> std::string;
+auto toString(llvm::Type const *type) noexcept -> std::string;
+auto toString(llvm::Value const *value) noexcept -> std::string;
 } // namespace mint

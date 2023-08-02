@@ -24,26 +24,15 @@ class Parens : public Syntax {
   Ptr m_ast;
 
 public:
-  Parens(Attributes attributes, Location location, Ptr ast) noexcept
-      : Syntax{Ast::Kind::Parens, attributes, location}, m_ast{std::move(ast)} {
-    m_ast->setPrevAst(this);
-  }
+  Parens(Attributes attributes, Location location, Ptr ast) noexcept;
   ~Parens() noexcept override = default;
 
   [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   Ptr ast) noexcept {
-    return std::make_unique<Parens>(attributes, location, std::move(ast));
-  }
+                                   Ptr ast) noexcept -> ast::Ptr;
 
-  static auto classof(Ast const *ast) noexcept -> bool {
-    return ast->kind() == Ast::Kind::Parens;
-  }
-
-  Ptr clone(Environment &env) const noexcept override;
-
-  void print(std::ostream &out) const noexcept override {
-    out << "(" << m_ast << ")";
-  }
+  static auto classof(Ast const *ast) noexcept -> bool;
+  Ptr clone() const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;

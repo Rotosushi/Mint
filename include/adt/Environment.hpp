@@ -60,10 +60,10 @@ class Environment {
   std::ostream *m_error_output;
   std::ostream *m_log_output;
 
-  std::unique_ptr<llvm::LLVMContext> llvm_context;
-  std::unique_ptr<llvm::Module> llvm_module;
-  std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder;
-  llvm::TargetMachine *llvm_target_machine;
+  std::unique_ptr<llvm::LLVMContext> m_llvm_context;
+  std::unique_ptr<llvm::Module> m_llvm_module;
+  std::unique_ptr<llvm::IRBuilder<>> m_llvm_ir_builder;
+  llvm::TargetMachine *m_llvm_target_machine;
   // llvm::Function *current_llvm_function;
 
   Environment(std::istream *in, std::ostream *out, std::ostream *errout,
@@ -71,189 +71,97 @@ class Environment {
               std::unique_ptr<llvm::LLVMContext> llvm_context,
               std::unique_ptr<llvm::Module> llvm_module,
               std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder,
-              llvm::TargetMachine *llvm_target_machine) noexcept
-      : m_global_scope(Scope::createGlobalScope(m_identifier_set.empty_id())),
-        m_local_scope(m_global_scope), m_parser(this, in), m_input(in),
-        m_output(out), m_error_output(errout), m_log_output(log),
-        llvm_context(std::move(llvm_context)),
-        llvm_module(std::move(llvm_module)),
-        llvm_ir_builder(std::move(llvm_ir_builder)),
-        llvm_target_machine(llvm_target_machine)
-  // ,current_llvm_function(nullptr)
-  {
-    MINT_ASSERT(in != nullptr);
-    MINT_ASSERT(out != nullptr);
-    MINT_ASSERT(errout != nullptr);
-
-    MINT_ASSERT(llvm_target_machine != nullptr);
-
-    InitializeBuiltinBinops(this);
-    InitializeBuiltinUnops(this);
-  }
+              llvm::TargetMachine *llvm_target_machine) noexcept;
 
 public:
+  /**** Environment Methods ****/
   [[nodiscard]] static auto nativeCPUFeatures() noexcept -> std::string;
-
+  //   #NOTE: does the work of initializing the llvm data structures
   [[nodiscard]] static auto create(std::istream *in = &std::cin,
                                    std::ostream *out = &std::cout,
                                    std::ostream *errout = &std::cerr,
                                    std::ostream *log = &std::clog) noexcept
       -> Environment;
 
-  // #TODO: reorganize environment methods more clearly into
-  // groups. according to which member they access.
+  // #NOTE:
+  // string is some quoted text from the source code: "\"...\""
+  // return the same string without quotes "..."
+  static auto getTextFromTextLiteral(std::string_view string) noexcept
+      -> std::string_view;
 
-  /**** Environment Methods ****/
   auto repl() noexcept -> int;
-
   auto compile(std::filesystem::path file) noexcept -> int;
 
-  void printErrorWithSource(Error const &error) const noexcept {
-    if (error.isDefault()) {
-      auto &data = error.getDefault();
-      auto bad_source = m_parser.extractSourceLine(data.location);
-      error.print(*m_error_output, bad_source);
-    } else {
-      error.print(*m_error_output);
-    }
-  }
-
+  void printErrorWithSource(Error const &error) const noexcept;
   void printErrorWithSource(Error const &error,
-                            Parser const &parser) const noexcept {
-    if (error.isDefault()) {
-      auto &data = error.getDefault();
-      auto bad_source = parser.extractSourceLine(data.location);
-      error.print(*m_error_output, bad_source);
-    } else {
-      error.print(*m_error_output);
-    }
-  }
+                            Parser const &parser) const noexcept;
 
-  /*
-    #NOTE:
-    string is some quoted string: "\"...\""
-    return the same string without quotes "..."
-  */
-  auto getText(std::string_view string) noexcept -> std::string_view {
-    auto cursor = std::next(string.begin());
-    auto end = std::prev(string.end());
-
-    // #TODO: replace escape sequences with character literals?
-
-    return {cursor, static_cast<std::size_t>(std::distance(cursor, end))};
-  }
-
-  /**** global "module" interface ****/
-  void addAstToModule(ast::Ptr ast) noexcept {
-    m_module.push_back(std::move(ast));
-  }
-
-  /**** DirectorySearcher interface ****/
-  void appendDirectory(fs::path file) noexcept {
-    return m_directory_searcher.append(std::move(file));
-  }
-
-  auto fileExists(fs::path file) noexcept {
-    return m_directory_searcher.exists(std::move(file));
-  }
-
-  auto fileSearch(fs::path file) noexcept {
-    return m_directory_searcher.search(std::move(file));
-  }
-
-  auto getIdentifier(std::string_view name) noexcept {
-    return m_identifier_set.emplace(name);
-  }
-
-  /**** ImportSet interface ****/
-  auto alreadyImported(fs::path const &filename) noexcept -> bool {
-    return m_import_set.contains(filename);
-  }
-
-  void addImport(fs::path const &filename) noexcept {
-    m_import_set.insert(filename);
-  }
-
-  /**** Scope interface ****/
-  auto localScope() noexcept { return m_local_scope; }
-
+  auto localScope() noexcept -> std::shared_ptr<Scope>;
   auto exchangeLocalScope(std::shared_ptr<Scope> scope) noexcept
-      -> std::shared_ptr<Scope> {
-    auto old_local = m_local_scope;
-    m_local_scope = scope;
-    return old_local;
-  }
+      -> std::shared_ptr<Scope>;
 
-  /*
-    intended to be called when processing an Ast::Function,
-    such that lookup and binding occurs within the local
-    scope of the function.
-    note the lack of a scope name, and thus no ability to
-    bind the scope to the current scope. thus anonymous scopes
-    are only alive as long as they are the local_scope.
+  //   intended to be called when processing an ast::Function,
+  //   or ast::Block
+  //   such that lookup and binding occurs within the local
+  //   scope of the function.
+  //   note the lack of a scope name, and thus no ability to
+  //   bind the scope to the current scope. thus anonymous scopes
+  //   are only alive as long as they are the local_scope.
+  //
+  //   this behavior is intended for functions, whose names
+  //   only need to be alive for the time functions are being
+  //   evaluated. but not for modules, as a modules names
+  //   must be alive for the lifetime of a given program.
+  void pushScope() noexcept;
 
-    this behavior is intended for functions, whose names
-    only need to be alive for the time functions are being
-    evaluated. but not for modules, as a modules names
-    must be alive for the lifetime of a given program.
-  */
-  void pushScope() noexcept {
-    m_local_scope = Scope::createScope({}, m_local_scope);
-  }
+  //   called when processing an Ast::Module,
+  //   such that lookup and binding occurs within the
+  //   local scope of the module.
+  void pushScope(Identifier name) noexcept;
 
-  /*
-    called when processing an Ast::Module,
-    such that lookup and binding occurs within the
-    local scope of the module.
-  */
-  void pushScope(Identifier name) noexcept {
-    auto found = m_local_scope->lookupScope(name);
-    if (found) {
-      m_local_scope = found.value().ptr();
-      return;
-    }
+  // traverse up the scope tree one level.
+  void popScope() noexcept;
 
-    auto new_scope = m_local_scope->bindScope(name);
-    m_local_scope = new_scope.ptr();
-  }
+  //**** Environment member interfaces ****//
+  //**** global "module" interface ****//
+  void addAstToModule(ast::Ptr ast) noexcept;
+
+  //**** DirectorySearcher interface ****//
+  void appendDirectory(fs::path file) noexcept;
+
+  auto fileExists(fs::path file) noexcept -> bool;
+
+  auto fileSearch(fs::path file) noexcept -> std::optional<std::fstream>;
+
+  //**** Identifier Set Interface ****//
+  auto getIdentifier(std::string_view name) noexcept -> Identifier;
+
+  //**** ImportSet interface ****//
+  auto alreadyImported(fs::path const &filename) noexcept -> bool;
+
+  void addImport(fs::path const &filename) noexcept;
+
+  //**** Scope interface ****//
   // called when we fail to create a module, so we
   // don't partially define a module within the current
   // namespace.
-  void unbindScope(Identifier name) noexcept {
-    m_local_scope->unbindScope(name);
-  }
-
-  // traverse up the scope tree one level.
-  void popScope() noexcept {
-    if (m_local_scope->isGlobal()) {
-      return; // cannot traverse past global scope
-    }
-
-    m_local_scope = m_local_scope->getPrevScope();
-  }
+  void unbindScope(Identifier name) noexcept;
 
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
-                ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept {
-    return m_local_scope->bindName(name, attributes, type,
-                                   std::move(comptime_value), runtime_value);
-  }
+                ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
+      -> mint::Result<mint::Bindings::Binding>;
 
   auto partialBindName(Identifier name, Attributes attributes,
-                       type::Ptr type) noexcept {
-    return m_local_scope->partialBindName(name, attributes, type);
-  }
+                       type::Ptr type) noexcept
+      -> mint::Result<mint::Bindings::Binding>;
 
-  auto lookupBinding(Identifier name) noexcept {
-    return m_local_scope->lookupBinding(name);
-  }
-  auto lookupLocalBinding(Identifier name) noexcept {
-    return m_local_scope->lookupLocalBinding(name);
-  }
-  auto getQualifiedName(Identifier name) noexcept {
-    return m_local_scope->qualifyName(name);
-  }
+  auto lookupBinding(Identifier name) noexcept
+      -> mint::Result<mint::Bindings::Binding>;
+  auto lookupLocalBinding(Identifier name) noexcept
+      -> mint::Result<mint::Bindings::Binding>;
+  auto qualifyName(Identifier name) noexcept -> Identifier;
 
-  /**** Use Before Def Interface ****/
+  //**** Use Before Def Interface ****/
   std::optional<Error> bindUseBeforeDef(Error const &error,
                                         ast::Ptr ast) noexcept;
 
@@ -263,8 +171,7 @@ private:
                                         ast::Ptr ast) noexcept;
 
 public:
-  std::optional<Error>
-  resolveTypeOfUseBeforeDef(Identifier def_name) noexcept;
+  std::optional<Error> resolveTypeOfUseBeforeDef(Identifier def_name) noexcept;
 
   std::optional<Error>
   resolveComptimeValueOfUseBeforeDef(Identifier def_name) noexcept;
@@ -272,231 +179,104 @@ public:
   std::optional<Error>
   resolveRuntimeValueOfUseBeforeDef(Identifier def_name) noexcept;
 
-  /**** BinopTable Interface ****/
-  auto createBinop(Token op) noexcept { return m_binop_table.emplace(op); }
-  auto lookupBinop(Token op) noexcept { return m_binop_table.lookup(op); }
+  //**** BinopTable Interface ****/
+  auto createBinop(Token op) noexcept -> BinopTable::Binop;
+  auto lookupBinop(Token op) noexcept -> std::optional<BinopTable::Binop>;
 
-  /**** UnopTable Interface ****/
-  auto createUnop(Token op) noexcept { return m_unop_table.emplace(op); }
-  auto lookupUnop(Token op) noexcept { return m_unop_table.lookup(op); }
+  //**** UnopTable Interface ****/
+  auto createUnop(Token op) noexcept -> UnopTable::Unop;
+  auto lookupUnop(Token op) noexcept -> std::optional<UnopTable::Unop>;
 
-  /**** TypeInterner Interface ****/
-  auto getBooleanType() noexcept { return m_type_interner.getBooleanType(); }
-  auto getIntegerType() noexcept { return m_type_interner.getIntegerType(); }
-  auto getNilType() noexcept { return m_type_interner.getNilType(); }
+  //**** TypeInterner Interface ****/
+  auto getBooleanType() noexcept -> type::Boolean const *;
+  auto getIntegerType() noexcept -> type::Integer const *;
+  auto getNilType() noexcept -> type::Nil const *;
 
-  /**** Ast create methods ****/
-  auto getLetAst(Attributes attributes, Location location,
-                 std::optional<type::Ptr> annotation, Identifier name,
-                 ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast::Let::create(attributes, location, annotation, name,
-                            std::move(ast));
-  }
-
-  auto getNilAst(Attributes attributes, Location location) noexcept
-      -> ast::Ptr {
-    return ast::Nil::create(attributes, location);
-  }
-
-  auto getBooleanAst(Attributes attributes, Location location,
-                     bool value) noexcept -> ast::Ptr {
-    return ast::Boolean::create(attributes, location, value);
-  }
-
-  auto getIntegerAst(Attributes attributes, Location location,
-                     int value) noexcept -> ast::Ptr {
-    return ast::Integer::create(attributes, location, value);
-  }
-
-  auto getParensAst(Attributes attributes, Location location,
-                    ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast::Parens::create(attributes, location, std::move(ast));
-  }
-
-  auto getAffixAst(Attributes attributes, Location location,
-                   ast::Ptr ast) noexcept -> ast::Ptr {
-    return ast::Affix::create(attributes, location, std::move(ast));
-  }
-
-  auto getImportAst(Attributes attributes, Location location,
-                    std::string filename) noexcept -> ast::Ptr {
-    return ast::Import::create(attributes, location, std::move(filename));
-  }
-
-  auto getModuleAst(Attributes attributes, Location location, Identifier name,
-                    ast::Module::Expressions expressions) noexcept -> ast::Ptr {
-    return ast::Module::create(attributes, location, name,
-                               std::move(expressions));
-  }
-
-  auto getBinopAst(Attributes attributes, Location location, Token op,
-                   ast::Ptr left, ast::Ptr right) noexcept -> ast::Ptr {
-    return ast::Binop::create(attributes, location, op, std::move(left),
-                              std::move(right));
-  }
-
-  auto getUnopAst(Attributes attributes, Location location, Token op,
-                  ast::Ptr right) noexcept -> ast::Ptr {
-    return ast::Unop::create(attributes, location, op, std::move(right));
-  }
-
-  auto getVariableAst(Attributes attributes, Location location,
-                      Identifier name) noexcept -> ast::Ptr {
-    return ast::Variable::create(attributes, location, name);
-  }
-
-  /* LLVM interface */
-
-  /**** LLVM Helpers *****/
-  auto emitLLVMIR(fs::path filename) noexcept -> int {
-    auto llvm_ir_filename = filename.replace_extension("ll");
-    std::error_code error;
-    llvm::raw_fd_ostream outfile{llvm_ir_filename.c_str(), error};
-    if (error) {
-      *m_error_output << "Couldn't open file: " << llvm_ir_filename << " -- "
-                      << error << "\n";
-      return EXIT_FAILURE;
-    }
-
-    llvm_module->print(outfile, /* AssemblyAnnotationWriter = */ nullptr);
-    return EXIT_SUCCESS;
-  }
-
-  /* https://llvm.org/docs/LangRef.html#identifiers */
+  //**** LLVM interface ****//
+  //**** LLVM Helpers *****//
   auto createQualifiedNameForLLVM(Identifier name) noexcept -> Identifier;
 
   /**** LLVM IRBuilder interface ****/
   // types
-  auto getLLVMNilType() noexcept -> llvm::IntegerType * {
-    return llvm_ir_builder->getInt1Ty();
-  }
-
-  auto getLLVMBooleanType() noexcept -> llvm::IntegerType * {
-    return llvm_ir_builder->getInt1Ty();
-  }
-
-  auto getLLVMIntegerType() noexcept -> llvm::IntegerType * {
-    return llvm_ir_builder->getInt32Ty();
-  }
+  auto getLLVMNilType() noexcept -> llvm::IntegerType *;
+  auto getLLVMBooleanType() noexcept -> llvm::IntegerType *;
+  auto getLLVMIntegerType() noexcept -> llvm::IntegerType *;
 
   // values
-  auto getLLVMNil() noexcept -> llvm::ConstantInt * {
-    return llvm_ir_builder->getInt1(false);
-  }
-
-  auto getLLVMBoolean(bool value) noexcept -> llvm::ConstantInt * {
-    return llvm_ir_builder->getInt1(value);
-  }
-
-  auto getLLVMInteger(int value) noexcept -> llvm::ConstantInt * {
-    return llvm_ir_builder->getInt32(value);
-  }
+  auto getLLVMNil() noexcept -> llvm::ConstantInt *;
+  auto getLLVMBoolean(bool value) noexcept -> llvm::ConstantInt *;
+  auto getLLVMInteger(int value) noexcept -> llvm::ConstantInt *;
 
   // instructions
-  llvm::Value *createLLVMNeg(llvm::Value *right, llvm::Twine const &name = "",
-                             bool no_unsigned_wrap = false,
-                             bool no_signed_wrap = false) noexcept {
-    return llvm_ir_builder->CreateNeg(right, name, no_unsigned_wrap,
-                                      no_signed_wrap);
-  }
+  auto createLLVMNeg(llvm::Value *right, llvm::Twine const &name = "",
+                     bool no_unsigned_wrap = false,
+                     bool no_signed_wrap = false) noexcept -> llvm::Value *;
 
-  llvm::Value *createLLVMNot(llvm::Value *right, llvm::Twine const &name = "") {
-    return llvm_ir_builder->CreateNot(right, name);
-  }
+  auto createLLVMNot(llvm::Value *right, llvm::Twine const &name = "") noexcept
+      -> llvm::Value *;
 
   /* https://llvm.org/docs/LangRef.html#add-instruction */
-  llvm::Value *createLLVMAdd(llvm::Value *left, llvm::Value *right,
-                             llvm::Twine const &name = "",
-                             bool no_unsigned_wrap = false,
-                             bool no_signed_wrap = false) noexcept {
-    return llvm_ir_builder->CreateAdd(left, right, name, no_unsigned_wrap,
-                                      no_signed_wrap);
-  }
+  auto createLLVMAdd(llvm::Value *left, llvm::Value *right,
+                     llvm::Twine const &name = "",
+                     bool no_unsigned_wrap = false,
+                     bool no_signed_wrap = false) noexcept -> llvm::Value *;
 
   /* https://llvm.org/docs/LangRef.html#sub-instruction */
-  llvm::Value *createLLVMSub(llvm::Value *left, llvm::Value *right,
-                             llvm::Twine const &name = "",
-                             bool no_unsigned_wrap = false,
-                             bool no_signed_wrap = false) noexcept {
-    return llvm_ir_builder->CreateSub(left, right, name, no_unsigned_wrap,
-                                      no_signed_wrap);
-  }
+  auto createLLVMSub(llvm::Value *left, llvm::Value *right,
+                     llvm::Twine const &name = "",
+                     bool no_unsigned_wrap = false,
+                     bool no_signed_wrap = false) noexcept -> llvm::Value *;
 
   /* https://llvm.org/docs/LangRef.html#mul-instruction */
-  llvm::Value *createLLVMMul(llvm::Value *left, llvm::Value *right,
-                             llvm::Twine const &name = "",
-                             bool no_unsigned_wrap = false,
-                             bool no_signed_wrap = false) noexcept {
-    return llvm_ir_builder->CreateMul(left, right, name, no_unsigned_wrap,
-                                      no_signed_wrap);
-  }
+  auto createLLVMMul(llvm::Value *left, llvm::Value *right,
+                     llvm::Twine const &name = "",
+                     bool no_unsigned_wrap = false,
+                     bool no_signed_wrap = false) noexcept -> llvm::Value *;
 
   /* https://llvm.org/docs/LangRef.html#sdiv-instruction */
-  llvm::Value *createLLVMSDiv(llvm::Value *left, llvm::Value *right,
-                              llvm::Twine const &name = "",
-                              bool is_exact = false) noexcept {
-    return llvm_ir_builder->CreateSDiv(left, right, name, is_exact);
-  }
+  auto createLLVMSDiv(llvm::Value *left, llvm::Value *right,
+                      llvm::Twine const &name = "",
+                      bool is_exact = false) noexcept -> llvm::Value *;
 
   /* https://llvm.org/docs/LangRef.html#srem-instruction */
-  llvm::Value *createLLVMSRem(llvm::Value *left, llvm::Value *right,
-                              llvm::Twine const &name = "") noexcept {
-    return llvm_ir_builder->CreateSRem(left, right, name);
-  }
+  auto createLLVMSRem(llvm::Value *left, llvm::Value *right,
+                      llvm::Twine const &name = "") noexcept -> llvm::Value *;
 
   /* https://llvm.org/docs/LangRef.html#icmp-instruction */
   auto createLLVMICmpEQ(llvm::Value *left, llvm::Value *right,
-                        const llvm::Twine &name = "") noexcept {
-    return llvm_ir_builder->CreateICmpEQ(left, right, name);
-  }
+                        const llvm::Twine &name = "") noexcept -> llvm::Value *;
 
   auto createLLVMICmpNE(llvm::Value *left, llvm::Value *right,
-                        const llvm::Twine &name = "") noexcept {
-    return llvm_ir_builder->CreateICmpNE(left, right, name);
-  }
+                        const llvm::Twine &name = "") noexcept -> llvm::Value *;
 
   auto createLLVMICmpSGT(llvm::Value *left, llvm::Value *right,
-                         const llvm::Twine &name = "") noexcept {
-    return llvm_ir_builder->CreateICmpSGT(left, right, name);
-  }
+                         const llvm::Twine &name = "") noexcept
+      -> llvm::Value *;
 
   auto createLLVMICmpSGE(llvm::Value *left, llvm::Value *right,
-                         const llvm::Twine &name = "") noexcept {
-    return llvm_ir_builder->CreateICmpSGE(left, right, name);
-  }
+                         const llvm::Twine &name = "") noexcept
+      -> llvm::Value *;
 
   auto createLLVMICmpSLT(llvm::Value *left, llvm::Value *right,
-                         const llvm::Twine &name = "") noexcept {
-    return llvm_ir_builder->CreateICmpSLT(left, right, name);
-  }
+                         const llvm::Twine &name = "") noexcept
+      -> llvm::Value *;
 
   auto createLLVMICmpSLE(llvm::Value *left, llvm::Value *right,
-                         const llvm::Twine &name = "") noexcept {
-    return llvm_ir_builder->CreateICmpSLE(left, right, name);
-  }
+                         const llvm::Twine &name = "") noexcept
+      -> llvm::Value *;
 
   auto createLLVMAnd(llvm::Value *left, llvm::Value *right,
-                     const llvm::Twine &name = "") noexcept {
-    return llvm_ir_builder->CreateAnd(left, right, name);
-  }
-
+                     const llvm::Twine &name = "") noexcept -> llvm::Value *;
   auto createLLVMOr(llvm::Value *left, llvm::Value *right,
-                    const llvm::Twine &name = "") noexcept {
-    return llvm_ir_builder->CreateOr(left, right, name);
-  }
+                    const llvm::Twine &name = "") noexcept -> llvm::Value *;
 
-  /**** composite 'instructions' ****/
+  /**** composite llvm IR 'instructions' ****/
   // allocations
   auto createLLVMGlobalVariable(std::string_view name, llvm::Type *type,
                                 llvm::Constant *init = nullptr) noexcept
       -> llvm::GlobalVariable *;
 
-  // load
-  auto createLLVMLoad(llvm::Type *type, llvm::Value *source) -> llvm::Value * {
-    // #NOTE: we can only load single value types.
-    // however all types currently available in
-    // the language are single value.
-    return llvm_ir_builder->CreateLoad(type, source);
-  }
+  // loads/stores
+  auto createLLVMLoad(llvm::Type *type, llvm::Value *source) -> llvm::Value *;
 };
 } // namespace mint

@@ -19,6 +19,18 @@
 
 namespace mint {
 namespace type {
+Integer::Integer() noexcept : Type{Type::Kind::Integer} {}
+
+auto Integer::classof(Ptr type) noexcept -> bool {
+  return Type::Kind::Integer == type->kind();
+}
+
+[[nodiscard]] bool Integer::equals(Ptr right) const noexcept {
+  return llvm::dyn_cast<const Integer>(right) != nullptr;
+}
+
+void Integer::print(std::ostream &out) const noexcept { out << "Integer"; }
+
 [[nodiscard]] llvm::Type *Integer::toLLVMImpl(Environment &env) const noexcept {
   m_cached_llvm_type = env.getLLVMIntegerType();
   return m_cached_llvm_type;

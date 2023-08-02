@@ -21,28 +21,15 @@
 #include "utility/Log.hpp"
 
 namespace mint {
-[[noreturn]] inline void
+[[noreturn]] void
 abort(std::string_view message,
-      std::source_location location =
-          std::source_location::current()) noexcept(true) {
-  log(std::cerr, message, location);
-  // if we are in a debug build,
-  // emit a breakpoint instruction.
-  // for debugging convenience
-  MINT_ASSERT(false && "abort");
+      std::source_location location = std::source_location::current()) noexcept;
 
-  std::abort();
-}
+[[noreturn]] void
+abort(std::error_code error_code,
+      std::source_location location = std::source_location::current()) noexcept;
 
-[[noreturn]] inline void abort(
-    std::error_code error_code,
-    std::source_location location = std::source_location::current()) noexcept {
-  abort(error_code.message(), location);
-}
-
-[[noreturn]] inline void abort(
-    std::errc ec,
-    std::source_location location = std::source_location::current()) noexcept {
-  abort(std::make_error_code(ec), location);
-}
+[[noreturn]] void
+abort(std::errc ec,
+      std::source_location location = std::source_location::current()) noexcept;
 } // namespace mint

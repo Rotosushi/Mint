@@ -26,6 +26,7 @@
 namespace mint {
 class Environment;
 
+// #TODO: BinopEvalFn no longer needs a reference to the environment.
 using BinopEvalFn = Result<ast::Ptr> (*)(ast::Ast *left, ast::Ast *right,
                                          Environment &env);
 using BinopCodegenFn = Result<llvm::Value *> (*)(llvm::Value *left,
@@ -57,26 +58,10 @@ public:
   BinopOverloads() noexcept { overloads.reserve(2); }
 
   auto lookup(type::Ptr left_type, type::Ptr right_type) noexcept
-      -> std::optional<BinopOverload> {
-    for (auto &overload : overloads) {
-      if (left_type == overload.left_type &&
-          right_type == overload.right_type) {
-        return overload;
-      }
-    }
-    return std::nullopt;
-  }
+      -> std::optional<BinopOverload>;
 
   auto emplace(type::Ptr left_type, type::Ptr right_type, type::Ptr result_type,
-               BinopEvalFn eval, BinopCodegenFn gen) noexcept -> BinopOverload {
-    auto found = lookup(left_type, right_type);
-    if (found) {
-      return found.value();
-    }
-
-    return overloads.emplace_back(left_type, right_type, result_type, eval,
-                                  gen);
-  }
+               BinopEvalFn eval, BinopCodegenFn gen) noexcept -> BinopOverload;
 };
 
 class BinopTable {
@@ -93,16 +78,11 @@ public:
     Binop(Table::iterator iter) noexcept : iter(iter) {}
 
     auto lookup(type::Ptr left_type, type::Ptr right_type) noexcept
-        -> std::optional<BinopOverload> {
-      return iter->second.lookup(left_type, right_type);
-    }
+        -> std::optional<BinopOverload>;
 
     auto emplace(type::Ptr left_type, type::Ptr right_type,
                  type::Ptr result_type, BinopEvalFn eval,
-                 BinopCodegenFn gen) noexcept -> BinopOverload {
-      return iter->second.emplace(left_type, right_type, result_type, eval,
-                                  gen);
-    }
+                 BinopCodegenFn gen) noexcept -> BinopOverload;
   };
 
 private:
@@ -111,22 +91,9 @@ private:
 public:
   BinopTable() noexcept = default;
 
-  auto lookup(Token op) noexcept -> std::optional<Binop> {
-    auto found = table.find(op);
-    if (found != table.end()) {
-      return found;
-    }
-    return std::nullopt;
-  }
+  auto lookup(Token op) noexcept -> std::optional<Binop>;
 
-  auto emplace(Token op) -> Binop {
-    auto found = table.find(op);
-    if (found != table.end()) {
-      return found;
-    }
-
-    return table.emplace(std::make_pair(op, BinopOverloads{})).first;
-  }
+  auto emplace(Token op) -> Binop;
 };
 
 void InitializeBuiltinBinops(Environment *env);

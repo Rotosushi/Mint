@@ -19,9 +19,26 @@
 
 namespace mint {
 namespace ast {
-Ptr Affix::clone(Environment &env) const noexcept {
-  return env.getAffixAst(attributes(), location(), m_ast->clone(env));
+Affix::Affix(Attributes attributes, Location location, Ptr ast) noexcept
+    : Syntax{Ast::Kind::Affix, attributes, location}, m_ast{std::move(ast)} {
+  m_ast->setPrevAst(this);
 }
+
+[[nodiscard]] auto Affix::create(Attributes attributes, Location location,
+                                 Ptr ast) noexcept -> ast::Ptr {
+  return static_cast<std::unique_ptr<Ast>>(
+      std::make_unique<Affix>(attributes, location, std::move(ast)));
+}
+
+auto Affix::classof(Ast const *ast) noexcept -> bool {
+  return ast->kind() == Ast::Kind::Affix;
+}
+
+Ptr Affix::clone() const noexcept {
+  return create(attributes(), location(), m_ast->clone());
+}
+
+void Affix::print(std::ostream &out) const noexcept { out << m_ast << ";"; }
 
 Result<type::Ptr> Affix::typecheck(Environment &env) const noexcept {
   auto result = m_ast->typecheck(env);

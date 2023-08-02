@@ -19,8 +19,27 @@
 
 namespace mint {
 namespace ast {
-Ptr Boolean::clone(Environment &env) const noexcept {
-  return env.getBooleanAst(attributes(), location(), m_value);
+Boolean::Boolean(Attributes attributes, Location location, bool value) noexcept
+    : Value{Ast::Kind::Boolean, attributes, location}, m_value{value} {}
+
+[[nodiscard]] auto Boolean::create(Attributes attributes, Location location,
+                                   bool value) noexcept -> ast::Ptr {
+  return static_cast<std::unique_ptr<Ast>>(
+      std::make_unique<Boolean>(attributes, location, value));
+}
+
+auto Boolean::classof(Ast const *ast) noexcept -> bool {
+  return ast->kind() == Ast::Kind::Boolean;
+}
+
+auto Boolean::value() const noexcept -> bool { return m_value; }
+
+void Boolean::print(std::ostream &out) const noexcept {
+  out << (m_value ? "true" : "false");
+}
+
+Ptr Boolean::clone() const noexcept {
+  return create(attributes(), location(), m_value);
 }
 
 Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {
@@ -28,8 +47,8 @@ Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {
   return env.getBooleanType();
 }
 
-Result<ast::Ptr> Boolean::evaluate(Environment &env) noexcept {
-  return clone(env);
+Result<ast::Ptr> Boolean::evaluate([[maybe_unused]] Environment &env) noexcept {
+  return clone();
 }
 
 Result<llvm::Value *> Boolean::codegen(Environment &env) noexcept {

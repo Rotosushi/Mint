@@ -19,8 +19,27 @@
 
 namespace mint {
 namespace ast {
-Ptr Parens::clone(Environment &env) const noexcept {
-  return env.getParensAst(attributes(), location(), m_ast->clone(env));
+Parens::Parens(Attributes attributes, Location location, Ptr ast) noexcept
+    : Syntax{Ast::Kind::Parens, attributes, location}, m_ast{std::move(ast)} {
+  m_ast->setPrevAst(this);
+}
+
+[[nodiscard]] auto Parens::create(Attributes attributes, Location location,
+                                  Ptr ast) noexcept -> ast::Ptr {
+  return static_cast<std::unique_ptr<Ast>>(
+      std::make_unique<Parens>(attributes, location, std::move(ast)));
+}
+
+auto Parens::classof(Ast const *ast) noexcept -> bool {
+  return ast->kind() == Ast::Kind::Parens;
+}
+
+void Parens::print(std::ostream &out) const noexcept {
+  out << "(" << m_ast << ")";
+}
+
+Ptr Parens::clone() const noexcept {
+  return create(attributes(), location(), m_ast->clone());
 }
 
 Result<type::Ptr> Parens::typecheck(Environment &env) const noexcept {

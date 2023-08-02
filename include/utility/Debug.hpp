@@ -17,7 +17,7 @@
 #pragma once
 
 #if !defined(NDEBUG)
-#  define DEBUG(x) (x)
+#  define DO_IF_DEBUG(x) (x)
 #else
-#  define DEBUG(x)
+#  define DO_IF_DEBUG(x)
 #endif

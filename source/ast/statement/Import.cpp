@@ -16,11 +16,31 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "ast/statement/Import.hpp"
 #include "adt/Environment.hpp"
+#include "ast/value/Nil.hpp"
 
 namespace mint {
 namespace ast {
-Ptr Import::clone(Environment &env) const noexcept {
-  return env.getImportAst(attributes(), location(), m_filename);
+Import::Import(Attributes attributes, Location location,
+               std::string filename) noexcept
+    : Statement{Ast::Kind::Import, attributes, location},
+      m_filename{std::move(filename)} {}
+
+[[nodiscard]] auto Import::create(Attributes attributes, Location location,
+                                  std::string filename) noexcept -> ast::Ptr {
+  return static_cast<std::unique_ptr<Ast>>(
+      std::make_unique<Import>(attributes, location, std::move(filename)));
+}
+
+auto Import::classof(Ast const *ast) noexcept -> bool {
+  return ast->kind() == Ast::Kind::Import;
+}
+
+Ptr Import::clone() const noexcept {
+  return create(attributes(), location(), m_filename);
+}
+
+void Import::print(std::ostream &out) const noexcept {
+  out << "import " << m_filename << ";";
 }
 
 Result<type::Ptr> Import::typecheck(Environment &env) const noexcept {
@@ -39,7 +59,7 @@ Result<type::Ptr> Import::typecheck(Environment &env) const noexcept {
 
 Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
   if (env.alreadyImported(m_filename)) {
-    return env.getNilAst({}, {});
+    return ast::Nil::create({}, {});
   }
 
   auto found = env.fileSearch(m_filename);
@@ -62,17 +82,15 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
     auto typecheck_result = ast->typecheck(env);
     if (!typecheck_result) {
       auto &error = typecheck_result.error();
-      if (error.isUseBeforeDef()) {
-        if (auto failed = env.bindUseBeforeDef(error, std::move(ast))) {
-          env.printErrorWithSource(failed.value());
-          return {Error::Kind::ImportFailed, location(), m_filename};
-        }
-      } else {
+      if (!error.isUseBeforeDef()) {
         env.printErrorWithSource(error, parser);
         return {Error::Kind::ImportFailed, location(), m_filename};
       }
 
-      env.addAstToModule(std::move(ast));
+      if (auto failed = env.bindUseBeforeDef(error, std::move(ast))) {
+        env.printErrorWithSource(failed.value());
+        return {Error::Kind::ImportFailed, location(), m_filename};
+      }
       continue;
     }
 
@@ -94,7 +112,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
   // perform the import of this file.
   // #NOTE: this only works in a single threaded context.
   env.addImport(m_filename);
-  return env.getNilAst({}, {});
+  return ast::Nil::create({}, {});
 }
 
 /*

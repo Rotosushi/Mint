@@ -24,26 +24,18 @@ class Boolean : public Value {
   bool m_value;
 
 public:
-  Boolean(Attributes attributes, Location location, bool value) noexcept
-      : Value{Ast::Kind::Boolean, attributes, location}, m_value{value} {}
+  Boolean(Attributes attributes, Location location, bool value) noexcept;
   ~Boolean() noexcept override = default;
 
-  auto value() const noexcept { return m_value; }
-
   [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   bool value) noexcept {
-    return std::make_unique<Boolean>(attributes, location, value);
-  }
+                                   bool value) noexcept -> ast::Ptr;
 
-  static auto classof(Ast const *ast) noexcept -> bool {
-    return ast->kind() == Ast::Kind::Boolean;
-  }
+  static auto classof(Ast const *ast) noexcept -> bool;
 
-  Ptr clone(Environment &env) const noexcept override;
+  auto value() const noexcept -> bool;
 
-  void print(std::ostream &out) const noexcept override {
-    out << (m_value ? "true" : "false");
-  }
+  Ptr clone() const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;

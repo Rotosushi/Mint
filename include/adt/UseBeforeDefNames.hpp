@@ -18,10 +18,8 @@
 #include "adt/Identifier.hpp"
 
 namespace mint {
-  struct UseBeforeDefNames {
+struct UseBeforeDefNames {
   Identifier def;
-  Identifier qualified_def;
   Identifier undef;
-  Identifier qualified_undef;
 };
 } // namespace mint

@@ -18,6 +18,71 @@
 #include "scan/Scanner.hpp"
 
 namespace mint {
+void Scanner::UpdateLocation() noexcept {
+  auto length = cursor - token;
+  location.fline = location.lline;
+  location.fcolumn = location.lcolumn;
+
+  for (std::ptrdiff_t i = 0; i < length; ++i) {
+    if (token[i] == '\n') {
+      ++location.lline;
+      location.lcolumn = 0;
+      location.fcolumn = 0;
+    } else {
+      ++location.lcolumn;
+    }
+  }
+}
+
+Scanner::Scanner() noexcept : location{1, 0, 1, 0} {
+  end = marker = token = cursor = buffer.end();
+}
+
+Scanner::Scanner(std::string_view input) noexcept
+    : location{1, 0, 1, 0}, buffer{input} {
+  end = buffer.end();
+  marker = token = cursor = buffer.begin();
+}
+
+auto Scanner::view() const noexcept -> std::string_view {
+  return {buffer.c_str(), buffer.size()};
+}
+
+void Scanner::reset() noexcept {
+  location = {1, 0, 1, 0};
+  buffer.clear();
+  end = cursor = marker = token = buffer.end();
+}
+
+auto Scanner::endOfInput() const noexcept -> bool { return cursor == end; }
+
+void Scanner::append(std::string_view text) noexcept {
+  if (buffer.empty()) {
+    buffer.append(text);
+    end = buffer.end();
+    marker = token = cursor = buffer.begin();
+  } else {
+    auto begin = buffer.begin();
+    auto cursor_offset = std::distance(begin, cursor);
+    auto marker_offset = std::distance(begin, marker);
+    auto token_offset = std::distance(begin, token);
+
+    buffer.append(text);
+
+    begin = buffer.begin();
+    end = buffer.end();
+    cursor = begin + cursor_offset;
+    marker = begin + marker_offset;
+    token = begin + token_offset;
+  }
+}
+
+auto Scanner::getText() const noexcept -> std::string_view {
+  return {token, cursor};
+}
+
+auto Scanner::getLocation() const noexcept -> Location { return location; }
+
 /*!re2c
   re2c:api:style = free-form;
   re2c:yyfill:enable = 0;

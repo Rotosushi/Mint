@@ -19,6 +19,18 @@
 
 namespace mint {
 namespace type {
+Nil::Nil() noexcept : Type{Type::Kind::Nil} {}
+
+auto Nil::classof(Ptr type) noexcept -> bool {
+  return Type::Kind::Nil == type->kind();
+}
+
+[[nodiscard]] bool Nil::equals(Ptr right) const noexcept {
+  return llvm::dyn_cast<const Nil>(right) != nullptr;
+}
+
+void Nil::print(std::ostream &out) const noexcept { out << "Nil"; }
+
 [[nodiscard]] llvm::Type *Nil::toLLVMImpl(Environment &env) const noexcept {
   m_cached_llvm_type = env.getLLVMNilType();
   return m_cached_llvm_type;

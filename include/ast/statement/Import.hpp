@@ -25,25 +25,16 @@ class Import : public Statement {
 
 public:
   Import(Attributes attributes, Location location,
-         std::string filename) noexcept
-      : Statement{Ast::Kind::Import, attributes, location},
-        m_filename{std::move(filename)} {}
+         std::string filename) noexcept;
   ~Import() noexcept override = default;
 
   [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   std::string filename) {
-    return std::make_unique<Import>(attributes, location, std::move(filename));
-  }
+                                   std::string filename) noexcept -> ast::Ptr;
 
-  static auto classof(Ast const *ast) noexcept -> bool {
-    return ast->kind() == Ast::Kind::Import;
-  }
+  static auto classof(Ast const *ast) noexcept -> bool;
 
-  Ptr clone(Environment &env) const noexcept override;
-
-  void print(std::ostream &out) const noexcept override {
-    out << "import " << m_filename << ";";
-  }
+  Ptr clone() const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;

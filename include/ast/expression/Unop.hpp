@@ -26,27 +26,16 @@ class Unop : public Expression {
   Ptr m_right;
 
 public:
-  Unop(Attributes attributes, Location location, Token op, Ptr right) noexcept
-      : Expression{Ast::Kind::Unop, attributes, location}, m_op{op},
-        m_right{std::move(right)} {
-    m_right->setPrevAst(this);
-  }
+  Unop(Attributes attributes, Location location, Token op, Ptr right) noexcept;
   ~Unop() noexcept override = default;
 
   [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   Token op, Ptr right) {
-    return std::make_unique<Unop>(attributes, location, op, std::move(right));
-  }
+                                   Token op, Ptr right) noexcept -> ast::Ptr;
 
-  static auto classof(Ast const *ast) noexcept -> bool {
-    return ast->kind() == Ast::Kind::Unop;
-  }
+  static auto classof(Ast const *ast) noexcept -> bool;
 
-  Ptr clone(Environment &env) const noexcept override;
-
-  void print(std::ostream &out) const noexcept override {
-    out << m_op << " " << m_right;
-  }
+  Ptr clone() const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;

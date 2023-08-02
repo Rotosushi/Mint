@@ -14,7 +14,13 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-// clang-format off
-#define MINT_TEST_RESOURCES_DIR "/home/cadence/projects/Mint/test/resources"
-// clang-format on
+#include "utility/Log.hpp"
+
+namespace mint {
+void log(std::ostream &out, std::string_view message,
+         std::source_location location) noexcept {
+  out << "file: " << location.file_name() << "(" << location.line() << ":"
+      << location.column() << ")\n"
+      << "function: " << location.function_name() << "\n [" << message << "]\n";
+}
+} // namespace mint

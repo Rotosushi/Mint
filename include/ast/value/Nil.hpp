@@ -22,22 +22,15 @@ namespace mint {
 namespace ast {
 class Nil : public Value {
 public:
-  Nil(Attributes attributes, Location location) noexcept
-      : Value{Ast::Kind::Nil, attributes, location} {}
+  Nil(Attributes attributes, Location location) noexcept;
   ~Nil() noexcept override = default;
 
   [[nodiscard]] static auto create(Attributes attributes,
-                                   Location location) noexcept {
-    return std::make_unique<Nil>(attributes, location);
-  }
+                                   Location location) noexcept -> ast::Ptr;
 
-  static auto classof(Ast const *ast) noexcept -> bool {
-    return ast->kind() == Ast::Kind::Nil;
-  }
-
-  Ptr clone(Environment &env) const noexcept override;
-
-  void print(std::ostream &out) const noexcept override { out << "nil"; }
+  static auto classof(Ast const *ast) noexcept -> bool;
+  Ptr clone() const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;

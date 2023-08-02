@@ -19,9 +19,25 @@
 
 namespace mint {
 namespace ast {
-Ptr Variable::clone(Environment &env) const noexcept {
-  return env.getVariableAst(attributes(), location(), m_name);
+Variable::Variable(Attributes attributes, Location location,
+                   Identifier name) noexcept
+    : Expression{Ast::Kind::Variable, attributes, location}, m_name{name} {}
+
+[[nodiscard]] auto Variable::create(Attributes attributes, Location location,
+                                    Identifier name) noexcept -> ast::Ptr {
+  return static_cast<std::unique_ptr<Ast>>(
+      std::make_unique<Variable>(attributes, location, name));
 }
+
+auto Variable::classof(Ast const *ast) noexcept -> bool {
+  return ast->kind() == Ast::Kind::Variable;
+}
+
+Ptr Variable::clone() const noexcept {
+  return create(attributes(), location(), m_name);
+}
+
+void Variable::print(std::ostream &out) const noexcept { out << m_name; }
 
 auto Variable::handleUseBeforeDef(Error &error, Environment &env) const noexcept
     -> Error {
@@ -40,27 +56,11 @@ auto Variable::handleUseBeforeDef(Environment &env) const noexcept -> Error {
     return {Error::Kind::NameUnboundInScope, location(), m_name.view()};
   }
 
-  auto def = found.value();
-  auto q_def = env.getQualifiedName(found.value());
+  auto def = env.qualifyName(found.value());
+  auto undef = m_name;
 
-  // #NOTE: if the undef name is qualified, we
-  // assume the programmer specified the correct name of
-  // the use-before-def. meaning that the definition which
-  // resolves this use-before-def must have a qualified name
-  // which matches.
-  // if the name is unqualified then we only want names which
-  // when looked up from this local scope could be found by
-  // unqualified lookup. that is a locally qualified name, or
-  // an above scope qualified name.
-  auto [undef, q_undef] = [&]() {
-    if (m_name.isQualified()) {
-      return std::make_pair(m_name.variable(), m_name);
-    }
-    return std::make_pair(m_name, env.getQualifiedName(m_name));
-  }();
-
-  return Error{Error::Kind::UseBeforeDef,
-               UseBeforeDefNames{def, q_def, undef, q_undef}, env.localScope()};
+  return Error{Error::Kind::UseBeforeDef, UseBeforeDefNames{def, undef},
+               env.localScope()};
 }
 
 /*
@@ -92,7 +92,7 @@ Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {
   if (!binding.hasComptimeValue())
     return handleUseBeforeDef(env);
 
-  return binding.comptimeValueOrAssert()->clone(env);
+  return binding.comptimeValueOrAssert()->clone();
 }
 
 Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {

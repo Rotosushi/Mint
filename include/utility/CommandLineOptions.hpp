@@ -15,22 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "utility/Config.hpp"
-#include <iostream>
-
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h"
+
+namespace cl = llvm::cl;
 
 /*
   https://llvm.org/docs/CommandLine.html#quick-start-guide
 */
 namespace mint {
-llvm::cl::opt<std::string> input_filename(llvm::cl::Positional,
-                                          llvm::cl::desc("<input file>"));
+inline cl::opt<std::string> input_filename(cl::Positional,
+                                           cl::desc("<input file>"));
 
-inline void printVersion(llvm::raw_ostream &out) noexcept {
-  out << "mint version: " << MINT_VERSION_MAJOR << "." << MINT_VERSION_MINOR
-      << "." << MINT_VERSION_PATCH << "\n git revision [" << MINT_GIT_REVISION
-      << "]\n Compiled on " << __DATE__ << " at " << __TIME__ << "\n";
-}
+void printVersion(llvm::raw_ostream &out) noexcept;
 } // namespace mint

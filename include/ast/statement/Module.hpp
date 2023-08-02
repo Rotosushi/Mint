@@ -32,34 +32,18 @@ private:
 
 public:
   Module(Attributes attributes, Location location, Identifier name,
-         Expressions expressions) noexcept
-      : Statement{Ast::Kind::Module, attributes, location}, m_name{name},
-        m_expressions{std::move(expressions)} {
-    for (auto &expression : m_expressions)
-      expression->setPrevAst(this);
-  }
+         Expressions expressions) noexcept;
   ~Module() noexcept override = default;
 
   [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   Identifier name, Expressions expressions) {
-    return std::make_unique<Module>(attributes, location, name,
-                                    std::move(expressions));
-  }
+                                   Identifier name,
+                                   Expressions expressions) noexcept
+      -> ast::Ptr;
 
-  static auto classof(Ast const *ast) noexcept -> bool {
-    return ast->kind() == Ast::Kind::Module;
-  }
+  static auto classof(Ast const *ast) noexcept -> bool;
 
-  Ptr clone(Environment &env) const noexcept override;
-
-  void print(std::ostream &out) const noexcept override {
-    out << "module " << m_name << " { \n";
-
-    for (auto &expression : m_expressions)
-      out << expression << "\n";
-
-    out << "}";
-  }
+  Ptr clone() const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;

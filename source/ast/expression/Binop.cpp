@@ -19,9 +19,32 @@
 
 namespace mint {
 namespace ast {
-Ptr Binop::clone(Environment &env) const noexcept {
-  return env.getBinopAst(attributes(), location(), m_op, m_left->clone(env),
-                         m_right->clone(env));
+Binop::Binop(Attributes attributes, Location location, Token op, Ptr left,
+             Ptr right) noexcept
+    : Expression{Ast::Kind::Binop, attributes, location}, m_op{op},
+      m_left{std::move(left)}, m_right{std::move(right)} {
+  m_left->setPrevAst(this);
+  m_right->setPrevAst(this);
+}
+
+[[nodiscard]] auto Binop::create(Attributes attributes, Location location,
+                                 Token op, Ptr left, Ptr right) noexcept
+    -> ast::Ptr {
+  return static_cast<std::unique_ptr<Ast>>(std::make_unique<Binop>(
+      attributes, location, op, std::move(left), std::move(right)));
+}
+
+void Binop::print(std::ostream &out) const noexcept {
+  out << m_left << " " << m_op << " " << m_right;
+}
+
+auto Binop::classof(Ast const *ast) noexcept -> bool {
+  return ast->kind() == Ast::Kind::Binop;
+}
+
+Ptr Binop::clone() const noexcept {
+  return create(attributes(), location(), m_op, m_left->clone(),
+                m_right->clone());
 }
 
 Result<type::Ptr> Binop::typecheck(Environment &env) const noexcept {

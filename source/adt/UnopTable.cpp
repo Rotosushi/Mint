@@ -18,9 +18,10 @@
 #include "adt/Environment.hpp"
 
 namespace mint {
-auto eval_unop_minus(ast::Ast *right, Environment &env) -> Result<ast::Ptr> {
+auto eval_unop_minus(ast::Ast *right, [[maybe_unused]] Environment &env)
+    -> Result<ast::Ptr> {
   auto *integer = llvm::cast<ast::Integer>(right);
-  return env.getIntegerAst({}, {}, -(integer->value()));
+  return ast::Integer::create({}, {}, -(integer->value()));
 }
 
 auto codegen_unop_minus(llvm::Value *right, Environment &env)
@@ -28,9 +29,10 @@ auto codegen_unop_minus(llvm::Value *right, Environment &env)
   return env.createLLVMNeg(right);
 }
 
-auto eval_unop_not(ast::Ast *right, Environment &env) -> Result<ast::Ptr> {
+auto eval_unop_not(ast::Ast *right, [[maybe_unused]] Environment &env)
+    -> Result<ast::Ptr> {
   auto *boolean = llvm::cast<ast::Boolean>(right);
-  return env.getBooleanAst({}, {}, !(boolean->value()));
+  return ast::Boolean::create({}, {}, !(boolean->value()));
 }
 
 auto codegen_unop_not(llvm::Value *right, Environment &env)

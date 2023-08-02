@@ -19,9 +19,22 @@
 
 namespace mint {
 namespace ast {
-Ptr Nil::clone(Environment &env) const noexcept {
-  return env.getNilAst(attributes(), location());
+Nil::Nil(Attributes attributes, Location location) noexcept
+    : Value{Ast::Kind::Nil, attributes, location} {}
+
+[[nodiscard]] auto Nil::create(Attributes attributes,
+                               Location location) noexcept -> ast::Ptr {
+  return static_cast<std::unique_ptr<Ast>>(
+      std::make_unique<Nil>(attributes, location));
 }
+
+auto Nil::classof(Ast const *ast) noexcept -> bool {
+  return ast->kind() == Ast::Kind::Nil;
+}
+
+Ptr Nil::clone() const noexcept { return create(attributes(), location()); }
+
+void Nil::print(std::ostream &out) const noexcept { out << "nil"; }
 
 Result<type::Ptr> Nil::typecheck(Environment &env) const noexcept {
   setCachedType(env.getNilType());
@@ -34,10 +47,12 @@ Result<type::Ptr> Nil::typecheck(Environment &env) const noexcept {
   meaning we have to return a clone of the scalar value.
   this is not very efficient. a different evaluation strategy
   might be better suited to interpretation. over evaluating
-  asts directly. because it is unessesary to clone here, 
+  asts directly. because it is unessesary to clone here,
   theoretically speaking.
 */
-Result<ast::Ptr> Nil::evaluate(Environment &env) noexcept { return clone(env); }
+Result<ast::Ptr> Nil::evaluate([[maybe_unused]] Environment &env) noexcept {
+  return clone();
+}
 
 Result<llvm::Value *> Nil::codegen(Environment &env) noexcept {
   return env.getLLVMNil();

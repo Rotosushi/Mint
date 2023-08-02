@@ -109,7 +109,10 @@ public:
         continue; // the ++cursor at the end of the loop body.
       }
 
-      if (cursor.ubd_name() == name) {
+      auto ubd_name = cursor.ubd_name();
+      auto ubd_def_name = cursor.ubd_def_name();
+      auto scope_name = cursor.scope_name();
+      if (ubd_name == name) {
         result.append(cursor);
         ++cursor;
         continue;
@@ -122,8 +125,8 @@ public:
       // that was just created, thus we can rely on the
       // weaker comparison of the unqualified names
       // to resolve use before definition.
-      if (subscopeOf(cursor.scope_name(), name)) {
-        auto unqualified_ubd_name = cursor.ubd_name().variable();
+      if (subscopeOf(scope_name, name)) {
+        auto unqualified_ubd_name = ubd_name.variable();
         auto unqualified_name = name.variable();
         if (unqualified_ubd_name == unqualified_name) {
           result.append(cursor);
@@ -144,9 +147,11 @@ public:
       // in which the ubd_definition was defined, all we need to do
       // is search for the composite name
       if (name.isQualified()) {
-        auto local_qualifications = cursor.ubd_def_name().qualifications();
+        auto local_qualifications = ubd_def_name.qualifications();
         auto locally_qualified_name =
-            cursor.ubd_name().prependScope(local_qualifications);
+            local_qualifications.empty()
+                ? ubd_name
+                : ubd_name.prependScope(local_qualifications);
         if (name == locally_qualified_name) {
           result.append(cursor);
           ++cursor;

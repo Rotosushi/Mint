@@ -22,18 +22,13 @@ namespace mint {
 namespace type {
 class Boolean : public Type {
 public:
-  Boolean() noexcept : Type{Type::Kind::Boolean} {}
+  Boolean() noexcept;
   ~Boolean() noexcept override = default;
 
-  static auto classof(Ptr type) noexcept -> bool {
-    return Type::Kind::Boolean == type->kind();
-  }
+  static auto classof(Ptr type) noexcept -> bool;
 
-  [[nodiscard]] bool equals(Ptr right) const noexcept override {
-    return llvm::dyn_cast<const Boolean>(right) != nullptr;
-  }
-
-  void print(std::ostream &out) const noexcept override { out << "Boolean"; }
+  [[nodiscard]] bool equals(Ptr right) const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   [[nodiscard]] llvm::Type *
   toLLVMImpl(Environment &env) const noexcept override;

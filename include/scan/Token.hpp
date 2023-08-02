@@ -76,6 +76,11 @@ enum struct Token : int {
 };
 
 using BinopPrecedence = int8_t;
+enum struct BinopAssociativity {
+  None,
+  Left,
+  Right,
+};
 
 /*
 
@@ -86,189 +91,12 @@ using BinopPrecedence = int8_t;
   * / %     -> 5
 
 */
-inline auto precedence(Token token) noexcept -> BinopPrecedence {
-  switch (token) {
-  case Token::EqualEqual:
-  case Token::NotEqual:
-    return 1;
+auto precedence(Token token) noexcept -> BinopPrecedence;
+auto associativity(Token token) noexcept -> BinopAssociativity;
+auto isBinop(Token token) noexcept -> bool;
+auto isUnop(Token token) noexcept -> bool;
+auto tokenToView(Token token) noexcept -> std::string_view;
 
-  case Token::LessThan:
-  case Token::LessThanOrEqual:
-  case Token::GreaterThanOrEqual:
-  case Token::GreaterThan:
-    return 2;
-
-  case Token::And:
-  case Token::Or:
-    return 3;
-
-  case Token::Plus:
-  case Token::Minus:
-    return 4;
-
-  case Token::Star:
-  case Token::Divide:
-  case Token::Modulo:
-    return 5;
-
-  default:
-    return -1;
-  }
-}
-
-enum struct BinopAssociativity {
-  None,
-  Left,
-  Right,
-};
-
-inline auto associativity(Token token) noexcept -> BinopAssociativity {
-  switch (token) {
-  case Token::EqualEqual:
-  case Token::NotEqual:
-  case Token::LessThan:
-  case Token::LessThanOrEqual:
-  case Token::GreaterThanOrEqual:
-  case Token::GreaterThan:
-  case Token::And:
-  case Token::Or:
-  case Token::Plus:
-  case Token::Minus:
-  case Token::Star:
-  case Token::Divide:
-  case Token::Modulo:
-    return BinopAssociativity::Left;
-  default:
-    return BinopAssociativity::None;
-  }
-}
-
-inline auto isBinop(Token token) noexcept -> bool {
-  switch (token) {
-  case Token::EqualEqual:
-  case Token::NotEqual:
-  case Token::LessThan:
-  case Token::LessThanOrEqual:
-  case Token::GreaterThanOrEqual:
-  case Token::GreaterThan:
-  case Token::And:
-  case Token::Or:
-  case Token::Plus:
-  case Token::Minus:
-  case Token::Star:
-  case Token::Divide:
-  case Token::Modulo:
-    return true;
-  default:
-    return false;
-  }
-}
-
-inline auto isUnop(Token token) noexcept -> bool {
-  switch (token) {
-  case Token::Not:
-  case Token::Minus:
-    return true;
-  default:
-    return false;
-  }
-}
-
-inline auto tokenToView(Token token) noexcept -> std::string_view {
-  switch (token) {
-  case Token::Error:
-    return "Token::Error";
-  case Token::End:
-    return "Token::End";
-
-  case Token::Let:
-    return "let";
-  case Token::Module:
-    return "module";
-  case Token::Public:
-    return "public";
-  case Token::Private:
-    return "private";
-  case Token::Import:
-    return "import";
-  case Token::From:
-    return "from";
-
-  case Token::Equal:
-    return "=";
-  case Token::Semicolon:
-    return ";";
-  case Token::Colon:
-    return ":";
-  case Token::BeginParen:
-    return "(";
-  case Token::EndParen:
-    return ")";
-  case Token::BeginBrace:
-    return "{";
-  case Token::EndBrace:
-    return "}";
-
-  case Token::Plus:
-    return "+";
-  case Token::Minus:
-    return "-";
-  case Token::Star:
-    return "*";
-  case Token::Divide:
-    return "/";
-  case Token::Modulo:
-    return "%";
-  case Token::Not:
-    return "!";
-  case Token::And:
-    return "&";
-  case Token::Or:
-    return "|";
-  case Token::LessThan:
-    return "<";
-  case Token::LessThanOrEqual:
-    return "<=";
-  case Token::EqualEqual:
-    return "==";
-  case Token::NotEqual:
-    return "!=";
-  case Token::GreaterThan:
-    return "<";
-  case Token::GreaterThanOrEqual:
-    return "<=";
-
-  case Token::Nil:
-    return "nil";
-  case Token::True:
-    return "true";
-  case Token::False:
-    return "false";
-
-  case Token::NilType:
-    return "Nil";
-  case Token::BooleanType:
-    return "Boolean";
-  case Token::IntegerType:
-    return "Integer";
-
-  case Token::Identifier:
-    return "Token::Identifier";
-  case Token::Integer:
-    return "Token::Integer";
-  case Token::Text:
-    return "Token::Text";
-
-  default:
-    abort("Unknown Token");
-    break;
-  }
-}
-
-inline auto operator<<(std::ostream &out, Token token) noexcept
-    -> std::ostream & {
-  out << tokenToView(token);
-  return out;
-}
+auto operator<<(std::ostream &out, Token token) noexcept -> std::ostream &;
 
 } // namespace mint

@@ -14,10 +14,14 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-#include <vector>
+#include "utility/CommandLineOptions.hpp"
+
+#include "utility/Config.hpp"
 
 namespace mint {
-template <class T>
-void append(std::vector<T> &left, std::vector<T> &right) noexcept;
+void printVersion(llvm::raw_ostream &out) noexcept {
+  out << "mint version: " << MINT_VERSION_MAJOR << "." << MINT_VERSION_MINOR
+      << "." << MINT_VERSION_PATCH << "\n git revision [" << MINT_GIT_REVISION
+      << "]\n Compiled on " << __DATE__ << " at " << __TIME__ << "\n";
+}
 } // namespace mint

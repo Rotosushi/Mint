@@ -28,29 +28,17 @@ class Binop : public Expression {
 
 public:
   Binop(Attributes attributes, Location location, Token op, Ptr left,
-        Ptr right) noexcept
-      : Expression{Ast::Kind::Binop, attributes, location}, m_op{op},
-        m_left{std::move(left)}, m_right{std::move(right)} {
-    m_left->setPrevAst(this);
-    m_right->setPrevAst(this);
-  }
+        Ptr right) noexcept;
   ~Binop() noexcept override = default;
 
   [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   Token op, Ptr left, Ptr right) {
-    return std::make_unique<Binop>(attributes, location, op, std::move(left),
-                                   std::move(right));
-  }
+                                   Token op, Ptr left, Ptr right) noexcept
+      -> ast::Ptr;
 
-  static auto classof(Ast const *ast) noexcept -> bool {
-    return ast->kind() == Ast::Kind::Binop;
-  }
+  static auto classof(Ast const *ast) noexcept -> bool;
 
-  Ptr clone(Environment &env) const noexcept override;
-
-  void print(std::ostream &out) const noexcept override {
-    out << m_left << " " << m_op << " " << m_right;
-  }
+  Ptr clone() const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;

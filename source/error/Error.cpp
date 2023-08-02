@@ -81,4 +81,70 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
     abort("Unknown Error::Kind");
   }
 }
+
+Error::Error(Kind kind) noexcept : m_kind(kind) {}
+Error::Error(Kind kind, Location location, std::string_view message) noexcept
+    : m_kind(kind),
+      m_data(std::in_place_type<Default>, location, std::string(message)) {}
+Error::Error(Kind kind, UseBeforeDefNames names,
+             std::shared_ptr<Scope> scope) noexcept
+    : m_kind(kind), m_data(std::in_place_type<UseBeforeDef>, names, scope) {}
+Error::Error(UseBeforeDef const &usedef) noexcept
+    : m_kind(Kind::UseBeforeDef), m_data(usedef) {}
+
+[[nodiscard]] auto Error::isMonostate() const noexcept -> bool {
+  return std::holds_alternative<std::monostate>(m_data);
+}
+[[nodiscard]] auto Error::isDefault() const noexcept -> bool {
+  return std::holds_alternative<Default>(m_data);
+}
+[[nodiscard]] auto Error::isUseBeforeDef() const noexcept -> bool {
+  return std::holds_alternative<UseBeforeDef>(m_data);
+}
+
+[[nodiscard]] auto Error::getDefault() const noexcept -> const Default & {
+  MINT_ASSERT(isDefault());
+  return std::get<Default>(m_data);
+}
+[[nodiscard]] auto Error::getUseBeforeDef() const noexcept
+    -> const UseBeforeDef & {
+  MINT_ASSERT(isUseBeforeDef());
+  return std::get<UseBeforeDef>(m_data);
+}
+
+void Error::underline(std::ostream &out, Location location,
+                      std::string_view bad_source) noexcept {
+  for (std::size_t i = 0; i <= bad_source.size(); ++i) {
+    if ((i < location.fcolumn) || (i > location.lcolumn))
+      out << " ";
+    else
+      out << "^";
+  }
+  out << "\n";
+}
+
+void Error::print(std::ostream &out,
+                  std::string_view bad_source) const noexcept {
+  out << KindToView(m_kind);
+
+  // we don't print anything extra for other kinds of error
+  if (std::holds_alternative<Default>(m_data)) {
+    auto &default_data = std::get<Default>(m_data);
+
+    auto &loc = default_data.location;
+    auto &msg = default_data.message;
+
+    out << " -- [" << loc.fline << ":" << loc.fcolumn << "]";
+    out << " -- " << msg << "\n";
+
+    if (!bad_source.empty()) {
+      out << bad_source << "\n";
+      underline(out, loc, bad_source);
+    }
+    out << "\n";
+  }
+}
+
+auto Error::kind() const noexcept -> Error::Kind { return m_kind; }
+
 } // namespace mint

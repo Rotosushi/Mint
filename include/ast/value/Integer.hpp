@@ -24,23 +24,18 @@ class Integer : public Value {
   int m_value;
 
 public:
-  Integer(Attributes attributes, Location location, int value) noexcept
-      : Value{Ast::Kind::Integer, attributes, location}, m_value{value} {}
+  Integer(Attributes attributes, Location location, int value) noexcept;
   ~Integer() noexcept override = default;
 
-  auto value() const noexcept { return m_value; }
-
   [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   int value) noexcept {
-    return std::make_unique<Integer>(attributes, location, value);
-  }
+                                   int value) noexcept -> ast::Ptr;
 
-  static auto classof(Ast const *ast) noexcept -> bool {
-    return ast->kind() == Ast::Kind::Integer;
-  }
+  static auto classof(Ast const *ast) noexcept -> bool;
 
-  Ptr clone(Environment &env) const noexcept override;
-  void print(std::ostream &out) const noexcept override { out << m_value; }
+  auto value() const noexcept -> int;
+
+  Ptr clone() const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;
   Result<ast::Ptr> evaluate(Environment &env) noexcept override;

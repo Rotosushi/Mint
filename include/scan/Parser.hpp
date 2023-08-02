@@ -82,68 +82,33 @@ private:
   Attributes default_attributes;
 
 public:
-  void setIstream(std::istream *in) noexcept {
-    MINT_ASSERT(in != nullptr);
-    this->in = in;
-  }
+  Parser(Environment *env, std::istream *in) noexcept;
 
-  auto text() const noexcept { return scanner.getText(); }
-  auto location() const noexcept { return scanner.getLocation(); }
-
-  auto endOfInput() const noexcept { return scanner.endOfInput() && in->eof(); }
-
+  void setIstream(std::istream *in) noexcept;
   [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
       -> std::string_view;
 
+  auto endOfInput() const noexcept -> bool;
+  auto parse() -> Result<ast::Ptr> { return parseTop(); }
+
 private:
-  void next() noexcept { current = scanner.scan(); }
-  void append(std::string_view text) noexcept { scanner.append(text); }
+  auto text() const noexcept -> std::string_view;
+  auto location() const noexcept -> Location;
 
-  void fill() noexcept {
-    auto at_end = current == Token::End;
-    auto more_source = !in->eof();
-    auto in_good = in->good();
-    if (at_end && more_source && in_good) {
-      std::string line;
-      std::getline(*in, line, '\n');
-      line.push_back('\n');
-      append(line);
+  void next() noexcept;
+  void append(std::string_view text) noexcept;
+  void fill() noexcept;
 
-      next();
-    }
-  }
-
-  // NOTE: we need to call fill before we
+  // NOTE: we call fill before we
   // check the state of the current token.
   // to ensure that we have all of the available
   // source before we check the state.
   // otherwise the end of the buffer could
   // be reached and parsing stopped when the
   // term itself is merely separated accross lines.
-  auto peek(Token token) noexcept -> bool {
-    fill();
-    return current == token;
-  }
-
-  auto expect(Token token) noexcept -> bool {
-    fill();
-    if (current == token) {
-      next();
-      return true;
-    }
-    return false;
-  }
-
-  auto predictsDeclaration(Token token) noexcept -> bool {
-    fill();
-    switch (token) {
-    case Token::Let:
-    case Token::Module:
-      return true;
-    default:
-      return false;
-    }
-  }
+  auto peek(Token token) noexcept -> bool;
+  auto expect(Token token) noexcept -> bool;
+  auto predictsDeclaration(Token token) noexcept -> bool;
 
   // we just encountered a syntax error,
   // so we want to walk the parser past the
@@ -151,25 +116,10 @@ private:
   // error.
   // so advance the scanner until we see ';'
   // or the End of the buffer.
-  void recover() noexcept {
-    while (!peek(Token::Semicolon) && !peek(Token::End)) {
-      next();
-    }
-
-    if (peek(Token::Semicolon)) {
-      next();
-    }
-  }
-
-  auto handle_error(Error::Kind kind) noexcept -> Error {
-    recover();
-    return {kind, location(), text()};
-  }
+  void recover() noexcept;
+  auto handle_error(Error::Kind kind) noexcept -> Error;
   auto handle_error(Error::Kind kind, Location location,
-                    std::string_view message) noexcept -> Error {
-    recover();
-    return {kind, location, message};
-  }
+                    std::string_view message) noexcept -> Error;
 
   auto parseTop() noexcept -> Result<ast::Ptr>;
   auto parseDeclaration(bool is_public) noexcept -> Result<ast::Ptr>;
@@ -184,12 +134,5 @@ private:
   auto parseType() noexcept -> Result<type::Ptr>;
 
 public:
-  Parser(Environment *env, std::istream *in)
-      : env(env), in(in), current(Token::End) {
-    MINT_ASSERT(env != nullptr);
-    MINT_ASSERT(in != nullptr);
-  }
-
-  auto parse() -> Result<ast::Ptr> { return parseTop(); }
 };
 } // namespace mint

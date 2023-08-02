@@ -22,18 +22,13 @@ namespace mint {
 namespace type {
 class Nil : public Type {
 public:
-  Nil() noexcept : Type{Type::Kind::Nil} {}
+  Nil() noexcept;
   ~Nil() noexcept override = default;
 
-  static auto classof(Ptr type) noexcept -> bool {
-    return Type::Kind::Nil == type->kind();
-  }
+  static auto classof(Ptr type) noexcept -> bool;
 
-  [[nodiscard]] bool equals(Ptr right) const noexcept override {
-    return llvm::dyn_cast<const Nil>(right) != nullptr;
-  }
-
-  void print(std::ostream &out) const noexcept override { out << "Nil"; }
+  [[nodiscard]] bool equals(Ptr right) const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
   [[nodiscard]] llvm::Type *
   toLLVMImpl(Environment &env) const noexcept override;

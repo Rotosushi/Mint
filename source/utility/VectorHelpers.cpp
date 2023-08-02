@@ -14,32 +14,13 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-#include <string>
-
-#include "llvm/IR/Value.h"
-#include "llvm/Support/Error.h"
-#include "llvm/Support/raw_ostream.h"
+#include "utility/VectorHelpers.hpp"
 
 namespace mint {
-inline auto toString(llvm::Error const &error) noexcept -> std::string {
-  std::string result;
-  llvm::raw_string_ostream stream{result};
-  stream << error;
-  return result;
-}
-
-inline auto toString(llvm::Type const *type) noexcept -> std::string {
-  std::string result;
-  llvm::raw_string_ostream stream{result};
-  type->print(stream);
-  return result;
-}
-
-inline auto toString(llvm::Value const *value) noexcept -> std::string {
-  std::string result;
-  llvm::raw_string_ostream stream{result};
-  value->print(stream);
-  return result;
+template <class T>
+void append(std::vector<T> &left, std::vector<T> &right) noexcept {
+  auto new_size = left.size() + right.size();
+  left.reserve(new_size);
+  left.insert(left.end(), right.begin(), right.end());
 }
 } // namespace mint

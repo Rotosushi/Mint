@@ -90,69 +90,26 @@ private:
   static auto KindToView(Kind kind) noexcept -> std::string_view;
 
 public:
-  Error(Kind kind) noexcept : m_kind(kind) {}
-  Error(Kind kind, Location location, std::string_view message) noexcept
-      : m_kind(kind),
-        m_data(std::in_place_type<Default>, location, std::string(message)) {}
+  Error(Kind kind) noexcept;
+  Error(Kind kind, Location location, std::string_view message) noexcept;
   Error(Kind kind, UseBeforeDefNames names,
-        std::shared_ptr<Scope> scope) noexcept
-      : m_kind(kind), m_data(std::in_place_type<UseBeforeDef>, names, scope) {}
-  Error(UseBeforeDef const &usedef) noexcept
-      : m_kind(Kind::UseBeforeDef), m_data(usedef) {}
+        std::shared_ptr<Scope> scope) noexcept;
+  Error(UseBeforeDef const &usedef) noexcept;
 
-  [[nodiscard]] auto isMonostate() const noexcept -> bool {
-    return std::holds_alternative<std::monostate>(m_data);
-  }
-  [[nodiscard]] auto isDefault() const noexcept -> bool {
-    return std::holds_alternative<Default>(m_data);
-  }
-  [[nodiscard]] auto isUseBeforeDef() const noexcept -> bool {
-    return std::holds_alternative<UseBeforeDef>(m_data);
-  }
+  [[nodiscard]] auto isMonostate() const noexcept -> bool;
+  [[nodiscard]] auto isDefault() const noexcept -> bool;
+  [[nodiscard]] auto isUseBeforeDef() const noexcept -> bool;
 
-  [[nodiscard]] auto getDefault() const noexcept -> const Default & {
-    MINT_ASSERT(isDefault());
-    return std::get<Default>(m_data);
-  }
-  [[nodiscard]] auto getUseBeforeDef() const noexcept -> const UseBeforeDef & {
-    MINT_ASSERT(isUseBeforeDef());
-    return std::get<UseBeforeDef>(m_data);
-  }
+  [[nodiscard]] auto getDefault() const noexcept -> const Default &;
+  [[nodiscard]] auto getUseBeforeDef() const noexcept -> const UseBeforeDef &;
 
   static void underline(std::ostream &out, Location location,
-                        std::string_view bad_source) noexcept {
-    for (std::size_t i = 0; i <= bad_source.size(); ++i) {
-      if ((i < location.fcolumn) || (i > location.lcolumn))
-        out << " ";
-      else
-        out << "^";
-    }
-    out << "\n";
-  }
+                        std::string_view bad_source) noexcept;
 
   void print(std::ostream &out,
-             std::string_view bad_source = "") const noexcept {
-    out << KindToView(m_kind);
+             std::string_view bad_source = "") const noexcept;
 
-    // we don't print anything extra for other kinds of error
-    if (std::holds_alternative<Default>(m_data)) {
-      auto &default_data = std::get<Default>(m_data);
-
-      auto &loc = default_data.location;
-      auto &msg = default_data.message;
-
-      out << " -- [" << loc.fline << ":" << loc.fcolumn << "]";
-      out << " -- " << msg << "\n";
-
-      if (!bad_source.empty()) {
-        out << bad_source << "\n";
-        underline(out, loc, bad_source);
-      }
-      out << "\n";
-    }
-  }
-
-  auto kind() const noexcept { return m_kind; }
+  auto kind() const noexcept -> Kind;
 };
 
 inline auto operator<<(std::ostream &out, Error &error) -> std::ostream & {
