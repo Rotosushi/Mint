@@ -16,8 +16,70 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/UnopTable.hpp"
 #include "adt/Environment.hpp"
+#include "ast/value/Boolean.hpp"
+#include "ast/value/Integer.hpp"
 
 namespace mint {
+[[nodiscard]] auto UnopOverload::evaluate(ast::Ast *right, Environment &env)
+    -> Result<ast::Ptr> {
+  return eval(right, env);
+}
+[[nodiscard]] auto UnopOverload::codegen(llvm::Value *right, Environment &env)
+    -> Result<llvm::Value *> {
+  return gen(right, env);
+}
+
+auto UnopOverloads::lookup(type::Ptr right_type) noexcept
+    -> std::optional<UnopOverload> {
+  for (auto &overload : overloads) {
+    if (right_type == overload.right_type) {
+      return overload;
+    }
+  }
+  return std::nullopt;
+}
+
+auto UnopOverloads::emplace(type::Ptr right_type, type::Ptr result_type,
+                            UnopEvalFn eval, UnopCodegenFn codegen) noexcept
+    -> UnopOverload {
+  auto found = lookup(right_type);
+  if (found) {
+    return found.value();
+  }
+
+  return overloads.emplace_back(right_type, result_type, eval, codegen);
+}
+
+UnopTable::Unop::Unop(Table::iterator iter) noexcept : iter(iter) {}
+
+auto UnopTable::Unop::lookup(type::Ptr right_type) noexcept
+    -> std::optional<UnopOverload> {
+  return iter->second.lookup(right_type);
+}
+
+auto UnopTable::Unop::emplace(type::Ptr right_type, type::Ptr result_type,
+                              UnopEvalFn eval, UnopCodegenFn codegen) noexcept
+    -> UnopOverload {
+  return iter->second.emplace(right_type, result_type, eval, codegen);
+}
+
+auto UnopTable::lookup(Token op) noexcept -> std::optional<Unop> {
+  auto found = table.find(op);
+  if (found != table.end()) {
+    return found;
+  }
+  return std::nullopt;
+}
+
+auto UnopTable::emplace(Token op) noexcept -> Unop {
+  auto found = table.find(op);
+  if (found != table.end()) {
+    return found;
+  }
+
+  return table.emplace(op, UnopOverloads{}).first;
+}
+
 auto eval_unop_minus(ast::Ast *right, [[maybe_unused]] Environment &env)
     -> Result<ast::Ptr> {
   auto *integer = llvm::cast<ast::Integer>(right);

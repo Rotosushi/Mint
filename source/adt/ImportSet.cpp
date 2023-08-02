@@ -14,18 +14,19 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-#include <filesystem>
-#include <vector>
-
-namespace fs = std::filesystem;
+#include "adt/ImportSet.hpp"
 
 namespace mint {
-class ImportSet {
-  std::vector<fs::path> m_set;
+[[nodiscard]] auto ImportSet::contains(fs::path const &filename) noexcept
+    -> bool {
+  for (auto &file : m_set)
+    if (filename == file)
+      return true;
+  return false;
+}
 
-public:
-  [[nodiscard]] auto contains(fs::path const &filename) noexcept -> bool;
-  void insert(fs::path const &filename) noexcept;
-};
+void ImportSet::insert(fs::path const &filename) noexcept {
+  if (!contains(filename))
+    m_set.emplace_back(filename);
+}
 } // namespace mint

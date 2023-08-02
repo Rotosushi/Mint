@@ -40,15 +40,11 @@ struct BinopOverload {
   BinopEvalFn eval;
   BinopCodegenFn gen;
 
-  [[nodiscard]] auto evaluate(ast::Ast *left, ast::Ast *right,
-                              Environment &env) {
-    return eval(left, right, env);
-  }
+  [[nodiscard]] auto evaluate(ast::Ast *left, ast::Ast *right, Environment &env)
+      -> Result<ast::Ptr>;
 
   [[nodiscard]] auto codegen(llvm::Value *left, llvm::Value *right,
-                             Environment &env) {
-    return gen(left, right, env);
-  }
+                             Environment &env) -> Result<llvm::Value *>;
 };
 
 class BinopOverloads {

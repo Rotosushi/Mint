@@ -14,13 +14,22 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "utility/VectorHelpers.hpp"
+#include "adt/Attributes.hpp"
 
 namespace mint {
-template <class T>
-void append(std::vector<T> &left, std::vector<T> &right) noexcept {
-  auto new_size = left.size() + right.size();
-  left.reserve(new_size);
-  left.insert(left.end(), right.begin(), right.end());
+[[nodiscard]] auto Attributes::isPublic() const noexcept -> bool {
+  return set[Public];
+}
+
+auto Attributes::isPublic(bool state) noexcept -> bool {
+  return set[Public] = state;
+}
+
+[[nodiscard]] auto Attributes::isPrivate() const noexcept -> bool {
+  return !isPublic();
+}
+
+auto Attributes::isPrivate(bool state) noexcept -> bool {
+  return isPublic(!state);
 }
 } // namespace mint

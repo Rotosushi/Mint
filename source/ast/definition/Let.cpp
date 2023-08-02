@@ -18,6 +18,7 @@
 
 #include "adt/Environment.hpp"
 #include "ast/definition/Let.hpp"
+#include "ast/value/Nil.hpp"
 #include "utility/LLVMUtility.hpp"
 
 namespace mint {

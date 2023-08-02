@@ -19,5 +19,9 @@
 
 namespace mint {
 template <class T>
-void append(std::vector<T> &left, std::vector<T> &right) noexcept;
+inline void append(std::vector<T> &left, std::vector<T> &right) noexcept {
+  auto new_size = left.size() + right.size();
+  left.reserve(new_size);
+  left.insert(left.end(), right.begin(), right.end());
+}
 } // namespace mint

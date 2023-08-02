@@ -38,12 +38,10 @@ struct UnopOverload {
   UnopEvalFn eval;
   UnopCodegenFn gen;
 
-  [[nodiscard]] auto evaluate(ast::Ast *right, Environment &env) {
-    return eval(right, env);
-  }
-  [[nodiscard]] auto codegen(llvm::Value *right, Environment &env) {
-    return gen(right, env);
-  }
+  [[nodiscard]] auto evaluate(ast::Ast *right, Environment &env)
+      -> Result<ast::Ptr>;
+  [[nodiscard]] auto codegen(llvm::Value *right, Environment &env)
+      -> Result<llvm::Value *>;
 };
 
 class UnopOverloads {
@@ -52,24 +50,10 @@ class UnopOverloads {
 public:
   UnopOverloads() noexcept { overloads.reserve(2); }
 
-  auto lookup(type::Ptr right_type) noexcept -> std::optional<UnopOverload> {
-    for (auto &overload : overloads) {
-      if (right_type == overload.right_type) {
-        return overload;
-      }
-    }
-    return std::nullopt;
-  }
+  auto lookup(type::Ptr right_type) noexcept -> std::optional<UnopOverload>;
 
   auto emplace(type::Ptr right_type, type::Ptr result_type, UnopEvalFn eval,
-               UnopCodegenFn codegen) noexcept -> UnopOverload {
-    auto found = lookup(right_type);
-    if (found) {
-      return found.value();
-    }
-
-    return overloads.emplace_back(right_type, result_type, eval, codegen);
-  }
+               UnopCodegenFn codegen) noexcept -> UnopOverload;
 };
 
 class UnopTable {
@@ -83,38 +67,19 @@ public:
     Table::iterator iter;
 
   public:
-    Unop(Table::iterator iter) noexcept : iter(iter) {}
+    Unop(Table::iterator iter) noexcept;
 
-    auto lookup(type::Ptr right_type) noexcept -> std::optional<UnopOverload> {
-      return iter->second.lookup(right_type);
-    }
-
+    auto lookup(type::Ptr right_type) noexcept -> std::optional<UnopOverload>;
     auto emplace(type::Ptr right_type, type::Ptr result_type, UnopEvalFn eval,
-                 UnopCodegenFn codegen) noexcept -> UnopOverload {
-      return iter->second.emplace(right_type, result_type, eval, codegen);
-    }
+                 UnopCodegenFn codegen) noexcept -> UnopOverload;
   };
 
 private:
   Table table;
 
 public:
-  auto lookup(Token op) noexcept -> std::optional<Unop> {
-    auto found = table.find(op);
-    if (found != table.end()) {
-      return found;
-    }
-    return std::nullopt;
-  }
-
-  auto emplace(Token op) noexcept -> Unop {
-    auto found = table.find(op);
-    if (found != table.end()) {
-      return found;
-    }
-
-    return table.emplace(op, UnopOverloads{}).first;
-  }
+  auto lookup(Token op) noexcept -> std::optional<Unop>;
+  auto emplace(Token op) noexcept -> Unop;
 };
 
 void InitializeBuiltinUnops(Environment *env);

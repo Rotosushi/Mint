@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "scan/Parser.hpp"
 #include "adt/Environment.hpp"
+#include "ast/All.hpp"
 #include "utility/NumbersRoundTrip.hpp"
 
 namespace mint {

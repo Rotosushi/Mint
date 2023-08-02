@@ -32,7 +32,7 @@
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
-#include "ast/All.hpp"
+#include "ast/Ast.hpp"
 #include "scan/Parser.hpp"
 
 namespace mint {

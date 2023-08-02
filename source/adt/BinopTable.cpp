@@ -16,8 +16,22 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/BinopTable.hpp"
 #include "adt/Environment.hpp"
+#include "ast/value/Boolean.hpp"
+#include "ast/value/Integer.hpp"
 
 namespace mint {
+[[nodiscard]] auto BinopOverload::evaluate(ast::Ast *left, ast::Ast *right,
+                                           Environment &env)
+    -> Result<ast::Ptr> {
+  return eval(left, right, env);
+}
+
+[[nodiscard]] auto BinopOverload::codegen(llvm::Value *left, llvm::Value *right,
+                                          Environment &env)
+    -> Result<llvm::Value *> {
+  return gen(left, right, env);
+}
+
 auto BinopOverloads::lookup(type::Ptr left_type, type::Ptr right_type) noexcept
     -> std::optional<BinopOverload> {
   for (auto &overload : overloads) {

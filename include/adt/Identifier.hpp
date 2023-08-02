@@ -47,10 +47,7 @@ private:
   IdentifierSet *set;
   std::string_view data;
 
-  Identifier(IdentifierSet *set, std::string_view data) noexcept
-      : set(set), data(data) {
-    MINT_ASSERT(set != nullptr);
-  }
+  Identifier(IdentifierSet *set, std::string_view data) noexcept;
 
   friend class IdentifierSet;
 
@@ -60,15 +57,10 @@ public:
   auto operator=(const Identifier &id) noexcept -> Identifier & = default;
   auto operator=(Identifier &&id) noexcept -> Identifier & = default;
 
-  // since identifiers are interned, comparison can
-  // be done via pointer comparison.
-  auto operator==(const Identifier &other) const noexcept -> bool {
-    return data.begin() == other.data.begin();
-  }
-
-  operator std::string_view() const noexcept { return data; }
-  auto view() const noexcept -> std::string_view { return data; }
-  auto empty() const noexcept -> bool { return data.empty(); }
+  auto operator==(const Identifier &other) const noexcept -> bool;
+  operator std::string_view() const noexcept;
+  auto view() const noexcept -> std::string_view;
+  auto empty() const noexcept -> bool;
   auto globalNamespace() const noexcept -> Identifier;
 
   // /*
@@ -79,13 +71,7 @@ public:
   // "a::x"           -> true
   // "a0::...::aN::x" -> true
   // */
-  [[nodiscard]] auto isQualified() const noexcept -> bool {
-    for (auto c : data) {
-      if (c == ':')
-        return true;
-    }
-    return false;
-  }
+  [[nodiscard]] auto isQualified() const noexcept -> bool;
 
   // /*
   // does this identifier begin with global scope?
@@ -95,12 +81,7 @@ public:
   // "a::x"           -> false
   // "a0::...::aN::x" -> false
   // */
-  [[nodiscard]] auto isGloballyQualified() const noexcept -> bool {
-    if (*data.begin() == ':') {
-      return true;
-    }
-    return false;
-  }
+  [[nodiscard]] auto isGloballyQualified() const noexcept -> bool;
 
   // #NOTE: qualifications does not return an Identifier
   // because the qualifications of an Identifier are not
@@ -158,8 +139,6 @@ inline auto operator<<(std::ostream &out, Identifier const &id) noexcept
 [[nodiscard]] auto subscopeOf(Identifier scope, Identifier name) noexcept
     -> bool;
 
-// #TODO: why does this function have to be in the header file
-// to prevent linker errors?
 template <class... Args>
 [[nodiscard]] inline auto IdentifierSet::emplace(Args &&...args) noexcept
     -> Identifier {
@@ -167,9 +146,6 @@ template <class... Args>
   return Identifier(this, *pair.first);
 }
 
-[[nodiscard]] inline auto IdentifierSet::empty_id() noexcept -> Identifier {
-  return emplace("");
-}
 } // namespace mint
 
 namespace std {

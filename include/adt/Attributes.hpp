@@ -29,9 +29,9 @@ private:
   Set set;
 
 public:
-  [[nodiscard]] auto isPublic() const noexcept -> bool { return set[Public]; }
-  auto isPublic(bool state) noexcept -> bool { return set[Public] = state; }
-  [[nodiscard]] auto isPrivate() const noexcept -> bool { return !isPublic(); }
-  auto isPrivate(bool state) noexcept -> bool { return isPublic(!state); }
+  [[nodiscard]] auto isPublic() const noexcept -> bool;
+  auto isPublic(bool state) noexcept -> bool;
+  [[nodiscard]] auto isPrivate() const noexcept -> bool;
+  auto isPrivate(bool state) noexcept -> bool;
 };
 } // namespace mint

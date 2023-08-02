@@ -18,12 +18,15 @@ re2c_generate_scanner(
 )
 
 add_library(mint_common STATIC 
+  ${MINT_SOURCE_DIR}/adt/Attributes.cpp 
   ${MINT_SOURCE_DIR}/adt/BinopTable.cpp
   ${MINT_SOURCE_DIR}/adt/DirectorySearch.cpp 
   ${MINT_SOURCE_DIR}/adt/Environment.cpp
   ${MINT_SOURCE_DIR}/adt/Identifier.cpp 
+  ${MINT_SOURCE_DIR}/adt/ImportSet.cpp
   ${MINT_SOURCE_DIR}/adt/Scope.cpp
   ${MINT_SOURCE_DIR}/adt/UnopTable.cpp
+  ${MINT_SOURCE_DIR}/adt/UseBeforeDefMap.cpp 
 
   ${MINT_SOURCE_DIR}/ast/definition/Function.cpp 
   ${MINT_SOURCE_DIR}/ast/definition/Let.cpp
@@ -49,11 +52,9 @@ add_library(mint_common STATIC
   ${MINT_SOURCE_DIR}/type/Integer.cpp
 
   ${MINT_SOURCE_DIR}/utility/Abort.cpp
-  ${MINT_SOURCE_DIR}/utility/Allocator.cpp
   ${MINT_SOURCE_DIR}/utility/CommandLineOptions.cpp
   ${MINT_SOURCE_DIR}/utility/LLVMUtility.cpp
   ${MINT_SOURCE_DIR}/utility/Log.cpp
-  ${MINT_SOURCE_DIR}/utility/VectorHelpers.cpp
 )
 set_property(
   TARGET mint_common 

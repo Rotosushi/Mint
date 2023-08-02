@@ -17,71 +17,44 @@
 #include "adt/Identifier.hpp"
 
 namespace mint {
-// #NOTE:
-// if we consider a set of scopes (x0, x1, ..., xN)
-// which are descending subscopes, defined as
-// module x0 {
-//   module x1 {
-//     ...
-//     module xN { ... } ... }}
-// then a variable appearing in scope xA
-// (where A is-in [0...N])
-// is reachable by unqualified lookup from any scope xB
-// (where B >= A and B <= N)
-
-// if we consider a set of sets of scopes
-// a0, a1, ..., aM
-// where each (a0, a1, ..., aM)
-// is-a set of descending subscopes (a0_0, a0_1, ..., a0_N)
-// then a variable within scope xA_B
-// (where A is-is [0...N] and B is-in [0...M])
-// is reachable by unqualified lookup from any scope xC_D
-// (where (A <= C <= N) and (B <= D <= M))
-
-// additionally, any possible scope is a subscope of global scope
-
-// that is, a variable is only reachable by unqualified lookup
-// from a subscope of the defining scope of the variable.
-
-// thus, this function returns true if and only if the qualifications
-// of scope are a subset of the qualifications of name.
-auto subscopeOf(Identifier scope, Identifier name) noexcept -> bool {
-  auto q_name = name.qualifications();
-  // if the qualifications of name is a longer string,
-  // than the scope. then we know name is more qualified
-  // than the scope, so it cannot be a subscope of left.
-  if (q_name.view().size() > scope.view().size())
-    return false;
-
-  // we know right <= left, so we only need to
-  // look for the end of right.
-  auto s_cursor = scope.view().begin();
-  auto n_cursor = q_name.view().begin();
-  auto n_end = q_name.view().end();
-  while (n_cursor != n_end) {
-    // if the characters are not equal, then we
-    // know that the scopes diverge at a point
-    // before they reach their full specificity.
-    // meaning they are parallel scopes.
-    if (*s_cursor != *n_cursor)
-      return false;
-
-    ++s_cursor;
-    ++n_cursor;
-  }
-
-  // we reach here in two cases, either the strings are equal,
-  // in which case scope is the same scope as name's scope.
-  // meaning they are subscopes. (because a set is a subset of itself)
-  // or they are equal for the entire length of names
-  // qualifications, which means that scope is more qualified
-  // than the scope of name meaning that scope is a subscope of
-  // names scope.
-  return true;
+[[nodiscard]] auto IdentifierSet::empty_id() noexcept -> Identifier {
+  return emplace("");
 }
+
+Identifier::Identifier(IdentifierSet *set, std::string_view data) noexcept
+    : set(set), data(data) {
+  MINT_ASSERT(set != nullptr);
+}
+
+// #NOTE: since identifiers are interned, comparison can be
+// implemented as pointer comparison.
+auto Identifier::operator==(const Identifier &other) const noexcept -> bool {
+  return data.begin() == other.data.begin();
+}
+
+Identifier::operator std::string_view() const noexcept { return data; }
+
+auto Identifier::view() const noexcept -> std::string_view { return data; }
+
+auto Identifier::empty() const noexcept -> bool { return data.empty(); }
 
 auto Identifier::globalNamespace() const noexcept -> Identifier {
   return set->empty_id();
+}
+
+[[nodiscard]] auto Identifier::isQualified() const noexcept -> bool {
+  for (auto c : data) {
+    if (c == ':')
+      return true;
+  }
+  return false;
+}
+
+[[nodiscard]] auto Identifier::isGloballyQualified() const noexcept -> bool {
+  if (*data.begin() == ':') {
+    return true;
+  }
+  return false;
 }
 
 [[nodiscard]] auto Identifier::qualifications() const noexcept -> Identifier {
@@ -179,4 +152,68 @@ auto Identifier::globalNamespace() const noexcept -> Identifier {
   new_name += data;
   return set->emplace(std::move(new_name));
 }
+
+// #NOTE:
+// if we consider a set of scopes (x0, x1, ..., xN)
+// which are descending subscopes, defined as
+// module x0 {
+//   module x1 {
+//     ...
+//     module xN { ... } ... }}
+// then a variable appearing in scope xA
+// (where A is-in [0...N])
+// is reachable by unqualified lookup from any scope xB
+// (where B >= A and B <= N)
+
+// if we consider a set of sets of scopes
+// a0, a1, ..., aM
+// where each (a0, a1, ..., aM)
+// is-a set of descending subscopes (a0_0, a0_1, ..., a0_N)
+// then a variable within scope xA_B
+// (where A is-is [0...N] and B is-in [0...M])
+// is reachable by unqualified lookup from any scope xC_D
+// (where (A <= C <= N) and (B <= D <= M))
+
+// additionally, any possible scope is a subscope of global scope
+
+// that is, a variable is only reachable by unqualified lookup
+// from a subscope of the defining scope of the variable.
+
+// thus, this function returns true if and only if the qualifications
+// of scope are a subset of the qualifications of name.
+auto subscopeOf(Identifier scope, Identifier name) noexcept -> bool {
+  auto q_name = name.qualifications();
+  // if the qualifications of name is a longer string,
+  // than the scope. then we know name is more qualified
+  // than the scope, so it cannot be a subscope of left.
+  if (q_name.view().size() > scope.view().size())
+    return false;
+
+  // we know right <= left, so we only need to
+  // look for the end of right.
+  auto s_cursor = scope.view().begin();
+  auto n_cursor = q_name.view().begin();
+  auto n_end = q_name.view().end();
+  while (n_cursor != n_end) {
+    // if the characters are not equal, then we
+    // know that the scopes diverge at a point
+    // before they reach their full specificity.
+    // meaning they are parallel scopes.
+    if (*s_cursor != *n_cursor)
+      return false;
+
+    ++s_cursor;
+    ++n_cursor;
+  }
+
+  // we reach here in two cases, either the strings are equal,
+  // in which case scope is the same scope as name's scope.
+  // meaning they are subscopes. (because a set is a subset of itself)
+  // or they are equal for the entire length of names
+  // qualifications, which means that scope is more qualified
+  // than the scope of name meaning that scope is a subscope of
+  // names scope.
+  return true;
+}
+
 } // namespace mint
