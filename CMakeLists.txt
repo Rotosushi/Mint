@@ -11,8 +11,12 @@ set(MINT_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 set(MINT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/source")
 set(MINT_RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
 
+set(WARNINGS -Wall -Wdeprecated -Wextra -Wpedantic -Wconversion -Werror)
+set(CXX_OPTIONS ${WARNINGS})
 
-find_package(LLVM REQUIRED CONFIG)
+# find dependencies
+# find LLVM
+find_package(LLVM 16 REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION} in ${LLVM_DIR}")
 
@@ -22,7 +26,8 @@ separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 
 # retrieved from llvm-config --cxxflags 
-# explicitly listed to remove -std=c++20 flag
+# NOTE: explicitly listed to remove -std=c++20 flag
+# NOTE: we cannot add -fno-exceptions and use boost test.
 set(llvm_cxxflags 
   -I/usr/local/include 
   #-fno-exceptions 
@@ -57,7 +62,7 @@ execute_process(
 separate_arguments(llvm_system_libs)
 
 
-#project wide configuration information
+# create project wide configuration information
 execute_process(
   COMMAND git rev-parse HEAD
   OUTPUT_VARIABLE Mint_GIT_REVISION
@@ -74,9 +79,6 @@ configure_file(
   ${MINT_INCLUDE_DIR}/utility/Config.hpp.in 
   ${MINT_INCLUDE_DIR}/utility/Config.hpp
 )
-
-set(WARNINGS -Wall -Wdeprecated -Wextra -Wpedantic -Wconversion -Werror)
-set(CXX_OPTIONS ${WARNINGS})
 
 # build the mint executable
 add_subdirectory(source)

@@ -89,7 +89,7 @@ public:
   static auto getTextFromTextLiteral(std::string_view string) noexcept
       -> std::string_view;
 
-  auto repl() noexcept -> int;
+  auto repl(bool do_print) noexcept -> int;
   auto compile(std::filesystem::path file) noexcept -> int;
 
   void printErrorWithSource(Error const &error) const noexcept;

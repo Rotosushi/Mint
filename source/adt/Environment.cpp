@@ -127,9 +127,10 @@ auto Environment::getTextFromTextLiteral(std::string_view string) noexcept
   return {cursor, static_cast<std::size_t>(std::distance(cursor, end))};
 }
 
-auto Environment::repl() noexcept -> int {
+auto Environment::repl(bool do_print) noexcept -> int {
   while (true) {
-    *m_output << "# ";
+    if (do_print)
+      *m_output << "# ";
 
     auto parse_result = m_parser.parse();
     if (!parse_result) {
@@ -164,13 +165,30 @@ auto Environment::repl() noexcept -> int {
     }
     auto &value = evaluate_result.value();
 
-    *m_output << ast << " : " << type << " => " << value << "\n";
+    if (do_print)
+      *m_output << ast << " : " << type << " => " << value << "\n";
+
+    addAstToModule(std::move(ast));
   }
 
   return EXIT_SUCCESS;
 }
 
+//  Parse, Typecheck, and Evaluate each ast within the source file
+//  then Codegen all of the terms collected and emit all of that
+//  as LLVM IR.
+//
+//  #TODO: emit the terms into a LLVM bitcode, or object file.
+//
+//  #TODO: add a link step to produce a library, or executable
+//
+//  #TODO: I think we can handle multiple source files by "import"ing
+//  each subsequent file into the environment created by the first
+//  file given. then generating the code from there. this might
+//  convert straight to a multithreaded approach, where a thread is
+//  launched per input file.
 auto Environment::compile(fs::path filename) noexcept -> int {
+
   auto found = fileSearch(filename);
   if (!found) {
     Error e{Error::Kind::FileNotFound, Location{}, filename.c_str()};
@@ -180,65 +198,11 @@ auto Environment::compile(fs::path filename) noexcept -> int {
   auto &file = found.value();
   m_parser.setIstream(&file);
 
-  /*
-    Parse, Typecheck, and Evaluate each ast within the source file
+  repl(/* do_print = */ false);
 
-    #TODO: I think we can handle multiple source files by "import"ing
-    each subsequent file into the environment created by the first
-    file given. then generating the code from there. this might
-    convert straight to a multithreaded approach, where a thread is
-    launched per input file.
-  */
-  while (true) {
-    auto parse_result = m_parser.parse();
-    if (!parse_result) {
-      auto &error = parse_result.error();
-      if (error.kind() == Error::Kind::EndOfInput)
-        break;
-
-      printErrorWithSource(error);
-      return EXIT_FAILURE;
-    }
-    auto &ast = parse_result.value();
-
-    auto typecheck_result = ast->typecheck(*this);
-    if (!typecheck_result) {
-      auto &error = typecheck_result.error();
-      if (!error.isUseBeforeDef()) {
-        printErrorWithSource(error);
-        return EXIT_FAILURE;
-      }
-
-      if (auto failed = bindUseBeforeDef(error, std::move(ast))) {
-        printErrorWithSource(failed.value());
-        return EXIT_FAILURE;
-      }
-      continue;
-    }
-
-    auto evaluate_result = ast->evaluate(*this);
-    if (!evaluate_result) {
-      auto &error = evaluate_result.error();
-      if (!error.isUseBeforeDef()) {
-        printErrorWithSource(evaluate_result.error());
-        return EXIT_FAILURE;
-      }
-
-      if (auto failed = bindUseBeforeDef(error, std::move(ast))) {
-        printErrorWithSource(failed.value());
-        return EXIT_FAILURE;
-      }
-      continue;
-    }
-
-    addAstToModule(std::move(ast));
-  }
-
-  /*
-    codegen each term within the module,
-    this populates the llvm_module with
-    the llvm equivalent of all terms.
-  */
+  //   codegen each term within the module,
+  //   this populates the llvm_module with
+  //   the llvm equivalent of all terms.
   for (auto &ast : m_module) {
     auto codegen_result = ast->codegen(*this);
     if (!codegen_result) {
@@ -247,15 +211,6 @@ auto Environment::compile(fs::path filename) noexcept -> int {
     }
   }
 
-  /*
-    emit the module
-
-    #TODO: iff there is a main entry point
-    emit an object file and link it with lld
-    to create an executable.
-    iff there is more than one main entry point
-    report an error
-  */
   emitLLVMIR(*m_llvm_module, filename, *m_error_output);
   return EXIT_SUCCESS;
 }

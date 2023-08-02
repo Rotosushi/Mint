@@ -155,7 +155,7 @@ void testExpressionInREPL(TestCode &expression) {
   auto env =
       mint::Environment::create(&input, &output, &error_output, &log_output);
 
-  env.repl();
+  env.repl(true);
 
   auto line = extractFinalLine(output.view());
   auto result = extractResult(line);
