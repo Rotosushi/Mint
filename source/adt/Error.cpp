@@ -125,7 +125,7 @@ void Error::underline(std::ostream &out, Location location,
 
 void Error::print(std::ostream &out,
                   std::string_view bad_source) const noexcept {
-  out << KindToView(m_kind);
+  out << "Error: " << KindToView(m_kind);
 
   // we don't print anything extra for other kinds of error
   if (std::holds_alternative<Default>(m_data)) {

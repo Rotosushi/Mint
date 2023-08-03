@@ -20,9 +20,7 @@
 
 namespace cl = llvm::cl;
 
-/*
-  https://llvm.org/docs/CommandLine.html#quick-start-guide
-*/
+//  https://llvm.org/docs/CommandLine.html#quick-start-guide
 namespace mint {
 inline cl::opt<std::string> input_filename(cl::Positional,
                                            cl::desc("<input file>"));

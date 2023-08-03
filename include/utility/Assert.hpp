@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include "utility/Config.hpp"
 
 #if defined(__clang__) || defined(__GNUC__)
 #  define MINT_BREAKPOINT() __builtin_trap()
@@ -26,7 +27,7 @@
 #  define MINT_BREAKPOINT() std::abort()
 #endif
 
-#if !defined(NDEBUG)
+#if MINT_DEBUG
 #  include "utility/Log.hpp" // mint::log
 #  include <iostream>        // std::cerr
 #  define MINT_ASSERT(condition)                                               \

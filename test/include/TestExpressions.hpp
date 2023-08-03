@@ -98,11 +98,15 @@ constexpr inline auto getAllTestCode() noexcept {
       {"module A {\n public let a = B::a; \n} module A { module B { public let "
        "a = 1; }}",
        "A::a;", "1"},
-      //{"import \"" MINT_RESOURCES_DIR "/module.mi\";", "::A::a;", "1"},
-      //{"import \"" MINT_RESOURCES_DIR "/module.mi\";", "::a;", "2"},
-      //{"import \"" MINT_RESOURCES_DIR "/module.mi\";", "::A::b;", "2"},
-      //{"import \"" MINT_RESOURCES_DIR "/module.mi\";", "::A::d;", "3"},
-      //{"import \"" MINT_RESOURCES_DIR "/module.mi\";", "::A::e;", "4"},
+      {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "A::b;", "1"},
+      {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "a;", "1"},
+      {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "A::c;", "2"},
+      {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "d;", "2"},
+      {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "A::e;", "3"},
+      {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "A::f;", "4"},
+      {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "B::g;", "4"},
+      {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "A::h;", "5"},
+      {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "A::B::i;", "5"},
   };
 
   return std::to_array(expressions);

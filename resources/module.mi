@@ -6,18 +6,20 @@ module A {
   public let c = d;
 }
 
+public let d = 2;
+
 module A {
-  public let e = 2;
-  public let f = ::B::h;
-  public let g = B::h;
+  public let e = 3;
+  public let f = B::g;
 }
 
 module B {
-  public let h = 3;
+  public let g = 4;
 }
 
 module A {
+  public let h= A::B::i;
   module B {
-    public let i = 4;
+    public let i = 5;
   }
 }

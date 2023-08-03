@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "utility/Abort.hpp"
+#include <iostream>
 
 namespace mint {
 [[noreturn]] void abort(std::string_view message,

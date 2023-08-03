@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include "utility/Config.hpp"
 
-#if !defined(NDEBUG)
+#if MINT_DEBUG
 #  define DO_IF_DEBUG(x) (x)
 #else
 #  define DO_IF_DEBUG(x)
 #endif
-
