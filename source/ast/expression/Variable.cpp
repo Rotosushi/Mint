@@ -83,28 +83,28 @@ Result<type::Ptr> Variable::typecheck(Environment &env) const noexcept {
 Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {
   auto bound = env.lookupBinding(m_name);
   if (!bound)
-    return handleUseBeforeDef(bound.error(), env);
+    return Result<ast::Ptr>{handleUseBeforeDef(bound.error(), env)};
 
   auto binding = bound.value();
 
   // we cannot evaluate a variable given a
   // binding without a comptime value
   if (!binding.hasComptimeValue())
-    return handleUseBeforeDef(env);
+    return Result<ast::Ptr>{handleUseBeforeDef(env)};
 
-  return binding.comptimeValueOrAssert()->clone();
+  return Result<ast::Ptr>{binding.comptimeValueOrAssert()->clone()};
 }
 
 Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {
   auto bound = env.lookupBinding(m_name);
   if (!bound)
-    return handleUseBeforeDef(bound.error(), env);
+    return Result<llvm::Value *>{handleUseBeforeDef(bound.error(), env)};
   auto binding = bound.value();
 
   // we cannot codegen a variable given a
   // binding without a runtime value
   if (!binding.hasRuntimeValue())
-    return handleUseBeforeDef(env);
+    return Result<llvm::Value *>{handleUseBeforeDef(env)};
 
   auto type = binding.type()->toLLVM(env);
   auto value = binding.runtimeValueOrAssert();
@@ -112,15 +112,15 @@ Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {
   // #TODO: this only makes sense when codegening
   // in a global context. as otherwise we want to
   // load/store the global variable itself.
-  // however in the global context there is nowhere
-  // to execute instructions.
+  // however there are no local contexts yet. so
+  // this check is fine for now.
   if (auto global = llvm::dyn_cast<llvm::GlobalVariable>(value)) {
-    return global->getInitializer();
+    return Result<llvm::Value *>{global->getInitializer()};
   } else {
     // #NOTE: given that runtime variables are stored
     // in memory we need to load the value,
     // such that it can be used in expressions.
-    return env.createLLVMLoad(type, value);
+    return Result<llvm::Value *>{env.createLLVMLoad(type, value)};
   }
 }
 } // namespace ast

@@ -26,12 +26,9 @@
 namespace mint {
 class Environment;
 
-// #TODO: BinopEvalFn no longer needs a reference to the environment.
-using BinopEvalFn = Result<ast::Ptr> (*)(ast::Ast *left, ast::Ast *right,
-                                         Environment &env);
-using BinopCodegenFn = Result<llvm::Value *> (*)(llvm::Value *left,
-                                                 llvm::Value *right,
-                                                 Environment &env);
+using BinopEvalFn = ast::Ptr (*)(ast::Ast *left, ast::Ast *right);
+using BinopCodegenFn = llvm::Value *(*)(llvm::Value *left, llvm::Value *right,
+                                        Environment &env);
 
 struct BinopOverload {
   type::Ptr left_type;
@@ -40,11 +37,10 @@ struct BinopOverload {
   BinopEvalFn eval;
   BinopCodegenFn gen;
 
-  [[nodiscard]] auto evaluate(ast::Ast *left, ast::Ast *right, Environment &env)
-      -> Result<ast::Ptr>;
+  [[nodiscard]] auto evaluate(ast::Ast *left, ast::Ast *right) -> ast::Ptr;
 
   [[nodiscard]] auto codegen(llvm::Value *left, llvm::Value *right,
-                             Environment &env) -> Result<llvm::Value *>;
+                             Environment &env) -> llvm::Value *;
 };
 
 class BinopOverloads {

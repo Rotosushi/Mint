@@ -27,4 +27,4 @@ void log(
     std::source_location location = std::source_location::current()) noexcept;
 } // namespace mint
 
-#define MINT_LOG(stream, message) DO_IF_DEBUG(mint::log((stream), (message)))
+#define DEBUG_LOG(stream, message) DO_IF_DEBUG(mint::log((stream), (message)))

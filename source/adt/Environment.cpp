@@ -182,11 +182,13 @@ auto Environment::repl(bool do_print) noexcept -> int {
 //
 //  #TODO: add a link step to produce a library, or executable
 //
-//  #TODO: I think we can handle multiple source files by "import"ing
+//  #TODO: I think we can handle multiple source files by "repl"ing
 //  each subsequent file into the environment created by the first
-//  file given. then generating the code from there. this might
-//  convert straight to a multithreaded approach, where a thread is
-//  launched per input file.
+//  file given. then generating the code after all files are processed.
+//  this might convert to a multithreaded approach, where a thread is
+//  launched per input file. but we would need some way of
+//  A) bringing all of the results into a single output file and
+//  B) something else I am sure I haven't thought of.
 auto Environment::compile(fs::path filename) noexcept -> int {
 
   auto found = fileSearch(filename);
@@ -200,9 +202,6 @@ auto Environment::compile(fs::path filename) noexcept -> int {
 
   repl(/* do_print = */ false);
 
-  //   codegen each term within the module,
-  //   this populates the llvm_module with
-  //   the llvm equivalent of all terms.
   for (auto &ast : m_module) {
     auto codegen_result = ast->codegen(*this);
     if (!codegen_result) {

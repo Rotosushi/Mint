@@ -165,6 +165,8 @@ public:
 
   [[nodiscard]] auto isGlobal() const noexcept -> bool;
   [[nodiscard]] auto getPrevScope() const noexcept -> std::shared_ptr<Scope>;
+  [[nodiscard]] auto bindingsEmpty() const noexcept -> bool;
+  [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
   [[nodiscard]] auto hasName() const noexcept;
   // #TODO: if there is no scope name, and this is not global scope
   // walk up the scope tree until we find a scope name. That name is
@@ -172,14 +174,6 @@ public:
   // 'real' scopes, in the sense that they can be named. I think.)
   [[nodiscard]] auto name() const noexcept;
   [[nodiscard]] auto qualifiedName() const noexcept -> Identifier;
-
-  [[nodiscard]] auto bindingsEmpty() const noexcept -> bool {
-    return m_bindings->empty();
-  }
-
-  [[nodiscard]] auto scopesEmpty() const noexcept -> bool {
-    return m_scopes->empty();
-  }
 
   [[nodiscard]] auto qualifyName(Identifier name) noexcept -> Identifier;
 

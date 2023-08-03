@@ -20,12 +20,11 @@
 #include "ast/value/Integer.hpp"
 
 namespace mint {
-[[nodiscard]] auto UnopOverload::evaluate(ast::Ast *right, Environment &env)
-    -> Result<ast::Ptr> {
-  return eval(right, env);
+[[nodiscard]] auto UnopOverload::evaluate(ast::Ast *right) -> ast::Ptr {
+  return eval(right);
 }
 [[nodiscard]] auto UnopOverload::codegen(llvm::Value *right, Environment &env)
-    -> Result<llvm::Value *> {
+    -> llvm::Value * {
   return gen(right, env);
 }
 
@@ -80,25 +79,21 @@ auto UnopTable::emplace(Token op) noexcept -> Unop {
   return table.emplace(op, UnopOverloads{}).first;
 }
 
-auto eval_unop_minus(ast::Ast *right, [[maybe_unused]] Environment &env)
-    -> Result<ast::Ptr> {
+auto eval_unop_minus(ast::Ast *right) -> ast::Ptr {
   auto *integer = llvm::cast<ast::Integer>(right);
   return ast::Integer::create({}, {}, -(integer->value()));
 }
 
-auto codegen_unop_minus(llvm::Value *right, Environment &env)
-    -> Result<llvm::Value *> {
+auto codegen_unop_minus(llvm::Value *right, Environment &env) -> llvm::Value * {
   return env.createLLVMNeg(right);
 }
 
-auto eval_unop_not(ast::Ast *right, [[maybe_unused]] Environment &env)
-    -> Result<ast::Ptr> {
+auto eval_unop_not(ast::Ast *right) -> ast::Ptr {
   auto *boolean = llvm::cast<ast::Boolean>(right);
   return ast::Boolean::create({}, {}, !(boolean->value()));
 }
 
-auto codegen_unop_not(llvm::Value *right, Environment &env)
-    -> Result<llvm::Value *> {
+auto codegen_unop_not(llvm::Value *right, Environment &env) -> llvm::Value * {
   return env.createLLVMNot(right);
 }
 

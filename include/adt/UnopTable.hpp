@@ -28,9 +28,10 @@
 namespace mint {
 class Environment;
 
-using UnopEvalFn = Result<ast::Ptr> (*)(ast::Ast *right, Environment &env);
-using UnopCodegenFn = Result<llvm::Value *> (*)(llvm::Value *right,
-                                                Environment &env);
+// #TODO: both of these can return without wrapping in a Result<T>
+// #TODO: UnopEvalFn no longer needs a reference to the environment.
+using UnopEvalFn = ast::Ptr (*)(ast::Ast *right);
+using UnopCodegenFn = llvm::Value *(*)(llvm::Value *right, Environment &env);
 
 struct UnopOverload {
   type::Ptr right_type;
@@ -38,10 +39,9 @@ struct UnopOverload {
   UnopEvalFn eval;
   UnopCodegenFn gen;
 
-  [[nodiscard]] auto evaluate(ast::Ast *right, Environment &env)
-      -> Result<ast::Ptr>;
+  [[nodiscard]] auto evaluate(ast::Ast *right) -> ast::Ptr;
   [[nodiscard]] auto codegen(llvm::Value *right, Environment &env)
-      -> Result<llvm::Value *>;
+      -> llvm::Value *;
 };
 
 class UnopOverloads {

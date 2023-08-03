@@ -169,7 +169,8 @@ auto ScopeTable::Entry::partialBind(Identifier name, Attributes attributes,
 
 auto ScopeTable::emplace(Identifier name,
                          std::weak_ptr<Scope> prev_scope) noexcept -> Entry {
-  auto pair = table.try_emplace(name, Scope::createScope(name, prev_scope));
+  auto pair =
+      table.try_emplace(name, Scope::createScope(name, std::move(prev_scope)));
   return pair.first;
 }
 
@@ -195,7 +196,7 @@ Scope::Scope(Identifier name) noexcept
 
 Scope::Scope(std::optional<Identifier> name,
              std::weak_ptr<Scope> prev_scope) noexcept
-    : m_name(name), m_prev_scope(prev_scope),
+    : m_name(name), m_prev_scope(std::move(prev_scope)),
       m_bindings(std::make_unique<Bindings>()),
       m_scopes(std::make_unique<ScopeTable>()) {
   auto ptr = prev_scope.lock();
@@ -203,14 +204,16 @@ Scope::Scope(std::optional<Identifier> name,
 }
 
 Scope::Scope(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
-    : m_name(std::move(name)), m_prev_scope(prev_scope),
+    : m_name(name), m_prev_scope(std::move(prev_scope)),
       m_bindings(std::make_unique<Bindings>()),
       m_scopes(std::make_unique<ScopeTable>()) {
   auto ptr = prev_scope.lock();
   m_global = ptr->m_global;
 }
 
-void Scope::setGlobal(std::weak_ptr<Scope> scope) noexcept { m_global = scope; }
+void Scope::setGlobal(std::weak_ptr<Scope> scope) noexcept {
+  m_global = std::move(scope);
+}
 
 [[nodiscard]] auto Scope::createGlobalScope(Identifier name)
     -> std::shared_ptr<Scope> {
@@ -223,7 +226,7 @@ void Scope::setGlobal(std::weak_ptr<Scope> scope) noexcept { m_global = scope; }
 [[nodiscard]] auto Scope::createScope(std::optional<Identifier> name,
                                       std::weak_ptr<Scope> prev_scope)
     -> std::shared_ptr<Scope> {
-  return std::make_shared<Scope>(name, prev_scope);
+  return std::make_shared<Scope>(name, std::move(prev_scope));
 }
 
 [[nodiscard]] auto Scope::isGlobal() const noexcept -> bool {
@@ -236,6 +239,14 @@ void Scope::setGlobal(std::weak_ptr<Scope> scope) noexcept { m_global = scope; }
   // I like it better than returning a nullptr.
   MINT_ASSERT(!m_prev_scope.expired());
   return m_prev_scope.lock();
+}
+
+[[nodiscard]] auto Scope::bindingsEmpty() const noexcept -> bool {
+  return m_bindings->empty();
+}
+
+[[nodiscard]] auto Scope::scopesEmpty() const noexcept -> bool {
+  return m_scopes->empty();
 }
 
 [[nodiscard]] auto Scope::hasName() const noexcept {

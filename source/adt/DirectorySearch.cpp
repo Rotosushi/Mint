@@ -45,7 +45,7 @@ auto DirectorySearcher::searchWithinDirectory(fs::path &directory,
 }
 
 void DirectorySearcher::append(fs::path directory) noexcept {
-  m_known_paths.push_back(directory);
+  m_known_paths.emplace_back(std::move(directory));
 }
 
 auto DirectorySearcher::exists(fs::path file) noexcept -> bool {

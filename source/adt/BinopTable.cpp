@@ -20,15 +20,13 @@
 #include "ast/value/Integer.hpp"
 
 namespace mint {
-[[nodiscard]] auto BinopOverload::evaluate(ast::Ast *left, ast::Ast *right,
-                                           Environment &env)
-    -> Result<ast::Ptr> {
-  return eval(left, right, env);
+[[nodiscard]] auto BinopOverload::evaluate(ast::Ast *left, ast::Ast *right)
+    -> ast::Ptr {
+  return eval(left, right);
 }
 
 [[nodiscard]] auto BinopOverload::codegen(llvm::Value *left, llvm::Value *right,
-                                          Environment &env)
-    -> Result<llvm::Value *> {
+                                          Environment &env) -> llvm::Value * {
   return gen(left, right, env);
 }
 
@@ -92,8 +90,7 @@ auto BinopTable::emplace(Token op) -> Binop {
   new values being created by the compiler, and thus are not
   associated with any input text.
 */
-auto eval_binop_add(ast::Ast *left, ast::Ast *right,
-                    [[maybe_unused]] Environment &env) -> Result<ast::Ptr> {
+auto eval_binop_add(ast::Ast *left, ast::Ast *right) -> ast::Ptr {
   auto *left_integer = llvm::cast<ast::Integer>(left);
   auto *right_integer = llvm::cast<ast::Integer>(right);
   return ast::Integer::create({}, {},
@@ -101,12 +98,11 @@ auto eval_binop_add(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_add(llvm::Value *left, llvm::Value *right, Environment &env)
-    -> Result<llvm::Value *> {
+    -> llvm::Value * {
   return env.createLLVMAdd(left, right);
 }
 
-auto eval_binop_sub(ast::Ast *left, ast::Ast *right,
-                    [[maybe_unused]] Environment &env) -> Result<ast::Ptr> {
+auto eval_binop_sub(ast::Ast *left, ast::Ast *right) -> ast::Ptr {
   auto *left_integer = llvm::cast<ast::Integer>(left);
   auto *right_integer = llvm::cast<ast::Integer>(right);
   return ast::Integer::create({}, {},
@@ -114,12 +110,11 @@ auto eval_binop_sub(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_sub(llvm::Value *left, llvm::Value *right, Environment &env)
-    -> Result<llvm::Value *> {
+    -> llvm::Value * {
   return env.createLLVMSub(left, right);
 }
 
-auto eval_binop_mult(ast::Ast *left, ast::Ast *right,
-                     [[maybe_unused]] Environment &env) -> Result<ast::Ptr> {
+auto eval_binop_mult(ast::Ast *left, ast::Ast *right) -> ast::Ptr {
   auto *left_integer = llvm::cast<ast::Integer>(left);
   auto *right_integer = llvm::cast<ast::Integer>(right);
   return ast::Integer::create({}, {},
@@ -127,12 +122,11 @@ auto eval_binop_mult(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_mult(llvm::Value *left, llvm::Value *right, Environment &env)
-    -> Result<llvm::Value *> {
+    -> llvm::Value * {
   return env.createLLVMMul(left, right);
 }
 
-auto eval_binop_div(ast::Ast *left, ast::Ast *right,
-                    [[maybe_unused]] Environment &env) -> Result<ast::Ptr> {
+auto eval_binop_div(ast::Ast *left, ast::Ast *right) -> ast::Ptr {
   auto *left_integer = llvm::cast<ast::Integer>(left);
   auto *right_integer = llvm::cast<ast::Integer>(right);
   return ast::Integer::create({}, {},
@@ -140,12 +134,11 @@ auto eval_binop_div(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_div(llvm::Value *left, llvm::Value *right, Environment &env)
-    -> Result<llvm::Value *> {
+    -> llvm::Value * {
   return env.createLLVMSDiv(left, right);
 }
 
-auto eval_binop_mod(ast::Ast *left, ast::Ast *right,
-                    [[maybe_unused]] Environment &env) -> Result<ast::Ptr> {
+auto eval_binop_mod(ast::Ast *left, ast::Ast *right) -> ast::Ptr {
   auto *left_integer = llvm::cast<ast::Integer>(left);
   auto *right_integer = llvm::cast<ast::Integer>(right);
   return ast::Integer::create({}, {},
@@ -153,12 +146,11 @@ auto eval_binop_mod(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_mod(llvm::Value *left, llvm::Value *right, Environment &env)
-    -> Result<llvm::Value *> {
+    -> llvm::Value * {
   return env.createLLVMSRem(left, right);
 }
 
-auto eval_binop_and(ast::Ast *left, ast::Ast *right,
-                    [[maybe_unused]] Environment &env) -> Result<ast::Ptr> {
+auto eval_binop_and(ast::Ast *left, ast::Ast *right) -> ast::Ptr {
   auto *left_boolean = llvm::cast<ast::Boolean>(left);
   auto *right_boolean = llvm::cast<ast::Boolean>(right);
   return ast::Boolean::create({}, {},
@@ -166,12 +158,11 @@ auto eval_binop_and(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_and(llvm::Value *left, llvm::Value *right, Environment &env)
-    -> Result<llvm::Value *> {
+    -> llvm::Value * {
   return env.createLLVMAnd(left, right);
 }
 
-auto eval_binop_or(ast::Ast *left, ast::Ast *right,
-                   [[maybe_unused]] Environment &env) -> Result<ast::Ptr> {
+auto eval_binop_or(ast::Ast *left, ast::Ast *right) -> ast::Ptr {
   auto *left_boolean = llvm::cast<ast::Boolean>(left);
   auto *right_boolean = llvm::cast<ast::Boolean>(right);
   return ast::Boolean::create({}, {},
@@ -179,13 +170,11 @@ auto eval_binop_or(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_or(llvm::Value *left, llvm::Value *right, Environment &env)
-    -> Result<llvm::Value *> {
+    -> llvm::Value * {
   return env.createLLVMOr(left, right);
 }
 
-auto eval_binop_integer_equality(ast::Ast *left, ast::Ast *right,
-                                 [[maybe_unused]] Environment &env)
-    -> Result<ast::Ptr> {
+auto eval_binop_integer_equality(ast::Ast *left, ast::Ast *right) -> ast::Ptr {
   auto *left_integer = llvm::cast<ast::Integer>(left);
   auto *right_integer = llvm::cast<ast::Integer>(right);
   return ast::Boolean::create({}, {},
@@ -193,13 +182,11 @@ auto eval_binop_integer_equality(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_integer_equality(llvm::Value *left, llvm::Value *right,
-                                Environment &env) -> Result<llvm::Value *> {
+                                Environment &env) -> llvm::Value * {
   return env.createLLVMICmpEQ(left, right);
 }
 
-auto eval_binop_boolean_equality(ast::Ast *left, ast::Ast *right,
-                                 [[maybe_unused]] Environment &env)
-    -> Result<ast::Ptr> {
+auto eval_binop_boolean_equality(ast::Ast *left, ast::Ast *right) -> ast::Ptr {
   auto *left_boolean = llvm::cast<ast::Boolean>(left);
   auto *right_boolean = llvm::cast<ast::Boolean>(right);
   return ast::Boolean::create({}, {},
@@ -207,13 +194,12 @@ auto eval_binop_boolean_equality(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_boolean_equality(llvm::Value *left, llvm::Value *right,
-                                Environment &env) -> Result<llvm::Value *> {
+                                Environment &env) -> llvm::Value * {
   return env.createLLVMICmpEQ(left, right);
 }
 
-auto eval_binop_integer_inequality(ast::Ast *left, ast::Ast *right,
-                                   [[maybe_unused]] Environment &env)
-    -> Result<ast::Ptr> {
+auto eval_binop_integer_inequality(ast::Ast *left, ast::Ast *right)
+    -> ast::Ptr {
   auto *left_integer = llvm::cast<ast::Integer>(left);
   auto *right_integer = llvm::cast<ast::Integer>(right);
   return ast::Boolean::create({}, {},
@@ -221,13 +207,12 @@ auto eval_binop_integer_inequality(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_integer_inequality(llvm::Value *left, llvm::Value *right,
-                                  Environment &env) -> Result<llvm::Value *> {
+                                  Environment &env) -> llvm::Value * {
   return env.createLLVMICmpNE(left, right);
 }
 
-auto eval_binop_boolean_inequality(ast::Ast *left, ast::Ast *right,
-                                   [[maybe_unused]] Environment &env)
-    -> Result<ast::Ptr> {
+auto eval_binop_boolean_inequality(ast::Ast *left, ast::Ast *right)
+    -> ast::Ptr {
   auto *left_boolean = llvm::cast<ast::Boolean>(left);
   auto *right_boolean = llvm::cast<ast::Boolean>(right);
   return ast::Boolean::create({}, {},
@@ -235,13 +220,11 @@ auto eval_binop_boolean_inequality(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_boolean_inequality(llvm::Value *left, llvm::Value *right,
-                                  Environment &env) -> Result<llvm::Value *> {
+                                  Environment &env) -> llvm::Value * {
   return env.createLLVMICmpNE(left, right);
 }
 
-auto eval_binop_less_than(ast::Ast *left, ast::Ast *right,
-                          [[maybe_unused]] Environment &env)
-    -> Result<ast::Ptr> {
+auto eval_binop_less_than(ast::Ast *left, ast::Ast *right) -> ast::Ptr {
   auto *left_integer = llvm::cast<ast::Integer>(left);
   auto *right_integer = llvm::cast<ast::Integer>(right);
   return ast::Boolean::create({}, {},
@@ -249,13 +232,12 @@ auto eval_binop_less_than(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_less_than(llvm::Value *left, llvm::Value *right,
-                         Environment &env) -> Result<llvm::Value *> {
+                         Environment &env) -> llvm::Value * {
   return env.createLLVMICmpSLT(left, right);
 }
 
-auto eval_binop_less_than_or_equal(ast::Ast *left, ast::Ast *right,
-                                   [[maybe_unused]] Environment &env)
-    -> Result<ast::Ptr> {
+auto eval_binop_less_than_or_equal(ast::Ast *left, ast::Ast *right)
+    -> ast::Ptr {
   auto *left_integer = llvm::cast<ast::Integer>(left);
   auto *right_integer = llvm::cast<ast::Integer>(right);
   return ast::Boolean::create({}, {},
@@ -263,13 +245,11 @@ auto eval_binop_less_than_or_equal(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_less_than_or_equal(llvm::Value *left, llvm::Value *right,
-                                  Environment &env) -> Result<llvm::Value *> {
+                                  Environment &env) -> llvm::Value * {
   return env.createLLVMICmpSLE(left, right);
 }
 
-auto eval_binop_greater_than(ast::Ast *left, ast::Ast *right,
-                             [[maybe_unused]] Environment &env)
-    -> Result<ast::Ptr> {
+auto eval_binop_greater_than(ast::Ast *left, ast::Ast *right) -> ast::Ptr {
   auto *left_integer = llvm::cast<ast::Integer>(left);
   auto *right_integer = llvm::cast<ast::Integer>(right);
   return ast::Boolean::create({}, {},
@@ -277,13 +257,12 @@ auto eval_binop_greater_than(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_greater_than(llvm::Value *left, llvm::Value *right,
-                            Environment &env) -> Result<llvm::Value *> {
+                            Environment &env) -> llvm::Value * {
   return env.createLLVMICmpSGT(left, right);
 }
 
-auto eval_binop_greater_than_or_equal(ast::Ast *left, ast::Ast *right,
-                                      [[maybe_unused]] Environment &env)
-    -> Result<ast::Ptr> {
+auto eval_binop_greater_than_or_equal(ast::Ast *left, ast::Ast *right)
+    -> ast::Ptr {
   auto *left_integer = llvm::cast<ast::Integer>(left);
   auto *right_integer = llvm::cast<ast::Integer>(right);
   return ast::Boolean::create({}, {},
@@ -291,8 +270,7 @@ auto eval_binop_greater_than_or_equal(ast::Ast *left, ast::Ast *right,
 }
 
 auto gen_binop_greater_than_or_equal(llvm::Value *left, llvm::Value *right,
-                                     Environment &env)
-    -> Result<llvm::Value *> {
+                                     Environment &env) -> llvm::Value * {
   return env.createLLVMICmpSGE(left, right);
 }
 

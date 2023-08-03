@@ -72,7 +72,7 @@ Result<type::Ptr> Binop::typecheck(Environment &env) const noexcept {
   }
 
   setCachedType(instance->result_type);
-  return instance->result_type;
+  return {instance->result_type};
 }
 
 Result<ast::Ptr> Binop::evaluate(Environment &env) noexcept {
@@ -101,7 +101,7 @@ Result<ast::Ptr> Binop::evaluate(Environment &env) noexcept {
     return {Error::Kind::BinopTypeMismatch, location(), message.view()};
   }
 
-  return instance->evaluate(left_value.get(), right_value.get(), env);
+  return {instance->evaluate(left_value.get(), right_value.get())};
 }
 
 Result<llvm::Value *> Binop::codegen(Environment &env) noexcept {
@@ -130,7 +130,7 @@ Result<llvm::Value *> Binop::codegen(Environment &env) noexcept {
     return {Error::Kind::BinopTypeMismatch, location(), message.view()};
   }
 
-  return instance->codegen(left_value, right_value, env);
+  return {instance->codegen(left_value, right_value, env)};
 }
 } // namespace ast
 } // namespace mint

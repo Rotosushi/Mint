@@ -86,7 +86,7 @@ Result<ast::Ptr> Unop::evaluate(Environment &env) noexcept {
     return {Error::Kind::UnopTypeMismatch, m_right->location(), message.view()};
   }
 
-  return instance->evaluate(right_value.get(), env);
+  return instance->evaluate(right_value.get());
 }
 
 Result<llvm::Value *> Unop::codegen(Environment &env) noexcept {

@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+// NOLINTBEGIN
 // clang-format off
 #define MINT_VERSION_MAJOR @Mint_VERSION_MAJOR@
 #define MINT_VERSION_MINOR @Mint_VERSION_MINOR@
@@ -22,10 +23,5 @@
 #define MINT_GIT_REVISION "@Mint_GIT_REVISION@"
 #define MINT_RESOURCES_DIR "@MINT_RESOURCES_DIR@"
 #cmakedefine01 MINT_DEBUG
-
-// #TODO: the compiler flags include -std=c++23 so why does this error?
-// #if __cplusplus < 202302L
-//   #error "Not being compiled in c++23 mode"
-// #endif
-
+// NOLINTEND
 // clang-format on

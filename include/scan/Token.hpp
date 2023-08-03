@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+
 #include <ostream>
 #include <string_view>
 
@@ -75,7 +76,7 @@ enum struct Token : int {
   Text,
 };
 
-using BinopPrecedence = int8_t;
+using BinopPrecedence = unsigned char;
 enum struct BinopAssociativity {
   None,
   Left,

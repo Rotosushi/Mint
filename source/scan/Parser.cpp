@@ -342,7 +342,7 @@ auto Parser::precedenceParser(ast::Ptr left, BinopPrecedence prec) noexcept
 
   auto new_prec = [&]() -> BinopPrecedence {
     if (precedence(op) > precedence(current))
-      return precedence(op) + 1;
+      return precedence(op) + static_cast<BinopPrecedence>(1);
     else
       return precedence(op);
   };

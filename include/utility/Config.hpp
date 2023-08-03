@@ -15,17 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+// NOLINTBEGIN
 // clang-format off
 #define MINT_VERSION_MAJOR 0
 #define MINT_VERSION_MINOR 0
 #define MINT_VERSION_PATCH 2
-#define MINT_GIT_REVISION "b9ceff0bbf0e4bb27adcd19dcc798b06fe772dca"
+#define MINT_GIT_REVISION "5bcbe9d87941ebbf7589057ba030997fef1c85ee"
 #define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
 #define MINT_DEBUG 1
-
-// #TODO: the compiler flags include -std=c++23 so why does this error?
-// #if __cplusplus < 202302L
-//   #error "Not being compiled in c++23 mode"
-// #endif
-
+// NOLINTEND
 // clang-format on
