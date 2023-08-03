@@ -12,7 +12,8 @@ set(MINT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/source")
 set(MINT_RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
 
 set(WARNINGS -Wall -Wdeprecated -Wextra -Wpedantic -Wconversion -Werror)
-set(CXX_OPTIONS ${WARNINGS})
+#set(CXX_OPTIONS ${WARNINGS})
+set(CXX_OPTIONS ${WARNINGS} -flto)
 
 # find dependencies
 # find LLVM

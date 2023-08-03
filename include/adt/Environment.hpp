@@ -23,7 +23,6 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Target/TargetMachine.h"
 
-// #include "adt/AstAllocator.hpp"
 #include "adt/BinopTable.hpp"
 #include "adt/DirectorySearch.hpp"
 #include "adt/Identifier.hpp"
@@ -165,12 +164,6 @@ public:
   std::optional<Error> bindUseBeforeDef(Error const &error,
                                         ast::Ptr ast) noexcept;
 
-private:
-  std::optional<Error> bindUseBeforeDef(UseBeforeDefMap::Elements &elements,
-                                        Error const &error,
-                                        ast::Ptr ast) noexcept;
-
-public:
   std::optional<Error> resolveTypeOfUseBeforeDef(Identifier def_name) noexcept;
 
   std::optional<Error>
@@ -196,7 +189,11 @@ public:
   //**** LLVM Helpers *****//
   auto createQualifiedNameForLLVM(Identifier name) noexcept -> Identifier;
 
-  /**** LLVM IRBuilder interface ****/
+  //**** LLVM Module Interface ****//
+  auto getOrInsertGlobal(std::string_view name, llvm::Type *type) noexcept
+      -> llvm::GlobalVariable *;
+
+  /**** LLVM IRBuilder interface ****/ //
   // types
   auto getLLVMNilType() noexcept -> llvm::IntegerType *;
   auto getLLVMBooleanType() noexcept -> llvm::IntegerType *;
@@ -270,13 +267,7 @@ public:
   auto createLLVMOr(llvm::Value *left, llvm::Value *right,
                     const llvm::Twine &name = "") noexcept -> llvm::Value *;
 
-  /**** composite llvm IR 'instructions' ****/
-  // allocations
-  auto createLLVMGlobalVariable(std::string_view name, llvm::Type *type,
-                                llvm::Constant *init = nullptr) noexcept
-      -> llvm::GlobalVariable *;
-
-  // loads/stores
-  auto createLLVMLoad(llvm::Type *type, llvm::Value *source) -> llvm::Value *;
+  auto createLLVMLoad(llvm::Type *type, llvm::Value *source) noexcept
+      -> llvm::Value *;
 };
 } // namespace mint

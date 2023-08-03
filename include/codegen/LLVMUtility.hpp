@@ -15,13 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 2
-#define MINT_GIT_REVISION "412b56a182dfd46563b161ecf12704b0d1dded7b"
-#define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
-#define MINT_DEBUG 1
-// NOLINTEND
-// clang-format on
+#include <filesystem>
+#include <ostream>
+#include <string>
+
+namespace fs = std::filesystem;
+
+namespace llvm {
+class Module;
+class Type;
+class Value;
+class Error;
+} // namespace llvm
+
+namespace mint {
+auto emitLLVMIR(llvm::Module &module, fs::path const &filename,
+                std::ostream &error_output) noexcept -> int;
+
+auto toString(llvm::Error const &error) noexcept -> std::string;
+auto toString(llvm::Type const *type) noexcept -> std::string;
+auto toString(llvm::Value const *value) noexcept -> std::string;
+} // namespace mint

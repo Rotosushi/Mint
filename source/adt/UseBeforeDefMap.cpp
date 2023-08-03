@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/UseBeforeDefMap.hpp"
+#include "adt/Environment.hpp"
+#include "ast/definition/Definition.hpp"
 
 namespace mint {
 UseBeforeDefMap::iterator::iterator(Elements::iterator iter) noexcept
@@ -185,4 +187,169 @@ void UseBeforeDefMap::insert(Elements &&elements) noexcept {
   for (auto &&element : elements)
     insert(std::move(element));
 }
+
+std::optional<Error> UseBeforeDefMap::bindUseBeforeDef(Error const &error,
+                                                       ast::Ptr ast) noexcept {
+  MINT_ASSERT(error.isUseBeforeDef());
+  auto ubd = error.getUseBeforeDef();
+  auto &names = ubd.names;
+  auto &scope = ubd.scope;
+  auto ubd_name = names.undef;
+  auto ubd_def_name = names.def;
+  auto scope_name = scope->qualifiedName();
+
+  auto ubd_def_ast = llvm::cast<ast::Definition>(ast.get());
+  if (auto failed = ubd_def_ast->checkUseBeforeDef(ubd)) {
+    return failed;
+  }
+
+  insert(ubd_name, ubd_def_name, scope_name, std::move(ast), scope);
+  return std::nullopt;
+}
+
+std::optional<Error> UseBeforeDefMap::bindUseBeforeDef(Elements &elements,
+                                                       Error const &error,
+                                                       ast::Ptr ast) noexcept {
+  MINT_ASSERT(error.isUseBeforeDef());
+  auto ubd = error.getUseBeforeDef();
+  auto &names = ubd.names;
+  auto &scope = ubd.scope;
+  auto ubd_name = names.undef;
+  auto ubd_def_name = names.def;
+  auto scope_name = scope->qualifiedName();
+
+  auto ubd_def_ast = llvm::cast<ast::Definition>(ast.get());
+  if (auto failed = ubd_def_ast->checkUseBeforeDef(ubd)) {
+    return failed;
+  }
+
+  elements.emplace_back(ubd_name, ubd_def_name, scope_name, std::move(ast),
+                        scope);
+  return std::nullopt;
+}
+
+std::optional<Error>
+UseBeforeDefMap::resolveTypeOfUseBeforeDef(Environment &env,
+                                           Identifier def_name) noexcept {
+  UseBeforeDefMap::Elements stage;
+  UseBeforeDefMap::Range old_entries;
+
+  auto range = lookup(def_name);
+  for (auto it : range) {
+    it.being_resolved(true);
+    // #NOTE: we enter the local scope of the ubd definition
+    // so we know that when we construct it's binding we
+    // construct it in the correct scope.
+    auto old_local_scope = env.exchangeLocalScope(it.scope());
+
+    auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
+    // #NOTE: since we are resolving the ubd here, we can clear the error
+    ubd_def_ast->clearUseBeforeDef();
+
+    auto result = ubd_def_ast->typecheck(env);
+    if (!result) {
+      auto &error = result.error();
+      if (!error.isUseBeforeDef()) {
+        it.being_resolved(false);
+        env.exchangeLocalScope(old_local_scope);
+        return error;
+      }
+
+      // handle another use before def error.
+      bindUseBeforeDef(stage, error, std::move(it.ubd_def_ast()));
+      old_entries.append(it);
+    }
+
+    env.exchangeLocalScope(old_local_scope);
+    it.being_resolved(false);
+  }
+
+  if (!old_entries.empty())
+    erase(old_entries);
+
+  if (!stage.empty())
+    insert(std::move(stage));
+
+  return std::nullopt;
+}
+
+std::optional<Error> UseBeforeDefMap::resolveComptimeValueOfUseBeforeDef(
+    Environment &env, Identifier def_name) noexcept {
+  UseBeforeDefMap::Elements stage;
+  UseBeforeDefMap::Range old_entries;
+
+  auto range = lookup(def_name);
+  for (auto it : range) {
+    it.being_resolved(true);
+    auto old_local_scope = env.exchangeLocalScope(it.scope());
+
+    auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
+    ubd_def_ast->clearUseBeforeDef();
+
+    // sanity check that we have called typecheck on this definition.
+    MINT_ASSERT(ubd_def_ast->cachedTypeOrAssert() != nullptr);
+
+    auto result = ubd_def_ast->evaluate(env);
+    if (!result) {
+      auto &error = result.error();
+      if (!error.isUseBeforeDef()) {
+        it.being_resolved(false);
+        env.exchangeLocalScope(old_local_scope);
+        return error;
+      }
+
+      // handle another use before def error.
+      bindUseBeforeDef(stage, error, std::move(it.ubd_def_ast()));
+      old_entries.append(it);
+    }
+
+    env.exchangeLocalScope(old_local_scope);
+    it.being_resolved(false);
+  }
+
+  if (!old_entries.empty())
+    erase(old_entries);
+
+  if (!stage.empty())
+    insert(std::move(stage));
+
+  return std::nullopt;
+}
+
+std::optional<Error> UseBeforeDefMap::resolveRuntimeValueOfUseBeforeDef(
+    Environment &env, Identifier def_name) noexcept {
+  UseBeforeDefMap::Elements stage;
+
+  auto range = lookup(def_name);
+  for (auto it : range) {
+    it.being_resolved(true);
+    auto old_local_scope = env.exchangeLocalScope(it.scope());
+
+    auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
+    ubd_def_ast->clearUseBeforeDef();
+
+    // sanity check that we have called typecheck on this definition.
+    MINT_ASSERT(ubd_def_ast->cachedTypeOrAssert() != nullptr);
+
+    auto result = ubd_def_ast->codegen(env);
+    if (!result) {
+      it.being_resolved(false);
+      env.exchangeLocalScope(old_local_scope);
+      return result.error();
+    }
+
+    env.exchangeLocalScope(old_local_scope);
+    it.being_resolved(false);
+  }
+
+  // #NOTE: codegen is the last step when processing an ast.
+  // so we can safely remove these entries from the ubd map
+  erase(range);
+
+  if (!stage.empty())
+    insert(std::move(stage));
+
+  return std::nullopt;
+}
+
 } // namespace mint

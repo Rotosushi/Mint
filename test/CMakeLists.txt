@@ -22,10 +22,11 @@ target_include_directories(mint_test PUBLIC
  ${MINT_INCLUDE_DIR}
 )
 target_link_libraries(mint_test
-  ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
   mint_scan
   mint_type
   mint_ast
   mint_adt
+  mint_codegen
   mint_utility
+  ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
 )

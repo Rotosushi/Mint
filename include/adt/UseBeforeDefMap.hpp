@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <list>
+#include <optional>
 #include <vector>
 
 #include "adt/Scope.hpp"
@@ -23,6 +24,7 @@
 #include "ast/Ast.hpp"
 
 namespace mint {
+class Environment;
 
 class UseBeforeDefMap {
 public:
@@ -81,6 +83,25 @@ public:
               std::shared_ptr<Scope> scope) noexcept;
   void insert(Element &&element) noexcept;
   void insert(Elements &&elements) noexcept;
+
+  std::optional<Error> bindUseBeforeDef(Error const &error,
+                                        ast::Ptr ast) noexcept;
+
+private:
+  std::optional<Error> bindUseBeforeDef(Elements &elements, Error const &error,
+                                        ast::Ptr ast) noexcept;
+
+public:
+  std::optional<Error> resolveTypeOfUseBeforeDef(Environment &env,
+                                                 Identifier def_name) noexcept;
+
+  std::optional<Error>
+  resolveComptimeValueOfUseBeforeDef(Environment &env,
+                                     Identifier def_name) noexcept;
+
+  std::optional<Error>
+  resolveRuntimeValueOfUseBeforeDef(Environment &env,
+                                    Identifier def_name) noexcept;
 };
 
 } // namespace mint

@@ -19,7 +19,8 @@
 #include "adt/Environment.hpp"
 #include "ast/definition/Let.hpp"
 #include "ast/value/Nil.hpp"
-#include "utility/LLVMUtility.hpp"
+#include "codegen/Allocate.hpp"
+#include "codegen/LLVMUtility.hpp"
 
 namespace mint {
 namespace ast {
@@ -193,12 +194,14 @@ Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
   auto type = m_ast->cachedTypeOrAssert();
   auto llvm_type = type->toLLVM(env);
 
+  // #NOTE: we don't want to create global variables
+  // to represent local variables.
   // create a global variable for the binding
   auto llvm_name = env.createQualifiedNameForLLVM(name());
   llvm::GlobalVariable *variable = nullptr;
   if (auto constant = llvm::dyn_cast<llvm::Constant>(value)) {
     variable =
-        env.createLLVMGlobalVariable(llvm_name.view(), llvm_type, constant);
+        createLLVMGlobalVariable(env, llvm_name.view(), llvm_type, constant);
   } else {
     return {Error::Kind::GlobalInitNotConstant, m_ast->location(),
             toString(value)};

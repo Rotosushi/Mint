@@ -14,14 +14,18 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 2
-#define MINT_GIT_REVISION "412b56a182dfd46563b161ecf12704b0d1dded7b"
-#define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
-#define MINT_DEBUG 1
-// NOLINTEND
-// clang-format on
+#include "adt/Environment.hpp"
+#include "codegen/Allocate.hpp"
+
+namespace mint {
+auto createLLVMLoad(Environment &env, llvm::Type *type,
+                    llvm::Value *source) noexcept -> llvm::Value * {
+  // #NOTE: we cannot create a load instruction for a type which
+  // does not fit within a single register.
+  // https://llvm.org/docs/LangRef.html#load-instruction
+  // https://llvm.org/docs/LangRef.html#single-value-types
+  // #NOTE: none of the available types (Integer, Boolean, Nil)
+  // are larger than a single register.
+  return env.createLLVMLoad(type, source);
+}
+} // namespace mint

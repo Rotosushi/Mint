@@ -14,14 +14,19 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "utility/LLVMUtility.hpp"
+#include "codegen/LLVMUtility.hpp"
 
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Value.h"
+#include "llvm/Support/Error.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace mint {
-auto emitLLVMIR(llvm::Module &module, fs::path filename,
+auto emitLLVMIR(llvm::Module &module, fs::path const &filename,
                 std::ostream &error_output) noexcept -> int {
-  auto llvm_ir_filename = filename.replace_extension("ll");
+  auto llvm_ir_filename = filename;
+  llvm_ir_filename.replace_extension("ll");
   std::error_code error;
   llvm::raw_fd_ostream outfile{llvm_ir_filename.c_str(), error};
   if (error) {

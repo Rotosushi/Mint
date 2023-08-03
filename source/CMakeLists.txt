@@ -5,12 +5,14 @@ add_subdirectory(${MINT_SOURCE_DIR}/ast)
 add_subdirectory(${MINT_SOURCE_DIR}/scan)
 add_subdirectory(${MINT_SOURCE_DIR}/type)
 add_subdirectory(${MINT_SOURCE_DIR}/utility)
+add_subdirectory(${MINT_SOURCE_DIR}/codegen)
 
 set(MINT_COMMON_LIBS
   mint_scan
   mint_type
   mint_ast
   mint_adt
+  mint_codegen
   mint_utility
 )
 

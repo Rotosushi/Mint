@@ -16,7 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/Environment.hpp"
 #include "ast/definition/Definition.hpp"
-#include "utility/LLVMUtility.hpp"
+#include "codegen/LLVMUtility.hpp"
 
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -190,7 +190,6 @@ auto Environment::repl(bool do_print) noexcept -> int {
 //  A) bringing all of the results into a single output file and
 //  B) something else I am sure I haven't thought of.
 auto Environment::compile(fs::path filename) noexcept -> int {
-
   auto found = fileSearch(filename);
   if (!found) {
     Error e{Error::Kind::FileNotFound, Location{}, filename.c_str()};
@@ -336,164 +335,24 @@ auto Environment::qualifyName(Identifier name) noexcept -> Identifier {
 //**** Use Before Def Interface ****/
 std::optional<Error> Environment::bindUseBeforeDef(Error const &error,
                                                    ast::Ptr ast) noexcept {
-  MINT_ASSERT(error.isUseBeforeDef());
-  auto ubd = error.getUseBeforeDef();
-  auto &names = ubd.names;
-  auto &scope = ubd.scope;
-  auto ubd_name = names.undef;
-  auto ubd_def_name = names.def;
-  auto scope_name = scope->qualifiedName();
-
-  auto ubd_def_ast = llvm::cast<ast::Definition>(ast.get());
-  if (auto failed = ubd_def_ast->checkUseBeforeDef(ubd)) {
-    return failed;
-  }
-
-  m_use_before_def_map.insert(ubd_name, ubd_def_name, scope_name,
-                              std::move(ast), scope);
-  return std::nullopt;
-}
-
-std::optional<Error>
-Environment::bindUseBeforeDef(UseBeforeDefMap::Elements &elements,
-                              Error const &error, ast::Ptr ast) noexcept {
-  MINT_ASSERT(error.isUseBeforeDef());
-  auto ubd = error.getUseBeforeDef();
-  auto &names = ubd.names;
-  auto &scope = ubd.scope;
-  auto ubd_name = names.undef;
-  auto ubd_def_name = names.def;
-  auto scope_name = scope->qualifiedName();
-
-  auto ubd_def_ast = llvm::cast<ast::Definition>(ast.get());
-  if (auto failed = ubd_def_ast->checkUseBeforeDef(ubd)) {
-    return failed;
-  }
-
-  elements.emplace_back(ubd_name, ubd_def_name, scope_name, std::move(ast),
-                        scope);
-  return std::nullopt;
+  return m_use_before_def_map.bindUseBeforeDef(error, std::move(ast));
 }
 
 std::optional<Error>
 Environment::resolveTypeOfUseBeforeDef(Identifier def_name) noexcept {
-  UseBeforeDefMap::Elements stage;
-  UseBeforeDefMap::Range old_entries;
-
-  auto range = m_use_before_def_map.lookup(def_name);
-  for (auto it : range) {
-    it.being_resolved(true);
-    // #NOTE: we enter the local scope of the ubd definition
-    // so we know that when we construct it's binding we
-    // construct it in the correct scope.
-    auto old_local_scope = exchangeLocalScope(it.scope());
-
-    auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
-    // #NOTE: since we are resolving the ubd here, we can clear the error
-    ubd_def_ast->clearUseBeforeDef();
-
-    auto result = ubd_def_ast->typecheck(*this);
-    if (!result) {
-      auto &error = result.error();
-      if (!error.isUseBeforeDef()) {
-        it.being_resolved(false);
-        exchangeLocalScope(old_local_scope);
-        return error;
-      }
-
-      // handle another use before def error.
-      bindUseBeforeDef(stage, error, std::move(it.ubd_def_ast()));
-      old_entries.append(it);
-    }
-
-    exchangeLocalScope(old_local_scope);
-    it.being_resolved(false);
-  }
-
-  if (!old_entries.empty())
-    m_use_before_def_map.erase(old_entries);
-
-  if (!stage.empty())
-    m_use_before_def_map.insert(std::move(stage));
-
-  return std::nullopt;
+  return m_use_before_def_map.resolveTypeOfUseBeforeDef(*this, def_name);
 }
 
 std::optional<Error>
 Environment::resolveComptimeValueOfUseBeforeDef(Identifier def_name) noexcept {
-  UseBeforeDefMap::Elements stage;
-  UseBeforeDefMap::Range old_entries;
-
-  auto range = m_use_before_def_map.lookup(def_name);
-  for (auto it : range) {
-    it.being_resolved(true);
-    auto old_local_scope = exchangeLocalScope(it.scope());
-
-    auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
-    ubd_def_ast->clearUseBeforeDef();
-
-    // sanity check that we have called typecheck on this definition.
-    MINT_ASSERT(ubd_def_ast->cachedTypeOrAssert() != nullptr);
-
-    auto result = ubd_def_ast->evaluate(*this);
-    if (!result) {
-      auto &error = result.error();
-      if (!error.isUseBeforeDef()) {
-        it.being_resolved(false);
-        exchangeLocalScope(old_local_scope);
-        return error;
-      }
-
-      // handle another use before def error.
-      bindUseBeforeDef(stage, error, std::move(it.ubd_def_ast()));
-      old_entries.append(it);
-    }
-
-    exchangeLocalScope(old_local_scope);
-    it.being_resolved(false);
-  }
-
-  if (!old_entries.empty())
-    m_use_before_def_map.erase(old_entries);
-
-  if (!stage.empty())
-    m_use_before_def_map.insert(std::move(stage));
-
-  return std::nullopt;
+  return m_use_before_def_map.resolveComptimeValueOfUseBeforeDef(*this,
+                                                                 def_name);
 }
 
 std::optional<Error>
 Environment::resolveRuntimeValueOfUseBeforeDef(Identifier def_name) noexcept {
-  UseBeforeDefMap::Elements stage;
-
-  auto range = m_use_before_def_map.lookup(def_name);
-  for (auto it : range) {
-    it.being_resolved(true);
-    auto old_local_scope = exchangeLocalScope(it.scope());
-
-    auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
-    ubd_def_ast->clearUseBeforeDef();
-
-    // sanity check that we have called typecheck on this definition.
-    MINT_ASSERT(ubd_def_ast->cachedTypeOrAssert() != nullptr);
-
-    auto result = ubd_def_ast->codegen(*this);
-    if (!result) {
-      return result.error();
-    }
-
-    exchangeLocalScope(old_local_scope);
-    it.being_resolved(false);
-  }
-
-  // #NOTE: codegen is the last step when processing an ast.
-  // so we can safely remove these entries from the ubd map
-  m_use_before_def_map.erase(range);
-
-  if (!stage.empty())
-    m_use_before_def_map.insert(std::move(stage));
-
-  return std::nullopt;
+  return m_use_before_def_map.resolveRuntimeValueOfUseBeforeDef(*this,
+                                                                def_name);
 }
 
 //**** BinopTable Interface ****/
@@ -553,7 +412,15 @@ auto Environment::createQualifiedNameForLLVM(Identifier name) noexcept
   return m_identifier_set.emplace(std::move(llvm_name));
 }
 
-/**** LLVM IRBuilder interface ****/
+//**** LLVM Module Interface ****//
+auto Environment::getOrInsertGlobal(std::string_view name,
+                                    llvm::Type *type) noexcept
+    -> llvm::GlobalVariable * {
+  return llvm::cast<llvm::GlobalVariable>(
+      m_llvm_module->getOrInsertGlobal(name, type));
+}
+
+//**** LLVM IRBuilder interface ****//
 // types
 auto Environment::getLLVMNilType() noexcept -> llvm::IntegerType * {
   return m_llvm_ir_builder->getInt1Ty();
@@ -683,27 +550,9 @@ auto Environment::createLLVMOr(llvm::Value *left, llvm::Value *right,
   return m_llvm_ir_builder->CreateOr(left, right, name);
 }
 
-/**** composite llvm IR 'instructions' ****/
-// allocations
-auto Environment::createLLVMGlobalVariable(std::string_view name,
-                                           llvm::Type *type,
-                                           llvm::Constant *init) noexcept
-    -> llvm::GlobalVariable * {
-  auto variable = llvm::cast<llvm::GlobalVariable>(
-      m_llvm_module->getOrInsertGlobal(name, type));
-
-  if (init != nullptr)
-    variable->setInitializer(init);
-
-  return variable;
-}
-
 // loads/stores
-auto Environment::createLLVMLoad(llvm::Type *type, llvm::Value *source)
+auto Environment::createLLVMLoad(llvm::Type *type, llvm::Value *source) noexcept
     -> llvm::Value * {
-  // #NOTE: we can only load single value types.
-  // however all types currently available in
-  // the language are single value.
   return m_llvm_ir_builder->CreateLoad(type, source);
 }
 

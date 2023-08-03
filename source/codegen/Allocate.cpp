@@ -14,14 +14,21 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 2
-#define MINT_GIT_REVISION "412b56a182dfd46563b161ecf12704b0d1dded7b"
-#define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
-#define MINT_DEBUG 1
-// NOLINTEND
-// clang-format on
+#include "codegen/Allocate.hpp"
+#include "adt/Environment.hpp"
+
+#include "llvm/IR/Constant.h"
+#include "llvm/IR/Type.h"
+
+namespace mint {
+auto createLLVMGlobalVariable(Environment &env, std::string_view name,
+                              llvm::Type *type, llvm::Constant *init) noexcept
+    -> llvm::GlobalVariable * {
+  auto variable = env.getOrInsertGlobal(name, type);
+
+  if (init != nullptr)
+    variable->setInitializer(init);
+
+  return variable;
+}
+} // namespace mint

@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.20)
 add_library(mint_utility STATIC 
   ${MINT_SOURCE_DIR}/utility/Abort.cpp
   ${MINT_SOURCE_DIR}/utility/CommandLineOptions.cpp
-  ${MINT_SOURCE_DIR}/utility/LLVMUtility.cpp
   ${MINT_SOURCE_DIR}/utility/Log.cpp
 )
 target_include_directories(mint_utility PUBLIC ${MINT_INCLUDE_DIR} ${LLVM_INCLUDE_DIRS})

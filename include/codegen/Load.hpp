@@ -15,22 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <filesystem>
-#include <ostream>
-#include <string>
-
-namespace fs = std::filesystem;
-
-#include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Value.h"
-#include "llvm/Support/Error.h"
 
 namespace mint {
-auto emitLLVMIR(llvm::Module &module, fs::path filename,
-                std::ostream &error_output) noexcept -> int;
+class Environment;
 
-auto toString(llvm::Error const &error) noexcept -> std::string;
-auto toString(llvm::Type const *type) noexcept -> std::string;
-auto toString(llvm::Value const *value) noexcept -> std::string;
+auto createLLVMLoad(Environment &env, llvm::Type *type,
+                    llvm::Value *source) noexcept -> llvm::Value *;
 } // namespace mint

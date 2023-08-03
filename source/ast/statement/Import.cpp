@@ -104,21 +104,19 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
     env.addAstToModule(std::move(ast));
   }
 
-  // #NOTE: since we just imported this file into
-  // the environment, we already have it's definitions.
-  // so in order to prevent redefining anything we
-  // add this file to the set of imported files.
-  // thus, we can later check to see if we need to
-  // perform the import of this file.
-  // #NOTE: this only works in a single threaded context.
+  //  #NOTE: since we just imported this file into
+  //  the environment, we already have it's definitions.
+  //  so in order to prevent redefining anything we
+  //  add this file to the set of imported files.
+  //  thus, we can later check to see if we need to
+  //  perform the import of this file.
+  //  #NOTE: this only works in a single threaded context.
   env.addImport(m_filename);
   return ast::Nil::create({}, {});
 }
 
-/*
-  #NOTE: the import statement is a no-op at runtime.
-  as it is fully resolved at compile time.
-*/
+//  #NOTE: the import statement is a no-op at runtime.
+//  as it is fully resolved at compile time.
 Result<llvm::Value *> Import::codegen(Environment &env) noexcept {
   return env.getLLVMNil();
 }
