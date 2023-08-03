@@ -97,10 +97,29 @@ UseBeforeDefMap::contains_definition(Range &range, Identifier name,
     auto ubd_name = cursor.ubd_name();
     auto ubd_def_name = cursor.ubd_def_name();
     auto scope_name = cursor.scope_name();
+
+    // handle the case where the ubd_name matches the
+    // given name directly.
     if (ubd_name == name) {
       result.append(cursor);
       ++cursor;
       continue;
+    }
+
+    // handle the case where the ubd_name has
+    // global qualifications. in this case,
+    // the only way the new definition could
+    // resolve to the udb_name is if with global
+    // qualifications itself the names matched.
+    if (ubd_name.isGloballyQualified()) {
+      auto globally_qualified_name =
+          name.prependScope(name.globalQualification());
+      if (ubd_name == globally_qualified_name) {
+        result.append(cursor);
+        ++cursor;
+        continue;
+      }
+      // else fallthrough
     }
 
     // the name doesn't match. however, if the scope of the
@@ -126,11 +145,12 @@ UseBeforeDefMap::contains_definition(Range &range, Identifier name,
     // still resolve by qualified lookup. so if name is qualified,
     // then we want to resolve names in the map which are
     // dependant on that name through qualified lookup.
-    // we assume what is looked up in the map is fully qualified,
-    // and we assume that the ubd_name is qualified such that
+    // since we know the name is qualified,
+    // if we assume that the ubd_name is qualified such that
     // it would resolve to the new definition from the scope
     // in which the ubd_definition was defined, all we need to do
-    // is search for the composite name
+    // is search for the composite name where the ubd_name is
+    // qualified within the scope of the ubd_definition
     if (name.isQualified()) {
       auto local_qualifications = ubd_def_name.qualifications();
       auto locally_qualified_name =

@@ -38,7 +38,7 @@ auto Identifier::view() const noexcept -> std::string_view { return data; }
 
 auto Identifier::empty() const noexcept -> bool { return data.empty(); }
 
-auto Identifier::globalNamespace() const noexcept -> Identifier {
+auto Identifier::globalQualification() const noexcept -> Identifier {
   return set->empty_id();
 }
 

@@ -61,10 +61,7 @@ public:
   operator std::string_view() const noexcept;
   auto view() const noexcept -> std::string_view;
   auto empty() const noexcept -> bool;
-  auto globalNamespace() const noexcept -> Identifier;
-
-  // /*
-  // does this identifier begin with a scope?
+  auto globalQualification() const noexcept -> Identifier;
 
   // "x"              -> false
   // "::x"            -> true

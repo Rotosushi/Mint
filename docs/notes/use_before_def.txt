@@ -943,9 +943,36 @@ the fully qualified name of b is what would be looked up in the map.
 #QUESTION how do we handle globally qualified names being used in the 
 ubd map?
 
+public let b = ::a;
+public let a = 1;
 
+a matches ::a iff we add global qualifications.
 
+module A {
+  public let a = ::b;
+}
 
+public let b = 1;
+
+b matches ::b iff we add global qualifications
+
+public let a = ::A::b;
+
+module A {
+  public let b = 1;
+}
+
+A::b matches ::A::b iff we add global qualifications
+
+module A {
+  public let a = ::B::b;
+}
+
+module B {
+  public let b = 1;
+}
+
+B::b matches ::B::b iff we add global qualifications
 
 
 
