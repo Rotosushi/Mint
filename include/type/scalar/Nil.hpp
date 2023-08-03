@@ -14,26 +14,25 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "type/Nil.hpp"
-#include "adt/Environment.hpp"
+#pragma once
+
+#include "type/Type.hpp"
 
 namespace mint {
 namespace type {
-Nil::Nil() noexcept : Type{Type::Kind::Nil} {}
+class Nil : public Type {
+public:
+  Nil() noexcept;
+  ~Nil() noexcept override = default;
 
-auto Nil::classof(Ptr type) noexcept -> bool {
-  return Type::Kind::Nil == type->kind();
-}
+  static auto classof(Ptr type) noexcept -> bool;
 
-[[nodiscard]] bool Nil::equals(Ptr right) const noexcept {
-  return llvm::dyn_cast<const Nil>(right) != nullptr;
-}
+  [[nodiscard]] bool equals(Ptr right) const noexcept override;
+  void print(std::ostream &out) const noexcept override;
 
-void Nil::print(std::ostream &out) const noexcept { out << "Nil"; }
-
-[[nodiscard]] llvm::Type *Nil::toLLVMImpl(Environment &env) const noexcept {
-  m_cached_llvm_type = env.getLLVMNilType();
-  return m_cached_llvm_type;
-}
+private:
+  [[nodiscard]] llvm::Type *
+  toLLVMImpl(Environment &env) const noexcept override;
+};
 } // namespace type
 } // namespace mint

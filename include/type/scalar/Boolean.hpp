@@ -30,6 +30,7 @@ public:
   [[nodiscard]] bool equals(Ptr right) const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
+private:
   [[nodiscard]] llvm::Type *
   toLLVMImpl(Environment &env) const noexcept override;
 };

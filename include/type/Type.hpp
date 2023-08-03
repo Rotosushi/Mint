@@ -34,15 +34,20 @@ public:
     Nil,
     Boolean,
     Integer,
+
+    Function,
   };
 
 protected:
-  mutable llvm::Type *m_cached_llvm_type;
-
   [[nodiscard]] virtual llvm::Type *
   toLLVMImpl(Environment &env) const noexcept = 0;
 
+  llvm::Type *setCachedType(llvm::Type *type) const noexcept {
+    return m_cached_llvm_type = type;
+  }
+
 private:
+  mutable llvm::Type *m_cached_llvm_type;
   Kind m_kind;
 
 public:

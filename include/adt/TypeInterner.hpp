@@ -15,17 +15,49 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <forward_list>
+
 #include "type/All.hpp"
 
 namespace mint {
 class TypeInterner {
+  template <class T> class Composite {
+    std::forward_list<T> set;
+
+  public:
+    template <class... Args> T const *emplace(Args &&...args) noexcept {
+      std::forward_list<T> potential;
+      potential.emplace_front(std::forward<Args>(args)...);
+      auto const *type = &potential.front();
+
+      for (auto &element : set)
+        if (element.equals(type))
+          return &element;
+
+      set.splice_after(set.before_begin(), potential);
+      return &set.front();
+    }
+  };
+
   type::Boolean boolean_type;
   type::Integer integer_type;
   type::Nil nil_type;
 
+  Composite<type::Function> function_types;
+
 public:
-  auto getBooleanType() const noexcept { return &boolean_type; }
-  auto getIntegerType() const noexcept { return &integer_type; }
-  auto getNilType() const noexcept { return &nil_type; }
+  auto getBooleanType() const noexcept -> type::Boolean const * {
+    return &boolean_type;
+  }
+  auto getIntegerType() const noexcept -> type::Integer const * {
+    return &integer_type;
+  }
+  auto getNilType() const noexcept -> type::Nil const * { return &nil_type; }
+
+  auto getFunctionType(type::Ptr result_type,
+                       std::vector<type::Ptr> argument_types) noexcept
+      -> type::Function const * {
+    return function_types.emplace(result_type, std::move(argument_types));
+  }
 };
 } // namespace mint

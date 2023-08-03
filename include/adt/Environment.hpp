@@ -185,6 +185,10 @@ public:
   auto getIntegerType() noexcept -> type::Integer const *;
   auto getNilType() noexcept -> type::Nil const *;
 
+  auto getFunctionType(type::Ptr result_type,
+                       std::vector<type::Ptr> argument_types) noexcept
+      -> type::Function const *;
+
   //**** LLVM interface ****//
   //**** LLVM Helpers *****//
   auto createQualifiedNameForLLVM(Identifier name) noexcept -> Identifier;
@@ -198,6 +202,10 @@ public:
   auto getLLVMNilType() noexcept -> llvm::IntegerType *;
   auto getLLVMBooleanType() noexcept -> llvm::IntegerType *;
   auto getLLVMIntegerType() noexcept -> llvm::IntegerType *;
+
+  auto getLLVMFunctionType(llvm::Type *result_type,
+                           llvm::ArrayRef<llvm::Type *> argument_types) noexcept
+      -> llvm::FunctionType *;
 
   // values
   auto getLLVMNil() noexcept -> llvm::ConstantInt *;

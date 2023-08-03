@@ -19,8 +19,8 @@
 // clang-format off
 #define MINT_VERSION_MAJOR 0
 #define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 2
-#define MINT_GIT_REVISION "7c52254dee54896c523a4ab414ba0545a84bfe53"
+#define MINT_VERSION_PATCH 3
+#define MINT_GIT_REVISION "70acf840e73c953e5c3b8a72ce28f13d78e242fc"
 #define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
 #define MINT_DEBUG 1
 // NOLINTEND

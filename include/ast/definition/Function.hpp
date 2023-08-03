@@ -21,25 +21,24 @@
 
 namespace mint {
 namespace ast {
-/*
-class Function : public Definition {
-public:
-using Argument = std::pair<Identifier, type::Ptr>;
-using Arguments = std::vector<Argument>;
+// class Function : public Definition {
+// public:
+// using Argument = std::pair<Identifier, type::Ptr>;
+// using Arguments = std::vector<Argument>;
 
-private:
-Arguments m_arguments;
-Ptr m_body;
+// private:
+// Arguments m_arguments;
+// Ptr m_body;
 
-public:
-Function(Attributes attributes, Location location,
-         std::optional<type::Ptr> annotation, Identifier name,
-         Arguments arguments, Ptr body) noexcept
-    : Definition{Ast::Kind::Function, attributes, location, annotation, name},
-      m_arguments{std::move(arguments)}, m_body{std::move(body)} {
-  m_body->setPrevAst(this);
-}
-};
-*/
+// public:
+// Function(Attributes attributes, Location location,
+//          std::optional<type::Ptr> annotation, Identifier name,
+//          Arguments arguments, Ptr body) noexcept
+//     : Definition{Ast::Kind::Function, attributes, location, annotation,
+//     name},
+//       m_arguments{std::move(arguments)}, m_body{std::move(body)} {
+//   m_body->setPrevAst(this);
+// }
+// };
 } // namespace ast
 } // namespace mint

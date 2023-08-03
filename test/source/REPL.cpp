@@ -93,7 +93,7 @@ std::string_view extractResult(std::string_view view) {
           ++token;
         }
         // walk until we hit the newline
-        while (!isspace(*cursor)) {
+        while (*cursor != '\n') {
           ++cursor;
         }
 

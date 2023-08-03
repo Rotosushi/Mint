@@ -14,26 +14,34 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "type/Integer.hpp"
-#include "adt/Environment.hpp"
+#pragma once
+#include <vector>
+
+#include "type/Type.hpp"
 
 namespace mint {
 namespace type {
-Integer::Integer() noexcept : Type{Type::Kind::Integer} {}
+class Function : public Type {
+public:
+  using Arguments = std::vector<type::Ptr>;
 
-auto Integer::classof(Ptr type) noexcept -> bool {
-  return Type::Kind::Integer == type->kind();
-}
+private:
+  type::Ptr m_result_type;
+  Arguments m_arguments;
 
-[[nodiscard]] bool Integer::equals(Ptr right) const noexcept {
-  return llvm::dyn_cast<const Integer>(right) != nullptr;
-}
+public:
+  Function(type::Ptr result_type) noexcept;
+  Function(type::Ptr result_type, Arguments arguments) noexcept;
+  ~Function() noexcept override = default;
 
-void Integer::print(std::ostream &out) const noexcept { out << "Integer"; }
+  static auto classof(type::Ptr type) noexcept -> bool;
 
-[[nodiscard]] llvm::Type *Integer::toLLVMImpl(Environment &env) const noexcept {
-  m_cached_llvm_type = env.getLLVMIntegerType();
-  return m_cached_llvm_type;
-}
+  [[nodiscard]] bool equals(type::Ptr type) const noexcept override;
+  void print(std::ostream &out) const noexcept override;
+
+private:
+  [[nodiscard]] llvm::Type *
+  toLLVMImpl(Environment &env) const noexcept override;
+};
 } // namespace type
 } // namespace mint

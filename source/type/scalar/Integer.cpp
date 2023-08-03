@@ -14,24 +14,25 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-
-#include "type/Type.hpp"
+#include "type/scalar/Integer.hpp"
+#include "adt/Environment.hpp"
 
 namespace mint {
 namespace type {
-class Nil : public Type {
-public:
-  Nil() noexcept;
-  ~Nil() noexcept override = default;
+Integer::Integer() noexcept : Type{Type::Kind::Integer} {}
 
-  static auto classof(Ptr type) noexcept -> bool;
+auto Integer::classof(Ptr type) noexcept -> bool {
+  return Type::Kind::Integer == type->kind();
+}
 
-  [[nodiscard]] bool equals(Ptr right) const noexcept override;
-  void print(std::ostream &out) const noexcept override;
+[[nodiscard]] bool Integer::equals(Ptr right) const noexcept {
+  return llvm::dyn_cast<const Integer>(right) != nullptr;
+}
 
-  [[nodiscard]] llvm::Type *
-  toLLVMImpl(Environment &env) const noexcept override;
-};
+void Integer::print(std::ostream &out) const noexcept { out << "Integer"; }
+
+[[nodiscard]] llvm::Type *Integer::toLLVMImpl(Environment &env) const noexcept {
+  return setCachedType(env.getLLVMIntegerType());
+}
 } // namespace type
 } // namespace mint

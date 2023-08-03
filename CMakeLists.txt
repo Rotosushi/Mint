@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(Mint LANGUAGES C CXX VERSION 0.0.2 DESCRIPTION "A minimal interpreter")
+project(Mint LANGUAGES C CXX VERSION 0.0.3 DESCRIPTION "A minimal interpreter")
 
 message(STATUS "c++ standard: ${CMAKE_CXX_STANDARD}")
 
@@ -13,7 +13,7 @@ set(MINT_RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
 
 set(WARNINGS -Wall -Wdeprecated -Wextra -Wpedantic -Wconversion -Werror)
 #set(CXX_OPTIONS ${WARNINGS})
-set(CXX_OPTIONS ${WARNINGS} -flto)
+set(CXX_OPTIONS ${WARNINGS} -flto=auto -fuse-linker-plugin)
 
 # find dependencies
 # find LLVM

@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 
 add_library(mint_type STATIC 
-  ${MINT_SOURCE_DIR}/type/Nil.cpp
-  ${MINT_SOURCE_DIR}/type/Boolean.cpp
-  ${MINT_SOURCE_DIR}/type/Integer.cpp
+  ${MINT_SOURCE_DIR}/type/scalar/Nil.cpp
+  ${MINT_SOURCE_DIR}/type/scalar/Boolean.cpp
+  ${MINT_SOURCE_DIR}/type/scalar/Integer.cpp
+
+  ${MINT_SOURCE_DIR}/type/composite/Function.cpp
 )
 target_include_directories(mint_type PUBLIC ${MINT_INCLUDE_DIR} ${LLVM_INCLUDE_DIRS})
 target_compile_options(mint_type PUBLIC ${CXX_OPTIONS} ${llvm_cxxflags})

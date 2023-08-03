@@ -14,7 +14,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "type/Boolean.hpp"
+#include "type/scalar/Boolean.hpp"
 #include "adt/Environment.hpp"
 
 namespace mint {
@@ -32,8 +32,7 @@ auto Boolean::classof(Ptr type) noexcept -> bool {
 void Boolean::print(std::ostream &out) const noexcept { out << "Boolean"; }
 
 [[nodiscard]] llvm::Type *Boolean::toLLVMImpl(Environment &env) const noexcept {
-  m_cached_llvm_type = env.getLLVMBooleanType();
-  return m_cached_llvm_type;
+  return setCachedType(env.getLLVMBooleanType());
 }
 } // namespace type
 } // namespace mint

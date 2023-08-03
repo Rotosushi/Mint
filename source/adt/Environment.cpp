@@ -384,6 +384,13 @@ auto Environment::getNilType() noexcept -> type::Nil const * {
   return m_type_interner.getNilType();
 }
 
+auto Environment::getFunctionType(
+    type::Ptr result_type, std::vector<type::Ptr> argument_types) noexcept
+    -> type::Function const * {
+  return m_type_interner.getFunctionType(result_type,
+                                         std::move(argument_types));
+}
+
 /**** LLVM interface ****/
 /**** LLVM Helpers *****/
 /* https://llvm.org/docs/LangRef.html#identifiers */
@@ -432,6 +439,14 @@ auto Environment::getLLVMBooleanType() noexcept -> llvm::IntegerType * {
 
 auto Environment::getLLVMIntegerType() noexcept -> llvm::IntegerType * {
   return m_llvm_ir_builder->getInt32Ty();
+}
+
+auto Environment::getLLVMFunctionType(
+    llvm::Type *result_type,
+    llvm::ArrayRef<llvm::Type *> argument_types) noexcept
+    -> llvm::FunctionType * {
+  return llvm::FunctionType::get(result_type, argument_types,
+                                 /* isVarArg = */ false);
 }
 
 // values
