@@ -147,7 +147,7 @@ auto ScopeTable::Entry::partialBind(Identifier name, Attributes attributes,
   return iter->second->partialBindName(name, attributes, type);
 }
 
-[[nodiscard]] auto ScopeTable::Entry::lookup(Identifier name) noexcept
+[[nodiscard]] auto ScopeTable::Entry::lookupBinding(Identifier name) noexcept
     -> Result<Bindings::Binding> {
   return iter->second->lookupBinding(name);
 }
@@ -379,6 +379,9 @@ auto Scope::lookupBinding(Identifier name) noexcept
     return global_scope->qualifiedLookup(name.restScope());
   }
 
+  // #NOTE: even though qualified lookup also checks name.isQualified
+  // we still have to branch here to allow local names to resolve to 
+  // private variables.
   auto found_locally =
       name.isQualified() ? qualifiedLookup(name) : lookupLocalBinding(name);
   // if we found the name return the binding
@@ -390,7 +393,7 @@ auto Scope::lookupBinding(Identifier name) noexcept
     return found_locally;
   // search the higher scope for the name.
   auto scope = m_prev_scope.lock();
-  return scope->qualifiedLookup(name);
+  return scope->lookupBinding(name);
 }
 
 } // namespace mint

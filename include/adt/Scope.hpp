@@ -106,7 +106,7 @@ public:
     auto partialBind(Identifier name, Attributes attributes,
                      type::Ptr type) noexcept -> Result<Bindings::Binding>;
 
-    [[nodiscard]] auto lookup(Identifier name) noexcept
+    [[nodiscard]] auto lookupBinding(Identifier name) noexcept
         -> Result<Bindings::Binding>;
 
     [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept

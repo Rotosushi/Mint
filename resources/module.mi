@@ -2,6 +2,7 @@
 public let a = A::b;
 
 module A {
+  public let a = e;
   public let b = 1;
   public let c = d;
 }
@@ -22,4 +23,18 @@ module A {
   module B {
     public let i = 5;
   }
+  public let j = A::B::k;
+}
+
+module A {
+  module B {
+    public let k = 6;
+    public let l = m;
+    public let n = B::o;
+  }
+  public let m = 7;
+}
+
+module B {
+  public let o = 8;
 }
