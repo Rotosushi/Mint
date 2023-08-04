@@ -45,16 +45,14 @@ void Import::print(std::ostream &out) const noexcept {
 
 Result<type::Ptr> Import::typecheck(Environment &env) const noexcept {
   if (env.alreadyImported(m_filename)) {
-    setCachedType(env.getNilType());
-    return env.getNilType();
+    return setCachedType(env.getNilType());
   }
 
   auto exists = env.fileExists(m_filename);
   if (!exists)
     return {Error::Kind::FileNotFound, location(), m_filename};
 
-  setCachedType(env.getNilType());
-  return env.getNilType();
+  return setCachedType(env.getNilType());
 }
 
 Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {

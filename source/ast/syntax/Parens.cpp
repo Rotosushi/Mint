@@ -47,8 +47,7 @@ Result<type::Ptr> Parens::typecheck(Environment &env) const noexcept {
   if (!result)
     return result;
 
-  setCachedType(result.value());
-  return result;
+  return setCachedType(result.value());
 }
 
 Result<ast::Ptr> Parens::evaluate(Environment &env) noexcept {

@@ -27,6 +27,7 @@
 #include "adt/DirectorySearch.hpp"
 #include "adt/Identifier.hpp"
 #include "adt/ImportSet.hpp"
+#include "adt/InsertionPoint.hpp"
 #include "adt/Scope.hpp"
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
@@ -193,9 +194,23 @@ public:
   //**** LLVM Helpers *****//
   auto createQualifiedNameForLLVM(Identifier name) noexcept -> Identifier;
 
+  auto createBasicBlock(llvm::Twine const &name = "") noexcept
+      -> llvm::BasicBlock *;
+
+  auto createBasicBlock(llvm::Function *function,
+                        llvm::Twine const &name = "") noexcept
+      -> llvm::BasicBlock *;
+
+  auto exchangeInsertionPoint(InsertionPoint point = InsertionPoint{}) noexcept
+      -> InsertionPoint;
+
   //**** LLVM Module Interface ****//
   auto getOrInsertGlobal(std::string_view name, llvm::Type *type) noexcept
       -> llvm::GlobalVariable *;
+
+  auto getOrInsertFunction(std::string_view name,
+                           llvm::FunctionType *type) noexcept
+      -> llvm::FunctionCallee;
 
   /**** LLVM IRBuilder interface ****/ //
   // types
@@ -277,5 +292,8 @@ public:
 
   auto createLLVMLoad(llvm::Type *type, llvm::Value *source) noexcept
       -> llvm::Value *;
+
+  auto createLLVMReturn(llvm::Value *value = nullptr) noexcept
+      -> llvm::ReturnInst *;
 };
 } // namespace mint

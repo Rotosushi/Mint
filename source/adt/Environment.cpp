@@ -419,12 +419,42 @@ auto Environment::createQualifiedNameForLLVM(Identifier name) noexcept
   return m_identifier_set.emplace(std::move(llvm_name));
 }
 
+auto Environment::createBasicBlock(llvm::Twine const &name = "") noexcept
+    -> llvm::BasicBlock * {
+  return llvm::BasicBlock::Create(*m_llvm_context, name);
+}
+
+auto Environment::createBasicBlock(llvm::Function *function,
+                                   llvm::Twine const &name = "") noexcept
+    -> llvm::BasicBlock * {
+  return llvm::BasicBlock::Create(*m_llvm_context, name, function);
+}
+
+auto Environment::exchangeInsertionPoint(
+    InsertionPoint point = InsertionPoint{}) noexcept -> InsertionPoint {
+  InsertionPoint result{m_llvm_ir_builder->GetInsertBlock(),
+                        m_llvm_ir_builder->GetInsertPoint()};
+  if (!point.good())
+    m_llvm_ir_builder->ClearInsertionPoint();
+  else
+    m_llvm_ir_builder->SetInsertPoint(point.basic_block, point.it);
+
+  return result;
+}
+
 //**** LLVM Module Interface ****//
 auto Environment::getOrInsertGlobal(std::string_view name,
                                     llvm::Type *type) noexcept
     -> llvm::GlobalVariable * {
   return llvm::cast<llvm::GlobalVariable>(
       m_llvm_module->getOrInsertGlobal(name, type));
+}
+
+// #TODO: add llvm attributes to the function
+auto Environment::getOrInsertFunction(std::string_view name,
+                                      llvm::FunctionType *type) noexcept
+    -> llvm::FunctionCallee {
+  return m_llvm_module->getOrInsertFunction(name, type);
 }
 
 //**** LLVM IRBuilder interface ****//

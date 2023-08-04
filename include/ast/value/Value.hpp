@@ -20,10 +20,8 @@
 
 namespace mint {
 namespace ast {
-/*
-  #NOTE: the common base class of all Ast's which
-  represent some value within the program.
-*/
+//   #NOTE: the common base class of all Ast's which
+//   represent some value within the program.
 class Value : public Ast {
 protected:
   Value(Ast::Kind kind, Attributes attributes, Location location) noexcept
@@ -49,6 +47,10 @@ public:
   }
 
   virtual Result<type::Ptr> typecheck(Environment &env) const noexcept = 0;
+  // #TODO: values are such because they are not evaluated,
+  // they are what is evaluated with. is there some way of
+  // not performing a clone to return a valid ast::Ptr?
+  // my first thought is with a shared_ptr.
   virtual Result<ast::Ptr> evaluate(Environment &env) noexcept = 0;
   virtual Result<llvm::Value *> codegen(Environment &) noexcept = 0;
 };

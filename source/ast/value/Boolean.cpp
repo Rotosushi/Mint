@@ -43,8 +43,7 @@ Ptr Boolean::clone() const noexcept {
 }
 
 Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {
-  setCachedType(env.getBooleanType());
-  return env.getBooleanType();
+  return setCachedType(env.getBooleanType());
 }
 
 Result<ast::Ptr> Boolean::evaluate([[maybe_unused]] Environment &env) noexcept {

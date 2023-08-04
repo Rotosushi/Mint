@@ -60,6 +60,7 @@ public:
   auto operator==(const Identifier &other) const noexcept -> bool;
   operator std::string_view() const noexcept;
   auto view() const noexcept -> std::string_view;
+  auto getSet() const noexcept { return set; }
   auto empty() const noexcept -> bool;
   auto globalQualification() const noexcept -> Identifier;
 

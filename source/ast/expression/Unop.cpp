@@ -62,8 +62,7 @@ Result<type::Ptr> Unop::typecheck(Environment &env) const noexcept {
     return {Error::Kind::UnopTypeMismatch, m_right->location(), message.view()};
   }
 
-  setCachedType(instance->result_type);
-  return instance->result_type;
+  return setCachedType(instance->result_type);
 }
 
 Result<ast::Ptr> Unop::evaluate(Environment &env) noexcept {

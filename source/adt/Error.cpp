@@ -46,6 +46,8 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
     return "Expected a '{'";
   case Error::Kind::ExpectedAEndBrace:
     return "Expected a '}'";
+  case Error::Kind::ExpectedARightArrow:
+    return "Expected '->'";
   case Error::Kind::ExpectedText:
     return "Expected text [\"...\"]";
 

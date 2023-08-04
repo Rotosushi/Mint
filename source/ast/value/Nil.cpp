@@ -37,8 +37,7 @@ Ptr Nil::clone() const noexcept { return create(attributes(), location()); }
 void Nil::print(std::ostream &out) const noexcept { out << "nil"; }
 
 Result<type::Ptr> Nil::typecheck(Environment &env) const noexcept {
-  setCachedType(env.getNilType());
-  return env.getNilType();
+  return setCachedType(env.getNilType());
 }
 
 /*

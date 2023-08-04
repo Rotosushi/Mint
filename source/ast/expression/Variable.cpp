@@ -75,9 +75,7 @@ Result<type::Ptr> Variable::typecheck(Environment &env) const noexcept {
   if (!bound)
     return handleUseBeforeDef(bound.error(), env);
 
-  auto result = bound.value().type();
-  setCachedType(result);
-  return result;
+  return setCachedType(bound.value().type());
 }
 
 Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {

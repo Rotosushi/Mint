@@ -36,6 +36,9 @@ public:
 
   static auto classof(type::Ptr type) noexcept -> bool;
 
+  [[nodiscard]] auto result_type() const noexcept -> type::Ptr;
+  [[nodiscard]] auto arguments() const noexcept -> Arguments const &;
+
   [[nodiscard]] bool equals(type::Ptr type) const noexcept override;
   void print(std::ostream &out) const noexcept override;
 

@@ -58,6 +58,7 @@ public:
     ExpectedAClosingParen,
     ExpectedABeginBrace,
     ExpectedAEndBrace,
+    ExpectedARightArrow,
     ExpectedText,
 
     // typecheck errors

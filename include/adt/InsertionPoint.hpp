@@ -15,10 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include "llvm/IR/BasicBlock.h"
 
-#include "type/scalar/Boolean.hpp"
-#include "type/scalar/Integer.hpp"
-#include "type/scalar/Nil.hpp"
+namespace mint {
+struct InsertionPoint {
+  llvm::BasicBlock *basic_block;
+  llvm::BasicBlock::iterator it;
 
-#include "type/composite/Function.hpp"
-#include "type/composite/Lambda.hpp"
+  InsertionPoint() noexcept : basic_block(nullptr) {}
+  InsertionPoint(llvm::BasicBlock *bb, llvm::BasicBlock::iterator it) noexcept
+      : basic_block(bb), it(it) {}
+
+  [[nodiscard]] auto good() const noexcept -> bool {
+    return basic_block != nullptr;
+  }
+};
+} // namespace mint

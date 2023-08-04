@@ -71,8 +71,7 @@ Result<type::Ptr> Binop::typecheck(Environment &env) const noexcept {
     return {Error::Kind::BinopTypeMismatch, location(), message.view()};
   }
 
-  setCachedType(instance->result_type);
-  return {instance->result_type};
+  return setCachedType(instance->result_type);
 }
 
 Result<ast::Ptr> Binop::evaluate(Environment &env) noexcept {

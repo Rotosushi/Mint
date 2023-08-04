@@ -121,8 +121,7 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   if (auto failed = env.resolveTypeOfUseBeforeDef(qualified_name))
     return failed.value();
 
-  setCachedType(env.getNilType());
-  return env.getNilType();
+  return setCachedType(env.getNilType());
 }
 
 Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {

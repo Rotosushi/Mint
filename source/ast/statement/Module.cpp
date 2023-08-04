@@ -86,8 +86,8 @@ Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
   }
 
   env.popScope();
-  setCachedType(env.getNilType());
-  return env.getNilType();
+
+  return setCachedType(env.getNilType());
 }
 
 Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {

@@ -58,6 +58,7 @@ literal = "nil"
 type = "Nil"
      | "Boolean"
      | "Integer"
+     | "\" (type ("," type)*)? "->" type
 
 integer = [0-9]+
 
@@ -132,6 +133,7 @@ private:
       -> Result<ast::Ptr>;
   auto parseBasic() noexcept -> Result<ast::Ptr>;
   auto parseType() noexcept -> Result<type::Ptr>;
+  auto parseFunctionType() noexcept -> Result<type::Ptr>;
 
 public:
 };

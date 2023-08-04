@@ -491,10 +491,42 @@ auto Parser::parseType() noexcept -> Result<type::Ptr> {
     break;
   }
 
+  case Token::BSlash: {
+    return parseFunctionType();
+    break;
+  }
+
   default:
     return handle_error(Error::Kind::ExpectedAType);
     break;
   }
+}
+
+auto Parser::parseFunctionType() noexcept -> Result<type::Ptr> {
+  MINT_ASSERT(peek(Token::BSlash));
+  next(); // eat '\'
+
+  std::vector<type::Ptr> arguments;
+
+  // parse the argument types
+  if (!peek(Token::RArrow))
+    do {
+      auto result = parseType();
+      if (!result)
+        return result;
+
+      arguments.push_back(result.value());
+    } while (expect(Token::Comma)); // eat ','
+
+  if (!expect(Token::RArrow)) { // eat '->'
+    return handle_error(Error::Kind::ExpectedARightArrow);
+  }
+
+  auto result = parseType();
+  if (!result)
+    return result;
+
+  return env->getFunctionType(result.value(), std::move(arguments));
 }
 
 } // namespace mint

@@ -41,8 +41,7 @@ Ptr Integer::clone() const noexcept {
 }
 
 Result<type::Ptr> Integer::typecheck(Environment &env) const noexcept {
-  setCachedType(env.getIntegerType());
-  return env.getIntegerType();
+  return setCachedType(env.getIntegerType());
 }
 
 Result<ast::Ptr> Integer::evaluate([[maybe_unused]] Environment &env) noexcept {

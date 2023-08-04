@@ -44,6 +44,7 @@ class TypeInterner {
   type::Nil nil_type;
 
   Composite<type::Function> function_types;
+  Composite<type::Lambda> lamdba_types;
 
 public:
   auto getBooleanType() const noexcept -> type::Boolean const * {
@@ -58,6 +59,11 @@ public:
                        std::vector<type::Ptr> argument_types) noexcept
       -> type::Function const * {
     return function_types.emplace(result_type, std::move(argument_types));
+  }
+
+  auto getLambdaType(type::Function const *function_type) noexcept
+      -> type::Lambda const * {
+    return lamdba_types.emplace(function_type);
   }
 };
 } // namespace mint

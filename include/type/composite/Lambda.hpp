@@ -15,10 +15,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-
-#include "type/scalar/Boolean.hpp"
-#include "type/scalar/Integer.hpp"
-#include "type/scalar/Nil.hpp"
-
 #include "type/composite/Function.hpp"
-#include "type/composite/Lambda.hpp"
+
+namespace mint {
+namespace type {
+class Lambda : public Type {
+  Function const *m_function_type;
+
+public:
+  Lambda(Function const *function_type) noexcept;
+
+  static auto classof(type::Ptr type) noexcept -> bool;
+
+  [[nodiscard]] auto function_type() const noexcept -> Function const *;
+
+  [[nodiscard]] bool equals(type::Ptr type) const noexcept override;
+  void print(std::ostream &out) const noexcept override;
+
+private:
+  [[nodiscard]] llvm::Type *
+  toLLVMImpl(Environment &env) const noexcept override;
+};
+} // namespace type
+} // namespace mint

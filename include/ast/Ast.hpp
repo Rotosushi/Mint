@@ -58,6 +58,7 @@ public:
     Nil,
     Boolean,
     Integer,
+    Lambda,
     EndValue,
 
     // Syntax
@@ -100,16 +101,17 @@ protected:
     return m_prev_ast;
   }
 
+  type::Ptr setCachedType(type::Ptr type) const noexcept {
+    MINT_ASSERT(type != nullptr);
+    return m_cached_type = type;
+  }
+
 public:
   virtual ~Ast() noexcept = default;
 
   void setPrevAst(Ast *prev_ast) const noexcept {
     MINT_ASSERT(prev_ast != nullptr);
     m_prev_ast = prev_ast;
-  }
-  void setCachedType(type::Ptr type) const noexcept {
-    MINT_ASSERT(type != nullptr);
-    m_cached_type = type;
   }
 
   [[nodiscard]] auto cachedType() const noexcept { return m_cached_type; }

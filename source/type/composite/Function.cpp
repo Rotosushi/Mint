@@ -32,6 +32,14 @@ auto Function::classof(type::Ptr type) noexcept -> bool {
   return Type::Kind::Function == type->kind();
 }
 
+[[nodiscard]] auto Function::result_type() const noexcept -> type::Ptr {
+  return m_result_type;
+}
+
+[[nodiscard]] auto Function::arguments() const noexcept -> Arguments const & {
+  return m_arguments;
+}
+
 [[nodiscard]] bool Function::equals(type::Ptr type) const noexcept {
   if (auto function = llvm::dyn_cast<Function>(type); function != nullptr) {
     if (!m_result_type->equals(function->m_result_type))
@@ -48,7 +56,7 @@ auto Function::classof(type::Ptr type) noexcept -> bool {
 }
 
 void Function::print(std::ostream &out) const noexcept {
-  out << "fn (";
+  out << "\\";
 
   auto size = m_arguments.size();
   auto index = 0U;
@@ -57,9 +65,11 @@ void Function::print(std::ostream &out) const noexcept {
 
     if (index < (size - 1))
       out << ", ";
+
+    ++index;
   }
 
-  out << ") -> " << m_result_type;
+  out << " -> " << m_result_type;
 }
 
 [[nodiscard]] llvm::Type *

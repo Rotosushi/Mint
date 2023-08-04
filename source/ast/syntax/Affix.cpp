@@ -45,8 +45,7 @@ Result<type::Ptr> Affix::typecheck(Environment &env) const noexcept {
   if (!result)
     return result;
 
-  setCachedType(result.value());
-  return result;
+  return setCachedType(result.value());
 }
 
 Result<ast::Ptr> Affix::evaluate(Environment &env) noexcept {
