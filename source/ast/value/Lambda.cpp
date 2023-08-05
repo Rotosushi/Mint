@@ -37,11 +37,20 @@ auto Lambda::classof(Ast const *ast) noexcept -> bool {
   return Ast::Kind::Lambda == ast->kind();
 }
 
+[[nodiscard]] auto Lambda::arguments() const noexcept -> Arguments const & {
+  return m_arguments;
+}
+[[nodiscard]] auto Lambda::result_type() const noexcept -> type::Ptr {
+  return m_result_type;
+}
+[[nodiscard]] auto Lambda::body() const noexcept -> ast::Ptr const & {
+  return m_body;
+}
+
 auto Lambda::getLambdaName(IdentifierSet *set) noexcept -> Identifier {
   static std::size_t count = 0U;
   std::string name{"l"};
-  name += count;
-  ++count;
+  name += std::to_string(count++);
   return set->emplace(std::move(name));
 }
 
@@ -58,10 +67,8 @@ void Lambda::print(std::ostream &out) const noexcept {
   for (auto argument : m_arguments) {
     out << argument.name << ": " << argument.type;
 
-    if (index < (size - 1))
+    if (index++ < (size - 1))
       out << ", ";
-
-    ++index;
   }
 
   out << " -> " << m_result_type << " => " << m_body;
@@ -88,13 +95,10 @@ Result<type::Ptr> Lambda::typecheck(Environment &env) const noexcept {
   return setCachedType(result.value());
 }
 
-// #NOTE: Lambda's are values, so they are not really
-// evaluated, much like an integer literal is not evaluated.
-// instead they are used in expressions, one of which is
-// application.
-Result<ast::Ptr> Lambda::evaluate(Environment &env) noexcept {
-  return create(attributes(), location(), m_arguments, m_result_type,
-                m_body->clone());
+Result<ast::Ptr> Lambda::evaluate([[maybe_unused]] Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
+  return shared_from_this();
 }
 
 // #NOTE: we need to emit a llvm function object:
@@ -110,6 +114,8 @@ Result<ast::Ptr> Lambda::evaluate(Environment &env) noexcept {
 //   -) put everything back where it was
 //   -) return the function pointer as the result.
 Result<llvm::Value *> Lambda::codegen(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
   env.pushScope();
 
   auto llvm_function_type =
@@ -122,20 +128,35 @@ Result<llvm::Value *> Lambda::codegen(Environment &env) noexcept {
   auto entry = env.createBasicBlock(llvm_function);
   auto temp_ip = env.exchangeInsertionPoint({entry, entry->begin()});
 
-  for (auto &argument : m_arguments)
-    env.partialBindName(argument.name, argument.attributes, argument.type);
+  auto cleanup = [&]() {
+    env.exchangeInsertionPoint(temp_ip);
+    env.popScope();
+  };
+
+  auto llvm_arg_cursor = llvm_function->arg_begin();
+  for (auto &argument : m_arguments) {
+    auto &llvm_arg = *llvm_arg_cursor;
+    auto result =
+        env.partialBindName(argument.name, argument.attributes, argument.type);
+    if (!result) {
+      cleanup();
+      return result.error();
+    }
+
+    auto binding = result.value();
+    binding.setRuntimeValue(&llvm_arg);
+    ++llvm_arg_cursor;
+  }
 
   auto result = m_body->codegen(env);
   if (!result) {
-    env.exchangeInsertionPoint(temp_ip);
-    env.popScope();
+    cleanup();
     return result;
   }
 
   env.createLLVMReturn(result.value());
 
-  env.exchangeInsertionPoint(temp_ip);
-  env.popScope();
+  cleanup();
   return llvm_function;
 }
 } // namespace ast

@@ -71,6 +71,13 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
   case Error::Kind::NameIsPrivateInScope:
     return "Name is private and unaccessable from this scope";
 
+  case Error::Kind::CannotCallObject:
+    return "Cannot Call object";
+  case Error::Kind::ArgumentTypeMismatch:
+    return "Argument Types are not equal";
+  case Error::Kind::ArgumentNumberMismatch:
+    return "Number of Arguments is not equal";
+
   case Error::Kind::UnopTypeMismatch:
     return "Unop argument type mismatch";
   case Error::Kind::BinopTypeMismatch:

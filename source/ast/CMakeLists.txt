@@ -4,6 +4,7 @@ add_library(mint_ast STATIC
   ${MINT_SOURCE_DIR}/ast/definition/Function.cpp 
   ${MINT_SOURCE_DIR}/ast/definition/Let.cpp
   ${MINT_SOURCE_DIR}/ast/expression/Binop.cpp
+  ${MINT_SOURCE_DIR}/ast/expression/Call.cpp 
   ${MINT_SOURCE_DIR}/ast/expression/Unop.cpp
   ${MINT_SOURCE_DIR}/ast/expression/Variable.cpp
   ${MINT_SOURCE_DIR}/ast/statement/Import.cpp

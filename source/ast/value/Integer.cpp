@@ -45,10 +45,14 @@ Result<type::Ptr> Integer::typecheck(Environment &env) const noexcept {
 }
 
 Result<ast::Ptr> Integer::evaluate([[maybe_unused]] Environment &env) noexcept {
-  return clone();
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
+  return shared_from_this();
 }
 
 Result<llvm::Value *> Integer::codegen(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
   return env.getLLVMInteger(m_value);
 }
 } // namespace ast

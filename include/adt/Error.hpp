@@ -65,6 +65,7 @@ public:
     // import errors
     FileNotFound,
     ImportFailed,
+
     // definition errors
     LetTypeMismatch,
 
@@ -75,6 +76,11 @@ public:
     NameUnboundInScope,
     NameAlreadyBoundInScope,
     NameIsPrivateInScope,
+
+    // Call errors
+    CannotCallObject,
+    ArgumentTypeMismatch,
+    ArgumentNumberMismatch,
 
     // operator errors
     UnopTypeMismatch,

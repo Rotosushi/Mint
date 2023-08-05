@@ -36,6 +36,7 @@ private:
   ast::Ptr m_body;
 
   static auto getLambdaName(IdentifierSet *set) noexcept -> Identifier;
+
 public:
   Lambda(Attributes attributes, Location location, Arguments arguments,
          type::Ptr result_type, ast::Ptr body) noexcept;
@@ -45,6 +46,10 @@ public:
                      Arguments arguments, type::Ptr result_type,
                      ast::Ptr body) noexcept -> ast::Ptr;
   static auto classof(Ast const *ast) noexcept -> bool;
+
+  [[nodiscard]] auto arguments() const noexcept -> Arguments const &;
+  [[nodiscard]] auto result_type() const noexcept -> type::Ptr;
+  [[nodiscard]] auto body() const noexcept -> ast::Ptr const &;
 
   Ptr clone() const noexcept override;
   void print(std::ostream &out) const noexcept override;

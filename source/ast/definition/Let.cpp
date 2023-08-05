@@ -125,10 +125,9 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
 }
 
 Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
-  /*
-    #NOTE: if this let definition is a use-before-def, then
-    we do not want to evaluate it yet
-  */
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
+
   if (isUseBeforeDef())
     return {getUseBeforeDef()};
 
@@ -169,11 +168,12 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
   return ast::Nil::create({}, location());
 }
 
-/*
-  create the llvm::Value of the bound expression.
-  create the variable representing the value at runtime.
-*/
+//  create the llvm::Value of the bound expression.
+//  create the variable representing the value at runtime.
 Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
+
   if (isUseBeforeDef())
     return {getUseBeforeDef()};
 
@@ -193,6 +193,10 @@ Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
   auto type = m_ast->cachedTypeOrAssert();
   auto llvm_type = type->toLLVM(env);
 
+  // #TODO: add support for generating locals
+  // #TODO: factor this section into a function
+  // 'createGlobalVariable' or similar, ditto
+  // for the local variables.
   // #NOTE: we don't want to create global variables
   // to represent local variables.
   // create a global variable for the binding

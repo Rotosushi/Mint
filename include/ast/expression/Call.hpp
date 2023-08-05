@@ -17,34 +17,33 @@
 #pragma once
 #include <vector>
 
-#include "type/Type.hpp"
+#include "ast/expression/Expression.hpp"
 
 namespace mint {
-namespace type {
-class Function : public Type {
+namespace ast {
+class Call : public Expression {
 public:
-  using Arguments = std::vector<type::Ptr>;
+  using Arguments = std::vector<ast::Ptr>;
 
 private:
-  type::Ptr m_result_type;
+  ast::Ptr m_callee;
   Arguments m_arguments;
 
 public:
-  Function(type::Ptr result_type) noexcept;
-  Function(type::Ptr result_type, Arguments arguments) noexcept;
-  ~Function() noexcept override = default;
+  Call(Attributes attributes, Location location, ast::Ptr callee,
+       Arguments arguments) noexcept;
+  ~Call() noexcept override = default;
 
-  static auto classof(type::Ptr type) noexcept -> bool;
+  static auto create(Attributes attributes, Location location, ast::Ptr callee,
+                     Arguments arguments) noexcept -> ast::Ptr;
+  static auto classof(Ast const *ast) noexcept -> bool;
 
-  [[nodiscard]] auto result_type() const noexcept -> type::Ptr;
-  [[nodiscard]] auto arguments() const noexcept -> Arguments const &;
-
-  [[nodiscard]] bool equals(type::Ptr type) const noexcept override;
+  Ptr clone() const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
-private:
-  [[nodiscard]] llvm::Type *
-  toLLVMImpl(Environment &env) const noexcept override;
+  Result<type::Ptr> typecheck(Environment &env) const noexcept override;
+  Result<ast::Ptr> evaluate(Environment &env) noexcept override;
+  Result<llvm::Value *> codegen(Environment &env) noexcept override;
 };
-} // namespace type
+} // namespace ast
 } // namespace mint

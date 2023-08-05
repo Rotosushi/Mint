@@ -71,13 +71,7 @@ Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
         return result;
       }
 
-      // all we need to do to handle use-before-def at this point
-      // is attempt to bind this use-before-def term to the map.
-      // #NOTE: we clone here, because we don't want to leave the
-      // module itself in an undefined state. if we move, then
-      // the next time we iterate we will run into a null unique-ptr
-      // at this definition.
-      if (auto failed = env.bindUseBeforeDef(error, expression->clone())) {
+      if (auto failed = env.bindUseBeforeDef(error, expression)) {
         env.unbindScope(m_name);
         env.popScope();
         return failed.value();
@@ -91,6 +85,8 @@ Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
 }
 
 Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
   env.pushScope(m_name);
 
   for (auto &expression : m_expressions) {
@@ -104,7 +100,7 @@ Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {
         return result;
       }
 
-      if (auto failed = env.bindUseBeforeDef(error, expression->clone())) {
+      if (auto failed = env.bindUseBeforeDef(error, expression)) {
         env.unbindScope(m_name);
         env.popScope();
         return failed.value();
@@ -117,6 +113,8 @@ Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {
 }
 
 Result<llvm::Value *> Module::codegen(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
   env.pushScope(m_name);
 
   for (auto &expression : m_expressions) {
@@ -130,7 +128,7 @@ Result<llvm::Value *> Module::codegen(Environment &env) noexcept {
         return result;
       }
 
-      if (auto failed = env.bindUseBeforeDef(error, expression->clone())) {
+      if (auto failed = env.bindUseBeforeDef(error, expression)) {
         env.unbindScope(m_name);
         env.popScope();
         return failed.value();

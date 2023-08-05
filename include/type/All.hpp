@@ -20,5 +20,4 @@
 #include "type/scalar/Integer.hpp"
 #include "type/scalar/Nil.hpp"
 
-#include "type/composite/Function.hpp"
 #include "type/composite/Lambda.hpp"

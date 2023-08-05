@@ -5,8 +5,7 @@ add_library(mint_type STATIC
   ${MINT_SOURCE_DIR}/type/scalar/Boolean.cpp
   ${MINT_SOURCE_DIR}/type/scalar/Integer.cpp
 
-  ${MINT_SOURCE_DIR}/type/composite/Function.cpp
-  ${MINT_SOURCE_DIR}/type/composite/Lambda.cpp 
+  ${MINT_SOURCE_DIR}/type/composite/Lambda.cpp
 )
 target_include_directories(mint_type PUBLIC ${MINT_INCLUDE_DIR} ${LLVM_INCLUDE_DIRS})
 target_compile_options(mint_type PUBLIC ${CXX_OPTIONS} ${llvm_cxxflags})

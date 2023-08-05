@@ -1,2 +1,3 @@
-public let b = ::a;
-public let a = 1;
+
+public let a = 1 + 1;
+public let b = a + a;

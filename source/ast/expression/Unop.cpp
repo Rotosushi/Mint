@@ -66,9 +66,10 @@ Result<type::Ptr> Unop::typecheck(Environment &env) const noexcept {
 }
 
 Result<ast::Ptr> Unop::evaluate(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
   auto overloads = env.lookupUnop(m_op);
-  if (!overloads)
-    return {Error::Kind::UnknownUnop, location(), tokenToView(m_op)};
+  MINT_ASSERT(overloads.has_value());
 
   auto right_type = m_right->cachedTypeOrAssert();
 
@@ -78,20 +79,19 @@ Result<ast::Ptr> Unop::evaluate(Environment &env) noexcept {
   auto &right_value = right_result.value();
 
   auto instance = overloads->lookup(right_type);
-  if (!instance) {
-    std::stringstream message;
-    message << "no instance of [" << m_op << "] found for type [" << right_type
-            << "]";
-    return {Error::Kind::UnopTypeMismatch, m_right->location(), message.view()};
-  }
+  MINT_ASSERT(instance.has_value());
 
   return instance->evaluate(right_value.get());
 }
 
 Result<llvm::Value *> Unop::codegen(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
+  // #NOTE: unops must be codegen'ed within a basic block.
+  MINT_ASSERT(env.hasInsertionPoint());
+
   auto overloads = env.lookupUnop(m_op);
-  if (!overloads)
-    return {Error::Kind::UnknownUnop, location(), tokenToView(m_op)};
+  MINT_ASSERT(overloads.has_value());
 
   auto right_type = m_right->cachedTypeOrAssert();
 
@@ -101,12 +101,7 @@ Result<llvm::Value *> Unop::codegen(Environment &env) noexcept {
   auto right_value = right_result.value();
 
   auto instance = overloads->lookup(right_type);
-  if (!instance) {
-    std::stringstream message;
-    message << "no instance of [" << m_op << "] found for type [" << right_type
-            << "]";
-    return {Error::Kind::UnopTypeMismatch, m_right->location(), message.view()};
-  }
+  MINT_ASSERT(instance.has_value());
 
   return instance->codegen(right_value, env);
 }

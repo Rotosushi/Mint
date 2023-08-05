@@ -188,7 +188,7 @@ public:
 
   auto getFunctionType(type::Ptr result_type,
                        std::vector<type::Ptr> argument_types) noexcept
-      -> type::Function const *;
+      -> type::Lambda const *;
 
   //**** LLVM interface ****//
   //**** LLVM Helpers *****//
@@ -201,6 +201,7 @@ public:
                         llvm::Twine const &name = "") noexcept
       -> llvm::BasicBlock *;
 
+  auto hasInsertionPoint() const noexcept -> bool;
   auto exchangeInsertionPoint(InsertionPoint point = InsertionPoint{}) noexcept
       -> InsertionPoint;
 
@@ -228,70 +229,81 @@ public:
   auto getLLVMInteger(int value) noexcept -> llvm::ConstantInt *;
 
   // instructions
-  auto createLLVMNeg(llvm::Value *right, llvm::Twine const &name = "",
+  auto createLLVMNeg(llvm::Value *right, llvm::Twine const &name = "neg",
                      bool no_unsigned_wrap = false,
                      bool no_signed_wrap = false) noexcept -> llvm::Value *;
 
-  auto createLLVMNot(llvm::Value *right, llvm::Twine const &name = "") noexcept
-      -> llvm::Value *;
+  auto createLLVMNot(llvm::Value *right,
+                     llvm::Twine const &name = "not") noexcept -> llvm::Value *;
 
   /* https://llvm.org/docs/LangRef.html#add-instruction */
   auto createLLVMAdd(llvm::Value *left, llvm::Value *right,
-                     llvm::Twine const &name = "",
+                     llvm::Twine const &name = "add",
                      bool no_unsigned_wrap = false,
                      bool no_signed_wrap = false) noexcept -> llvm::Value *;
 
   /* https://llvm.org/docs/LangRef.html#sub-instruction */
   auto createLLVMSub(llvm::Value *left, llvm::Value *right,
-                     llvm::Twine const &name = "",
+                     llvm::Twine const &name = "sub",
                      bool no_unsigned_wrap = false,
                      bool no_signed_wrap = false) noexcept -> llvm::Value *;
 
   /* https://llvm.org/docs/LangRef.html#mul-instruction */
   auto createLLVMMul(llvm::Value *left, llvm::Value *right,
-                     llvm::Twine const &name = "",
+                     llvm::Twine const &name = "mul",
                      bool no_unsigned_wrap = false,
                      bool no_signed_wrap = false) noexcept -> llvm::Value *;
 
   /* https://llvm.org/docs/LangRef.html#sdiv-instruction */
   auto createLLVMSDiv(llvm::Value *left, llvm::Value *right,
-                      llvm::Twine const &name = "",
+                      llvm::Twine const &name = "sdiv",
                       bool is_exact = false) noexcept -> llvm::Value *;
 
   /* https://llvm.org/docs/LangRef.html#srem-instruction */
   auto createLLVMSRem(llvm::Value *left, llvm::Value *right,
-                      llvm::Twine const &name = "") noexcept -> llvm::Value *;
+                      llvm::Twine const &name = "srem") noexcept
+      -> llvm::Value *;
 
   /* https://llvm.org/docs/LangRef.html#icmp-instruction */
   auto createLLVMICmpEQ(llvm::Value *left, llvm::Value *right,
-                        const llvm::Twine &name = "") noexcept -> llvm::Value *;
+                        const llvm::Twine &name = "eq") noexcept
+      -> llvm::Value *;
 
   auto createLLVMICmpNE(llvm::Value *left, llvm::Value *right,
-                        const llvm::Twine &name = "") noexcept -> llvm::Value *;
+                        const llvm::Twine &name = "ne") noexcept
+      -> llvm::Value *;
 
   auto createLLVMICmpSGT(llvm::Value *left, llvm::Value *right,
-                         const llvm::Twine &name = "") noexcept
+                         const llvm::Twine &name = "sgt") noexcept
       -> llvm::Value *;
 
   auto createLLVMICmpSGE(llvm::Value *left, llvm::Value *right,
-                         const llvm::Twine &name = "") noexcept
+                         const llvm::Twine &name = "sge") noexcept
       -> llvm::Value *;
 
   auto createLLVMICmpSLT(llvm::Value *left, llvm::Value *right,
-                         const llvm::Twine &name = "") noexcept
+                         const llvm::Twine &name = "slt") noexcept
       -> llvm::Value *;
 
   auto createLLVMICmpSLE(llvm::Value *left, llvm::Value *right,
-                         const llvm::Twine &name = "") noexcept
+                         const llvm::Twine &name = "sle") noexcept
       -> llvm::Value *;
 
   auto createLLVMAnd(llvm::Value *left, llvm::Value *right,
-                     const llvm::Twine &name = "") noexcept -> llvm::Value *;
+                     const llvm::Twine &name = "and") noexcept -> llvm::Value *;
   auto createLLVMOr(llvm::Value *left, llvm::Value *right,
-                    const llvm::Twine &name = "") noexcept -> llvm::Value *;
+                    const llvm::Twine &name = "or") noexcept -> llvm::Value *;
 
+  // memory accessors
   auto createLLVMLoad(llvm::Type *type, llvm::Value *source) noexcept
       -> llvm::Value *;
+
+  // function instructions
+  auto createLLVMCall(llvm::FunctionCallee callee,
+                      llvm::ArrayRef<llvm::Value *> arguments,
+                      llvm::Twine const &name = "call",
+                      llvm::MDNode *fp_math_tag = nullptr) noexcept
+      -> llvm::CallInst *;
 
   auto createLLVMReturn(llvm::Value *value = nullptr) noexcept
       -> llvm::ReturnInst *;

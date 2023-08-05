@@ -75,9 +75,11 @@ Result<type::Ptr> Binop::typecheck(Environment &env) const noexcept {
 }
 
 Result<ast::Ptr> Binop::evaluate(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
+
   auto overloads = env.lookupBinop(m_op);
-  if (!overloads)
-    return {Error::Kind::UnknownBinop, location(), tokenToView(m_op)};
+  MINT_ASSERT(overloads.has_value());
 
   auto left_result = m_left->evaluate(env);
   if (!left_result)
@@ -92,21 +94,19 @@ Result<ast::Ptr> Binop::evaluate(Environment &env) noexcept {
   auto right_type = m_right->cachedTypeOrAssert();
 
   auto instance = overloads->lookup(left_type, right_type);
-  if (!instance) {
-    std::stringstream message;
-    message << "no instance of binop [" << m_op
-            << "] exists given argument types [" << left_type << ","
-            << right_type << "]";
-    return {Error::Kind::BinopTypeMismatch, location(), message.view()};
-  }
+  MINT_ASSERT(instance.has_value());
 
   return {instance->evaluate(left_value.get(), right_value.get())};
 }
 
 Result<llvm::Value *> Binop::codegen(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
+  // #NOTE: binops must be codegen'ed within a basic block.
+  MINT_ASSERT(env.hasInsertionPoint());
+
   auto overloads = env.lookupBinop(m_op);
-  if (!overloads)
-    return {Error::Kind::UnknownBinop, location(), tokenToView(m_op)};
+  MINT_ASSERT(overloads.has_value());
 
   auto left_result = m_left->codegen(env);
   if (!left_result)
@@ -121,13 +121,7 @@ Result<llvm::Value *> Binop::codegen(Environment &env) noexcept {
   auto right_type = m_right->cachedTypeOrAssert();
 
   auto instance = overloads->lookup(left_type, right_type);
-  if (!instance) {
-    std::stringstream message;
-    message << "no instance of binop [" << m_op
-            << "] exists given argument types [" << left_type << ","
-            << right_type << "]";
-    return {Error::Kind::BinopTypeMismatch, location(), message.view()};
-  }
+  MINT_ASSERT(instance.has_value());
 
   return {instance->codegen(left_value, right_value, env)};
 }

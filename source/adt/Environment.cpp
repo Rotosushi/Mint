@@ -386,7 +386,7 @@ auto Environment::getNilType() noexcept -> type::Nil const * {
 
 auto Environment::getFunctionType(
     type::Ptr result_type, std::vector<type::Ptr> argument_types) noexcept
-    -> type::Function const * {
+    -> type::Lambda const * {
   return m_type_interner.getFunctionType(result_type,
                                          std::move(argument_types));
 }
@@ -419,19 +419,23 @@ auto Environment::createQualifiedNameForLLVM(Identifier name) noexcept
   return m_identifier_set.emplace(std::move(llvm_name));
 }
 
-auto Environment::createBasicBlock(llvm::Twine const &name = "") noexcept
+auto Environment::createBasicBlock(llvm::Twine const &name) noexcept
     -> llvm::BasicBlock * {
   return llvm::BasicBlock::Create(*m_llvm_context, name);
 }
 
 auto Environment::createBasicBlock(llvm::Function *function,
-                                   llvm::Twine const &name = "") noexcept
+                                   llvm::Twine const &name) noexcept
     -> llvm::BasicBlock * {
   return llvm::BasicBlock::Create(*m_llvm_context, name, function);
 }
 
-auto Environment::exchangeInsertionPoint(
-    InsertionPoint point = InsertionPoint{}) noexcept -> InsertionPoint {
+auto Environment::hasInsertionPoint() const noexcept -> bool {
+  return m_llvm_ir_builder->GetInsertBlock() == nullptr;
+}
+
+auto Environment::exchangeInsertionPoint(InsertionPoint point) noexcept
+    -> InsertionPoint {
   InsertionPoint result{m_llvm_ir_builder->GetInsertBlock(),
                         m_llvm_ir_builder->GetInsertPoint()};
   if (!point.good())
@@ -595,10 +599,27 @@ auto Environment::createLLVMOr(llvm::Value *left, llvm::Value *right,
   return m_llvm_ir_builder->CreateOr(left, right, name);
 }
 
-// loads/stores
+// memory accessors
 auto Environment::createLLVMLoad(llvm::Type *type, llvm::Value *source) noexcept
     -> llvm::Value * {
   return m_llvm_ir_builder->CreateLoad(type, source);
+}
+
+// function instructions
+auto Environment::createLLVMCall(llvm::FunctionCallee callee,
+                                 llvm::ArrayRef<llvm::Value *> arguments,
+                                 llvm::Twine const &name,
+                                 llvm::MDNode *fp_math_tag) noexcept
+    -> llvm::CallInst * {
+  return m_llvm_ir_builder->CreateCall(callee, arguments, name, fp_math_tag);
+}
+
+auto Environment::createLLVMReturn(llvm::Value *value) noexcept
+    -> llvm::ReturnInst * {
+  if (value == nullptr)
+    return m_llvm_ir_builder->CreateRetVoid();
+  else
+    return m_llvm_ir_builder->CreateRet(value);
 }
 
 } // namespace mint

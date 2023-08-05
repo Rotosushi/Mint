@@ -31,20 +31,9 @@ class Environment;
 
 namespace ast {
 class Ast;
+using Ptr = std::shared_ptr<Ast>;
 
-/*
-  #NOTE: we are using unique_ptr because it forces the
-  interpreter to clean up unused memory as soon as possible.
-  avoiding an issue with disconnecting storage of the ast with
-  the structure of the ast itself.
-
-  and we use unique_ptr because it enforces move semantics.
-  explicitly calling out the places where clones are necessary.
-  something that shared_ptr hides.
-*/
-using Ptr = std::unique_ptr<Ast>;
-
-class Ast {
+class Ast : public std::enable_shared_from_this<Ast> {
 public:
   enum class Kind {
     // Definitions

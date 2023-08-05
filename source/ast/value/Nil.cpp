@@ -40,20 +40,15 @@ Result<type::Ptr> Nil::typecheck(Environment &env) const noexcept {
   return setCachedType(env.getNilType());
 }
 
-/*
-  #NOTE: we don't need to do anything to evaluate a scalar value,
-  however the type signature forces us to return a ast::Ptr,
-  meaning we have to return a clone of the scalar value.
-  this is not very efficient. a different evaluation strategy
-  might be better suited to interpretation. over evaluating
-  asts directly. because it is unessesary to clone here,
-  theoretically speaking.
-*/
 Result<ast::Ptr> Nil::evaluate([[maybe_unused]] Environment &env) noexcept {
-  return clone();
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
+  return shared_from_this();
 }
 
 Result<llvm::Value *> Nil::codegen(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
   return env.getLLVMNil();
 }
 

@@ -18,6 +18,7 @@
 
 #include "ast/definition/Let.hpp"
 #include "ast/expression/Binop.hpp"
+#include "ast/expression/Call.hpp"
 #include "ast/expression/Unop.hpp"
 #include "ast/expression/Variable.hpp"
 #include "ast/statement/Import.hpp"
@@ -26,4 +27,5 @@
 #include "ast/syntax/Parens.hpp"
 #include "ast/value/Boolean.hpp"
 #include "ast/value/Integer.hpp"
+#include "ast/value/Lambda.hpp"
 #include "ast/value/Nil.hpp"

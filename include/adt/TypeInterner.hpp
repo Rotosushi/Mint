@@ -43,7 +43,7 @@ class TypeInterner {
   type::Integer integer_type;
   type::Nil nil_type;
 
-  Composite<type::Function> function_types;
+  Composite<type::Lambda> function_types;
   Composite<type::Lambda> lamdba_types;
 
 public:
@@ -57,11 +57,11 @@ public:
 
   auto getFunctionType(type::Ptr result_type,
                        std::vector<type::Ptr> argument_types) noexcept
-      -> type::Function const * {
+      -> type::Lambda const * {
     return function_types.emplace(result_type, std::move(argument_types));
   }
 
-  auto getLambdaType(type::Function const *function_type) noexcept
+  auto getLambdaType(type::Lambda const *function_type) noexcept
       -> type::Lambda const * {
     return lamdba_types.emplace(function_type);
   }

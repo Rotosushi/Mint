@@ -56,13 +56,14 @@ Result<type::Ptr> Import::typecheck(Environment &env) const noexcept {
 }
 
 Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
   if (env.alreadyImported(m_filename)) {
     return ast::Nil::create({}, {});
   }
 
   auto found = env.fileSearch(m_filename);
-  if (!found)
-    return {Error::Kind::FileNotFound, location(), m_filename};
+  MINT_ASSERT(found.has_value());
   auto &file = found.value();
   Parser parser{&env, &file};
 
@@ -116,6 +117,8 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
 //  #NOTE: the import statement is a no-op at runtime.
 //  as it is fully resolved at compile time.
 Result<llvm::Value *> Import::codegen(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
   return env.getLLVMNil();
 }
 } // namespace ast

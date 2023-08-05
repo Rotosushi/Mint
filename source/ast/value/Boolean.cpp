@@ -47,10 +47,14 @@ Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {
 }
 
 Result<ast::Ptr> Boolean::evaluate([[maybe_unused]] Environment &env) noexcept {
-  return clone();
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
+  return shared_from_this();
 }
 
 Result<llvm::Value *> Boolean::codegen(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
   return env.getLLVMBoolean(m_value);
 }
 } // namespace ast

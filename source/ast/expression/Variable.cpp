@@ -59,8 +59,8 @@ auto Variable::handleUseBeforeDef(Environment &env) const noexcept -> Error {
   auto def = env.qualifyName(found.value());
   auto undef = m_name;
 
-  return Error{Error::Kind::UseBeforeDef, UseBeforeDefNames{def, undef},
-               env.localScope()};
+  return {Error::Kind::UseBeforeDef, UseBeforeDefNames{def, undef},
+          env.localScope()};
 }
 
 /*
@@ -71,54 +71,56 @@ auto Variable::handleUseBeforeDef(Environment &env) const noexcept -> Error {
   to be declared in any order.
 */
 Result<type::Ptr> Variable::typecheck(Environment &env) const noexcept {
-  auto bound = env.lookupBinding(m_name);
-  if (!bound)
-    return handleUseBeforeDef(bound.error(), env);
+  auto result = env.lookupBinding(m_name);
+  if (!result)
+    return handleUseBeforeDef(result.error(), env);
 
-  return setCachedType(bound.value().type());
+  return setCachedType(result.value().type());
 }
 
 Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {
-  auto bound = env.lookupBinding(m_name);
-  if (!bound)
-    return Result<ast::Ptr>{handleUseBeforeDef(bound.error(), env)};
-
-  auto binding = bound.value();
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
+  auto result = env.lookupBinding(m_name);
+  MINT_ASSERT(result.hasValue());
+  auto binding = result.value();
 
   // we cannot evaluate a variable given a
   // binding without a comptime value
   if (!binding.hasComptimeValue())
-    return Result<ast::Ptr>{handleUseBeforeDef(env)};
+    return handleUseBeforeDef(env);
 
-  return Result<ast::Ptr>{binding.comptimeValueOrAssert()->clone()};
+  return binding.comptimeValueOrAssert();
 }
 
+// #NOTE: variables don't -need- to be codegen'ed within a basic_block.
+// we do need to handle the difference in code however.
 Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {
-  auto bound = env.lookupBinding(m_name);
-  if (!bound)
-    return Result<llvm::Value *>{handleUseBeforeDef(bound.error(), env)};
-  auto binding = bound.value();
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
+  auto result = env.lookupBinding(m_name);
+  MINT_ASSERT(result.hasValue());
+  auto binding = result.value();
 
   // we cannot codegen a variable given a
   // binding without a runtime value
   if (!binding.hasRuntimeValue())
-    return Result<llvm::Value *>{handleUseBeforeDef(env)};
+    return handleUseBeforeDef(env);
 
   auto type = binding.type()->toLLVM(env);
   auto value = binding.runtimeValueOrAssert();
 
-  // #TODO: this only makes sense when codegening
-  // in a global context. as otherwise we want to
-  // load/store the global variable itself.
-  // however there are no local contexts yet. so
-  // this check is fine for now.
-  if (auto global = llvm::dyn_cast<llvm::GlobalVariable>(value)) {
-    return Result<llvm::Value *>{global->getInitializer()};
+  if (!env.hasInsertionPoint()) {
+    if (auto global = llvm::dyn_cast<llvm::GlobalVariable>(value)) {
+      return global->getInitializer();
+    }
+
+    abort("Global access without an InsertPoint");
   } else {
-    // #NOTE: given that runtime variables are stored
-    // in memory we need to load the value,
+    // #NOTE: #RULE runtime variables are stored
+    // in memory so we need to load the value,
     // such that it can be used in expressions.
-    return Result<llvm::Value *>{env.createLLVMLoad(type, value)};
+    return env.createLLVMLoad(type, value);
   }
 }
 } // namespace ast

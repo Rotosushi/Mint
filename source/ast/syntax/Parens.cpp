@@ -51,10 +51,14 @@ Result<type::Ptr> Parens::typecheck(Environment &env) const noexcept {
 }
 
 Result<ast::Ptr> Parens::evaluate(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
   return m_ast->evaluate(env);
 }
 
 Result<llvm::Value *> Parens::codegen(Environment &env) noexcept {
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
   return m_ast->codegen(env);
 }
 } // namespace ast
