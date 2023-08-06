@@ -15,13 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "1dd2f19c25e4cb5d3972092790341ba8d3ce083f"
-#define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
-#define MINT_DEBUG 1
-// NOLINTEND
-// clang-format on
+#include <string_view>
+
+namespace mint {
+namespace ir {
+class Import {
+  std::string_view m_file;
+
+public:
+  Import(std::string_view file) noexcept : m_file(file) {}
+  Import(Import const &other) noexcept = default;
+  Import(Import &&other) noexcept = default;
+  auto operator=(Import const &other) noexcept -> Import & = default;
+  auto operator=(Import &&other) noexcept -> Import & = default;
+  ~Import() noexcept = default;
+
+  [[nodiscard]] auto file() const noexcept -> std::string_view {
+    return m_file;
+  }
+};
+} // namespace ir
+} // namespace mint

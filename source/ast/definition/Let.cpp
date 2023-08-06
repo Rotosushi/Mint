@@ -125,18 +125,16 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
 }
 
 Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
-  // #NOTE: enforce that typecheck was called before
-  MINT_ASSERT(cachedTypeOrAssert());
-
   if (isUseBeforeDef())
     return {getUseBeforeDef()};
 
-  /*
-    #RULE #NOTE: we create partial bindings during typechecking,
-    and complete them during evaluation. this means we
-    expect the name to be bound already in scope.
-    thus we assert that the binding exists.
-  */
+  //  #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
+
+  //  #NOTE: we create partial bindings during typechecking,
+  //  and complete them during evaluation. this means we
+  //  expect the name to be bound already in scope.
+  //  thus we assert that the binding exists.
   auto found = env.lookupLocalBinding(name());
   MINT_ASSERT(found);
 
@@ -150,13 +148,11 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
     return term_value_result;
   auto &value = term_value_result.value();
 
-  // #NOTE #RULE
-  // we bind to a clone of the value, because otherwise
-  // the let expression would introduce a reference.
-  // this is not the meaning of let, which introduces a
-  // new variable. and as such must model the semantics of
-  // a new value.
-  binding.setComptimeValue(value->clone());
+  // #NOTE: let must model the semantics of introducing
+  // a new value into the scope. however, there is no
+  // concept of in-place mutation yet, so it doesn't much matter
+  // if two let expressions point to the same memory.
+  binding.setComptimeValue(value);
 
   // #NOTE: we just created the comptime value for this binding,
   // so we can evaluate any partial bindings
@@ -171,11 +167,11 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
 //  create the llvm::Value of the bound expression.
 //  create the variable representing the value at runtime.
 Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
-  // #NOTE: enforce that typecheck was called before
-  MINT_ASSERT(cachedTypeOrAssert());
-
   if (isUseBeforeDef())
     return {getUseBeforeDef()};
+
+  // #NOTE: enforce that typecheck was called before
+  MINT_ASSERT(cachedTypeOrAssert());
 
   auto found = env.lookupLocalBinding(name());
   MINT_ASSERT(found);

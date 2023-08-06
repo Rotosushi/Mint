@@ -42,6 +42,7 @@ enum struct Token : int {
   Comma,
   BSlash,
   RArrow,
+  EqRArrow,
   BeginParen,
   EndParen,
   BeginBrace,

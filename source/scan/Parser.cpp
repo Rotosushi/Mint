@@ -268,7 +268,8 @@ auto Parser::parseImport() noexcept -> Result<ast::Ptr> {
 
   auto right_loc = location();
   Location import_loc = {left_loc, right_loc};
-  return ast::Import::create(default_attributes, import_loc, std::string{file});
+  return ast::Import::create(default_attributes, import_loc,
+                             env->internString(file));
 }
 
 /* term = affix ";" */

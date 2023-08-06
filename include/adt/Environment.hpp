@@ -29,6 +29,7 @@
 #include "adt/ImportSet.hpp"
 #include "adt/InsertionPoint.hpp"
 #include "adt/Scope.hpp"
+#include "adt/StringSet.hpp"
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
@@ -40,6 +41,7 @@ class Environment {
   DirectorySearcher m_directory_searcher;
   ImportSet m_import_set;
   IdentifierSet m_identifier_set;
+  StringSet m_string_set;
   TypeInterner m_type_interner;
   // AstAllocator ast_allocator;
   BinopTable m_binop_table;
@@ -135,6 +137,9 @@ public:
 
   //**** Identifier Set Interface ****//
   auto getIdentifier(std::string_view name) noexcept -> Identifier;
+
+  //**** String Set Interface ****//
+  auto internString(std::string_view string) noexcept -> std::string_view; 
 
   //**** ImportSet interface ****//
   auto alreadyImported(fs::path const &filename) noexcept -> bool;
@@ -294,7 +299,7 @@ public:
   auto createLLVMOr(llvm::Value *left, llvm::Value *right,
                     const llvm::Twine &name = "or") noexcept -> llvm::Value *;
 
-  // memory accessors
+  // memory instructions
   auto createLLVMLoad(llvm::Type *type, llvm::Value *source) noexcept
       -> llvm::Value *;
 

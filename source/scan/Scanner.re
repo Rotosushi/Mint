@@ -141,6 +141,7 @@ auto Scanner::scan() noexcept -> Token {
       "}" { UpdateLocation(); return Token::EndBrace; }
       "\\" { UpdateLocation(); return Token::BSlash; }
       "->" { UpdateLocation(); return Token::RArrow; }
+      "=>" { UpdateLocation(); return Token::EqRArrow; }
 
       "+" { UpdateLocation(); return Token::Plus; }
       "-" { UpdateLocation(); return Token::Minus; }

@@ -54,6 +54,14 @@ basic = literal
 literal = "nil"
         | "true"
         | "false"
+        | "\" argument-list ("->" type?) "=>" local
+
+argument-list = (argument ("," argument)*)?
+
+argument = identifier ":" type
+
+local = let
+      | term
 
 type = "Nil"
      | "Boolean"

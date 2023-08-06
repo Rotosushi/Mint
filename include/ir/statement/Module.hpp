@@ -15,13 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "1dd2f19c25e4cb5d3972092790341ba8d3ce083f"
-#define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
-#define MINT_DEBUG 1
-// NOLINTEND
-// clang-format on
+#include <memory>
+
+namespace mint {
+namespace ir {
+class Instruction;
+
+class Module {
+  std::unique_ptr<Instruction[]> m_array;
+};
+} // namespace ir
+} // namespace mint

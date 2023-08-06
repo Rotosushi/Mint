@@ -21,15 +21,16 @@
 namespace mint {
 namespace ast {
 class Import : public Statement {
-  std::string m_filename;
+  std::string_view m_filename;
 
 public:
   Import(Attributes attributes, Location location,
-         std::string filename) noexcept;
+         std::string_view filename) noexcept;
   ~Import() noexcept override = default;
 
   [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   std::string filename) noexcept -> ast::Ptr;
+                                   std::string_view filename) noexcept
+      -> ast::Ptr;
 
   static auto classof(Ast const *ast) noexcept -> bool;
 

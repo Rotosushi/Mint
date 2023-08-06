@@ -21,14 +21,15 @@
 namespace mint {
 namespace ast {
 Import::Import(Attributes attributes, Location location,
-               std::string filename) noexcept
-    : Statement{Ast::Kind::Import, attributes, location},
-      m_filename{std::move(filename)} {}
+               std::string_view filename) noexcept
+    : Statement{Ast::Kind::Import, attributes, location}, m_filename{filename} {
+}
 
 [[nodiscard]] auto Import::create(Attributes attributes, Location location,
-                                  std::string filename) noexcept -> ast::Ptr {
+                                  std::string_view filename) noexcept
+    -> ast::Ptr {
   return static_cast<std::unique_ptr<Ast>>(
-      std::make_unique<Import>(attributes, location, std::move(filename)));
+      std::make_unique<Import>(attributes, location, filename));
 }
 
 auto Import::classof(Ast const *ast) noexcept -> bool {

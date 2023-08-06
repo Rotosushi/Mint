@@ -291,6 +291,12 @@ auto Environment::getIdentifier(std::string_view name) noexcept -> Identifier {
   return m_identifier_set.emplace(name);
 }
 
+//**** String Set Interface ****//
+auto Environment::internString(std::string_view string) noexcept
+    -> std::string_view {
+  return m_string_set.emplace(string);
+}
+
 //**** ImportSet interface ****/
 auto Environment::alreadyImported(fs::path const &filename) noexcept -> bool {
   return m_import_set.contains(filename);

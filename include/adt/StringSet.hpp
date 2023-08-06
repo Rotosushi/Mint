@@ -15,13 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "1dd2f19c25e4cb5d3972092790341ba8d3ce083f"
-#define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
-#define MINT_DEBUG 1
-// NOLINTEND
-// clang-format on
+#include <string>
+#include <string_view>
+#include <unordered_set>
+
+namespace mint {
+class StringSet {
+private:
+  std::unordered_set<std::string> m_set;
+
+public:
+  template <class... Args>
+  [[nodiscard]] auto emplace(Args &&...args) noexcept -> std::string_view {
+    auto pair = m_set.emplace(std::forward<Args>(args)...);
+    return static_cast<std::string_view>(*pair.first);
+  }
+};
+} // namespace mint

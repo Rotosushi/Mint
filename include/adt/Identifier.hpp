@@ -25,6 +25,8 @@
 namespace mint {
 class Identifier;
 
+// #TODO: refactor Identifier to use StringSet
+// instead of IdentifierSet.
 class IdentifierSet {
 private:
   std::unordered_set<std::string> set;

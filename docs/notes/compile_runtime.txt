@@ -24,7 +24,7 @@ so, what can be done at compile time, and what cannot?
 
 Theoretically it is possible to interpret any information which 
 is known at compile time. And Definitions must be made available 
-to the runtime, for the runtime to make any sense at all.
+to the comptime, for the runtime to make any sense at all.
 
 the important thing to consider is what happens to a term which 
 cannot be evaluated, only compiled. Due to that terms reliance upon 
@@ -44,16 +44,19 @@ Comptime:
     Nil 
     Boolean 
     Integer
+    Lambda
 
   Values 
     nil 
     true, false 
     [0-9]+
+    lambda-literals
 
 Runtime:
   Definitions 
     Let 
     Module, Import
+    lambda-definitions
 
 okay, all currently implemented values are scalars.
 at comptime values are represented as Ast nodes.
@@ -62,6 +65,11 @@ at runtime:
   Nil     -> llvm::ConstantInt(1, false)
   Boolean -> llvm::ConstantInt(1, value)
   Integer -> llvm::ConstantInt(32, value)
+  Lambda  -> llvm::Function * 
+
+note that lambdas are represented as function pointers.
+this can be done because there is no way to specify a capture 
+on a lambda.
 
 next to translate are the syntax ast's, 
 these can just pass through at comptime and runtime.
@@ -78,12 +86,11 @@ at runtime:
               of the comptime value.
 
 next are definitions:
-at comptime definitions bind Types and Asts.
-at runtime definitions bind global variables.
+at comptime definitions bind Types and Asts and comptime values.
+at runtime definitions bind global or local variables.
 at runtime:
   Let -> must create a global variable within the module.
-         needs to use it's fully qualified name in the module 
-         symbol table, and needs to convert the qualified name 
+         and needs to convert the qualified name 
          to something that llvm accepts.
          (convert any "::" to ".")
 
@@ -100,4 +107,24 @@ at runtime:
             and handle any use-before-def as usual.
 
 
+-----------------------------------------------------------------------------------
+currently the evaluation strategy operates directly on Ast's. 
+this is inefficient.
+because the nodes of an Ast are allocated on the heap,
 
+there are two ways I can think of for changing this,
+1) translate the Ast to a custom IR and evaluate that.
+  this IR can be designed for speed. 
+  (ideally stored in one big array, or as a "std::deque" like 
+  structure, where constructs bigger than a single instruction 
+  are themselves pointers to an array of instructions.)
+  and this IR is then translated to LLVM IR for codegen.
+
+2) translate the Ast to LLVM IR and use a JIT for evaluation.
+  this has the advantage of running directly on the CPU so 
+  it is the fastest it could be. additionally it saves the 
+  compiler from defining two translation steps.
+  and it reduces the amount of code that the compiler itself 
+  needs to get right in order to have the semantics of the compiler.
+  downsides are that Semantic analysis still occurs on Ast's directly,
+  which is slow. and I lose out on the fun of designing yet another IR. :P
