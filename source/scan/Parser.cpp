@@ -464,10 +464,84 @@ auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
     break;
   }
 
+  case Token::BSlash: {
+    return parseLambda();
+  }
+
   default:
     return handle_error(Error::Kind::ExpectedABasicTerm);
     break;
   }
+}
+
+auto Parser::parseLambda() noexcept -> Result<ast::Ptr> {
+  MINT_ASSERT(peek(Token::BSlash));
+  auto lhs_loc = location();
+  next(); // eat '\'
+  ast::Lambda::Arguments arguments;
+  type::Ptr result_type{nullptr};
+
+  auto parseArgument = [&]() -> Result<ast::Lambda::Argument> {
+    if (!peek(Token::Identifier))
+      return handle_error(Error::Kind::ExpectedAnIdentifier);
+
+    auto name = env->getIdentifier(text());
+    next();
+
+    if (!expect(Token::Colon))
+      return handle_error(Error::Kind::ExpectedAColon);
+
+    auto result = parseType();
+    if (!result)
+      return result.error();
+    auto type = result.value();
+    return ast::Lambda::Argument{name, default_attributes, type};
+  };
+
+  auto parseArguments = [&]() -> Result<ast::Lambda::Arguments> {
+    ast::Lambda::Arguments arguments;
+    do {
+      auto result = parseArgument();
+      if (!result)
+        return result.error();
+
+      arguments.emplace_back(result.value());
+    } while (expect(Token::Comma));
+    return arguments;
+  };
+
+  // optional argument list
+  if (peek(Token::Identifier)) {
+    auto result = parseArguments();
+    if (!result)
+      return result.error();
+
+    arguments = std::move(result.value());
+  }
+
+  // optional type annotation
+  if (expect(Token::RArrow)) {
+    auto result = parseType();
+    if (!result)
+      return result.error();
+
+    result_type = result.value();
+  }
+
+  // parse the body
+  if (!expect(Token::EqRArrow))
+    return handle_error(Error::Kind::ExpectedAEqualsRightArrow);
+
+  auto result = parseAffix();
+  if (!result)
+    return result;
+  auto &body = result.value();
+
+  auto rhs_loc = location();
+  Location lambda_loc{lhs_loc, rhs_loc};
+  return ast::Lambda::create(default_attributes, lambda_loc,
+                             std::move(arguments), result_type,
+                             std::move(body));
 }
 
 auto Parser::parseType() noexcept -> Result<type::Ptr> {
@@ -527,7 +601,7 @@ auto Parser::parseFunctionType() noexcept -> Result<type::Ptr> {
   if (!result)
     return result;
 
-  return env->getFunctionType(result.value(), std::move(arguments));
+  return env->getLambdaType(result.value(), std::move(arguments));
 }
 
 } // namespace mint

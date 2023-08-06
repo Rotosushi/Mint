@@ -6,6 +6,7 @@ add_subdirectory(${MINT_SOURCE_DIR}/scan)
 add_subdirectory(${MINT_SOURCE_DIR}/type)
 add_subdirectory(${MINT_SOURCE_DIR}/utility)
 add_subdirectory(${MINT_SOURCE_DIR}/codegen)
+add_subdirectory(${MINT_SOURCE_DIR}/ir)
 
 set(MINT_COMMON_LIBS
   mint_scan
@@ -14,6 +15,7 @@ set(MINT_COMMON_LIBS
   mint_adt
   mint_codegen
   mint_utility
+  mint_ir
 )
 
 add_executable(mint main.cpp)

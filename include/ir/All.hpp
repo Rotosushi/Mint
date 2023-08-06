@@ -21,6 +21,5 @@
 #include "ir/expression/Call.hpp"
 #include "ir/expression/Unop.hpp"
 #include "ir/statement/Import.hpp"
+#include "ir/statement/Module.hpp"
 #include "ir/value/Lambda.hpp"
-#include "ir/value/Parameter.hpp"
-#include "ir/value/Scalar.hpp"

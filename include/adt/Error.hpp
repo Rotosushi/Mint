@@ -53,12 +53,14 @@ public:
     ExpectedABasicTerm,
     ExpectedAType,
     ExpectedAnEquals,
+    ExpectedAColon,
     ExpectedASemicolon,
     ExpectedAnIdentifier,
     ExpectedAClosingParen,
     ExpectedABeginBrace,
     ExpectedAEndBrace,
     ExpectedARightArrow,
+    ExpectedAEqualsRightArrow,
     ExpectedText,
 
     // typecheck errors

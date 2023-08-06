@@ -139,7 +139,7 @@ public:
   auto getIdentifier(std::string_view name) noexcept -> Identifier;
 
   //**** String Set Interface ****//
-  auto internString(std::string_view string) noexcept -> std::string_view; 
+  auto internString(std::string_view string) noexcept -> std::string_view;
 
   //**** ImportSet interface ****//
   auto alreadyImported(fs::path const &filename) noexcept -> bool;
@@ -191,8 +191,8 @@ public:
   auto getIntegerType() noexcept -> type::Integer const *;
   auto getNilType() noexcept -> type::Nil const *;
 
-  auto getFunctionType(type::Ptr result_type,
-                       std::vector<type::Ptr> argument_types) noexcept
+  auto getLambdaType(type::Ptr result_type,
+                     type::Lambda::Arguments argument_types) noexcept
       -> type::Lambda const *;
 
   //**** LLVM interface ****//

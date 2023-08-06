@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <memory>
-
-#include "ir/Instruction.hpp"
+#include <vector>
 
 namespace mint {
 namespace ir {
+class Instruction;
 
 // #TODO: write a parser for ir, as well as a print
 // function, such that we can emit and read back the IR
@@ -36,29 +35,44 @@ namespace ir {
 
 // #NOTE: since an instruction is representing a 'flattened'
 // AST, an instruction is only valid with respect to the
-// given array it is currently residing in, thus there
+// given vector it is currently residing in, thus there
 // is no reason why a single instruction should be copied
-// or moved. only whole arrays can be validly copied or
-// moved. and since we disable copying of most elements
-// the array object itself can only be moved. (given that
-// this is only a pointer swap, the move constructors
-// are not called, (I don't think))
+// or moved. only whole vectors can be validly copied or
+// moved. however, to allow for an array to be copied or
+// moved, it's elements must be copyable or movable.
+// so we simply have to accept an unenforcable invariant
+// to the Mir class.
 
 class Mir {
-  std::unique_ptr<Instruction[]> m_array;
+public:
+  using Ir = std::vector<Instruction>;
+  using iterator = Ir::iterator;
+  using const_iterator = Ir::const_iterator;
+  using reference = Ir::reference;
+
+private:
+  Ir m_ir;
+
+public:
+  Mir() noexcept;
+  Mir(Ir ir) noexcept;
+  Mir(Mir const &other) noexcept;
+  Mir(Mir &&other) noexcept;
+  auto operator=(Mir const &other) noexcept -> Mir &;
+  auto operator=(Mir &&other) noexcept -> Mir &;
+
+  [[nodiscard]] auto empty() const noexcept -> bool;
+  [[nodiscard]] auto size() const noexcept -> std::size_t;
+
+  [[nodiscard]] auto ir() noexcept -> Ir &;
+  [[nodiscard]] auto ir() const noexcept -> Ir const &;
+
+  [[nodiscard]] auto begin() noexcept -> iterator;
+  [[nodiscard]] auto end() noexcept -> iterator;
+  [[nodiscard]] auto begin() const noexcept -> const_iterator;
+  [[nodiscard]] auto end() const noexcept -> const_iterator;
+
+  template <class... Args> [[nodiscard]] reference emplace_back(Args &&...args);
 };
-// enum Kind {
-//   Let,
-
-//   Binop,
-//   Call,
-//   Unop,
-
-//   Boolean,
-//   Integer,
-//   Lambda,
-//   Nil,
-// };
-
 } // namespace ir
 } // namespace mint

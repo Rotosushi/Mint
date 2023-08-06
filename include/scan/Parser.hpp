@@ -54,14 +54,12 @@ basic = literal
 literal = "nil"
         | "true"
         | "false"
-        | "\" argument-list ("->" type?) "=>" local
+        | "\" (argument-list)? ("->" type)? "=>" affix
+  #TODO | "\" (argument-list)? ("->" type)? block
 
-argument-list = (argument ("," argument)*)?
+argument-list = argument ("," argument)*
 
 argument = identifier ":" type
-
-local = let
-      | term
 
 type = "Nil"
      | "Boolean"
@@ -140,6 +138,7 @@ private:
   auto precedenceParser(ast::Ptr left, BinopPrecedence prec) noexcept
       -> Result<ast::Ptr>;
   auto parseBasic() noexcept -> Result<ast::Ptr>;
+  auto parseLambda() noexcept -> Result<ast::Ptr>;
   auto parseType() noexcept -> Result<type::Ptr>;
   auto parseFunctionType() noexcept -> Result<type::Ptr>;
 

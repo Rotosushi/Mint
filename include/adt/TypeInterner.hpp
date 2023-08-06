@@ -43,7 +43,6 @@ class TypeInterner {
   type::Integer integer_type;
   type::Nil nil_type;
 
-  Composite<type::Lambda> function_types;
   Composite<type::Lambda> lamdba_types;
 
 public:
@@ -55,15 +54,10 @@ public:
   }
   auto getNilType() const noexcept -> type::Nil const * { return &nil_type; }
 
-  auto getFunctionType(type::Ptr result_type,
-                       std::vector<type::Ptr> argument_types) noexcept
+  auto getLambdaType(type::Ptr result_type,
+                     type::Lambda::Arguments arguments) noexcept
       -> type::Lambda const * {
-    return function_types.emplace(result_type, std::move(argument_types));
-  }
-
-  auto getLambdaType(type::Lambda const *function_type) noexcept
-      -> type::Lambda const * {
-    return lamdba_types.emplace(function_type);
+    return lamdba_types.emplace(result_type, arguments);
   }
 };
 } // namespace mint

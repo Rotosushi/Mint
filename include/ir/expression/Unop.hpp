@@ -15,23 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "ir/Parameter.hpp"
+#include "ir/detail/Parameter.hpp"
 
 namespace mint {
 namespace ir {
 class Unop {
 public:
   enum Op {
-    neg,
-    not,
+    Neg,
+    Not,
   };
 
 private:
   Op m_op;
-  Parameter m_right;
+  detail::Parameter m_right;
 
 public:
-  Unop(Op op, Parameter right) noexcept : m_op(op), m_right(right) {}
+  Unop(Op op, detail::Parameter right) noexcept : m_op(op), m_right(right) {}
   Unop(Unop const &other) noexcept = default;
   Unop(Unop &&other) noexcept = default;
   auto operator=(Unop const &other) noexcept -> Unop & = default;
@@ -39,7 +39,9 @@ public:
   ~Unop() noexcept = default;
 
   [[nodiscard]] auto op() const noexcept -> Op { return m_op; }
-  [[nodiscard]] auto right() const noexcept -> Parameter { return m_right; }
+  [[nodiscard]] auto right() const noexcept -> detail::Parameter {
+    return m_right;
+  }
 };
 } // namespace ir
 

@@ -15,14 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <memory>
+#include "adt/Identifier.hpp"
+#include "ir/Mir.hpp"
 
 namespace mint {
 namespace ir {
-class Instruction;
-
 class Module {
-  std::unique_ptr<Instruction[]> m_array;
+  Identifier m_name;
+  Mir m_ir;
+
+public:
+  Module(Identifier name, Mir ir) noexcept
+      : m_name(name), m_ir(std::move(ir)) {}
+  Module(Module const &other) noexcept = default;
+  Module(Module &&other) noexcept = default;
+  auto operator=(Module const &other) noexcept -> Module & = default;
+  auto operator=(Module &&other) noexcept -> Module & = default;
+  ~Module() noexcept = default;
+
+  [[nodiscard]] auto name() const noexcept -> Identifier { return m_name; }
+
+  [[nodiscard]] auto ir() noexcept -> Mir & { return m_ir; }
+  [[nodiscard]] auto ir() const noexcept -> Mir const & { return m_ir; }
 };
 } // namespace ir
 } // namespace mint

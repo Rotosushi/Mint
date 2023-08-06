@@ -15,28 +15,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "adt/Identifier.hpp"
-#include "ir/detail/Parameter.hpp"
+#include <variant>
 
 namespace mint {
 namespace ir {
-class Let {
-  Identifier m_name;
-  detail::Parameter m_parameter;
+namespace detail {
+class Scalar {
+public:
+  using Variant = std::variant<std::monostate, bool, int>;
+
+private:
+  Variant m_variant;
 
 public:
-  Let(Identifier name, detail::Parameter parameter) noexcept
-      : m_name(name), m_parameter(parameter) {}
-  Let(Let const &other) noexcept = default;
-  Let(Let &&other) noexcept = default;
-  auto operator=(Let const &other) noexcept -> Let & = default;
-  auto operator=(Let &&other) noexcept -> Let & = default;
-  ~Let() noexcept = default;
+  Scalar() noexcept = default;
+  Scalar(bool boolean) noexcept
+      : m_variant(std::in_place_type<bool>, boolean) {}
+  Scalar(int integer) noexcept : m_variant(std::in_place_type<int>, integer) {}
+  Scalar(Scalar const &other) noexcept = default;
+  Scalar(Scalar &&other) noexcept = default;
+  auto operator=(Scalar const &other) noexcept -> Scalar & = default;
+  auto operator=(Scalar &&other) noexcept -> Scalar & = default;
+  ~Scalar() noexcept = default;
 
-  [[nodiscard]] auto name() const noexcept -> Identifier { return m_name; }
-  [[nodiscard]] auto parameter() const noexcept -> detail::Parameter {
-    return m_parameter;
-  }
+  [[nodiscard]] auto variant() noexcept -> Variant & { return m_variant; }
 };
+} // namespace detail
 } // namespace ir
 } // namespace mint

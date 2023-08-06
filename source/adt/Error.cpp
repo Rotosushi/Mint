@@ -36,6 +36,8 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
     return "Expected a type [Nil, Boolean, Integer]";
   case Error::Kind::ExpectedAnEquals:
     return "Expected a '='";
+  case Error::Kind::ExpectedAColon:
+    return "Expected a ':'";
   case Error::Kind::ExpectedASemicolon:
     return "Expected a ';'";
   case Error::Kind::ExpectedAnIdentifier:
@@ -48,6 +50,8 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
     return "Expected a '}'";
   case Error::Kind::ExpectedARightArrow:
     return "Expected '->'";
+  case Error::Kind::ExpectedAEqualsRightArrow:
+    return "Expected '=>'";
   case Error::Kind::ExpectedText:
     return "Expected text [\"...\"]";
 

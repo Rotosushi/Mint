@@ -81,18 +81,23 @@ void Lambda::print(std::ostream &out) const noexcept {
 // deduced from the type of the body.
 Result<type::Ptr> Lambda::typecheck(Environment &env) const noexcept {
   env.pushScope();
+  type::Lambda::Arguments argument_types;
 
-  for (auto &argument : m_arguments)
+  for (auto &argument : m_arguments) {
+    argument_types.emplace_back(argument.type);
     env.partialBindName(argument.name, argument.attributes, argument.type);
+  }
 
   auto result = m_body->typecheck(env);
   if (!result) {
     env.popScope();
     return result;
   }
+  auto result_type = result.value();
+  auto lambda_type = env.getLambdaType(result_type, std::move(argument_types));
 
   env.popScope();
-  return setCachedType(result.value());
+  return setCachedType(lambda_type);
 }
 
 Result<ast::Ptr> Lambda::evaluate([[maybe_unused]] Environment &env) noexcept {

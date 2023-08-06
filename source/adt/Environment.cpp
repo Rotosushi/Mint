@@ -390,11 +390,10 @@ auto Environment::getNilType() noexcept -> type::Nil const * {
   return m_type_interner.getNilType();
 }
 
-auto Environment::getFunctionType(
-    type::Ptr result_type, std::vector<type::Ptr> argument_types) noexcept
+auto Environment::getLambdaType(type::Ptr result_type,
+                                type::Lambda::Arguments argument_types) noexcept
     -> type::Lambda const * {
-  return m_type_interner.getFunctionType(result_type,
-                                         std::move(argument_types));
+  return m_type_interner.getLambdaType(result_type, std::move(argument_types));
 }
 
 /**** LLVM interface ****/

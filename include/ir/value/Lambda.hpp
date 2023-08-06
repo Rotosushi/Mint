@@ -19,25 +19,28 @@
 #include <vector>
 
 #include "adt/Attributes.hpp"
-#include "ir/Parameter.hpp"
+#include "ir/detail/Parameter.hpp"
 #include "type/Type.hpp"
 
 namespace mint {
 namespace ir {
 class Lambda {
+public:
   struct Argument {
     Identifier m_name;
     Attributes m_attributes;
     type::Ptr m_type;
   };
+  using Arguments = std::vector<Argument>;
 
-  std::vector<Argument> m_arguments;
-  Parameter m_body;
+private:
+  Arguments m_arguments;
+  detail::Parameter m_body;
   type::Ptr m_result_type;
 
 public:
-  Lambda(std::vector<Argument> arguments, Parameter body,
-         type::Ptr result_type = nullptr) noexcept
+  Lambda(Arguments arguments, detail::Parameter body,
+         type::Ptr result_type) noexcept
       : m_arguments(std::move(arguments)), m_body(body),
         m_result_type(result_type) {}
   Lambda(Lambda const &other) noexcept = default;
@@ -49,9 +52,12 @@ public:
   [[nodiscard]] auto arguments() const noexcept -> Arguments const & {
     return m_arguments;
   }
-  [[nodiscard]] auto body() const noexcept -> Parameter { return m_body; }
+  [[nodiscard]] auto body() const noexcept -> detail::Parameter {
+    return m_body;
+  }
   [[nodiscard]] auto result_type() const noexcept -> std::optional<type::Ptr> {
-    return m_result_type == nulptr ? std::nullopt : m_result_type;
+    return m_result_type == nullptr ? std::optional<type::Ptr>{}
+                                    : std::optional<type::Ptr>{m_result_type};
   }
 };
 } // namespace ir

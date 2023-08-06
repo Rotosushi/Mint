@@ -14,17 +14,22 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "ir/Parameter.hpp"
 #include <vector>
+
+#include "ir/detail/Parameter.hpp"
 
 namespace mint {
 namespace ir {
 class Call {
-  Parameter m_callee;
-  std::vector<Parameter> m_arguments;
+public:
+  using Arguments = std::vector<detail::Parameter>;
+
+private:
+  detail::Parameter m_callee;
+  Arguments m_arguments;
 
 public:
-  Call(Parameter callee, std::vector<Parameter> arguments) noexcept
+  Call(detail::Parameter callee, Arguments arguments) noexcept
       : m_callee(callee), m_arguments(std::move(arguments)) {}
 
   Call(Call const &other) noexcept = default;
@@ -33,10 +38,10 @@ public:
   auto operator=(Call &&other) noexcept -> Call & = default;
   ~Call() noexcept = default;
 
-  [[nodiscard]] auto callee() const noexcept -> Parameter { return m_callee; }
-  [[nodiscard]] auto arguments() const noexcept -> Arguments const & {
-    return m_arguments;
+  [[nodiscard]] auto callee() const noexcept -> detail::Parameter {
+    return m_callee;
   }
+  [[nodiscard]] auto arguments() noexcept -> Arguments & { return m_arguments; }
 };
 } // namespace ir
 } // namespace mint

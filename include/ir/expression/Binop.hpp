@@ -15,12 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-
-#include "ir/Parameter.hpp"
+#include "ir/detail/Parameter.hpp"
 
 namespace mint {
 namespace ir {
-
 class Binop {
 public:
   enum Op {
@@ -42,11 +40,11 @@ public:
 
 private:
   Op m_op;
-  Parameter m_left;
-  Parameter m_right;
+  detail::Parameter m_left;
+  detail::Parameter m_right;
 
 public:
-  Binop(Op op, Parameter left, Parameter right) noexcept
+  Binop(Op op, detail::Parameter left, detail::Parameter right) noexcept
       : m_op(op), m_left(left), m_right(right) {}
   Binop(Binop const &other) noexcept = default;
   Binop(Binop &&other) noexcept = default;
@@ -55,8 +53,12 @@ public:
   ~Binop() noexcept = default;
 
   [[nodiscard]] auto op() const noexcept -> Op { return m_op; }
-  [[nodiscard]] auto left() const noexcept -> Parameter { return m_left; }
-  [[nodiscard]] auto right() const noexcept -> Parameter { return m_right; }
+  [[nodiscard]] auto left() const noexcept -> detail::Parameter {
+    return m_left;
+  }
+  [[nodiscard]] auto right() const noexcept -> detail::Parameter {
+    return m_right;
+  }
 };
 } // namespace ir
 } // namespace mint
