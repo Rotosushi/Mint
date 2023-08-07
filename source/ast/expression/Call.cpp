@@ -24,7 +24,11 @@ namespace ast {
 Call::Call(Attributes attributes, Location location, ast::Ptr callee,
            Arguments arguments) noexcept
     : Expression(Ast::Kind::Call, attributes, location),
-      m_callee(std::move(callee)), m_arguments(std::move(arguments)) {}
+      m_callee(std::move(callee)), m_arguments(std::move(arguments)) {
+  m_callee->prevAst(this);
+  for (auto &ast : m_arguments)
+    ast->prevAst(this);
+}
 
 auto Call::create(Attributes attributes, Location location, ast::Ptr callee,
                   Arguments arguments) noexcept -> ast::Ptr {

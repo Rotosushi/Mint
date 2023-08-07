@@ -23,7 +23,9 @@ Lambda::Lambda(Attributes attributes, Location location, Arguments arguments,
                type::Ptr result_type, ast::Ptr body) noexcept
     : Value(Ast::Kind::Lambda, attributes, location),
       m_arguments(std::move(arguments)), m_result_type(result_type),
-      m_body(std::move(body)) {}
+      m_body(std::move(body)) {
+  m_body->prevAst(this);
+}
 
 auto Lambda::create(Attributes attributes, Location location,
                     Arguments arguments, type::Ptr result_type,

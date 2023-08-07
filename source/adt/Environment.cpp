@@ -245,29 +245,16 @@ auto Environment::exchangeLocalScope(std::shared_ptr<Scope> scope) noexcept
   return old_local;
 }
 
-shared_ptr<Scope> Environment::pushScope() noexcept {
-  return exchangeLocalScope(Scope::createScope({}, m_local_scope.get()));
+void Environment::pushScope() noexcept {
+  exchangeLocalScope(m_local_scope->pushScope());
 }
 
-shared_ptr<Scope> Environment::pushScope(Identifier name) noexcept {
-  auto found = m_local_scope->lookupScope(name);
-  if (found) { 
-    return found.value().ptr();
-  }
-
-  auto new_scope = m_local_scope->bindScope(name);
-  m_local_scope = new_scope.ptr();
+void Environment::pushScope(Identifier name) noexcept {
+  exchangeLocalScope(m_local_scope->pushScope(name));
 }
 
-shared_ptr<Scope> Environment::popScope() noexcept {
-  if (m_local_scope->isGlobal()) {
-    return; // cannot traverse past global scope
-  }
-
-  // #TODO: somehow m_local_scope->m_prev_scope 
-  // points to a corrupted previous scope.
-  // not nullptr, but a random address.
-  m_local_scope = m_local_scope->prevScope();
+void Environment::popScope() noexcept {
+  exchangeLocalScope(m_local_scope->popScope());
 }
 
 //**** "module" interface ****/

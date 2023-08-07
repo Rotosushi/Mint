@@ -224,6 +224,32 @@ void Scope::setGlobal(Scope *scope) noexcept { m_global = scope; }
   return std::make_shared<Scope>(name, prev_scope);
 }
 
+std::shared_ptr<Scope> Scope::pushScope() noexcept {
+  auto scope = createScope({}, this);
+  m_next_scope = scope;
+  return scope;
+}
+
+std::shared_ptr<Scope> Scope::pushScope(Identifier name) noexcept {
+  auto found = m_scopes->lookup(name);
+  if (found) {
+    m_next_scope = found.value().ptr();
+  } else {
+    m_next_scope = m_scopes->emplace(name, this).ptr();
+  }
+
+  return m_next_scope;
+}
+
+std::shared_ptr<Scope> Scope::popScope() noexcept {
+  m_next_scope.reset();
+  if (isGlobal()) {
+    return shared_from_this();
+  }
+
+  return prevScope();
+}
+
 [[nodiscard]] auto Scope::isGlobal() const noexcept -> bool {
   return m_prev_scope == nullptr;
 }
@@ -243,11 +269,11 @@ void Scope::setGlobal(Scope *scope) noexcept { m_global = scope; }
   return m_scopes->empty();
 }
 
-[[nodiscard]] auto Scope::hasName() const noexcept {
+[[nodiscard]] auto Scope::hasName() const noexcept -> bool {
   return m_name.has_value();
 }
 
-[[nodiscard]] auto Scope::name() const noexcept {
+[[nodiscard]] auto Scope::name() const noexcept -> Identifier {
   MINT_ASSERT(hasName());
   return m_name.value();
 }

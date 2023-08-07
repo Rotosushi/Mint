@@ -132,6 +132,7 @@ private:
   std::optional<Identifier> m_name;
   Scope *m_prev_scope;
   Scope *m_global;
+  std::shared_ptr<Scope> m_next_scope;
   std::unique_ptr<Bindings> m_bindings;
   std::unique_ptr<ScopeTable> m_scopes;
   // UseBeforeDefMap m_use_before_def_map;
@@ -162,16 +163,21 @@ public:
                                         Scope *prev_scope)
       -> std::shared_ptr<Scope>;
 
+  std::shared_ptr<Scope> pushScope() noexcept;
+  std::shared_ptr<Scope> pushScope(Identifier name) noexcept;
+  std::shared_ptr<Scope> popScope() noexcept;
+
   [[nodiscard]] auto isGlobal() const noexcept -> bool;
   [[nodiscard]] auto prevScope() const noexcept -> std::shared_ptr<Scope>;
   [[nodiscard]] auto bindingsEmpty() const noexcept -> bool;
   [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
-  [[nodiscard]] auto hasName() const noexcept;
+  [[nodiscard]] auto hasName() const noexcept -> bool;
+
   // #TODO: if there is no scope name, and this is not global scope
   // walk up the scope tree until we find a scope name. That name is
   // the name of the local named scope. (anonymous scopes are not
   // 'real' scopes, in the sense that they can be named. I think.)
-  [[nodiscard]] auto name() const noexcept;
+  [[nodiscard]] auto name() const noexcept -> Identifier;
   [[nodiscard]] auto qualifiedName() const noexcept -> Identifier;
 
   [[nodiscard]] auto qualifyName(Identifier name) noexcept -> Identifier;
