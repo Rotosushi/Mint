@@ -133,7 +133,7 @@ Result<ast::Ptr> Call::evaluate(Environment &env) noexcept {
     if (!result)
       return result;
 
-    actual_arguments.emplace_back(std::move(result.value()));
+    actual_arguments.emplace_back(result.value());
   }
 
   // inject the arguments into the lambda evaluation scope
@@ -148,7 +148,9 @@ Result<ast::Ptr> Call::evaluate(Environment &env) noexcept {
     auto binding = bound.value();
     auto &actual_argument = *actual_arguments_cursor;
 
-    binding.setComptimeValue(std::move(actual_argument));
+    binding.setComptimeValue(actual_argument->clone());
+
+    ++actual_arguments_cursor;
   }
 
   // evaluate the body in the lambda evaluation scope

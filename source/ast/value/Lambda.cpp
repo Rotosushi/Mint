@@ -71,7 +71,10 @@ void Lambda::print(std::ostream &out) const noexcept {
       out << ", ";
   }
 
-  out << " -> " << m_result_type << " => " << m_body;
+  if (m_result_type != nullptr)
+    out << " -> " << m_result_type;
+
+  out << " => " << m_body;
 }
 
 // #NOTE: the type of a lambda is a lambda type, wrapping

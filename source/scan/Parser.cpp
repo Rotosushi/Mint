@@ -39,18 +39,18 @@ auto Parser::extractSourceLine(Location const &location) const noexcept
   std::size_t lines_seen = 1;
 
   while ((lines_seen < location.fline) && (cursor != end)) {
-    if (*cursor == '\n') {
+    if (*cursor == '\n')
       lines_seen++;
-    }
+
     cursor++;
   }
 
   if (cursor != end) {
     auto eol = cursor;
 
-    while (eol != end && *eol != '\n') {
+    while (eol != end && *eol != '\n')
       eol++;
-    }
+
     return {cursor, eol};
   }
   return {};
@@ -111,13 +111,11 @@ auto Parser::predictsDeclaration(Token token) noexcept -> bool {
 }
 
 void Parser::recover() noexcept {
-  while (!peek(Token::Semicolon) && !peek(Token::End)) {
+  while (!peek(Token::Semicolon) && !peek(Token::End))
     next();
-  }
 
-  if (peek(Token::Semicolon)) {
+  if (peek(Token::Semicolon))
     next();
-  }
 }
 
 auto Parser::handle_error(Error::Kind kind) noexcept -> Error {
@@ -135,9 +133,8 @@ top = visibility? declaration
 */
 auto Parser::parseTop() noexcept -> Result<ast::Ptr> {
   fill();
-  if (endOfInput()) {
+  if (endOfInput())
     return handle_error(Error::Kind::EndOfInput);
-  }
 
   if (peek(Token::Public)) {
     next();
@@ -159,13 +156,12 @@ auto Parser::parseTop() noexcept -> Result<ast::Ptr> {
               | module
 */
 auto Parser::parseDeclaration(bool is_public) noexcept -> Result<ast::Ptr> {
-  if (peek(Token::Let)) {
+  if (peek(Token::Let))
     return parseLet(is_public);
-  } else if (peek(Token::Module)) {
+  else if (peek(Token::Module))
     return parseModule(is_public);
-  } else {
+  else
     return handle_error(Error::Kind::ExpectedADeclaration);
-  }
 }
 
 /*
@@ -179,9 +175,8 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<ast::Ptr> {
   MINT_ASSERT(peek(Token::Let));
   next(); // eat 'let'
 
-  if (!peek(Token::Identifier)) {
+  if (!peek(Token::Identifier))
     return handle_error(Error::Kind::ExpectedAnIdentifier);
-  }
 
   auto id = env->getIdentifier(text());
   next(); // eat identifier
@@ -194,14 +189,12 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<ast::Ptr> {
     annotation = type.value();
   }
 
-  if (!expect(Token::Equal)) {
+  if (!expect(Token::Equal))
     return handle_error(Error::Kind::ExpectedAnEquals);
-  }
 
   auto affix = parseTerm();
-  if (!affix) {
+  if (!affix)
     return affix;
-  }
 
   auto right_loc = location();
   Location let_loc = {left_loc, right_loc};
@@ -220,51 +213,47 @@ auto Parser::parseModule(bool is_public) noexcept -> Result<ast::Ptr> {
   MINT_ASSERT(peek(Token::Module));
   next(); // eat 'module'
 
-  if (!peek(Token::Identifier)) {
+  if (!peek(Token::Identifier))
     return handle_error(Error::Kind::ExpectedAnIdentifier);
-  }
 
   auto id = env->getIdentifier(text());
   next();
 
-  if (!expect(Token::BeginBrace)) {
+  if (!expect(Token::BeginBrace))
     return handle_error(Error::Kind::ExpectedABeginBrace);
-  }
 
   ast::Module::Expressions expressions;
   /* top* '}' */
   while (!expect(Token::EndBrace)) {
     auto expr = parseTop();
-    if (!expr) {
+    if (!expr)
       return expr;
-    }
+
     expressions.emplace_back(std::move(expr.value()));
   }
 
   auto right_loc = location();
   Location module_loc = {left_loc, right_loc};
-  return {
-      ast::Module::create(attributes, module_loc, id, std::move(expressions))};
+  return ast::Module::create(attributes, module_loc, id,
+                             std::move(expressions));
 }
 
 /*
-  import = "import" string ";"
+  import = "import" string-literal ";"
 */
 auto Parser::parseImport() noexcept -> Result<ast::Ptr> {
   auto left_loc = location();
   MINT_ASSERT(peek(Token::Import));
   next(); // eat "import"
 
-  if (!peek(Token::Text)) {
+  if (!peek(Token::Text))
     return handle_error(Error::Kind::ExpectedText);
-  }
 
   auto file = env->getTextFromTextLiteral(text());
   next(); // eat string
 
-  if (!expect(Token::Semicolon)) {
+  if (!expect(Token::Semicolon))
     return handle_error(Error::Kind::ExpectedASemicolon);
-  }
 
   auto right_loc = location();
   Location import_loc = {left_loc, right_loc};
@@ -282,23 +271,54 @@ auto Parser::parseTerm() noexcept -> Result<ast::Ptr> {
   }
   auto &affix = result.value();
 
-  if (!expect(Token::Semicolon)) {
+  if (!expect(Token::Semicolon))
     return handle_error(Error::Kind::ExpectedASemicolon);
-  }
 
   auto right_loc = location();
   Location term_loc = {left_loc, right_loc};
   return ast::Affix::create(default_attributes, term_loc, std::move(affix));
 }
 
+// affix = call (binop precedence-parser)?
 auto Parser::parseAffix() noexcept -> Result<ast::Ptr> {
-  auto basic = parseBasic();
-  if (!basic) {
-    return basic;
-  }
+  auto call = parseCall();
+  if (!call)
+    return call;
 
-  if (isBinop(current)) {
-    return precedenceParser(std::move(basic.value()), 0);
+  if (isBinop(current))
+    return precedenceParser(std::move(call.value()), 0);
+
+  return call;
+}
+
+// call = basic ("(" (affix ("," affix)*)? ")")?
+auto Parser::parseCall() noexcept -> Result<ast::Ptr> {
+  auto lhs_loc = location();
+  auto basic = parseBasic();
+  if (!basic)
+    return basic;
+
+  // optional call expression
+  if (expect(Token::BeginParen)) {
+    ast::Call::Arguments arguments;
+    // optional arguments to call expression
+    if (!peek(Token::EndParen)) {
+      do {
+        auto result = parseAffix();
+        if (!result)
+          return result;
+
+        arguments.emplace_back(std::move(result.value()));
+      } while (expect(Token::Comma));
+    }
+
+    if (!expect(Token::EndParen))
+      return handle_error(Error::Kind::ExpectedAClosingParen);
+
+    auto rhs_loc = location();
+    Location call_loc = {lhs_loc, rhs_loc};
+    basic = ast::Call::create(default_attributes, call_loc,
+                              std::move(basic.value()), std::move(arguments));
   }
 
   return basic;
@@ -354,7 +374,7 @@ auto Parser::precedenceParser(ast::Ptr left, BinopPrecedence prec) noexcept
 
     next(); // eat 'op'
 
-    auto right = parseBasic();
+    auto right = parseCall();
     if (!right)
       return right;
 
@@ -385,97 +405,105 @@ basic = "nil"
       | identifier
       | unop basic
       | "(" affix ")"
+      | "\" (argument-list)? ("->" type)? "=>" affix
 */
 auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
   fill();
 
   switch (current) {
-  case Token::Nil: {
-    auto loc = location();
-    next();
-    return ast::Nil::create(default_attributes, loc);
-    break;
-  }
+  case Token::Nil:
+    return parseNil();
 
-  case Token::True: {
-    auto loc = location();
-    next();
-    return ast::Boolean::create(default_attributes, loc, true);
-    break;
-  }
+  case Token::True:
+    return parseTrue();
 
-  case Token::False: {
-    auto loc = location();
-    next();
-    return ast::Boolean::create(default_attributes, loc, false);
-    break;
-  }
+  case Token::False:
+    return parseFalse();
 
-  case Token::Integer: {
-    int value = fromString<int>(text());
-    auto loc = location();
-    next();
+  case Token::Integer:
+    return parseInteger();
 
-    return ast::Integer::create(default_attributes, loc, value);
-    break;
-  }
-
-  case Token::Identifier: {
-    auto name = env->getIdentifier(text());
-    auto loc = location();
-    next(); // eat 'id'
-
-    return ast::Variable::create(default_attributes, loc, name);
-    break;
-  }
+  case Token::Identifier:
+    return parseVariable();
 
   case Token::Not:
-  case Token::Minus: {
-    auto lhs_loc = location();
-    auto op = current;
-    next(); // eat unop
+  case Token::Minus:
+    return parseUnop();
 
-    auto right = parseBasic();
-    if (!right)
-      return right;
-    auto &ast = right.value();
+  case Token::BeginParen:
+    return parseParens();
 
-    auto rhs_loc = location();
-    Location unop_loc{lhs_loc, rhs_loc};
-
-    return ast::Unop::create(default_attributes, unop_loc, op, std::move(ast));
-    break;
-  }
-
-  case Token::BeginParen: {
-    next(); // eat '('
-
-    auto affix = parseAffix();
-    if (!affix)
-      return affix;
-    auto &ast = affix.value();
-
-    if (!expect(Token::EndParen)) {
-      return handle_error(Error::Kind::ExpectedAClosingParen);
-    }
-
-    return ast::Parens::create(default_attributes, affix.value()->location(),
-                               std::move(ast));
-    break;
-  }
-
-  case Token::BSlash: {
+  case Token::BSlash:
     return parseLambda();
-  }
 
   default:
     return handle_error(Error::Kind::ExpectedABasicTerm);
-    break;
   }
 }
 
+auto Parser::parseNil() noexcept -> Result<ast::Ptr> {
+  auto loc = location();
+  next();
+  return ast::Nil::create(default_attributes, loc);
+}
+
+auto Parser::parseTrue() noexcept -> Result<ast::Ptr> {
+  auto loc = location();
+  next();
+  return ast::Boolean::create(default_attributes, loc, true);
+}
+
+auto Parser::parseFalse() noexcept -> Result<ast::Ptr> {
+  auto loc = location();
+  next();
+  return ast::Boolean::create(default_attributes, loc, false);
+}
+
+auto Parser::parseInteger() noexcept -> Result<ast::Ptr> {
+  int value = fromString<int>(text());
+  auto loc = location();
+  next();
+  return ast::Integer::create(default_attributes, loc, value);
+}
+
+auto Parser::parseVariable() noexcept -> Result<ast::Ptr> {
+  auto name = env->getIdentifier(text());
+  auto loc = location();
+  next(); // eat 'id'
+  return ast::Variable::create(default_attributes, loc, name);
+}
+
+auto Parser::parseUnop() noexcept -> Result<ast::Ptr> {
+  auto lhs_loc = location();
+  auto op = current;
+  next(); // eat unop
+
+  auto right = parseBasic();
+  if (!right)
+    return right;
+  auto &ast = right.value();
+
+  auto rhs_loc = location();
+  Location unop_loc{lhs_loc, rhs_loc};
+  return ast::Unop::create(default_attributes, unop_loc, op, std::move(ast));
+}
+
+auto Parser::parseParens() noexcept -> Result<ast::Ptr> {
+  next(); // eat '('
+
+  auto affix = parseAffix();
+  if (!affix)
+    return affix;
+  auto &ast = affix.value();
+
+  if (!expect(Token::EndParen))
+    return handle_error(Error::Kind::ExpectedAClosingParen);
+
+  auto loc = ast->location();
+  return ast::Parens::create(default_attributes, loc, std::move(ast));
+}
+
 auto Parser::parseLambda() noexcept -> Result<ast::Ptr> {
-  MINT_ASSERT(peek(Token::BSlash));
   auto lhs_loc = location();
   next(); // eat '\'
   ast::Lambda::Arguments arguments;
@@ -520,7 +548,7 @@ auto Parser::parseLambda() noexcept -> Result<ast::Ptr> {
   }
 
   // optional type annotation
-  if (expect(Token::RArrow)) {
+  if (expect(Token::RArrow)) { // eat '->'
     auto result = parseType();
     if (!result)
       return result.error();
@@ -529,7 +557,7 @@ auto Parser::parseLambda() noexcept -> Result<ast::Ptr> {
   }
 
   // parse the body
-  if (!expect(Token::EqRArrow))
+  if (!expect(Token::EqRArrow)) // eat '=>'
     return handle_error(Error::Kind::ExpectedAEqualsRightArrow);
 
   auto result = parseAffix();
@@ -548,39 +576,40 @@ auto Parser::parseType() noexcept -> Result<type::Ptr> {
   fill();
 
   switch (current) {
-  case Token::NilType: {
-    next();
-    return env->getNilType();
-    break;
-  }
+  case Token::NilType:
+    return parseNilType();
 
-  case Token::BooleanType: {
-    next();
-    return env->getBooleanType();
-    break;
-  }
+  case Token::BooleanType:
+    return parseBooleanType();
 
-  case Token::IntegerType: {
-    next();
-    return env->getIntegerType();
-    break;
-  }
+  case Token::IntegerType:
+    return parseIntegerType();
 
-  case Token::BSlash: {
+  case Token::BSlash:
     return parseFunctionType();
-    break;
-  }
 
   default:
     return handle_error(Error::Kind::ExpectedAType);
-    break;
   }
 }
 
-auto Parser::parseFunctionType() noexcept -> Result<type::Ptr> {
-  MINT_ASSERT(peek(Token::BSlash));
-  next(); // eat '\'
+auto Parser::parseNilType() noexcept -> Result<type::Ptr> {
+  next();
+  return env->getNilType();
+}
 
+auto Parser::parseBooleanType() noexcept -> Result<type::Ptr> {
+  next();
+  return env->getBooleanType();
+}
+
+auto Parser::parseIntegerType() noexcept -> Result<type::Ptr> {
+  next();
+  return env->getIntegerType();
+}
+
+auto Parser::parseFunctionType() noexcept -> Result<type::Ptr> {
+  next(); // eat '\'
   std::vector<type::Ptr> arguments;
 
   // parse the argument types
@@ -593,9 +622,8 @@ auto Parser::parseFunctionType() noexcept -> Result<type::Ptr> {
       arguments.push_back(result.value());
     } while (expect(Token::Comma)); // eat ','
 
-  if (!expect(Token::RArrow)) { // eat '->'
+  if (!expect(Token::RArrow)) // eat '->'
     return handle_error(Error::Kind::ExpectedARightArrow);
-  }
 
   auto result = parseType();
   if (!result)

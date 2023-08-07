@@ -304,7 +304,7 @@ public:
       -> llvm::Value *;
 
   // function instructions
-  auto createLLVMCall(llvm::FunctionCallee callee,
+  auto createLLVMCall(llvm::Function *callee,
                       llvm::ArrayRef<llvm::Value *> arguments,
                       llvm::Twine const &name = "call",
                       llvm::MDNode *fp_math_tag = nullptr) noexcept

@@ -34,15 +34,17 @@ declaration = let
 
 import = "import" string-literal ";"
 
-term = affix? ";"
+term = affix ";"
 
 let = "let" identifier (":" type)? "=" term
 
 module = "module" identifier "{" top* "}"
 
-affix = basic (binop precedence-parser)?
+affix = call (binop precedence-parser)?
 
-binop = "+" |"-" | "*" | "/" | "%" | "!" | "&" | "|"
+call = basic ("(" (affix ("," affix)*)? ")")?
+
+binop = "+" | "-" | "*" | "/" | "%" | "!" | "&" | "|"
         "<" | "<=" | "==" | "!=" | "=>" | ">"
 
 basic = literal
@@ -135,11 +137,22 @@ private:
   auto parseImport() noexcept -> Result<ast::Ptr>;
   auto parseTerm() noexcept -> Result<ast::Ptr>;
   auto parseAffix() noexcept -> Result<ast::Ptr>;
+  auto parseCall() noexcept -> Result<ast::Ptr>;
   auto precedenceParser(ast::Ptr left, BinopPrecedence prec) noexcept
       -> Result<ast::Ptr>;
   auto parseBasic() noexcept -> Result<ast::Ptr>;
+  auto parseNil() noexcept -> Result<ast::Ptr>;
+  auto parseTrue() noexcept -> Result<ast::Ptr>;
+  auto parseFalse() noexcept -> Result<ast::Ptr>;
+  auto parseInteger() noexcept -> Result<ast::Ptr>;
+  auto parseVariable() noexcept -> Result<ast::Ptr>;
+  auto parseUnop() noexcept -> Result<ast::Ptr>;
+  auto parseParens() noexcept -> Result<ast::Ptr>;
   auto parseLambda() noexcept -> Result<ast::Ptr>;
   auto parseType() noexcept -> Result<type::Ptr>;
+  auto parseNilType() noexcept -> Result<type::Ptr>;
+  auto parseBooleanType() noexcept -> Result<type::Ptr>;
+  auto parseIntegerType() noexcept -> Result<type::Ptr>;
   auto parseFunctionType() noexcept -> Result<type::Ptr>;
 
 public:

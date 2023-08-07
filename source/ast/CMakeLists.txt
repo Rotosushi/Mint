@@ -24,6 +24,7 @@ target_link_options(mint_ast PUBLIC
   ${llvm_system_libs}
 )
 target_link_libraries(mint_ast
+  mint_adt
   mint_codegen
   ${llvm_libs}
   ${LLVM_LIBRARY_DIRS}/liblldCommon.a

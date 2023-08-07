@@ -611,7 +611,7 @@ auto Environment::createLLVMLoad(llvm::Type *type, llvm::Value *source) noexcept
 }
 
 // function instructions
-auto Environment::createLLVMCall(llvm::FunctionCallee callee,
+auto Environment::createLLVMCall(llvm::Function *callee,
                                  llvm::ArrayRef<llvm::Value *> arguments,
                                  llvm::Twine const &name,
                                  llvm::MDNode *fp_math_tag) noexcept
