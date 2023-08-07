@@ -151,7 +151,7 @@ auto Environment::repl(bool do_print) noexcept -> int {
         continue;
       }
 
-      if (auto failed = bindUseBeforeDef(error, std::move(ast))) {
+      if (auto failed = bindUseBeforeDef(error, ast)) {
         printErrorWithSource(failed.value());
       }
       continue;

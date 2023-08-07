@@ -54,7 +54,7 @@ auto Lambda::getLambdaName(IdentifierSet *set) noexcept -> Identifier {
   return set->emplace(std::move(name));
 }
 
-Ptr Lambda::clone() const noexcept {
+Ptr Lambda::clone_impl() const noexcept {
   return create(attributes(), location(), m_arguments, m_result_type,
                 m_body->clone());
 }
@@ -100,7 +100,7 @@ Result<type::Ptr> Lambda::typecheck(Environment &env) const noexcept {
   auto lambda_type = env.getLambdaType(result_type, std::move(argument_types));
 
   env.popScope();
-  return setCachedType(lambda_type);
+  return cachedType(lambda_type);
 }
 
 Result<ast::Ptr> Lambda::evaluate([[maybe_unused]] Environment &env) noexcept {

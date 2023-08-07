@@ -32,7 +32,7 @@ auto Nil::classof(Ptr type) noexcept -> bool {
 void Nil::print(std::ostream &out) const noexcept { out << "Nil"; }
 
 [[nodiscard]] llvm::Type *Nil::toLLVMImpl(Environment &env) const noexcept {
-  return setCachedType(env.getLLVMNilType());
+  return cachedType(env.getLLVMNilType());
 }
 } // namespace type
 } // namespace mint

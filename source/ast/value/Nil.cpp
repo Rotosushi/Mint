@@ -32,12 +32,14 @@ auto Nil::classof(Ast const *ast) noexcept -> bool {
   return ast->kind() == Ast::Kind::Nil;
 }
 
-Ptr Nil::clone() const noexcept { return create(attributes(), location()); }
+Ptr Nil::clone_impl() const noexcept {
+  return create(attributes(), location());
+}
 
 void Nil::print(std::ostream &out) const noexcept { out << "nil"; }
 
 Result<type::Ptr> Nil::typecheck(Environment &env) const noexcept {
-  return setCachedType(env.getNilType());
+  return cachedType(env.getNilType());
 }
 
 Result<ast::Ptr> Nil::evaluate([[maybe_unused]] Environment &env) noexcept {

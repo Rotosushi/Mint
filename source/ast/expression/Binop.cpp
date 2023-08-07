@@ -23,8 +23,8 @@ Binop::Binop(Attributes attributes, Location location, Token op, Ptr left,
              Ptr right) noexcept
     : Expression{Ast::Kind::Binop, attributes, location}, m_op{op},
       m_left{std::move(left)}, m_right{std::move(right)} {
-  m_left->setPrevAst(this);
-  m_right->setPrevAst(this);
+  m_left->prevAst(this);
+  m_right->prevAst(this);
 }
 
 [[nodiscard]] auto Binop::create(Attributes attributes, Location location,
@@ -42,7 +42,7 @@ auto Binop::classof(Ast const *ast) noexcept -> bool {
   return ast->kind() == Ast::Kind::Binop;
 }
 
-Ptr Binop::clone() const noexcept {
+Ptr Binop::clone_impl() const noexcept {
   return create(attributes(), location(), m_op, m_left->clone(),
                 m_right->clone());
 }
@@ -71,11 +71,15 @@ Result<type::Ptr> Binop::typecheck(Environment &env) const noexcept {
     return {Error::Kind::BinopTypeMismatch, location(), message.view()};
   }
 
-  return setCachedType(instance->result_type);
+  return cachedType(instance->result_type);
 }
 
 Result<ast::Ptr> Binop::evaluate(Environment &env) noexcept {
   // #NOTE: enforce that typecheck was called before
+  // #NOTE: this doesn't work if we store copies of
+  // values in the symbol table, or pass copies of
+  // values in as arguments to functions, as these
+  // copies will have never been typechecked.
   MINT_ASSERT(cachedTypeOrAssert());
 
   auto overloads = env.lookupBinop(m_op);

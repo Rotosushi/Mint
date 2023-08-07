@@ -51,7 +51,7 @@ public:
   [[nodiscard]] auto result_type() const noexcept -> type::Ptr;
   [[nodiscard]] auto body() const noexcept -> ast::Ptr const &;
 
-  Ptr clone() const noexcept override;
+  Ptr clone_impl() const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

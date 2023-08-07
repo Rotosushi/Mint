@@ -32,7 +32,7 @@ auto Integer::classof(Ptr type) noexcept -> bool {
 void Integer::print(std::ostream &out) const noexcept { out << "Integer"; }
 
 [[nodiscard]] llvm::Type *Integer::toLLVMImpl(Environment &env) const noexcept {
-  return setCachedType(env.getLLVMIntegerType());
+  return cachedType(env.getLLVMIntegerType());
 }
 } // namespace type
 } // namespace mint

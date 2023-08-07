@@ -42,12 +42,12 @@ public:
            (ast->kind() <= Ast::Kind::EndSyntax);
   }
 
-  virtual Ptr clone() const noexcept = 0;
+  virtual Ptr clone_impl() const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
 
   std::optional<Identifier> getDefinitionName() const noexcept override {
-    if (havePrevAst()) {
-      auto prev = getPrevAst();
+    if (isRoot()) {
+      auto prev = prevAst();
       return prev->getDefinitionName();
     }
     return std::nullopt;

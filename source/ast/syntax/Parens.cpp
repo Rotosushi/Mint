@@ -21,7 +21,7 @@ namespace mint {
 namespace ast {
 Parens::Parens(Attributes attributes, Location location, Ptr ast) noexcept
     : Syntax{Ast::Kind::Parens, attributes, location}, m_ast{std::move(ast)} {
-  m_ast->setPrevAst(this);
+  m_ast->prevAst(this);
 }
 
 [[nodiscard]] auto Parens::create(Attributes attributes, Location location,
@@ -38,7 +38,7 @@ void Parens::print(std::ostream &out) const noexcept {
   out << "(" << m_ast << ")";
 }
 
-Ptr Parens::clone() const noexcept {
+Ptr Parens::clone_impl() const noexcept {
   return create(attributes(), location(), m_ast->clone());
 }
 
@@ -47,7 +47,7 @@ Result<type::Ptr> Parens::typecheck(Environment &env) const noexcept {
   if (!result)
     return result;
 
-  return setCachedType(result.value());
+  return cachedType(result.value());
 }
 
 Result<ast::Ptr> Parens::evaluate(Environment &env) noexcept {

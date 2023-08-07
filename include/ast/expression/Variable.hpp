@@ -42,7 +42,7 @@ public:
   // lookup. so there is no error to process.
   auto handleUseBeforeDef(Environment &env) const noexcept -> Error;
 
-  Ptr clone() const noexcept override;
+  Ptr clone_impl() const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

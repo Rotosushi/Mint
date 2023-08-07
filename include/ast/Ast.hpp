@@ -83,25 +83,24 @@ protected:
       : m_prev_ast{nullptr}, m_cached_type{nullptr}, m_kind{kind},
         m_attributes{attributes}, m_location{location} {}
 
-  bool havePrevAst() const noexcept { return m_prev_ast != nullptr; }
-
-  Ast *getPrevAst() const noexcept {
-    MINT_ASSERT(havePrevAst());
-    return m_prev_ast;
-  }
-
-  type::Ptr setCachedType(type::Ptr type) const noexcept {
-    MINT_ASSERT(type != nullptr);
+  auto cachedType(type::Ptr type) const noexcept -> type::Ptr {
     return m_cached_type = type;
   }
+
+  auto kind(Kind kind) noexcept { return m_kind = kind; }
+  auto attributes(Attributes attributes) noexcept {
+    return m_attributes = attributes;
+  }
+  auto location(Location location) noexcept { return m_location = location; }
+
+  [[nodiscard]] virtual Ptr clone_impl() const noexcept = 0;
 
 public:
   virtual ~Ast() noexcept = default;
 
-  void setPrevAst(Ast *prev_ast) const noexcept {
-    MINT_ASSERT(prev_ast != nullptr);
-    m_prev_ast = prev_ast;
-  }
+  bool isRoot() const noexcept { return m_prev_ast != nullptr; }
+  Ast *prevAst() const noexcept { return m_prev_ast; }
+  Ast *prevAst(Ast *prev_ast) const noexcept { return m_prev_ast = prev_ast; }
 
   [[nodiscard]] auto cachedType() const noexcept { return m_cached_type; }
   [[nodiscard]] auto cachedTypeOrAssert() const noexcept {
@@ -112,7 +111,22 @@ public:
   [[nodiscard]] auto attributes() const noexcept { return m_attributes; }
   [[nodiscard]] auto location() const noexcept { return m_location; }
 
-  [[nodiscard]] virtual Ptr clone() const noexcept = 0;
+  [[nodiscard]] auto clone() const noexcept -> Ptr {
+    // #NOTE: we assert that every ast is typechecked
+    // before it is evaluated or codegened.
+    // because of this, a cloned ast would not be counted
+    // as having been typechecked, due to clone being a
+    // bare virtual fn call, the members of the base
+    // class did not get cloned.
+    Ptr clone = clone_impl();
+    clone->prevAst(m_prev_ast);
+    clone->cachedType(m_cached_type);
+    clone->kind(m_kind);
+    clone->attributes(m_attributes);
+    clone->location(m_location);
+    return clone;
+  }
+
   virtual void print(std::ostream &out) const noexcept = 0;
 
   // #NOTE: walk up the Ast, iff we find an definition,

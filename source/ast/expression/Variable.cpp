@@ -33,7 +33,7 @@ auto Variable::classof(Ast const *ast) noexcept -> bool {
   return ast->kind() == Ast::Kind::Variable;
 }
 
-Ptr Variable::clone() const noexcept {
+Ptr Variable::clone_impl() const noexcept {
   return create(attributes(), location(), m_name);
 }
 
@@ -75,7 +75,7 @@ Result<type::Ptr> Variable::typecheck(Environment &env) const noexcept {
   if (!result)
     return handleUseBeforeDef(result.error(), env);
 
-  return setCachedType(result.value().type());
+  return cachedType(result.value().type());
 }
 
 Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {

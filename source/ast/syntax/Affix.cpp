@@ -21,7 +21,7 @@ namespace mint {
 namespace ast {
 Affix::Affix(Attributes attributes, Location location, Ptr ast) noexcept
     : Syntax{Ast::Kind::Affix, attributes, location}, m_ast{std::move(ast)} {
-  m_ast->setPrevAst(this);
+  m_ast->prevAst(this);
 }
 
 [[nodiscard]] auto Affix::create(Attributes attributes, Location location,
@@ -34,7 +34,7 @@ auto Affix::classof(Ast const *ast) noexcept -> bool {
   return ast->kind() == Ast::Kind::Affix;
 }
 
-Ptr Affix::clone() const noexcept {
+Ptr Affix::clone_impl() const noexcept {
   return create(attributes(), location(), m_ast->clone());
 }
 
@@ -45,7 +45,7 @@ Result<type::Ptr> Affix::typecheck(Environment &env) const noexcept {
   if (!result)
     return result;
 
-  return setCachedType(result.value());
+  return cachedType(result.value());
 }
 
 Result<ast::Ptr> Affix::evaluate(Environment &env) noexcept {

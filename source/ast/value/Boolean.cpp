@@ -38,12 +38,12 @@ void Boolean::print(std::ostream &out) const noexcept {
   out << (m_value ? "true" : "false");
 }
 
-Ptr Boolean::clone() const noexcept {
+Ptr Boolean::clone_impl() const noexcept {
   return create(attributes(), location(), m_value);
 }
 
 Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {
-  return setCachedType(env.getBooleanType());
+  return cachedType(env.getBooleanType());
 }
 
 Result<ast::Ptr> Boolean::evaluate([[maybe_unused]] Environment &env) noexcept {

@@ -25,7 +25,7 @@ Module::Module(Attributes attributes, Location location, Identifier name,
     : Statement{Ast::Kind::Module, attributes, location}, m_name{name},
       m_expressions{std::move(expressions)} {
   for (auto &expression : m_expressions)
-    expression->setPrevAst(this);
+    expression->prevAst(this);
 }
 
 [[nodiscard]] auto Module::create(Attributes attributes, Location location,
@@ -40,7 +40,7 @@ auto Module::classof(Ast const *ast) noexcept -> bool {
   return ast->kind() == Ast::Kind::Module;
 }
 
-Ptr Module::clone() const noexcept {
+Ptr Module::clone_impl() const noexcept {
   Expressions expressions;
   for (auto &expression : m_expressions) {
     expressions.emplace_back(expression->clone());
@@ -81,7 +81,7 @@ Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
 
   env.popScope();
 
-  return setCachedType(env.getNilType());
+  return cachedType(env.getNilType());
 }
 
 Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {

@@ -38,7 +38,7 @@ public:
                      Arguments arguments) noexcept -> ast::Ptr;
   static auto classof(Ast const *ast) noexcept -> bool;
 
-  Ptr clone() const noexcept override;
+  Ptr clone_impl() const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

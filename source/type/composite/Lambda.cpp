@@ -81,7 +81,7 @@ void Lambda::print(std::ostream &out) const noexcept {
       llvm_argument_types.push_back(type->toLLVM(env));
   }
 
-  return setCachedType(
+  return cachedType(
       env.getLLVMFunctionType(llvm_result_type, llvm_argument_types));
 }
 } // namespace type

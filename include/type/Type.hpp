@@ -43,7 +43,7 @@ protected:
   [[nodiscard]] virtual llvm::Type *
   toLLVMImpl(Environment &env) const noexcept = 0;
 
-  llvm::Type *setCachedType(llvm::Type *type) const noexcept {
+  llvm::Type *cachedType(llvm::Type *type) const noexcept {
     return m_cached_llvm_type = type;
   }
 

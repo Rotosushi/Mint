@@ -36,12 +36,12 @@ auto Integer::classof(Ast const *ast) noexcept -> bool {
 
 void Integer::print(std::ostream &out) const noexcept { out << m_value; }
 
-Ptr Integer::clone() const noexcept {
+Ptr Integer::clone_impl() const noexcept {
   return create(attributes(), location(), m_value);
 }
 
 Result<type::Ptr> Integer::typecheck(Environment &env) const noexcept {
-  return setCachedType(env.getIntegerType());
+  return cachedType(env.getIntegerType());
 }
 
 Result<ast::Ptr> Integer::evaluate([[maybe_unused]] Environment &env) noexcept {

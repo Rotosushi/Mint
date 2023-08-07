@@ -40,8 +40,13 @@ set(llvm_cxxflags
   -D__STDC_LIMIT_MACROS
 )
 
+set(llvm_components 
+  core 
+  x86 
+)
+
 execute_process(
-  COMMAND llvm-config --libfiles
+  COMMAND llvm-config --libs ${llvm_components}
   OUTPUT_VARIABLE llvm_libs 
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )

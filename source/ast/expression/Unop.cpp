@@ -23,7 +23,7 @@ Unop::Unop(Attributes attributes, Location location, Token op,
            Ptr right) noexcept
     : Expression{Ast::Kind::Unop, attributes, location}, m_op{op},
       m_right{std::move(right)} {
-  m_right->setPrevAst(this);
+  m_right->prevAst(this);
 }
 
 [[nodiscard]] auto Unop::create(Attributes attributes, Location location,
@@ -36,7 +36,7 @@ auto Unop::classof(Ast const *ast) noexcept -> bool {
   return ast->kind() == Ast::Kind::Unop;
 }
 
-Ptr Unop::clone() const noexcept {
+Ptr Unop::clone_impl() const noexcept {
   return create(attributes(), location(), m_op, m_right->clone());
 }
 
@@ -62,7 +62,7 @@ Result<type::Ptr> Unop::typecheck(Environment &env) const noexcept {
     return {Error::Kind::UnopTypeMismatch, m_right->location(), message.view()};
   }
 
-  return setCachedType(instance->result_type);
+  return cachedType(instance->result_type);
 }
 
 Result<ast::Ptr> Unop::evaluate(Environment &env) noexcept {

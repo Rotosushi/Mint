@@ -28,7 +28,7 @@ Let::Let(Attributes attributes, Location location,
          std::optional<type::Ptr> annotation, Identifier name, Ptr ast) noexcept
     : Definition{Ast::Kind::Let, attributes, location, annotation, name},
       m_ast{std::move(ast)} {
-  m_ast->setPrevAst(this);
+  m_ast->prevAst(this);
 }
 
 [[nodiscard]] auto Let::create(Attributes attributes, Location location,
@@ -55,7 +55,7 @@ Let::checkUseBeforeDef(Error::UseBeforeDef &ubd) const noexcept {
   return std::nullopt;
 }
 
-Ptr Let::clone() const noexcept {
+Ptr Let::clone_impl() const noexcept {
   return create(attributes(), location(), annotation(), name(), m_ast->clone());
 }
 
@@ -121,7 +121,7 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   if (auto failed = env.resolveTypeOfUseBeforeDef(qualified_name))
     return failed.value();
 
-  return setCachedType(env.getNilType());
+  return cachedType(env.getNilType());
 }
 
 Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
@@ -152,7 +152,7 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
   // a new value into the scope. however, there is no
   // concept of in-place mutation yet, so it doesn't much matter
   // if two let expressions point to the same memory.
-  binding.setComptimeValue(value);
+  binding.setComptimeValue(value->clone());
 
   // #NOTE: we just created the comptime value for this binding,
   // so we can evaluate any partial bindings

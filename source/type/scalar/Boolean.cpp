@@ -32,7 +32,7 @@ auto Boolean::classof(Ptr type) noexcept -> bool {
 void Boolean::print(std::ostream &out) const noexcept { out << "Boolean"; }
 
 [[nodiscard]] llvm::Type *Boolean::toLLVMImpl(Environment &env) const noexcept {
-  return setCachedType(env.getLLVMBooleanType());
+  return cachedType(env.getLLVMBooleanType());
 }
 } // namespace type
 } // namespace mint

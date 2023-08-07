@@ -89,7 +89,7 @@ public:
   virtual std::optional<Error>
   checkUseBeforeDef(Error::UseBeforeDef &ubd) const noexcept = 0;
 
-  virtual Ptr clone() const noexcept = 0;
+  virtual Ptr clone_impl() const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
 
   virtual Result<type::Ptr> typecheck(Environment &env) const noexcept = 0;

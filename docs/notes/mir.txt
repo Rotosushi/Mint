@@ -1,0 +1,34 @@
+// Copyright (C) 2023 Cade Weinberg
+// 
+// This file is part of Mint.
+// 
+// Mint is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Mint is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+
+so, with an intermediate representation how does the comptime and runtime process change?
+
+well, hopefully, not at all. though that is unlikely.
+
+one thing I can think of, is how do we call lambdas?
+
+obviously we just need a reference to them, but how is that possible 
+when references are indexes which are only valid within a given Mir?
+
+if the lambda itself is stored within the Mir, it cannot be called by 
+any part of the ir residing outside of the local Mir. because it cannot 
+be referenced by any instructions. the only thing I can think is to 
+store Lambdas (and perhaps by exension all other bound values) directly 
+within the symbol table itself. (iff they reside "on the stack" as it were.)
+Immediates can still be immediate. but values which are bound in a scope 
+must be accessable from other scopes. something which is impossible between 
+instructions in two Mirs.

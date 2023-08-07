@@ -36,7 +36,7 @@ auto Import::classof(Ast const *ast) noexcept -> bool {
   return ast->kind() == Ast::Kind::Import;
 }
 
-Ptr Import::clone() const noexcept {
+Ptr Import::clone_impl() const noexcept {
   return create(attributes(), location(), m_filename);
 }
 
@@ -46,14 +46,14 @@ void Import::print(std::ostream &out) const noexcept {
 
 Result<type::Ptr> Import::typecheck(Environment &env) const noexcept {
   if (env.alreadyImported(m_filename)) {
-    return setCachedType(env.getNilType());
+    return cachedType(env.getNilType());
   }
 
   auto exists = env.fileExists(m_filename);
   if (!exists)
     return {Error::Kind::FileNotFound, location(), m_filename};
 
-  return setCachedType(env.getNilType());
+  return cachedType(env.getNilType());
 }
 
 Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
@@ -87,7 +87,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
         return {Error::Kind::ImportFailed, location(), m_filename};
       }
 
-      if (auto failed = env.bindUseBeforeDef(error, std::move(ast))) {
+      if (auto failed = env.bindUseBeforeDef(error, ast)) {
         env.printErrorWithSource(failed.value());
         return {Error::Kind::ImportFailed, location(), m_filename};
       }

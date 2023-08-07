@@ -36,7 +36,7 @@ auto Call::classof(Ast const *ast) noexcept -> bool {
   return Ast::Kind::Call == ast->kind();
 }
 
-Ptr Call::clone() const noexcept {
+Ptr Call::clone_impl() const noexcept {
   Arguments cloned_arguments;
   cloned_arguments.reserve(m_arguments.size());
   for (auto &arg : m_arguments)
@@ -104,7 +104,7 @@ Result<type::Ptr> Call::typecheck(Environment &env) const noexcept {
     ++callee_cursor;
   }
 
-  return setCachedType(callee_type->result_type());
+  return cachedType(callee_type->result_type());
 }
 
 // #NOTE: evaluate the callee down to a lambda,
