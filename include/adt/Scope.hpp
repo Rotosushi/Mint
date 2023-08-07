@@ -121,8 +121,7 @@ public:
   [[nodiscard]] auto begin() noexcept -> iterator;
   [[nodiscard]] auto end() noexcept -> iterator;
 
-  auto emplace(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
-      -> Entry;
+  auto emplace(Identifier name, Scope *prev_scope) noexcept -> Entry;
   void unbind(Identifier name) noexcept;
 
   [[nodiscard]] auto lookup(Identifier name) noexcept -> Result<Entry>;
@@ -131,17 +130,16 @@ public:
 class Scope : public std::enable_shared_from_this<Scope> {
 private:
   std::optional<Identifier> m_name;
-  std::weak_ptr<Scope> m_prev_scope;
-  std::weak_ptr<Scope> m_global;
+  Scope *m_prev_scope;
+  Scope *m_global;
   std::unique_ptr<Bindings> m_bindings;
   std::unique_ptr<ScopeTable> m_scopes;
   // UseBeforeDefMap m_use_before_def_map;
 
 public:
   Scope(Identifier name) noexcept;
-  Scope(std::optional<Identifier> name,
-        std::weak_ptr<Scope> prev_scope) noexcept;
-  Scope(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept;
+  Scope(std::optional<Identifier> name, Scope *prev_scope) noexcept;
+  Scope(Identifier name, Scope *prev_scope) noexcept;
 
   friend class ScopeTable;
 
@@ -151,7 +149,8 @@ private:
   [[nodiscard]] auto qualifiedLookup(Identifier name) noexcept
       -> Result<Bindings::Binding>;
 
-  void setGlobal(std::weak_ptr<Scope> scope) noexcept;
+  void setPrevScope(Scope *scope) noexcept;
+  void setGlobal(Scope *scope) noexcept;
 
 public:
   // #NOTE: global scope has the name "", and this must be
@@ -160,11 +159,11 @@ public:
   [[nodiscard]] static auto createGlobalScope(Identifier name)
       -> std::shared_ptr<Scope>;
   [[nodiscard]] static auto createScope(std::optional<Identifier> name,
-                                        std::weak_ptr<Scope> prev_scope)
+                                        Scope *prev_scope)
       -> std::shared_ptr<Scope>;
 
   [[nodiscard]] auto isGlobal() const noexcept -> bool;
-  [[nodiscard]] auto getPrevScope() const noexcept -> std::shared_ptr<Scope>;
+  [[nodiscard]] auto prevScope() const noexcept -> std::shared_ptr<Scope>;
   [[nodiscard]] auto bindingsEmpty() const noexcept -> bool;
   [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
   [[nodiscard]] auto hasName() const noexcept;

@@ -47,7 +47,7 @@ Ptr Call::clone_impl() const noexcept {
 }
 
 void Call::print(std::ostream &out) const noexcept {
-  out << m_callee << " (";
+  out << m_callee << "(";
 
   auto index = 0U;
   auto size = m_arguments.size();

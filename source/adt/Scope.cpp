@@ -167,10 +167,8 @@ auto ScopeTable::Entry::partialBind(Identifier name, Attributes attributes,
   return table.end();
 }
 
-auto ScopeTable::emplace(Identifier name,
-                         std::weak_ptr<Scope> prev_scope) noexcept -> Entry {
-  auto pair =
-      table.try_emplace(name, Scope::createScope(name, std::move(prev_scope)));
+auto ScopeTable::emplace(Identifier name, Scope *prev_scope) noexcept -> Entry {
+  auto pair = table.try_emplace(name, Scope::createScope(name, prev_scope));
   return pair.first;
 }
 
@@ -194,49 +192,47 @@ Scope::Scope(Identifier name) noexcept
     : m_name(name), m_bindings(std::make_unique<Bindings>()),
       m_scopes(std::make_unique<ScopeTable>()) {}
 
-Scope::Scope(std::optional<Identifier> name,
-             std::weak_ptr<Scope> prev_scope) noexcept
+Scope::Scope(std::optional<Identifier> name, Scope *prev_scope) noexcept
     : m_name(name), m_prev_scope(prev_scope),
       m_bindings(std::make_unique<Bindings>()),
       m_scopes(std::make_unique<ScopeTable>()) {
-  auto ptr = prev_scope.lock();
-  m_global = ptr->m_global;
+  m_global = prev_scope->m_global;
 }
 
-Scope::Scope(Identifier name, std::weak_ptr<Scope> prev_scope) noexcept
+Scope::Scope(Identifier name, Scope *prev_scope) noexcept
     : m_name(name), m_prev_scope(prev_scope),
       m_bindings(std::make_unique<Bindings>()),
       m_scopes(std::make_unique<ScopeTable>()) {
-  auto ptr = prev_scope.lock();
-  m_global = ptr->m_global;
+  m_global = prev_scope->m_global;
 }
 
-void Scope::setGlobal(std::weak_ptr<Scope> scope) noexcept { m_global = scope; }
+void Scope::setPrevScope(Scope *scope) noexcept { m_prev_scope = scope; }
+void Scope::setGlobal(Scope *scope) noexcept { m_global = scope; }
 
 [[nodiscard]] auto Scope::createGlobalScope(Identifier name)
     -> std::shared_ptr<Scope> {
   MINT_ASSERT(name.view() == "");
   auto scope = std::make_shared<Scope>(name);
-  scope->setGlobal(scope->weak_from_this());
+  scope->setPrevScope(nullptr);
+  scope->setGlobal(scope.get());
   return scope;
 }
 
 [[nodiscard]] auto Scope::createScope(std::optional<Identifier> name,
-                                      std::weak_ptr<Scope> prev_scope)
+                                      Scope *prev_scope)
     -> std::shared_ptr<Scope> {
   return std::make_shared<Scope>(name, prev_scope);
 }
 
 [[nodiscard]] auto Scope::isGlobal() const noexcept -> bool {
-  return m_prev_scope.expired();
+  return m_prev_scope == nullptr;
 }
 
-[[nodiscard]] auto Scope::getPrevScope() const noexcept
-    -> std::shared_ptr<Scope> {
+[[nodiscard]] auto Scope::prevScope() const noexcept -> std::shared_ptr<Scope> {
   // #QUESTION is asserting the precondition the best solution?
   // I like it better than returning a nullptr.
-  MINT_ASSERT(!m_prev_scope.expired());
-  return m_prev_scope.lock();
+  MINT_ASSERT(nullptr != m_prev_scope);
+  return m_prev_scope->shared_from_this();
 }
 
 [[nodiscard]] auto Scope::bindingsEmpty() const noexcept -> bool {
@@ -262,18 +258,16 @@ void Scope::setGlobal(std::weak_ptr<Scope> scope) noexcept { m_global = scope; }
   // and we can return that immediately.
   if (isGlobal())
     return name();
-
-  auto prev = m_prev_scope.lock();
   // if this scope is anonymous, we return the qualified name of the
   // enclosing scope.
   if (!hasName()) {
-    return prev->qualifiedName();
+    return m_prev_scope->qualifiedName();
   }
 
   // return the qualified name of the previous scope prepended
   // to the name of this scope.
   auto base = name();
-  auto prev_name = prev->qualifiedName();
+  auto prev_name = m_prev_scope->qualifiedName();
   auto result = prev_name.empty() ? base : base.prependScope(prev_name);
   return result;
 }
@@ -291,8 +285,7 @@ void Scope::setGlobal(std::weak_ptr<Scope> scope) noexcept { m_global = scope; }
       m_name.has_value() ? name.prependScope(m_name.value()) : name;
 
   // qualify the name with the previous scope
-  auto prev = m_prev_scope.lock();
-  return prev->qualifyName(base);
+  return m_prev_scope->qualifyName(base);
 }
 
 auto Scope::bindName(Identifier name, Attributes attributes, type::Ptr type,
@@ -310,7 +303,7 @@ auto Scope::partialBindName(Identifier name, Attributes attributes,
 }
 
 auto Scope::bindScope(Identifier name) -> ScopeTable::Entry {
-  return m_scopes->emplace(name, weak_from_this());
+  return m_scopes->emplace(name, this);
 }
 
 void Scope::unbindScope(Identifier name) { return m_scopes->unbind(name); }
@@ -375,12 +368,11 @@ void Scope::unbindScope(Identifier name) { return m_scopes->unbind(name); }
 auto Scope::lookupBinding(Identifier name) noexcept
     -> Result<Bindings::Binding> {
   if (name.isGloballyQualified()) {
-    auto global_scope = m_global.lock();
-    return global_scope->qualifiedLookup(name.restScope());
+    return m_global->qualifiedLookup(name.restScope());
   }
 
   // #NOTE: even though qualified lookup also checks name.isQualified
-  // we still have to branch here to allow local names to resolve to 
+  // we still have to branch here to allow local names to resolve to
   // private variables.
   auto found_locally =
       name.isQualified() ? qualifiedLookup(name) : lookupLocalBinding(name);
@@ -392,8 +384,7 @@ auto Scope::lookupBinding(Identifier name) noexcept
   if (isGlobal())
     return found_locally;
   // search the higher scope for the name.
-  auto scope = m_prev_scope.lock();
-  return scope->lookupBinding(name);
+  return m_prev_scope->lookupBinding(name);
 }
 
 } // namespace mint

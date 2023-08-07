@@ -168,7 +168,7 @@ auto Environment::repl(bool do_print) noexcept -> int {
     if (do_print)
       *m_output << ast << " : " << type << " => " << value << "\n";
 
-    addAstToModule(std::move(ast));
+    addAstToModule(ast);
   }
 
   return EXIT_SUCCESS;
@@ -245,27 +245,29 @@ auto Environment::exchangeLocalScope(std::shared_ptr<Scope> scope) noexcept
   return old_local;
 }
 
-void Environment::pushScope() noexcept {
-  m_local_scope = Scope::createScope({}, m_local_scope);
+shared_ptr<Scope> Environment::pushScope() noexcept {
+  return exchangeLocalScope(Scope::createScope({}, m_local_scope.get()));
 }
 
-void Environment::pushScope(Identifier name) noexcept {
+shared_ptr<Scope> Environment::pushScope(Identifier name) noexcept {
   auto found = m_local_scope->lookupScope(name);
-  if (found) {
-    m_local_scope = found.value().ptr();
-    return;
+  if (found) { 
+    return found.value().ptr();
   }
 
   auto new_scope = m_local_scope->bindScope(name);
   m_local_scope = new_scope.ptr();
 }
 
-void Environment::popScope() noexcept {
+shared_ptr<Scope> Environment::popScope() noexcept {
   if (m_local_scope->isGlobal()) {
     return; // cannot traverse past global scope
   }
 
-  m_local_scope = m_local_scope->getPrevScope();
+  // #TODO: somehow m_local_scope->m_prev_scope 
+  // points to a corrupted previous scope.
+  // not nullptr, but a random address.
+  m_local_scope = m_local_scope->prevScope();
 }
 
 //**** "module" interface ****/
