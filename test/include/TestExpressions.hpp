@@ -126,8 +126,16 @@ constexpr inline auto getAllTestCode() noexcept {
       {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "B::C::x;", "13"},
       {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "B::C::a;", "14"},
       {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "B::C::y;", "14"},
+      {"let f = \\ => 1;", "f();", "1"},
       {"let f = \\a:Integer => a;", "f(1);", "1"},
-      {"let f = \\a:Integer, b:Integer => a + b;", "f(1,2)", "3"},
+      {"let f = \\a:Integer, b:Integer => a + b;", "f(1,2);", "3"},
+      {"let a = 2; let b = 3; \nlet f = \\a: Integer, b:Integer => a + b;",
+       "f(a,b);", "5"},
+      {"let f = \\a:Integer => g(a);\nlet g = \\a: Integer => a + 2;", "f(2);",
+       "4"},
+      {"let f = \\a:Integer => B::g(a);\n module B { public let g = \\a: "
+       "Integer => a + 2; }",
+       "f(3);", "5"},
   };
 
   return std::to_array(expressions);
