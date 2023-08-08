@@ -29,17 +29,31 @@ public:
   using const_reference = T const &;
 
 private:
+  std::size_t m_capacity;
   std::size_t m_size;
   std::unique_ptr<T[]> m_array;
 
 public:
-  Array() noexcept : m_size(0), m_array() {}
+  Array() noexcept : m_size(0), m_capacity(0), m_array() {}
   Array(std::size_t size) noexcept
-      : m_size(size), m_array(std::make_unique_for_overwrite<T[]>(size)) {}
+      : m_size(0), m_capacity(size),
+        m_array(std::make_unique_for_overwrite<T[]>(size)) {}
   ~Array() noexcept = default;
-  Array(Array const &other) noexcept = delete;
+  Array(Array const &other) noexcept
+      : m_size(other.m_size), m_capacity(other.m_capacity),
+        m_array(std::make_unique_for_overwrite<T[]>(other.size())) {
+    std::uninitialized_move_n((other.begin(), other.size(), &m_array[0]));
+  }
   Array(Array &&other) noexcept = default;
-  auto operator=(Array const &other) noexcept -> Array & = delete;
+  auto operator=(Array const &other) noexcept -> Array & {
+    if (this == &other)
+      return *this;
+
+    m_size = other.m_size;
+    m_capacity = m_size;
+    m_array = std::make_unique_for_overwrite<T[]>(other.size());
+    std::uninitialized_move_n(other.begin(), other.size(), &m_array[0]);
+  }
   auto operator=(Array &&other) noexcept -> Array & = default;
 
   void resize(std::size_t size) noexcept {
@@ -51,6 +65,7 @@ public:
     } else {
       std::uninitialized_move_n((&old_array[0]), m_size, (&m_array[0]));
     }
+    m_capacity = size;
   }
 
   void swap(Array &other) noexcept {
@@ -60,6 +75,9 @@ public:
 
   [[nodiscard]] auto empty() const noexcept -> bool { return m_size == 0; }
   [[nodiscard]] auto size() const noexcept -> std::size_t { return m_size; }
+  [[nodiscard]] auto capacity() const noexcept -> std::size_t {
+    return m_capacity;
+  }
 
   [[nodiscard]] auto begin() noexcept -> iterator { return &m_array[0]; }
   [[nodiscard]] auto end() noexcept -> iterator { return &m_array[m_size]; }
@@ -83,6 +101,15 @@ public:
       -> const_reference {
     MINT_ASSERT(index < m_size);
     return m_array[index];
+  }
+
+  template <class... Args>
+  [[nodiscard]] reference emplace_back(Args &&...args) {
+    if (m_size == m_capacity) {
+      resize(m_capacity + 1 * 2);
+    }
+
+    
   }
 };
 } // namespace mint

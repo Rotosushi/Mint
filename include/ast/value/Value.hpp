@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-
 #include "ast/Ast.hpp"
+#include "ir/detail/Parameter.hpp"
 
 namespace mint {
 namespace ast {
@@ -27,6 +27,13 @@ protected:
   Value(Ast::Kind kind, Attributes attributes, Location location) noexcept
       : Ast{kind, attributes, location} {}
 
+  [[nodiscard]] virtual Ptr clone_impl() const noexcept = 0;
+  // #NOTE: we don't want to call flatten_impl on values,
+  // because values are associated with a parameter.
+  virtual void flatten(ir::Mir &ir) const noexcept = 0;
+  virtual void
+  flatten_immediate(ir::detail::Parameter &parameter) const noexcept = 0;
+
 public:
   ~Value() noexcept override = default;
 
@@ -35,7 +42,11 @@ public:
            (ast->kind() <= Ast::Kind::EndValue);
   }
 
-  virtual Ptr clone_impl() const noexcept = 0;
+  auto isImmediate() const noexcept -> bool {
+    return (kind() == Ast::Kind::Nil) || (kind() == Ast::Kind::Boolean) ||
+           (kind() == Ast::Kind::Integer) || (kind() == Ast::Kind::Variable);
+  }
+
   virtual void print(std::ostream &out) const noexcept = 0;
 
   std::optional<Identifier> getDefinitionName() const noexcept override {

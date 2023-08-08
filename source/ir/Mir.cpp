@@ -45,6 +45,8 @@ auto Mir::operator=(Mir &&other) noexcept -> Mir & {
 
 auto Mir::empty() const noexcept -> bool { return m_ir.empty(); }
 auto Mir::size() const noexcept -> std::size_t { return m_ir.size(); }
+
+auto Mir::index() const noexcept -> detail::Index { return m_index; }
 auto Mir::ir() noexcept -> Ir & { return m_ir; }
 auto Mir::ir() const noexcept -> Ir const & { return m_ir; }
 
@@ -54,6 +56,7 @@ auto Mir::begin() const noexcept -> const_iterator { return m_ir.begin(); }
 auto Mir::end() const noexcept -> const_iterator { return m_ir.end(); }
 
 template <class... Args> Mir::reference Mir::emplace_back(Args &&...args) {
+  m_index += 1;
   return m_ir.emplace_back(std::forward<Args>(args)...);
 }
 } // namespace ir

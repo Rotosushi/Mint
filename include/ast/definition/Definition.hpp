@@ -90,6 +90,7 @@ public:
   checkUseBeforeDef(Error::UseBeforeDef &ubd) const noexcept = 0;
 
   virtual Ptr clone_impl() const noexcept = 0;
+  [[nodiscard]] virtual void flatten_impl(ir::Mir::Ir &ir) const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
 
   virtual Result<type::Ptr> typecheck(Environment &env) const noexcept = 0;

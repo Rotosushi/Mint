@@ -39,6 +39,7 @@ public:
   }
 
   virtual Ptr clone_impl() const noexcept = 0;
+  [[nodiscard]] virtual void flatten_impl(ir::Mir::Ir &ir) const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
 
   std::optional<Identifier> getDefinitionName() const noexcept override {

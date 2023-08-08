@@ -20,6 +20,7 @@
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
 #include "adt/Result.hpp"
+#include "ir/Mir.hpp"
 #include "scan/Location.hpp"
 #include "type/Type.hpp"
 #include "utility/Assert.hpp"
@@ -94,6 +95,7 @@ protected:
   auto location(Location location) noexcept { return m_location = location; }
 
   [[nodiscard]] virtual Ptr clone_impl() const noexcept = 0;
+  virtual void flatten_impl(ir::Mir &ir) const noexcept = 0;
 
 public:
   virtual ~Ast() noexcept = default;
@@ -146,6 +148,12 @@ public:
   evaluate(Environment &env) noexcept = 0;
   [[nodiscard]] virtual Result<llvm::Value *>
   codegen(Environment &env) noexcept = 0;
+
+  [[nodiscard]] ir::Mir flatten() const noexcept {
+    ir::Mir result;
+    flatten_impl(result);
+    return result;
+  }
 };
 
 inline auto operator<<(std::ostream &out, ast::Ptr const &ast) noexcept

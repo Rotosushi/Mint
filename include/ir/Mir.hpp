@@ -15,13 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <vector>
+#include "adt/Array.hpp"
+#include "ir/detail/Index.hpp"
 
 namespace mint {
 namespace ir {
 class Instruction;
 
-// #TODO: write a parser for ir, as well as a print
+// #TODO: maybe write a parser for ir, as well as a print
 // function, such that we can emit and read back the IR
 // to a file. this might come in handy for parallel
 // compilation.
@@ -31,26 +32,19 @@ class Instruction;
 // just in case the programmer specified an Ast infix
 // expression which broke precedence rules with one or
 // more parenthesis. (theoretically speaking only if
-// the parameter is itself another binop or unop I suppose)
-
-// #NOTE: since an instruction is representing a 'flattened'
-// AST, an instruction is only valid with respect to the
-// given vector it is currently residing in, thus there
-// is no reason why a single instruction should be copied
-// or moved. only whole vectors can be validly copied or
-// moved. however, to allow for an array to be copied or
-// moved, it's elements must be copyable or movable.
-// so we simply have to accept an unenforcable invariant
-// to the Mir class.
+// the parameter is itself another binop or unop,
+// but that would mean looking at the Instruction referenced
+// by the parameter, not just the parameter.)
 
 class Mir {
 public:
-  using Ir = std::vector<Instruction>;
+  using Ir = Array<Instruction>;
   using iterator = Ir::iterator;
   using const_iterator = Ir::const_iterator;
   using reference = Ir::reference;
 
 private:
+  detail::Index m_index;
   Ir m_ir;
 
 public:
@@ -64,6 +58,7 @@ public:
   [[nodiscard]] auto empty() const noexcept -> bool;
   [[nodiscard]] auto size() const noexcept -> std::size_t;
 
+  [[nodiscard]] auto index() const noexcept -> detail::Index;
   [[nodiscard]] auto ir() noexcept -> Ir &;
   [[nodiscard]] auto ir() const noexcept -> Ir const &;
 

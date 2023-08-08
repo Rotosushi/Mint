@@ -76,6 +76,7 @@ public:
   checkUseBeforeDef(Error::UseBeforeDef &ubd) const noexcept override;
 
   Ptr clone_impl() const noexcept override;
+  [[nodiscard]] void flatten_impl(ir::Mir::Ir &ir) const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

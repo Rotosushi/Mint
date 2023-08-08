@@ -35,6 +35,9 @@ public:
   auto value() const noexcept -> bool;
 
   Ptr clone_impl() const noexcept override;
+  void flatten(ir::Mir &ir) const noexcept override;
+  void
+  flatten_immediate(ir::detail::Parameter &parameter) const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

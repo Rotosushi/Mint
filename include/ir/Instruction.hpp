@@ -20,7 +20,7 @@
 namespace mint {
 namespace ir {
 // #TODO: perhaps 'Instruction' isn't the best name?
-// the instention is simply the variant representing
+// the intention is simply the variant representing
 // one of the available actions within the IR, that is
 // an element of the Array representing a given Ast.
 // Node? Element?
@@ -28,7 +28,8 @@ namespace ir {
 // flattened Ast. but maybe Mir fits better here? idk
 class Instruction {
 public:
-  using Variant = std::variant<Let, Binop, Call, Unop, Import, Module, Lambda>;
+  using Variant = std::variant<detail::Scalar, Let, Binop, Call, Unop, Import,
+                               Module, Lambda>;
 
 private:
   Variant m_variant;
@@ -38,6 +39,17 @@ public:
   template <class T, class... Args>
   Instruction(std::in_place_type_t<T> type, Args &&...args) noexcept
       : m_variant(type, std::forward<Args>(args)...) {}
+  // #NOTE: since an instruction is representing a 'flattened'
+  // AST, and there is no way to store pointers consistently
+  // within a std::vector. an instruction can only by valid
+  // with respect to the  given vector it is currently
+  // residing in. Thus there is no reason why a single
+  // instruction should be copied or moved.
+  // Only whole vectors can be validly copied or
+  // moved. however, to allow for an array to be copied or
+  // moved, it's elements must be copyable or movable.
+  // so we simply have to accept an un-enforcable invariant
+  // to the Mir class.
   Instruction(Instruction const &other) noexcept = default;
   Instruction(Instruction &&other) noexcept = default;
   auto operator=(Instruction const &other) noexcept -> Instruction & = default;

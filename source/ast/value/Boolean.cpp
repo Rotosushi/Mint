@@ -17,6 +17,8 @@
 #include "ast/value/Boolean.hpp"
 #include "adt/Environment.hpp"
 
+#include "ir/Instruction.hpp"
+
 namespace mint {
 namespace ast {
 Boolean::Boolean(Attributes attributes, Location location, bool value) noexcept
@@ -40,6 +42,15 @@ void Boolean::print(std::ostream &out) const noexcept {
 
 Ptr Boolean::clone_impl() const noexcept {
   return create(attributes(), location(), m_value);
+}
+
+void Boolean::flatten(ir::Mir &ir) const noexcept {
+  ir.emplace_back(std::in_place_type<detail::Scalar>, m_value);
+}
+
+void Boolean::flatten_immediate(
+    ir::detail::Parameter &parameter) const noexcept {
+  parameter = {m_value};
 }
 
 Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {
