@@ -31,4 +31,13 @@ store Lambdas (and perhaps by exension all other bound values) directly
 within the symbol table itself. (iff they reside "on the stack" as it were.)
 Immediates can still be immediate. but values which are bound in a scope 
 must be accessable from other scopes. something which is impossible between 
-instructions in two Mirs.
+instructions in two Mirs. and so must be accomplished by storing those 
+values within the symbol table directly.
+
+another hitch is how do we handle use-before-def?
+I suppose the same way, the Mir itself is stored within 
+the UBD table, then since typecheck, evaluate, and codegen 
+all work on the Mir they can work on the Mir held within the 
+UBD table.
+
+

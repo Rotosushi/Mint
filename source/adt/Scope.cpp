@@ -261,6 +261,15 @@ std::shared_ptr<Scope> Scope::popScope() noexcept {
   return m_prev_scope->shared_from_this();
 }
 
+[[nodiscard]] auto Scope::nearestNamedScope() noexcept
+    -> std::shared_ptr<Scope> {
+  if (m_name.has_value() || isGlobal()) {
+    return shared_from_this();
+  }
+
+  return m_prev_scope->nearestNamedScope();
+}
+
 [[nodiscard]] auto Scope::bindingsEmpty() const noexcept -> bool {
   return m_bindings->empty();
 }

@@ -99,6 +99,7 @@ public:
                             Parser const &parser) const noexcept;
 
   auto localScope() noexcept -> std::shared_ptr<Scope>;
+  auto nearestNamedScope() noexcept -> std::shared_ptr<Scope>;
   auto exchangeLocalScope(std::shared_ptr<Scope> scope) noexcept
       -> std::shared_ptr<Scope>;
 
@@ -137,6 +138,8 @@ public:
 
   //**** Identifier Set Interface ****//
   auto getIdentifier(std::string_view name) noexcept -> Identifier;
+
+  auto getLambdaName() noexcept -> Identifier;
 
   //**** String Set Interface ****//
   auto internString(std::string_view string) noexcept -> std::string_view;
@@ -191,8 +194,10 @@ public:
   auto getIntegerType() noexcept -> type::Integer const *;
   auto getNilType() noexcept -> type::Nil const *;
 
-  auto getLambdaType(type::Ptr result_type,
-                     type::Lambda::Arguments argument_types) noexcept
+  auto getFunctionType(type::Ptr result_type,
+                       type::Function::Arguments argument_types) noexcept
+      -> type::Function const *;
+  auto getLambdaType(type::Function const *function_type) noexcept
       -> type::Lambda const *;
 
   //**** LLVM interface ****//
@@ -227,6 +232,8 @@ public:
   auto getLLVMFunctionType(llvm::Type *result_type,
                            llvm::ArrayRef<llvm::Type *> argument_types) noexcept
       -> llvm::FunctionType *;
+
+  auto getLLVMPointerType() noexcept -> llvm::PointerType *;
 
   // values
   auto getLLVMNil() noexcept -> llvm::ConstantInt *;
@@ -305,6 +312,12 @@ public:
 
   // function instructions
   auto createLLVMCall(llvm::Function *callee,
+                      llvm::ArrayRef<llvm::Value *> arguments,
+                      llvm::Twine const &name = "call",
+                      llvm::MDNode *fp_math_tag = nullptr) noexcept
+      -> llvm::CallInst *;
+
+  auto createLLVMCall(llvm::FunctionType *type, llvm::Value *value,
                       llvm::ArrayRef<llvm::Value *> arguments,
                       llvm::Twine const &name = "call",
                       llvm::MDNode *fp_math_tag = nullptr) noexcept

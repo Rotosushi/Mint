@@ -169,6 +169,10 @@ public:
 
   [[nodiscard]] auto isGlobal() const noexcept -> bool;
   [[nodiscard]] auto prevScope() const noexcept -> std::shared_ptr<Scope>;
+  // #NOTE: this walks up the scope tree until it finds a
+  // scope with a name, then returns a shared_ptr to that
+  // scope.
+  [[nodiscard]] auto nearestNamedScope() noexcept -> std::shared_ptr<Scope>;
   [[nodiscard]] auto bindingsEmpty() const noexcept -> bool;
   [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
   [[nodiscard]] auto hasName() const noexcept -> bool;

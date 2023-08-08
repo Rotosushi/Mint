@@ -49,13 +49,6 @@ auto Lambda::classof(Ast const *ast) noexcept -> bool {
   return m_body;
 }
 
-auto Lambda::getLambdaName(IdentifierSet *set) noexcept -> Identifier {
-  static std::size_t count = 0U;
-  std::string name{"l"};
-  name += std::to_string(count++);
-  return set->emplace(std::move(name));
-}
-
 Ptr Lambda::clone_impl() const noexcept {
   return create(attributes(), location(), m_arguments, m_result_type,
                 m_body->clone());
@@ -86,7 +79,7 @@ void Lambda::print(std::ostream &out) const noexcept {
 // deduced from the type of the body.
 Result<type::Ptr> Lambda::typecheck(Environment &env) const noexcept {
   env.pushScope();
-  type::Lambda::Arguments argument_types;
+  type::Function::Arguments argument_types;
 
   for (auto &argument : m_arguments) {
     argument_types.emplace_back(argument.type);
@@ -99,7 +92,21 @@ Result<type::Ptr> Lambda::typecheck(Environment &env) const noexcept {
     return result;
   }
   auto result_type = result.value();
-  auto lambda_type = env.getLambdaType(result_type, std::move(argument_types));
+
+  // if the user specified a result_type, compare it against
+  // result the type of the body.
+  if (m_result_type != nullptr) {
+    if (!result_type->equals(m_result_type)) {
+      std::stringstream message;
+      message << "Expected type [" << m_result_type << "] Computed type ["
+              << result_type << "]";
+      return {Error::Kind::ResultTypeMismatch, location(), message.view()};
+    }
+  }
+
+  auto function_type =
+      env.getFunctionType(result_type, std::move(argument_types));
+  auto lambda_type = env.getLambdaType(function_type);
 
   env.popScope();
   return cachedType(lambda_type);
@@ -128,9 +135,11 @@ Result<llvm::Value *> Lambda::codegen(Environment &env) noexcept {
   MINT_ASSERT(cachedTypeOrAssert());
   env.pushScope();
 
+  auto function_type =
+      llvm::cast<type::Lambda>(cachedTypeOrAssert())->function_type();
   auto llvm_function_type =
-      llvm::cast<llvm::FunctionType>(cachedTypeOrAssert()->toLLVM(env));
-  auto llvm_lambda_name = getLambdaName(m_arguments.front().name.getSet());
+      llvm::cast<llvm::FunctionType>(function_type->toLLVM(env));
+  auto llvm_lambda_name = env.getLambdaName();
   auto function_callee =
       env.getOrInsertFunction(llvm_lambda_name, llvm_function_type);
   auto llvm_function = llvm::cast<llvm::Function>(function_callee.getCallee());

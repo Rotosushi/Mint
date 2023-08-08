@@ -35,17 +35,14 @@ and, once we have functions, they serve as the entry point to the
 program itself, meaning they allow the program to generate executables.
 instead of just llvm-ir.
 
-theoretically they effect the other expressions (binop, unop), however 
-there is not a way to construct a runtime only variable yet. so there is 
-no way of spelling out an expression which cannot be resolved at comptime. (yet)
-
 they come in two parts: function definitions, and call expressions. 
 further, it might be a good idea to add a third component. Blocks.
 which form both the function body. and anonymous local scopes themselves.
 
 okay, so I've decided to implement captureless lambdas first, these are 
-function objects, which can be represented by a function pointer.
-
+function objects, which can be represented by a function pointer. These 
+have more functionality than a top level function, and so are more useful 
+a feature to have early.
 
 
 so, the TODO list:

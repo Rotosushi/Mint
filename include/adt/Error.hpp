@@ -79,6 +79,9 @@ public:
     NameAlreadyBoundInScope,
     NameIsPrivateInScope,
 
+    // Function Errors
+    ResultTypeMismatch,
+
     // Call errors
     CannotCallObject,
     ArgumentTypeMismatch,

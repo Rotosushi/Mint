@@ -39,11 +39,21 @@ class TypeInterner {
     }
   };
 
+  class LambdaTypes {
+    std::forward_list<type::Lambda> set;
+
+  public:
+    type::Lambda const *emplace(type::Function const *function_type) noexcept {
+      return &set.emplace_front(function_type);
+    }
+  };
+
   type::Boolean boolean_type;
   type::Integer integer_type;
   type::Nil nil_type;
 
-  Composite<type::Lambda> lamdba_types;
+  Composite<type::Function> function_types;
+  LambdaTypes lamdba_types;
 
 public:
   auto getBooleanType() const noexcept -> type::Boolean const * {
@@ -54,10 +64,15 @@ public:
   }
   auto getNilType() const noexcept -> type::Nil const * { return &nil_type; }
 
-  auto getLambdaType(type::Ptr result_type,
-                     type::Lambda::Arguments arguments) noexcept
+  auto getFunctionType(type::Ptr result_type,
+                       type::Function::Arguments arguments) noexcept
+      -> type::Function const * {
+    return function_types.emplace(result_type, arguments);
+  }
+
+  auto getLambdaType(type::Function const *function_type) noexcept
       -> type::Lambda const * {
-    return lamdba_types.emplace(result_type, arguments);
+    return lamdba_types.emplace(function_type);
   }
 };
 } // namespace mint

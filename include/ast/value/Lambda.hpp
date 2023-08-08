@@ -35,8 +35,6 @@ private:
   type::Ptr m_result_type;
   ast::Ptr m_body;
 
-  static auto getLambdaName(IdentifierSet *set) noexcept -> Identifier;
-
 public:
   Lambda(Attributes attributes, Location location, Arguments arguments,
          type::Ptr result_type, ast::Ptr body) noexcept;

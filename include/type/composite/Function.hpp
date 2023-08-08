@@ -15,20 +15,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "type/composite/Function.hpp"
+#include "type/Type.hpp"
 
 namespace mint {
 namespace type {
-class Lambda : public Type {
-  type::Function const *m_function_type;
+class Function : public Type {
+public:
+  using Arguments = std::vector<type::Ptr>;
+
+private:
+  type::Ptr m_result_type;
+  Arguments m_arguments;
 
 public:
-  Lambda(type::Function const *function_type) noexcept;
-  ~Lambda() noexcept override = default;
+  Function(type::Ptr result_type) noexcept;
+  Function(type::Ptr result_type, Arguments arguments) noexcept;
+  ~Function() noexcept override = default;
 
   static auto classof(type::Ptr type) noexcept -> bool;
 
-  [[nodiscard]] auto function_type() const noexcept -> type::Function const *;
+  [[nodiscard]] auto result_type() const noexcept -> type::Ptr;
+  [[nodiscard]] auto arguments() const noexcept -> Arguments const &;
 
   [[nodiscard]] bool equals(type::Ptr type) const noexcept override;
   void print(std::ostream &out) const noexcept override;

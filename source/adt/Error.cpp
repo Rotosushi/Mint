@@ -75,6 +75,9 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
   case Error::Kind::NameIsPrivateInScope:
     return "Name is private and unaccessable from this scope";
 
+  case Error::Kind::ResultTypeMismatch:
+    return "Result Type annotation doesn't match computed type";
+
   case Error::Kind::CannotCallObject:
     return "Cannot Call object";
   case Error::Kind::ArgumentTypeMismatch:

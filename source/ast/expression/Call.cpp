@@ -73,6 +73,9 @@ Result<type::Ptr> Call::typecheck(Environment &env) const noexcept {
   if (!callee_result)
     return callee_result;
 
+  // #NOTE: lambda's are the only callable in the language
+  // currently. this will be made more robust in the event
+  // that multiple types are callable.
   auto callee_type = llvm::dyn_cast<type::Lambda>(callee_result.value());
   if (callee_type == nullptr) {
     std::stringstream message;
@@ -80,8 +83,9 @@ Result<type::Ptr> Call::typecheck(Environment &env) const noexcept {
     return {Error::Kind::CannotCallObject, m_callee->location(),
             message.view()};
   }
+  auto function_type = callee_type->function_type();
 
-  auto &callee_arguments = callee_type->arguments();
+  auto &callee_arguments = function_type->arguments();
   if (callee_arguments.size() != m_arguments.size()) {
     std::stringstream message;
     message << "Expected [" << m_arguments.size() << "] arguments, received ["
@@ -108,7 +112,7 @@ Result<type::Ptr> Call::typecheck(Environment &env) const noexcept {
     ++callee_cursor;
   }
 
-  return cachedType(callee_type->result_type());
+  return cachedType(function_type->result_type());
 }
 
 // #NOTE: evaluate the callee down to a lambda,
@@ -180,13 +184,6 @@ Result<llvm::Value *> Call::codegen(Environment &env) noexcept {
   if (!callee_result)
     return callee_result;
 
-  // #NOTE: we assert here, because we assume that the callee is
-  // a lambda, (or a variable bound to a lambda), and a lambda
-  // is represented by a llvm::Function. (because, for now, all
-  // lambdas are captureless.)
-  auto function = llvm::dyn_cast<llvm::Function>(callee_result.value());
-  MINT_ASSERT(function != nullptr);
-
   std::vector<llvm::Value *> actual_arguments;
   actual_arguments.reserve(m_arguments.size());
   for (auto &argument : m_arguments) {
@@ -199,7 +196,18 @@ Result<llvm::Value *> Call::codegen(Environment &env) noexcept {
     actual_arguments.emplace_back(result.value());
   }
 
-  return env.createLLVMCall(function, actual_arguments);
+  if (auto function = llvm::dyn_cast<llvm::Function>(callee_result.value());
+      function != nullptr) {
+    return env.createLLVMCall(function, actual_arguments);
+  } else {
+    // #NOTE: we assume this call is going through a function pointer.
+    auto lambda_type = llvm::cast<type::Lambda>(m_callee->cachedTypeOrAssert());
+    auto llvm_function_type = llvm::cast<llvm::FunctionType>(
+        lambda_type->function_type()->toLLVM(env));
+    auto llvm_function_pointer = callee_result.value();
+    return env.createLLVMCall(llvm_function_type, llvm_function_pointer,
+                              actual_arguments);
+  }
 }
 } // namespace ast
 } // namespace mint

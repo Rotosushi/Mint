@@ -59,8 +59,13 @@ auto Variable::handleUseBeforeDef(Environment &env) const noexcept -> Error {
   auto def = env.qualifyName(found.value());
   auto undef = m_name;
 
+  // we need to compute the scope that the definition resides
+  // within here. as when we use the local scope within a
+  // lambda evaluation context, we grab the anonymous scope.
+  // this means that the let expression binding the lambda
+  // unintentionally binds the lambda within it's own local scope.
   return {Error::Kind::UseBeforeDef, UseBeforeDefNames{def, undef},
-          env.localScope()};
+          env.nearestNamedScope()};
 }
 
 /*
@@ -117,6 +122,15 @@ Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {
 
     abort("Global access without an InsertPoint");
   } else {
+    // #NOTE: immediate values cannot be loaded,
+    // as a load expects a pointer type.
+    // immediate values are llvm::Argument and llvm::Constant.
+    // as far as I can tell.
+    if ((llvm::dyn_cast<llvm::Argument>(value) != nullptr) ||
+        (llvm::dyn_cast<llvm::Constant>(value) != nullptr)) {
+      return value;
+    }
+
     // #NOTE: #RULE runtime variables are stored
     // in memory so we need to load the value,
     // such that it can be used in expressions.

@@ -238,6 +238,10 @@ auto Environment::localScope() noexcept -> std::shared_ptr<Scope> {
   return m_local_scope;
 }
 
+auto Environment::nearestNamedScope() noexcept -> std::shared_ptr<Scope> {
+  return m_local_scope->nearestNamedScope();
+}
+
 auto Environment::exchangeLocalScope(std::shared_ptr<Scope> scope) noexcept
     -> std::shared_ptr<Scope> {
   auto old_local = m_local_scope;
@@ -276,8 +280,16 @@ auto Environment::fileSearch(fs::path file) noexcept
   return m_directory_searcher.search(std::move(file));
 }
 
+//**** Identifier Set Interface ****//
 auto Environment::getIdentifier(std::string_view name) noexcept -> Identifier {
   return m_identifier_set.emplace(name);
+}
+
+auto Environment::getLambdaName() noexcept -> Identifier {
+  static std::size_t count = 0U;
+  std::string name{"l"};
+  name += std::to_string(count++);
+  return m_identifier_set.emplace(std::move(name));
 }
 
 //**** String Set Interface ****//
@@ -379,10 +391,16 @@ auto Environment::getNilType() noexcept -> type::Nil const * {
   return m_type_interner.getNilType();
 }
 
-auto Environment::getLambdaType(type::Ptr result_type,
-                                type::Lambda::Arguments argument_types) noexcept
+auto Environment::getFunctionType(
+    type::Ptr result_type, type::Function::Arguments argument_types) noexcept
+    -> type::Function const * {
+  return m_type_interner.getFunctionType(result_type,
+                                         std::move(argument_types));
+}
+
+auto Environment::getLambdaType(type::Function const *function_type) noexcept
     -> type::Lambda const * {
-  return m_type_interner.getLambdaType(result_type, std::move(argument_types));
+  return m_type_interner.getLambdaType(function_type);
 }
 
 /**** LLVM interface ****/
@@ -425,7 +443,7 @@ auto Environment::createBasicBlock(llvm::Function *function,
 }
 
 auto Environment::hasInsertionPoint() const noexcept -> bool {
-  return m_llvm_ir_builder->GetInsertBlock() == nullptr;
+  return m_llvm_ir_builder->GetInsertBlock() != nullptr;
 }
 
 auto Environment::exchangeInsertionPoint(InsertionPoint point) noexcept
@@ -444,8 +462,12 @@ auto Environment::exchangeInsertionPoint(InsertionPoint point) noexcept
 auto Environment::getOrInsertGlobal(std::string_view name,
                                     llvm::Type *type) noexcept
     -> llvm::GlobalVariable * {
-  return llvm::cast<llvm::GlobalVariable>(
-      m_llvm_module->getOrInsertGlobal(name, type));
+  llvm::Constant *global =
+      type->isFunctionTy()
+          ? m_llvm_module->getOrInsertGlobal(name, getLLVMPointerType())
+          : m_llvm_module->getOrInsertGlobal(name, type);
+
+  return llvm::cast<llvm::GlobalVariable>(global);
 }
 
 // #TODO: add llvm attributes to the function
@@ -475,6 +497,10 @@ auto Environment::getLLVMFunctionType(
     -> llvm::FunctionType * {
   return llvm::FunctionType::get(result_type, argument_types,
                                  /* isVarArg = */ false);
+}
+
+auto Environment::getLLVMPointerType() noexcept -> llvm::PointerType * {
+  return m_llvm_ir_builder->getPtrTy();
 }
 
 // values
@@ -606,6 +632,15 @@ auto Environment::createLLVMCall(llvm::Function *callee,
                                  llvm::MDNode *fp_math_tag) noexcept
     -> llvm::CallInst * {
   return m_llvm_ir_builder->CreateCall(callee, arguments, name, fp_math_tag);
+}
+
+auto Environment::createLLVMCall(llvm::FunctionType *type, llvm::Value *value,
+                                 llvm::ArrayRef<llvm::Value *> arguments,
+                                 llvm::Twine const &name,
+                                 llvm::MDNode *fp_math_tag) noexcept
+    -> llvm::CallInst * {
+  return m_llvm_ir_builder->CreateCall(type, value, arguments, name,
+                                       fp_math_tag);
 }
 
 auto Environment::createLLVMReturn(llvm::Value *value) noexcept

@@ -629,7 +629,7 @@ auto Parser::parseFunctionType() noexcept -> Result<type::Ptr> {
   if (!result)
     return result;
 
-  return env->getLambdaType(result.value(), std::move(arguments));
+  return env->getFunctionType(result.value(), std::move(arguments));
 }
 
 } // namespace mint
