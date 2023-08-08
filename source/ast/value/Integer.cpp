@@ -40,6 +40,11 @@ Ptr Integer::clone_impl() const noexcept {
   return create(attributes(), location(), m_value);
 }
 
+ir::detail::Parameter
+Integer::flatten_impl([[maybe_unused]] ir::Mir &ir) const noexcept {
+  return {m_value};
+}
+
 Result<type::Ptr> Integer::typecheck(Environment &env) const noexcept {
   return cachedType(env.getIntegerType());
 }

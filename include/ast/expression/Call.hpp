@@ -29,6 +29,10 @@ private:
   ast::Ptr m_callee;
   Arguments m_arguments;
 
+protected:
+  Ptr clone_impl() const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
+
 public:
   Call(Attributes attributes, Location location, ast::Ptr callee,
        Arguments arguments) noexcept;
@@ -38,8 +42,6 @@ public:
                      Arguments arguments) noexcept -> ast::Ptr;
   static auto classof(Ast const *ast) noexcept -> bool;
 
-  Ptr clone_impl() const noexcept override;
-  [[nodiscard]] void flatten_impl(ir::Mir::Ir &ir) const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

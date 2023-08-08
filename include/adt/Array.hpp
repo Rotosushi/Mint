@@ -109,7 +109,9 @@ public:
       resize(m_capacity + 1 * 2);
     }
 
-    
+    T &element = &m_array[m_size++];
+    element = T{std::forward<Args>(args)...};
+    return element;
   }
 };
 } // namespace mint

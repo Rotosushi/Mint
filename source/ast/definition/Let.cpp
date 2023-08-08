@@ -21,6 +21,7 @@
 #include "ast/value/Nil.hpp"
 #include "codegen/Allocate.hpp"
 #include "codegen/LLVMUtility.hpp"
+#include "ir/Instruction.hpp"
 
 namespace mint {
 namespace ast {
@@ -57,6 +58,13 @@ Let::checkUseBeforeDef(Error::UseBeforeDef &ubd) const noexcept {
 
 Ptr Let::clone_impl() const noexcept {
   return create(attributes(), location(), annotation(), name(), m_ast->clone());
+}
+
+ir::detail::Parameter Let::flatten_impl(ir::Mir &ir) const noexcept {
+  auto pair = ir.emplace_back<ir::Let>(name(), ir::detail::Parameter{});
+  auto &let = pair.second->let();
+  let.parameter() = m_ast->flatten_impl(ir);
+  return pair.first;
 }
 
 void Let::print(std::ostream &out) const noexcept {

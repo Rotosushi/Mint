@@ -29,6 +29,9 @@ protected:
   Expression(Ast::Kind kind, Attributes attributes, Location location) noexcept
       : Ast{kind, attributes, location} {}
 
+  [[nodiscard]] virtual Ptr clone_impl() const noexcept = 0;
+  virtual ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept = 0;
+
 public:
   ~Expression() noexcept override = default;
 
@@ -37,8 +40,6 @@ public:
            (ast->kind() <= Ast::Kind::EndExpression);
   }
 
-  virtual Ptr clone_impl() const noexcept = 0;
-  [[nodiscard]] virtual void flatten_impl(ir::Mir::Ir &ir) const noexcept = 0;
   virtual void print(std::ostream &out) const noexcept = 0;
 
   std::optional<Identifier> getDefinitionName() const noexcept override {

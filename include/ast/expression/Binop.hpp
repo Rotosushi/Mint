@@ -18,6 +18,7 @@
 
 #include "ast/expression/Expression.hpp"
 #include "scan/Token.hpp"
+#include "ir/expression/Binop.hpp"
 
 namespace mint {
 namespace ast {
@@ -25,6 +26,12 @@ class Binop : public Expression {
   Token m_op;
   Ptr m_left;
   Ptr m_right;
+
+protected:
+  Ptr clone_impl() const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
+
+  static ir::Binop::Op convert(Token op) noexcept;
 
 public:
   Binop(Attributes attributes, Location location, Token op, Ptr left,
@@ -37,8 +44,6 @@ public:
 
   static auto classof(Ast const *ast) noexcept -> bool;
 
-  Ptr clone_impl() const noexcept override;
-  [[nodiscard]] void flatten_impl(ir::Mir::Ir &ir) const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

@@ -17,6 +17,7 @@
 #include "ast/statement/Import.hpp"
 #include "adt/Environment.hpp"
 #include "ast/value/Nil.hpp"
+#include "ir/Instruction.hpp"
 
 namespace mint {
 namespace ast {
@@ -38,6 +39,11 @@ auto Import::classof(Ast const *ast) noexcept -> bool {
 
 Ptr Import::clone_impl() const noexcept {
   return create(attributes(), location(), m_filename);
+}
+
+ir::detail::Parameter Import::flatten_impl(ir::Mir &ir) const noexcept {
+  auto pair = ir.emplace_back<ir::Import>(m_filename);
+  return pair.first;
 }
 
 void Import::print(std::ostream &out) const noexcept {

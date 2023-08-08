@@ -17,6 +17,7 @@
 #pragma once
 
 #include "ast/expression/Expression.hpp"
+#include "ir/expression/Unop.hpp"
 #include "scan/Token.hpp"
 
 namespace mint {
@@ -24,6 +25,12 @@ namespace ast {
 class Unop : public Expression {
   Token m_op;
   Ptr m_right;
+
+protected:
+  Ptr clone_impl() const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
+
+  static ir::Unop::Op convert(Token op) noexcept;
 
 public:
   Unop(Attributes attributes, Location location, Token op, Ptr right) noexcept;
@@ -34,8 +41,6 @@ public:
 
   static auto classof(Ast const *ast) noexcept -> bool;
 
-  Ptr clone_impl() const noexcept override;
-  [[nodiscard]] void flatten_impl(ir::Mir::Ir &ir) const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

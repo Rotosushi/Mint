@@ -61,6 +61,10 @@ namespace ast {
 class Let : public Definition {
   Ptr m_ast;
 
+protected:
+  Ptr clone_impl() const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
+
 public:
   Let(Attributes attributes, Location location,
       std::optional<type::Ptr> annotation, Identifier name, Ptr ast) noexcept;
@@ -75,8 +79,6 @@ public:
   std::optional<Error>
   checkUseBeforeDef(Error::UseBeforeDef &ubd) const noexcept override;
 
-  Ptr clone_impl() const noexcept override;
-  [[nodiscard]] void flatten_impl(ir::Mir::Ir &ir) const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

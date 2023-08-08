@@ -14,14 +14,13 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "7627a9f2b7acb88c4cf6c5b7f3b1c3cef02f83d8"
-#define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
-#define MINT_DEBUG 1
-// NOLINTEND
-// clang-format on
+#define BOOST_TEST_DYN_LINK
+#include "boost/test/unit_test.hpp"
+
+#include "adt/Array.hpp"
+
+
+BOOST_AUTO_TEST_CASE(mint_array) {
+  mint::Array<int> array;
+  
+}

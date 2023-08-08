@@ -35,6 +35,10 @@ private:
   type::Ptr m_result_type;
   ast::Ptr m_body;
 
+protected:
+  Ptr clone_impl() const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
+
 public:
   Lambda(Attributes attributes, Location location, Arguments arguments,
          type::Ptr result_type, ast::Ptr body) noexcept;
@@ -49,10 +53,6 @@ public:
   [[nodiscard]] auto result_type() const noexcept -> type::Ptr;
   [[nodiscard]] auto body() const noexcept -> ast::Ptr const &;
 
-  Ptr clone_impl() const noexcept override;
-  void flatten(ir::Mir &ir) const noexcept override;
-  void
-  flatten_immediate(ir::detail::Parameter &parameter) const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

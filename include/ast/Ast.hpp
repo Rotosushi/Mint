@@ -21,6 +21,7 @@
 #include "adt/Identifier.hpp"
 #include "adt/Result.hpp"
 #include "ir/Mir.hpp"
+#include "ir/detail/Parameter.hpp"
 #include "scan/Location.hpp"
 #include "type/Type.hpp"
 #include "utility/Assert.hpp"
@@ -84,6 +85,8 @@ protected:
       : m_prev_ast{nullptr}, m_cached_type{nullptr}, m_kind{kind},
         m_attributes{attributes}, m_location{location} {}
 
+  struct Protected {};
+
   auto cachedType(type::Ptr type) const noexcept -> type::Ptr {
     return m_cached_type = type;
   }
@@ -95,7 +98,6 @@ protected:
   auto location(Location location) noexcept { return m_location = location; }
 
   [[nodiscard]] virtual Ptr clone_impl() const noexcept = 0;
-  virtual void flatten_impl(ir::Mir &ir) const noexcept = 0;
 
 public:
   virtual ~Ast() noexcept = default;
@@ -129,6 +131,11 @@ public:
     return clone;
   }
 
+  bool isImmediate() const noexcept {
+    return (kind() == Ast::Kind::Nil) || (kind() == Ast::Kind::Boolean) ||
+           (kind() == Ast::Kind::Integer) || (kind() == Ast::Kind::Variable);
+  }
+
   virtual void print(std::ostream &out) const noexcept = 0;
 
   // #NOTE: walk up the Ast, iff we find an definition,
@@ -149,6 +156,7 @@ public:
   [[nodiscard]] virtual Result<llvm::Value *>
   codegen(Environment &env) noexcept = 0;
 
+  virtual ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept = 0;
   [[nodiscard]] ir::Mir flatten() const noexcept {
     ir::Mir result;
     flatten_impl(result);

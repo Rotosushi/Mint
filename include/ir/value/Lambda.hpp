@@ -52,9 +52,7 @@ public:
   [[nodiscard]] auto arguments() const noexcept -> Arguments const & {
     return m_arguments;
   }
-  [[nodiscard]] auto body() const noexcept -> detail::Parameter {
-    return m_body;
-  }
+  [[nodiscard]] auto body() noexcept -> detail::Parameter & { return m_body; }
   [[nodiscard]] auto result_type() const noexcept -> std::optional<type::Ptr> {
     return m_result_type == nullptr ? std::optional<type::Ptr>{}
                                     : std::optional<type::Ptr>{m_result_type};

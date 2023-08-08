@@ -16,7 +16,6 @@ set(WARNINGS -Wall -Wdeprecated -Wextra -Wpedantic -Wconversion -Werror)
 set(CXX_OPTIONS ${WARNINGS} -flto=auto -fuse-linker-plugin)
 
 # find dependencies
-# find LLVM
 find_package(LLVM 16 REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION} in ${LLVM_DIR}")
@@ -67,6 +66,12 @@ execute_process(
 )
 separate_arguments(llvm_system_libs)
 
+find_package(Boost 
+COMPONENTS unit_test_framework container
+REQUIRED 
+)
+
+message(STATUS "Found Boost ${Boost_VERSION} in ${Boost_INCLUDE_DIRS}")
 
 # create project wide configuration information
 execute_process(

@@ -37,6 +37,11 @@ Ptr Variable::clone_impl() const noexcept {
   return create(attributes(), location(), m_name);
 }
 
+ir::detail::Parameter
+Variable::flatten_impl([[maybe_unused]] ir::Mir &ir) const noexcept {
+  return {m_name};
+}
+
 void Variable::print(std::ostream &out) const noexcept { out << m_name; }
 
 auto Variable::handleUseBeforeDef(Error &error, Environment &env) const noexcept

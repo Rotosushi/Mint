@@ -44,13 +44,9 @@ Ptr Boolean::clone_impl() const noexcept {
   return create(attributes(), location(), m_value);
 }
 
-void Boolean::flatten(ir::Mir &ir) const noexcept {
-  ir.emplace_back(std::in_place_type<detail::Scalar>, m_value);
-}
-
-void Boolean::flatten_immediate(
-    ir::detail::Parameter &parameter) const noexcept {
-  parameter = {m_value};
+ir::detail::Parameter
+Boolean::flatten_impl([[maybe_unused]] ir::Mir &ir) const noexcept {
+  return {m_value};
 }
 
 Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {

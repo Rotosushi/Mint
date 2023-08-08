@@ -17,6 +17,7 @@
 #include "ast/statement/Module.hpp"
 #include "adt/Environment.hpp"
 #include "ast/value/Nil.hpp"
+#include "ir/Instruction.hpp"
 
 namespace mint {
 namespace ast {
@@ -47,6 +48,19 @@ Ptr Module::clone_impl() const noexcept {
   }
 
   return create(attributes(), location(), m_name, std::move(expressions));
+}
+
+ir::detail::Parameter Module::flatten_impl(ir::Mir &ir) const noexcept {
+  //  construct an Mir object to represent
+  //  instructions within the module
+  ir::Mir expressions;
+  expressions.reserve(m_expressions.size());
+  for (auto &expression : m_expressions) {
+    expression->flatten_impl(expressions);
+  }
+  // insert the module instruction into the current Mir object
+  auto pair = ir.emplace_back<ir::Module>(m_name, std::move(expressions));
+  return pair.first;
 }
 
 void Module::print(std::ostream &out) const noexcept {

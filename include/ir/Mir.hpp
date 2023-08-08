@@ -15,7 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "adt/Array.hpp"
+#include "boost/container/vector.hpp"
+#include <utility>
+
 #include "ir/detail/Index.hpp"
 
 namespace mint {
@@ -38,10 +40,13 @@ class Instruction;
 
 class Mir {
 public:
-  using Ir = Array<Instruction>;
+  using Ir = boost::container::vector<Instruction>;
   using iterator = Ir::iterator;
   using const_iterator = Ir::const_iterator;
+  using pointer = Ir::pointer;
+  using const_pointer = Ir::const_pointer;
   using reference = Ir::reference;
+  using const_reference = Ir::const_reference;
 
 private:
   detail::Index m_index;
@@ -52,13 +57,14 @@ public:
   Mir(Ir ir) noexcept;
   Mir(Mir const &other) noexcept;
   Mir(Mir &&other) noexcept;
+  ~Mir() noexcept;
   auto operator=(Mir const &other) noexcept -> Mir &;
   auto operator=(Mir &&other) noexcept -> Mir &;
 
   [[nodiscard]] auto empty() const noexcept -> bool;
   [[nodiscard]] auto size() const noexcept -> std::size_t;
+  void reserve(std::size_t size) noexcept;
 
-  [[nodiscard]] auto index() const noexcept -> detail::Index;
   [[nodiscard]] auto ir() noexcept -> Ir &;
   [[nodiscard]] auto ir() const noexcept -> Ir const &;
 
@@ -67,7 +73,12 @@ public:
   [[nodiscard]] auto begin() const noexcept -> const_iterator;
   [[nodiscard]] auto end() const noexcept -> const_iterator;
 
-  template <class... Args> [[nodiscard]] reference emplace_back(Args &&...args);
+  [[nodiscard]] auto operator[](std::size_t index) noexcept -> reference;
+  [[nodiscard]] auto operator[](std::size_t index) const noexcept
+      -> const_reference;
+
+  template <class T, class... Args>
+  std::pair<detail::Index, pointer> emplace_back(Args &&...args);
 };
 } // namespace ir
 } // namespace mint

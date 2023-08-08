@@ -24,6 +24,10 @@ namespace ast {
 class Variable : public Expression {
   Identifier m_name;
 
+protected:
+  Ptr clone_impl() const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
+
 public:
   Variable(Attributes attributes, Location location, Identifier name) noexcept;
   ~Variable() noexcept override = default;
@@ -42,8 +46,6 @@ public:
   // lookup. so there is no error to process.
   auto handleUseBeforeDef(Environment &env) const noexcept -> Error;
 
-  Ptr clone_impl() const noexcept override;
-  [[nodiscard]] void flatten_impl(ir::Mir::Ir &ir) const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

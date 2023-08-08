@@ -57,6 +57,15 @@ public:
   [[nodiscard]] auto operator-=(Index const &other) noexcept -> Index {
     return m_index -= other.m_index;
   }
+  auto operator++() noexcept -> Index & {
+    ++m_index;
+    return *this;
+  }
+  auto operator++(int) noexcept -> Index {
+    auto temp = *this;
+    ++m_index;
+    return temp;
+  }
 
   [[nodiscard]] auto operator<=>(Index const &other) const noexcept = default;
 

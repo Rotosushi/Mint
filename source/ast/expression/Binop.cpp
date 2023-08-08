@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "ast/expression/Binop.hpp"
 #include "adt/Environment.hpp"
+#include "ir/Instruction.hpp"
 
 namespace mint {
 namespace ast {
@@ -45,6 +46,51 @@ auto Binop::classof(Ast const *ast) noexcept -> bool {
 Ptr Binop::clone_impl() const noexcept {
   return create(attributes(), location(), m_op, m_left->clone(),
                 m_right->clone());
+}
+
+ir::Binop::Op Binop::convert(Token op) noexcept {
+  switch (op) {
+  case Token::Plus:
+    return ir::Binop::Plus;
+  case Token::Minus:
+    return ir::Binop::Minus;
+  case Token::Star:
+    return ir::Binop::Star;
+  case Token::Divide:
+    return ir::Binop::Divide;
+  case Token::Modulo:
+    return ir::Binop::Modulo;
+  case Token::Not:
+    return ir::Binop::Not;
+  case Token::And:
+    return ir::Binop::And;
+  case Token::Or:
+    return ir::Binop::Or;
+  case Token::LessThan:
+    return ir::Binop::LessThan;
+  case Token::LessThanOrEqual:
+    return ir::Binop::LessThanOrEqual;
+  case Token::EqualEqual:
+    return ir::Binop::EqualEqual;
+  case Token::NotEqual:
+    return ir::Binop::NotEqual;
+  case Token::GreaterThan:
+    return ir::Binop::GreaterThan;
+  case Token::GreaterThanOrEqual:
+    return ir::Binop::GreaterThanOrEqual;
+  default:
+    abort("bad binop op token");
+  }
+}
+
+ir::detail::Parameter Binop::flatten_impl(ir::Mir &ir) const noexcept {
+  auto pair = ir.emplace_back<ir::Binop>(convert(m_op), ir::detail::Parameter{},
+                                         ir::detail::Parameter{});
+  auto instruction = pair.second;
+  auto &binop = instruction->binop();
+  binop.left() = m_left->flatten_impl(ir);
+  binop.right() = m_right->flatten_impl(ir);
+  return pair.first;
 }
 
 Result<type::Ptr> Binop::typecheck(Environment &env) const noexcept {

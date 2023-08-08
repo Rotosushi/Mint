@@ -28,6 +28,7 @@ Mir::Mir() noexcept : m_ir() {}
 Mir::Mir(Ir ir) noexcept : m_ir(std::move(ir)) {}
 Mir::Mir(Mir const &other) noexcept : m_ir(other.m_ir) {}
 Mir::Mir(Mir &&other) noexcept : m_ir(std::move(other.m_ir)) {}
+Mir::~Mir() noexcept {}
 auto Mir::operator=(Mir const &other) noexcept -> Mir & {
   if (this == &other)
     return *this;
@@ -45,8 +46,8 @@ auto Mir::operator=(Mir &&other) noexcept -> Mir & {
 
 auto Mir::empty() const noexcept -> bool { return m_ir.empty(); }
 auto Mir::size() const noexcept -> std::size_t { return m_ir.size(); }
+void Mir::reserve(std::size_t size) noexcept { m_ir.reserve(size); }
 
-auto Mir::index() const noexcept -> detail::Index { return m_index; }
 auto Mir::ir() noexcept -> Ir & { return m_ir; }
 auto Mir::ir() const noexcept -> Ir const & { return m_ir; }
 
@@ -55,9 +56,29 @@ auto Mir::end() noexcept -> iterator { return m_ir.end(); }
 auto Mir::begin() const noexcept -> const_iterator { return m_ir.begin(); }
 auto Mir::end() const noexcept -> const_iterator { return m_ir.end(); }
 
-template <class... Args> Mir::reference Mir::emplace_back(Args &&...args) {
-  m_index += 1;
-  return m_ir.emplace_back(std::forward<Args>(args)...);
+[[nodiscard]] auto Mir::operator[](std::size_t index) noexcept -> reference {
+  MINT_ASSERT(index < size());
+  return m_ir[index];
+}
+
+[[nodiscard]] auto Mir::operator[](std::size_t index) const noexcept
+    -> const_reference {
+  MINT_ASSERT(index < size());
+  return m_ir[index];
+}
+
+// #NOTE: construct an instruction at the next open space
+// in the array, then return the Index of the instruction
+// created.
+template <class T, class... Args>
+std::pair<detail::Index, Mir::pointer> Mir::emplace_back(Args &&...args) {
+  auto ref =
+      m_ir.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);
+  // since we construct instructions one at a time
+  // starting from index 0, we can use post-increment
+  // to return the correct index, and increment for the
+  // next instruction to be constructed.
+  return {m_index++, &ref};
 }
 } // namespace ir
 } // namespace mint

@@ -23,6 +23,10 @@ namespace ast {
 class Integer : public Value {
   int m_value;
 
+protected:
+  Ptr clone_impl() const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
+
 public:
   Integer(Attributes attributes, Location location, int value) noexcept;
   ~Integer() noexcept override = default;
@@ -34,10 +38,6 @@ public:
 
   auto value() const noexcept -> int;
 
-  Ptr clone_impl() const noexcept override;
-  void flatten(ir::Mir &ir) const noexcept override;
-  void
-  flatten_immediate(ir::detail::Parameter &parameter) const noexcept override;
   void print(std::ostream &out) const noexcept override;
 
   Result<type::Ptr> typecheck(Environment &env) const noexcept override;

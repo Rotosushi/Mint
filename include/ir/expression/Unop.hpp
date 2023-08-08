@@ -39,9 +39,7 @@ public:
   ~Unop() noexcept = default;
 
   [[nodiscard]] auto op() const noexcept -> Op { return m_op; }
-  [[nodiscard]] auto right() const noexcept -> detail::Parameter {
-    return m_right;
-  }
+  [[nodiscard]] auto right() noexcept -> detail::Parameter & { return m_right; }
 };
 } // namespace ir
 

@@ -28,11 +28,7 @@ protected:
       : Ast{kind, attributes, location} {}
 
   [[nodiscard]] virtual Ptr clone_impl() const noexcept = 0;
-  // #NOTE: we don't want to call flatten_impl on values,
-  // because values are associated with a parameter.
-  virtual void flatten(ir::Mir &ir) const noexcept = 0;
-  virtual void
-  flatten_immediate(ir::detail::Parameter &parameter) const noexcept = 0;
+  virtual ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept = 0;
 
 public:
   ~Value() noexcept override = default;
@@ -40,11 +36,6 @@ public:
   static auto classof(Ast const *ast) noexcept -> bool {
     return (ast->kind() >= Ast::Kind::Value) &&
            (ast->kind() <= Ast::Kind::EndValue);
-  }
-
-  auto isImmediate() const noexcept -> bool {
-    return (kind() == Ast::Kind::Nil) || (kind() == Ast::Kind::Boolean) ||
-           (kind() == Ast::Kind::Integer) || (kind() == Ast::Kind::Variable);
   }
 
   virtual void print(std::ostream &out) const noexcept = 0;
@@ -58,10 +49,6 @@ public:
   }
 
   virtual Result<type::Ptr> typecheck(Environment &env) const noexcept = 0;
-  // #TODO: values are such because they are not evaluated,
-  // they are what is evaluated with. is there some way of
-  // not performing a clone to return a valid ast::Ptr?
-  // my first thought is with a shared_ptr.
   virtual Result<ast::Ptr> evaluate(Environment &env) noexcept = 0;
   virtual Result<llvm::Value *> codegen(Environment &) noexcept = 0;
 };

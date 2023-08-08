@@ -38,7 +38,7 @@ public:
   auto operator=(Call &&other) noexcept -> Call & = default;
   ~Call() noexcept = default;
 
-  [[nodiscard]] auto callee() const noexcept -> detail::Parameter {
+  [[nodiscard]] auto callee() noexcept -> detail::Parameter & {
     return m_callee;
   }
   [[nodiscard]] auto arguments() noexcept -> Arguments & { return m_arguments; }

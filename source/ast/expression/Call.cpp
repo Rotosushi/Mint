@@ -17,6 +17,7 @@
 #include "ast/expression/Call.hpp"
 #include "adt/Environment.hpp"
 #include "ast/value/Lambda.hpp"
+#include "ir/Instruction.hpp"
 #include "type/composite/Lambda.hpp"
 
 namespace mint {
@@ -48,6 +49,22 @@ Ptr Call::clone_impl() const noexcept {
 
   return create(attributes(), location(), m_callee->clone(),
                 std::move(cloned_arguments));
+}
+
+ir::detail::Parameter Call::flatten_impl(ir::Mir &ir) const noexcept {
+  auto pair = ir.emplace_back<ir::Call>(ir::detail::Parameter{},
+                                        ir::detail::Parameter{});
+  auto instruction = pair.second;
+  auto &call = instruction->call();
+  call.callee() = m_callee->flatten_impl(ir);
+
+  ir::Call::Arguments arguments;
+  arguments.reserve(m_arguments.size());
+  for (auto &argument : m_arguments) {
+    arguments.emplace_back(argument->flatten_impl(ir));
+  }
+  call.arguments() = std::move(arguments);
+  return pair.first;
 }
 
 void Call::print(std::ostream &out) const noexcept {

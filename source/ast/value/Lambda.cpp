@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "ast/value/Lambda.hpp"
 #include "adt/Environment.hpp"
+#include "ir/Instruction.hpp"
 
 namespace mint {
 namespace ast {
@@ -52,6 +53,14 @@ auto Lambda::classof(Ast const *ast) noexcept -> bool {
 Ptr Lambda::clone_impl() const noexcept {
   return create(attributes(), location(), m_arguments, m_result_type,
                 m_body->clone());
+}
+
+ir::detail::Parameter Lambda::flatten_impl(ir::Mir &ir) const noexcept {
+  auto pair = ir.emplace_back<ir::Lambda>(m_arguments, ir::detail::Parameter{},
+                                          m_result_type);
+  auto instruction = pair.second;
+  instruction->lambda().body() = m_body->flatten_impl(ir);
+  return pair.first;
 }
 
 void Lambda::print(std::ostream &out) const noexcept {

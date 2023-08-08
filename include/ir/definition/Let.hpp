@@ -34,7 +34,7 @@ public:
   ~Let() noexcept = default;
 
   [[nodiscard]] auto name() const noexcept -> Identifier { return m_name; }
-  [[nodiscard]] auto parameter() const noexcept -> detail::Parameter {
+  [[nodiscard]] auto parameter() noexcept -> detail::Parameter & {
     return m_parameter;
   }
 };

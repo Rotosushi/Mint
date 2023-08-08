@@ -40,9 +40,11 @@ private:
   Variant m_variant;
 
 public:
-  Parameter() noexcept = default;
-  Parameter(Scalar scalar) noexcept
-      : m_variant(std::in_place_type<Scalar>, scalar) {}
+  Parameter() noexcept : m_variant() {}
+  Parameter(bool boolean) noexcept
+      : m_variant(std::in_place_type<Scalar>, boolean) {}
+  Parameter(int integer) noexcept
+      : m_variant(std::in_place_type<Scalar>, integer) {}
   Parameter(Identifier name) noexcept
       : m_variant(std::in_place_type<Identifier>, name) {}
   Parameter(Index index) noexcept

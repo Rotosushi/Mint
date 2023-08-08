@@ -36,6 +36,11 @@ Ptr Nil::clone_impl() const noexcept {
   return create(attributes(), location());
 }
 
+ir::detail::Parameter
+Nil::flatten_impl([[maybe_unused]] ir::Mir &ir) const noexcept {
+  return {};
+}
+
 void Nil::print(std::ostream &out) const noexcept { out << "nil"; }
 
 Result<type::Ptr> Nil::typecheck(Environment &env) const noexcept {

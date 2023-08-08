@@ -16,6 +16,8 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "ast/expression/Unop.hpp"
 #include "adt/Environment.hpp"
+#include "ir/Instruction.hpp"
+#include "utility/Abort.hpp"
 
 namespace mint {
 namespace ast {
@@ -38,6 +40,27 @@ auto Unop::classof(Ast const *ast) noexcept -> bool {
 
 Ptr Unop::clone_impl() const noexcept {
   return create(attributes(), location(), m_op, m_right->clone());
+}
+
+ir::Unop::Op Unop::convert(Token op) noexcept {
+  switch (op) {
+  case Token::Minus:
+    return ir::Unop::Neg;
+
+  case Token::Not:
+    return ir::Unop::Not;
+
+  default:
+    abort("bad unop token");
+  }
+}
+
+ir::detail::Parameter Unop::flatten_impl(ir::Mir &ir) const noexcept {
+  auto pair = ir.emplace_back<ir::Unop>(convert(m_op), ir::detail::Parameter{},
+                                        ir::detail::Parameter{});
+  auto &unop = pair.second->unop();
+  unop.right() = m_right->flatten_impl(ir);
+  return pair.first;
 }
 
 void Unop::print(std::ostream &out) const noexcept {

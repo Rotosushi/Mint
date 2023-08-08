@@ -42,6 +42,10 @@ Ptr Parens::clone_impl() const noexcept {
   return create(attributes(), location(), m_ast->clone());
 }
 
+ir::detail::Parameter Parens::flatten_impl(ir::Mir &ir) const noexcept {
+  return m_ast->flatten_impl(ir);
+}
+
 Result<type::Ptr> Parens::typecheck(Environment &env) const noexcept {
   auto result = m_ast->typecheck(env);
   if (!result)
