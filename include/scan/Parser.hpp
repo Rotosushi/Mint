@@ -94,8 +94,12 @@ public:
   Parser(Environment *env, std::istream *in) noexcept;
 
   void setIstream(std::istream *in) noexcept;
+
   [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
       -> std::string_view;
+
+  void printErrorWithSource(std::ostream &out,
+                            Error const &error) const noexcept;
 
   auto endOfInput() const noexcept -> bool;
   auto parse() -> Result<ast::Ptr> { return parseTop(); }

@@ -204,7 +204,7 @@ Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
   // #NOTE: we don't want to create global variables
   // to represent local variables.
   // create a global variable for the binding
-  auto llvm_name = env.createQualifiedNameForLLVM(name());
+  auto llvm_name = env.qualifyName(name()).convertForLLVM();
   llvm::GlobalVariable *variable = nullptr;
   if (auto constant = llvm::dyn_cast<llvm::Constant>(value)) {
     variable =

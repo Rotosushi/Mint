@@ -61,6 +61,7 @@
 
 #include "TestExpressions.hpp"
 #include "adt/Environment.hpp"
+#include "core/Core.hpp"
 
 /*
   #NOTE: this function is rather inelegant
@@ -155,7 +156,8 @@ void testExpressionInREPL(TestCode &expression) {
   auto env =
       mint::Environment::create(&input, &output, &error_output, &log_output);
 
-  env.repl(true);
+  auto failed = repl(env, true);
+  BOOST_REQUIRE(failed == EXIT_SUCCESS);
 
   auto line = extractFinalLine(output.view());
   auto result = extractResult(line);

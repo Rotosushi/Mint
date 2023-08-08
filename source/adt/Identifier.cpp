@@ -153,6 +153,28 @@ auto Identifier::globalQualification() const noexcept -> Identifier {
   return set->emplace(std::move(new_name));
 }
 
+/* https://llvm.org/docs/LangRef.html#identifiers */
+[[nodiscard]] auto Identifier::convertForLLVM() const noexcept -> Identifier {
+  std::string llvm_name;
+  // the llvm_name is the same as the given name,
+  // where "::" is replaced with "."
+  auto cursor = data.begin();
+  auto end = data.end();
+  while (cursor != end) {
+    auto c = *cursor;
+    if (c == ':') {
+      llvm_name += '.';
+      ++cursor; // eat "::"
+      ++cursor;
+    } else {
+      llvm_name += c;
+      ++cursor; // eat the char
+    }
+  }
+
+  return set->emplace(std::move(llvm_name));
+}
+
 // #NOTE:
 // if we consider a set of scopes (x0, x1, ..., xN)
 // which are descending subscopes, defined as

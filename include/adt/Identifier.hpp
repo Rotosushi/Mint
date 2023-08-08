@@ -124,6 +124,9 @@ public:
   // */
   [[nodiscard]] auto prependScope(Identifier scope) const noexcept
       -> Identifier;
+
+  /* https://llvm.org/docs/LangRef.html#identifiers */
+  [[nodiscard]] auto convertForLLVM() const noexcept -> Identifier;
 };
 
 inline auto operator<<(std::ostream &out, Identifier const &id) noexcept

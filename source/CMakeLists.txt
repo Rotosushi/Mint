@@ -1,5 +1,16 @@
 cmake_minimum_required(VERSION 3.20)
 
+set(MINT_COMMON_LIBS
+  mint_scan
+  mint_type
+  mint_ast
+  mint_adt
+  mint_core
+  mint_utility
+  mint_ir
+  mint_codegen
+)
+
 add_subdirectory(${MINT_SOURCE_DIR}/adt)
 add_subdirectory(${MINT_SOURCE_DIR}/ast)
 add_subdirectory(${MINT_SOURCE_DIR}/scan)
@@ -7,16 +18,7 @@ add_subdirectory(${MINT_SOURCE_DIR}/type)
 add_subdirectory(${MINT_SOURCE_DIR}/utility)
 add_subdirectory(${MINT_SOURCE_DIR}/codegen)
 add_subdirectory(${MINT_SOURCE_DIR}/ir)
-
-set(MINT_COMMON_LIBS
-  mint_scan
-  mint_type
-  mint_ast
-  mint_adt
-  mint_codegen
-  mint_utility
-  mint_ir
-)
+add_subdirectory(${MINT_SOURCE_DIR}/core)
 
 add_executable(mint main.cpp)
 target_include_directories(mint PUBLIC ${MINT_INCLUDE_DIR} ${LLVM_INCLUDE_DIRS})

@@ -49,8 +49,7 @@ Environment::Environment(std::istream *in, std::ostream *out,
   InitializeBuiltinUnops(this);
 }
 
-/**** Environment Methods ****/
-
+//**** Environment Methods ****//
 [[nodiscard]] auto Environment::nativeCPUFeatures() noexcept -> std::string {
   std::string features;
   llvm::StringMap<bool> map;
@@ -117,122 +116,36 @@ Environment::Environment(std::istream *in, std::ostream *out,
                      target_machine};
 }
 
-auto Environment::getTextFromTextLiteral(std::string_view string) noexcept
+std::istream &Environment::getInputStream() noexcept { return *m_input; }
+
+std::ostream &Environment::getOutputStream() noexcept { return *m_output; }
+
+std::ostream &Environment::getErrorStream() noexcept { return *m_error_output; }
+
+std::ostream &Environment::getLogStream() noexcept { return *m_log_output; }
+
+fs::path &Environment::sourceFile() noexcept { return m_file; }
+
+void Environment::sourceFile(fs::path const &file) noexcept { m_file = file; }
+
+//**** Parser interface ****//
+void Environment::setIStream(std::istream *in) noexcept {
+  m_parser.setIstream(in);
+}
+
+auto Environment::extractSourceLine(Location const &location) const noexcept
     -> std::string_view {
-  auto cursor = std::next(string.begin());
-  auto end = std::prev(string.end());
-
-  // #TODO: replace escape sequences with character literals here?
-
-  return {cursor, static_cast<std::size_t>(std::distance(cursor, end))};
-}
-
-auto Environment::repl(bool do_print) noexcept -> int {
-  while (true) {
-    if (do_print)
-      *m_output << "# ";
-
-    auto parse_result = m_parser.parse();
-    if (!parse_result) {
-      auto &error = parse_result.error();
-      if (error.kind() == Error::Kind::EndOfInput)
-        break;
-
-      printErrorWithSource(error);
-      continue;
-    }
-    auto &ast = parse_result.value();
-
-    auto typecheck_result = ast->typecheck(*this);
-    if (!typecheck_result) {
-      auto &error = typecheck_result.error();
-      if (!error.isUseBeforeDef()) {
-        printErrorWithSource(error);
-        continue;
-      }
-
-      if (auto failed = bindUseBeforeDef(error, ast)) {
-        printErrorWithSource(failed.value());
-      }
-      continue;
-    }
-    auto &type = typecheck_result.value();
-
-    auto evaluate_result = ast->evaluate(*this);
-    if (!evaluate_result) {
-      printErrorWithSource(evaluate_result.error());
-      continue;
-    }
-    auto &value = evaluate_result.value();
-
-    if (do_print)
-      *m_output << ast << " : " << type << " => " << value << "\n";
-
-    addAstToModule(ast);
-  }
-
-  return EXIT_SUCCESS;
-}
-
-//  Parse, Typecheck, and Evaluate each ast within the source file
-//  then Codegen all of the terms collected and emit all of that
-//  as LLVM IR.
-//
-//  #TODO: emit the terms into a LLVM bitcode, or object file.
-//
-//  #TODO: add a link step to produce a library, or executable
-//
-//  #TODO: I think we can handle multiple source files by "repl"ing
-//  each subsequent file into the environment created by the first
-//  file given. then generating the code after all files are processed.
-//  this might convert to a multithreaded approach, where a thread is
-//  launched per input file. but we would need some way of
-//  A) bringing all of the results into a single output file and
-//  B) something else I am sure I haven't thought of.
-auto Environment::compile(fs::path filename) noexcept -> int {
-  auto found = fileSearch(filename);
-  if (!found) {
-    Error e{Error::Kind::FileNotFound, Location{}, filename.c_str()};
-    e.print(*m_error_output);
-    return EXIT_FAILURE;
-  }
-  auto &file = found.value();
-  m_parser.setIstream(&file);
-
-  repl(/* do_print = */ false);
-
-  for (auto &ast : m_module) {
-    auto codegen_result = ast->codegen(*this);
-    if (!codegen_result) {
-      printErrorWithSource(codegen_result.error());
-      return EXIT_FAILURE;
-    }
-  }
-
-  emitLLVMIR(*m_llvm_module, filename, *m_error_output);
-  return EXIT_SUCCESS;
+  return m_parser.extractSourceLine(location);
 }
 
 void Environment::printErrorWithSource(Error const &error) const noexcept {
-  if (error.isDefault()) {
-    auto &data = error.getDefault();
-    auto bad_source = m_parser.extractSourceLine(data.location);
-    error.print(*m_error_output, bad_source);
-  } else {
-    error.print(*m_error_output);
-  }
+  m_parser.printErrorWithSource(*m_error_output, error);
 }
 
-void Environment::printErrorWithSource(Error const &error,
-                                       Parser const &parser) const noexcept {
-  if (error.isDefault()) {
-    auto &data = error.getDefault();
-    auto bad_source = parser.extractSourceLine(data.location);
-    error.print(*m_error_output, bad_source);
-  } else {
-    error.print(*m_error_output);
-  }
+auto Environment::endOfInput() const noexcept -> bool {
+  return m_parser.endOfInput();
 }
+auto Environment::parse() -> Result<ast::Ptr> { return m_parser.parse(); }
 
 auto Environment::localScope() noexcept -> std::shared_ptr<Scope> {
   return m_local_scope;
@@ -265,6 +178,8 @@ void Environment::popScope() noexcept {
 void Environment::addAstToModule(ast::Ptr ast) noexcept {
   m_module.push_back(std::move(ast));
 }
+
+std::vector<ast::Ptr> &Environment::getModule() noexcept { return m_module; }
 
 //**** DirectorySearcher interface ****/
 void Environment::appendDirectory(fs::path file) noexcept {
@@ -403,34 +318,8 @@ auto Environment::getLambdaType(type::Function const *function_type) noexcept
   return m_type_interner.getLambdaType(function_type);
 }
 
-/**** LLVM interface ****/
+/**** LLVM interfaces ****/
 /**** LLVM Helpers *****/
-/* https://llvm.org/docs/LangRef.html#identifiers */
-auto Environment::createQualifiedNameForLLVM(Identifier name) noexcept
-    -> Identifier {
-  auto qualified = qualifyName(name);
-  auto view = qualified.view();
-  std::string llvm_name;
-
-  // the llvm_name is the same as the given name,
-  // where "::" is replaced with "."
-  auto cursor = view.begin();
-  auto end = view.end();
-  while (cursor != end) {
-    auto c = *cursor;
-    if (c == ':') {
-      llvm_name += '.';
-      ++cursor; // eat "::"
-      ++cursor;
-    } else {
-      llvm_name += c;
-      ++cursor; // eat the char
-    }
-  }
-
-  return m_identifier_set.emplace(std::move(llvm_name));
-}
-
 auto Environment::createBasicBlock(llvm::Twine const &name) noexcept
     -> llvm::BasicBlock * {
   return llvm::BasicBlock::Create(*m_llvm_context, name);
@@ -459,6 +348,10 @@ auto Environment::exchangeInsertionPoint(InsertionPoint point) noexcept
 }
 
 //**** LLVM Module Interface ****//
+auto Environment::getLLVMModule() noexcept -> llvm::Module & {
+  return *m_llvm_module;
+}
+
 auto Environment::getOrInsertGlobal(std::string_view name,
                                     llvm::Type *type) noexcept
     -> llvm::GlobalVariable * {

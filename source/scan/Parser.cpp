@@ -18,6 +18,7 @@
 #include "adt/Environment.hpp"
 #include "ast/All.hpp"
 #include "utility/NumbersRoundTrip.hpp"
+#include "utility/Stringify.hpp"
 
 namespace mint {
 Parser::Parser(Environment *env, std::istream *in) noexcept
@@ -54,6 +55,17 @@ auto Parser::extractSourceLine(Location const &location) const noexcept
     return {cursor, eol};
   }
   return {};
+}
+
+void Parser::printErrorWithSource(std::ostream &out,
+                                  Error const &error) const noexcept {
+  if (error.isDefault()) {
+    auto &data = error.getDefault();
+    auto bad_source = extractSourceLine(data.location);
+    error.print(out, bad_source);
+  } else {
+    error.print(out);
+  }
 }
 
 auto Parser::endOfInput() const noexcept -> bool {
@@ -249,7 +261,7 @@ auto Parser::parseImport() noexcept -> Result<ast::Ptr> {
   if (!peek(Token::Text))
     return handle_error(Error::Kind::ExpectedText);
 
-  auto file = env->getTextFromTextLiteral(text());
+  auto file = stringify(text());
   next(); // eat string
 
   if (!expect(Token::Semicolon))

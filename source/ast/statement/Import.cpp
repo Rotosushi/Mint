@@ -68,7 +68,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
   if (env.alreadyImported(m_filename)) {
     return ast::Nil::create({}, {});
   }
-
+  auto &error_out = env.getErrorStream();
   auto found = env.fileSearch(m_filename);
   MINT_ASSERT(found.has_value());
   auto &file = found.value();
@@ -80,7 +80,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
       auto &error = parse_result.error();
       if (error.kind() == Error::Kind::EndOfInput)
         break;
-      env.printErrorWithSource(error, parser);
+      parser.printErrorWithSource(error_out, error);
       return {Error::Kind::ImportFailed, location(), m_filename};
     }
     auto &ast = parse_result.value();
@@ -89,12 +89,12 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
     if (!typecheck_result) {
       auto &error = typecheck_result.error();
       if (!error.isUseBeforeDef()) {
-        env.printErrorWithSource(error, parser);
+        parser.printErrorWithSource(error_out, error);
         return {Error::Kind::ImportFailed, location(), m_filename};
       }
 
       if (auto failed = env.bindUseBeforeDef(error, ast)) {
-        env.printErrorWithSource(failed.value());
+        parser.printErrorWithSource(error_out, failed.value());
         return {Error::Kind::ImportFailed, location(), m_filename};
       }
       continue;
@@ -103,7 +103,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
     auto evaluate_result = ast->evaluate(env);
     if (!evaluate_result) {
       auto &error = evaluate_result.error();
-      env.printErrorWithSource(error, parser);
+      parser.printErrorWithSource(error_out, error);
       return {Error::Kind::ImportFailed, location(), m_filename};
     }
 

@@ -37,7 +37,10 @@
 #include "scan/Parser.hpp"
 
 namespace mint {
+// Allocates the data-structures necessary for the
+// compilation process.
 class Environment {
+  fs::path m_file;
   DirectorySearcher m_directory_searcher;
   ImportSet m_import_set;
   IdentifierSet m_identifier_set;
@@ -85,49 +88,26 @@ public:
                                    std::ostream *log = &std::clog) noexcept
       -> Environment;
 
-  // #NOTE:
-  // string is some quoted text from the source code: "\"...\""
-  // return the same string without quotes "..."
-  static auto getTextFromTextLiteral(std::string_view string) noexcept
-      -> std::string_view;
-
-  auto repl(bool do_print) noexcept -> int;
-  auto compile(std::filesystem::path file) noexcept -> int;
-
-  void printErrorWithSource(Error const &error) const noexcept;
-  void printErrorWithSource(Error const &error,
-                            Parser const &parser) const noexcept;
-
-  auto localScope() noexcept -> std::shared_ptr<Scope>;
-  auto nearestNamedScope() noexcept -> std::shared_ptr<Scope>;
-  auto exchangeLocalScope(std::shared_ptr<Scope> scope) noexcept
-      -> std::shared_ptr<Scope>;
-
-  //   intended to be called when processing an ast::Function,
-  //   or ast::Block
-  //   such that lookup and binding occurs within the local
-  //   scope of the function.
-  //   note the lack of a scope name, and thus no ability to
-  //   bind the scope to the current scope. thus anonymous scopes
-  //   are only alive as long as they are the local_scope.
-  //
-  //   this behavior is intended for functions, whose names
-  //   only need to be alive for the time functions are being
-  //   evaluated. but not for modules, as a modules names
-  //   must be alive for the lifetime of a given program.
-  void pushScope() noexcept;
-
-  //   called when processing an Ast::Module,
-  //   such that lookup and binding occurs within the
-  //   local scope of the module.
-  void pushScope(Identifier name) noexcept;
-
-  // traverse up the scope tree one level.
-  void popScope() noexcept;
-
   //**** Environment member interfaces ****//
+  std::istream &getInputStream() noexcept;
+  std::ostream &getOutputStream() noexcept;
+  std::ostream &getErrorStream() noexcept;
+  std::ostream &getLogStream() noexcept;
+
+  fs::path &sourceFile() noexcept;
+  void sourceFile(fs::path const &file) noexcept;
+
+  //**** Parser interface ****//
+  void setIStream(std::istream *in) noexcept;
+  [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
+      -> std::string_view;
+  void printErrorWithSource(Error const &error) const noexcept;
+  auto endOfInput() const noexcept -> bool;
+  auto parse() -> Result<ast::Ptr>;
+
   //**** global "module" interface ****//
   void addAstToModule(ast::Ptr ast) noexcept;
+  std::vector<ast::Ptr> &getModule() noexcept;
 
   //**** DirectorySearcher interface ****//
   void appendDirectory(fs::path file) noexcept;
@@ -150,9 +130,15 @@ public:
   void addImport(fs::path const &filename) noexcept;
 
   //**** Scope interface ****//
-  // called when we fail to create a module, so we
-  // don't partially define a module within the current
-  // namespace.
+  auto localScope() noexcept -> std::shared_ptr<Scope>;
+  auto nearestNamedScope() noexcept -> std::shared_ptr<Scope>;
+  auto exchangeLocalScope(std::shared_ptr<Scope> scope) noexcept
+      -> std::shared_ptr<Scope>;
+
+  void pushScope() noexcept;
+  void pushScope(Identifier name) noexcept;
+  void popScope() noexcept;
+
   void unbindScope(Identifier name) noexcept;
 
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
@@ -169,7 +155,7 @@ public:
       -> mint::Result<mint::Bindings::Binding>;
   auto qualifyName(Identifier name) noexcept -> Identifier;
 
-  //**** Use Before Def Interface ****/
+  //**** Use Before Def Interface ****//
   std::optional<Error> bindUseBeforeDef(Error const &error,
                                         ast::Ptr ast) noexcept;
 
@@ -181,15 +167,15 @@ public:
   std::optional<Error>
   resolveRuntimeValueOfUseBeforeDef(Identifier def_name) noexcept;
 
-  //**** BinopTable Interface ****/
+  //**** BinopTable Interface ****//
   auto createBinop(Token op) noexcept -> BinopTable::Binop;
   auto lookupBinop(Token op) noexcept -> std::optional<BinopTable::Binop>;
 
-  //**** UnopTable Interface ****/
+  //**** UnopTable Interface ****//
   auto createUnop(Token op) noexcept -> UnopTable::Unop;
   auto lookupUnop(Token op) noexcept -> std::optional<UnopTable::Unop>;
 
-  //**** TypeInterner Interface ****/
+  //**** TypeInterner Interface ****//
   auto getBooleanType() noexcept -> type::Boolean const *;
   auto getIntegerType() noexcept -> type::Integer const *;
   auto getNilType() noexcept -> type::Nil const *;
@@ -202,8 +188,6 @@ public:
 
   //**** LLVM interface ****//
   //**** LLVM Helpers *****//
-  auto createQualifiedNameForLLVM(Identifier name) noexcept -> Identifier;
-
   auto createBasicBlock(llvm::Twine const &name = "") noexcept
       -> llvm::BasicBlock *;
 
@@ -216,6 +200,7 @@ public:
       -> InsertionPoint;
 
   //**** LLVM Module Interface ****//
+  auto getLLVMModule() noexcept -> llvm::Module &;
   auto getOrInsertGlobal(std::string_view name, llvm::Type *type) noexcept
       -> llvm::GlobalVariable *;
 
@@ -223,7 +208,7 @@ public:
                            llvm::FunctionType *type) noexcept
       -> llvm::FunctionCallee;
 
-  /**** LLVM IRBuilder interface ****/ //
+  //**** LLVM IRBuilder interface ****//
   // types
   auto getLLVMNilType() noexcept -> llvm::IntegerType *;
   auto getLLVMBooleanType() noexcept -> llvm::IntegerType *;
@@ -306,11 +291,11 @@ public:
   auto createLLVMOr(llvm::Value *left, llvm::Value *right,
                     const llvm::Twine &name = "or") noexcept -> llvm::Value *;
 
-  // memory instructions
+  // memory related instructions
   auto createLLVMLoad(llvm::Type *type, llvm::Value *source) noexcept
       -> llvm::Value *;
 
-  // function instructions
+  // function related instructions
   auto createLLVMCall(llvm::Function *callee,
                       llvm::ArrayRef<llvm::Value *> arguments,
                       llvm::Twine const &name = "call",

@@ -20,6 +20,7 @@ target_link_libraries(mint_test
   mint_adt
   mint_ir
   mint_codegen
+  mint_core
   mint_utility
   ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
 )

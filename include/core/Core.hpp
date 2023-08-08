@@ -15,13 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "dcc1eb178380ae7a39861cf5caaf13c92bfc435c"
-#define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
-#define MINT_DEBUG 1
-// NOLINTEND
-// clang-format on
+
+namespace mint {
+class Environment;
+
+[[nodiscard]] int repl(Environment &env, bool do_print);
+[[nodiscard]] int compile(Environment &env);
+} // namespace mint
