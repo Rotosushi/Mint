@@ -20,8 +20,9 @@
 
 namespace mint {
 namespace ast {
-Lambda::Lambda(Attributes attributes, Location location, Arguments arguments,
-               type::Ptr result_type, ast::Ptr body) noexcept
+Lambda::Lambda(Attributes attributes, Location location,
+               FormalArguments arguments, type::Ptr result_type,
+               ast::Ptr body) noexcept
     : Value(Ast::Kind::Lambda, attributes, location),
       m_arguments(std::move(arguments)), m_result_type(result_type),
       m_body(std::move(body)) {
@@ -29,7 +30,7 @@ Lambda::Lambda(Attributes attributes, Location location, Arguments arguments,
 }
 
 auto Lambda::create(Attributes attributes, Location location,
-                    Arguments arguments, type::Ptr result_type,
+                    FormalArguments arguments, type::Ptr result_type,
                     ast::Ptr body) noexcept -> ast::Ptr {
   return static_cast<ast::Ptr>(
       std::make_unique<Lambda>(attributes, location, std::move(arguments),
@@ -40,7 +41,8 @@ auto Lambda::classof(Ast const *ast) noexcept -> bool {
   return Ast::Kind::Lambda == ast->kind();
 }
 
-[[nodiscard]] auto Lambda::arguments() const noexcept -> Arguments const & {
+[[nodiscard]] auto Lambda::arguments() const noexcept
+    -> FormalArguments const & {
   return m_arguments;
 }
 [[nodiscard]] auto Lambda::result_type() const noexcept -> type::Ptr {
@@ -56,10 +58,9 @@ Ptr Lambda::clone_impl() const noexcept {
 }
 
 ir::detail::Parameter Lambda::flatten_impl(ir::Mir &ir) const noexcept {
-  auto pair = ir.emplace_back<ir::Lambda>(m_arguments, ir::detail::Parameter{},
-                                          m_result_type);
-  auto instruction = pair.second;
-  instruction->lambda().body() = m_body->flatten_impl(ir);
+  auto pair = ir.emplaceLambda(m_arguments, m_result_type);
+  auto lambda = pair.second->lambda();
+  lambda.body() = m_body->flatten_impl(ir);
   return pair.first;
 }
 

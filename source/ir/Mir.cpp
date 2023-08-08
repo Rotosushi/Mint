@@ -67,18 +67,42 @@ auto Mir::end() const noexcept -> const_iterator { return m_ir.end(); }
   return m_ir[index];
 }
 
-// #NOTE: construct an instruction at the next open space
-// in the array, then return the Index of the instruction
-// created.
 template <class T, class... Args>
 std::pair<detail::Index, Mir::pointer> Mir::emplace_back(Args &&...args) {
   auto ref =
       m_ir.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);
-  // since we construct instructions one at a time
-  // starting from index 0, we can use post-increment
-  // to return the correct index, and increment for the
-  // next instruction to be constructed.
   return {m_index++, &ref};
+}
+
+std::pair<detail::Index, Mir::pointer> Mir::emplaceLet(Identifier name) {
+  return emplace_back<Let>(name);
+}
+
+std::pair<detail::Index, Mir::pointer> Mir::emplaceBinop(Binop::Op op) {
+  return emplace_back<Binop>(op);
+}
+
+std::pair<detail::Index, Mir::pointer> Mir::emplaceCall() {
+  return emplace_back<Call>();
+}
+
+std::pair<detail::Index, Mir::pointer> Mir::emplaceUnop(Unop::Op op) {
+  return emplace_back<Unop>(op);
+}
+
+std::pair<detail::Index, Mir::pointer>
+Mir::emplaceImport(std::string_view file) {
+  return emplace_back<Import>(file);
+}
+
+std::pair<detail::Index, Mir::pointer>
+Mir::emplaceModule(Identifier name, boost::container::vector<Mir> expressions) {
+  return emplace_back<Module>(name, std::move(expressions));
+}
+
+std::pair<detail::Index, Mir::pointer>
+Mir::emplaceLambda(FormalArguments arguments, type::Ptr result_type) {
+  return emplace_back<Lambda>(std::move(arguments), result_type);
 }
 } // namespace ir
 } // namespace mint

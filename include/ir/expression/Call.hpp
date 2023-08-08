@@ -29,6 +29,7 @@ private:
   Arguments m_arguments;
 
 public:
+  Call() noexcept {}
   Call(detail::Parameter callee, Arguments arguments) noexcept
       : m_callee(callee), m_arguments(std::move(arguments)) {}
 

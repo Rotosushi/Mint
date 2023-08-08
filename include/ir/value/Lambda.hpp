@@ -18,38 +18,27 @@
 #include <optional>
 #include <vector>
 
-#include "adt/Attributes.hpp"
+#include "adt/Argument.hpp"
 #include "ir/detail/Parameter.hpp"
-#include "type/Type.hpp"
 
 namespace mint {
 namespace ir {
 class Lambda {
-public:
-  struct Argument {
-    Identifier m_name;
-    Attributes m_attributes;
-    type::Ptr m_type;
-  };
-  using Arguments = std::vector<Argument>;
-
 private:
-  Arguments m_arguments;
-  detail::Parameter m_body;
+  FormalArguments m_arguments;
   type::Ptr m_result_type;
+  detail::Parameter m_body;
 
 public:
-  Lambda(Arguments arguments, detail::Parameter body,
-         type::Ptr result_type) noexcept
-      : m_arguments(std::move(arguments)), m_body(body),
-        m_result_type(result_type) {}
+  Lambda(FormalArguments arguments, type::Ptr result_type) noexcept
+      : m_arguments(std::move(arguments)), m_result_type(result_type) {}
   Lambda(Lambda const &other) noexcept = default;
   Lambda(Lambda &&other) noexcept = default;
   auto operator=(Lambda const &other) noexcept -> Lambda & = default;
   auto operator=(Lambda &&other) noexcept -> Lambda & = default;
   ~Lambda() noexcept = default;
 
-  [[nodiscard]] auto arguments() const noexcept -> Arguments const & {
+  [[nodiscard]] auto arguments() const noexcept -> FormalArguments const & {
     return m_arguments;
   }
   [[nodiscard]] auto body() noexcept -> detail::Parameter & { return m_body; }

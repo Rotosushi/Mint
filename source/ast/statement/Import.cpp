@@ -42,7 +42,7 @@ Ptr Import::clone_impl() const noexcept {
 }
 
 ir::detail::Parameter Import::flatten_impl(ir::Mir &ir) const noexcept {
-  auto pair = ir.emplace_back<ir::Import>(m_filename);
+  auto pair = ir.emplaceImport(m_filename);
   return pair.first;
 }
 

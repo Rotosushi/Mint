@@ -15,28 +15,32 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include "boost/container/vector.hpp"
+
 #include "adt/Identifier.hpp"
-#include "ir/Mir.hpp"
 
 namespace mint {
 namespace ir {
+class Mir;
+
 class Module {
+public:
+  using Expressions = boost::container::vector<Mir>;
+
+private:
   Identifier m_name;
-  Mir m_ir;
+  Expressions m_expressions;
 
 public:
-  Module(Identifier name, Mir ir) noexcept
-      : m_name(name), m_ir(std::move(ir)) {}
-  Module(Module const &other) noexcept = default;
-  Module(Module &&other) noexcept = default;
-  auto operator=(Module const &other) noexcept -> Module & = default;
-  auto operator=(Module &&other) noexcept -> Module & = default;
-  ~Module() noexcept = default;
+  Module(Identifier name, Expressions expressions) noexcept;
+  Module(Module const &other) noexcept;
+  Module(Module &&other) noexcept;
+  auto operator=(Module const &other) noexcept -> Module &;
+  auto operator=(Module &&other) noexcept -> Module &;
+  ~Module() noexcept;
 
-  [[nodiscard]] auto name() const noexcept -> Identifier { return m_name; }
-
-  [[nodiscard]] auto ir() noexcept -> Mir & { return m_ir; }
-  [[nodiscard]] auto ir() const noexcept -> Mir const & { return m_ir; }
+  [[nodiscard]] auto name() const noexcept -> Identifier;
+  [[nodiscard]] auto expressions() noexcept -> Expressions &;
 };
 } // namespace ir
 } // namespace mint

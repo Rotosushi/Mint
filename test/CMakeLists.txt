@@ -5,7 +5,6 @@ set(TEST_INCLUDE_DIR ${TEST_DIR}/include)
 set(TEST_SOURCE_DIR ${TEST_DIR}/source)
 
 add_executable(mint_test
-  ${TEST_SOURCE_DIR}/Array.cpp
   ${TEST_SOURCE_DIR}/REPL.cpp 
 
   main.cpp
@@ -19,6 +18,7 @@ target_link_libraries(mint_test
   mint_type
   mint_ast
   mint_adt
+  mint_ir
   mint_codegen
   mint_utility
   ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}

@@ -84,8 +84,7 @@ ir::Binop::Op Binop::convert(Token op) noexcept {
 }
 
 ir::detail::Parameter Binop::flatten_impl(ir::Mir &ir) const noexcept {
-  auto pair = ir.emplace_back<ir::Binop>(convert(m_op), ir::detail::Parameter{},
-                                         ir::detail::Parameter{});
+  auto pair = ir.emplaceBinop(convert(m_op));
   auto instruction = pair.second;
   auto &binop = instruction->binop();
   binop.left() = m_left->flatten_impl(ir);

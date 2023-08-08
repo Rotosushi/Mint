@@ -17,21 +17,14 @@
 #pragma once
 #include <vector>
 
+#include "adt/Argument.hpp"
 #include "ast/value/Value.hpp"
 
 namespace mint {
 namespace ast {
 class Lambda : public Value {
-public:
-  struct Argument {
-    Identifier name;
-    Attributes attributes;
-    type::Ptr type;
-  };
-  using Arguments = std::vector<Argument>;
-
 private:
-  Arguments m_arguments;
+  FormalArguments m_arguments;
   type::Ptr m_result_type;
   ast::Ptr m_body;
 
@@ -40,16 +33,16 @@ protected:
   ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
 
 public:
-  Lambda(Attributes attributes, Location location, Arguments arguments,
+  Lambda(Attributes attributes, Location location, FormalArguments arguments,
          type::Ptr result_type, ast::Ptr body) noexcept;
   ~Lambda() noexcept override = default;
 
   static auto create(Attributes attributes, Location location,
-                     Arguments arguments, type::Ptr result_type,
+                     FormalArguments arguments, type::Ptr result_type,
                      ast::Ptr body) noexcept -> ast::Ptr;
   static auto classof(Ast const *ast) noexcept -> bool;
 
-  [[nodiscard]] auto arguments() const noexcept -> Arguments const &;
+  [[nodiscard]] auto arguments() const noexcept -> FormalArguments const &;
   [[nodiscard]] auto result_type() const noexcept -> type::Ptr;
   [[nodiscard]] auto body() const noexcept -> ast::Ptr const &;
 

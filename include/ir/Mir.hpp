@@ -18,7 +18,11 @@
 #include "boost/container/vector.hpp"
 #include <utility>
 
+#include "adt/Identifier.hpp"
 #include "ir/detail/Index.hpp"
+#include "ir/expression/Binop.hpp"
+#include "ir/expression/Unop.hpp"
+#include "ir/value/Lambda.hpp"
 
 namespace mint {
 namespace ir {
@@ -52,6 +56,9 @@ private:
   detail::Index m_index;
   Ir m_ir;
 
+  template <class T, class... Args>
+  std::pair<detail::Index, Mir::pointer> emplace_back(Args &&...args);
+
 public:
   Mir() noexcept;
   Mir(Ir ir) noexcept;
@@ -77,8 +84,15 @@ public:
   [[nodiscard]] auto operator[](std::size_t index) const noexcept
       -> const_reference;
 
-  template <class T, class... Args>
-  std::pair<detail::Index, pointer> emplace_back(Args &&...args);
+  std::pair<detail::Index, pointer> emplaceLet(Identifier name);
+  std::pair<detail::Index, pointer> emplaceBinop(Binop::Op op);
+  std::pair<detail::Index, pointer> emplaceCall();
+  std::pair<detail::Index, pointer> emplaceUnop(Unop::Op op);
+  std::pair<detail::Index, pointer> emplaceImport(std::string_view file);
+  std::pair<detail::Index, pointer>
+  emplaceModule(Identifier name, boost::container::vector<Mir> expressions);
+  std::pair<detail::Index, pointer> emplaceLambda(FormalArguments arguments,
+                                                  type::Ptr result_type);
 };
 } // namespace ir
 } // namespace mint

@@ -56,8 +56,7 @@ ir::Unop::Op Unop::convert(Token op) noexcept {
 }
 
 ir::detail::Parameter Unop::flatten_impl(ir::Mir &ir) const noexcept {
-  auto pair = ir.emplace_back<ir::Unop>(convert(m_op), ir::detail::Parameter{},
-                                        ir::detail::Parameter{});
+  auto pair = ir.emplaceUnop(convert(m_op));
   auto &unop = pair.second->unop();
   unop.right() = m_right->flatten_impl(ir);
   return pair.first;

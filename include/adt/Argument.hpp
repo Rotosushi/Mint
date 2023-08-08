@@ -14,13 +14,19 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#define BOOST_TEST_DYN_LINK
-#include "boost/test/unit_test.hpp"
+#pragma once
+#include <vector>
 
-#include "adt/Array.hpp"
+#include "adt/Attributes.hpp"
+#include "adt/Identifier.hpp"
+#include "type/Type.hpp"
 
+namespace mint {
+struct FormalArgument {
+  Identifier name;
+  Attributes attributes;
+  type::Ptr type;
+};
 
-BOOST_AUTO_TEST_CASE(mint_array) {
-  mint::Array<int> array;
-  
-}
+using FormalArguments = std::vector<FormalArgument>;
+} // namespace mint

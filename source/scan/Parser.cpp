@@ -506,10 +506,10 @@ auto Parser::parseParens() noexcept -> Result<ast::Ptr> {
 auto Parser::parseLambda() noexcept -> Result<ast::Ptr> {
   auto lhs_loc = location();
   next(); // eat '\'
-  ast::Lambda::Arguments arguments;
+  FormalArguments arguments;
   type::Ptr result_type{nullptr};
 
-  auto parseArgument = [&]() -> Result<ast::Lambda::Argument> {
+  auto parseArgument = [&]() -> Result<FormalArgument> {
     if (!peek(Token::Identifier))
       return handle_error(Error::Kind::ExpectedAnIdentifier);
 
@@ -523,11 +523,11 @@ auto Parser::parseLambda() noexcept -> Result<ast::Ptr> {
     if (!result)
       return result.error();
     auto type = result.value();
-    return ast::Lambda::Argument{name, default_attributes, type};
+    return FormalArgument{name, default_attributes, type};
   };
 
-  auto parseArguments = [&]() -> Result<ast::Lambda::Arguments> {
-    ast::Lambda::Arguments arguments;
+  auto parseArguments = [&]() -> Result<FormalArguments> {
+    FormalArguments arguments;
     do {
       auto result = parseArgument();
       if (!result)

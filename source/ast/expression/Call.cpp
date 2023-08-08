@@ -52,10 +52,8 @@ Ptr Call::clone_impl() const noexcept {
 }
 
 ir::detail::Parameter Call::flatten_impl(ir::Mir &ir) const noexcept {
-  auto pair = ir.emplace_back<ir::Call>(ir::detail::Parameter{},
-                                        ir::detail::Parameter{});
-  auto instruction = pair.second;
-  auto &call = instruction->call();
+  auto pair = ir.emplaceCall();
+  auto &call = pair.second->call();
   call.callee() = m_callee->flatten_impl(ir);
 
   ir::Call::Arguments arguments;

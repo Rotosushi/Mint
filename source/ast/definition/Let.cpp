@@ -61,7 +61,7 @@ Ptr Let::clone_impl() const noexcept {
 }
 
 ir::detail::Parameter Let::flatten_impl(ir::Mir &ir) const noexcept {
-  auto pair = ir.emplace_back<ir::Let>(name(), ir::detail::Parameter{});
+  auto pair = ir.emplaceLet(name());
   auto &let = pair.second->let();
   let.parameter() = m_ast->flatten_impl(ir);
   return pair.first;
