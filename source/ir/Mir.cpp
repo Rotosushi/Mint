@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "ir/Mir.hpp"
 #include "ir/Instruction.hpp"
+#include "utility/Assert.hpp"
 
 namespace mint {
 namespace ir {

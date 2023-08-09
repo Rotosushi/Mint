@@ -201,12 +201,7 @@ public:
       -> Result<Bindings::Binding>;
 
   /*
-    lookup a name of the form 'a::b::c::d::...::w::x::y::z'
-
-    where 'a::b::c::d::...::w::x::y' are all considered to be
-    scopes, due to their being prefixes to a name.
-    and 'z' is the name bound to some value, due to it
-    being a suffix to some value.
+    lookup a name of the form 'a0::a1::...::aN::x'
 
     "a"
     "a" is treated as a local variable

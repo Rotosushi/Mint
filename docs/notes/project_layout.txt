@@ -39,3 +39,28 @@ is for the scanner and parser which build the ast.
 type/ 
 is for the types understood by the compiler.
 
+utility/
+if for free functions which are program utilities
+
+-----------------------------------------------------------------------------------
+#TODO: refactor the project directory (and correspondingly the object files
+created by cmake within each directory):
+
+common/
+common/adt/
+common/ast/
+common/ir/
+common/type/
+common/utility/
+
+core/
+
+phase1/
+phase1/scan/
+
+phase2/
+phase2/typecheck 
+phase2/evaluate
+
+phase3/
+phase3/codegen

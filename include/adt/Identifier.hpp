@@ -15,28 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <cstring>
 #include <ostream>
-#include <string>
-#include <unordered_set>
 
-#include "utility/Assert.hpp"
+#include "adt/StringSet.hpp"
 
 namespace mint {
-class Identifier;
-
-// #TODO: refactor Identifier to use StringSet
-// instead of IdentifierSet.
-class IdentifierSet {
-private:
-  std::unordered_set<std::string> set;
-
-public:
-  template <class... Args>
-  [[nodiscard]] auto emplace(Args &&...args) noexcept -> Identifier;
-
-  [[nodiscard]] auto empty_id() noexcept -> Identifier;
-};
 
 /*
   start = [a-zA-Z_];
@@ -46,18 +29,18 @@ public:
 */
 class Identifier {
 private:
-  IdentifierSet *set;
+  StringSet *set;
   std::string_view data;
 
-  Identifier(IdentifierSet *set, std::string_view data) noexcept;
-
-  friend class IdentifierSet;
+  Identifier(StringSet *set, std::string_view data) noexcept;
 
 public:
   Identifier(const Identifier &id) noexcept = default;
   Identifier(Identifier &&id) noexcept = default;
   auto operator=(const Identifier &id) noexcept -> Identifier & = default;
   auto operator=(Identifier &&id) noexcept -> Identifier & = default;
+
+  static Identifier create(StringSet *set, std::string_view string) noexcept;
 
   auto operator==(const Identifier &other) const noexcept -> bool;
   operator std::string_view() const noexcept;
@@ -141,14 +124,6 @@ inline auto operator<<(std::ostream &out, Identifier const &id) noexcept
 //  is scope a subscope of the scope of name?
 [[nodiscard]] auto subscopeOf(Identifier scope, Identifier name) noexcept
     -> bool;
-
-template <class... Args>
-[[nodiscard]] inline auto IdentifierSet::emplace(Args &&...args) noexcept
-    -> Identifier {
-  auto pair = set.emplace(std::forward<Args>(args)...);
-  return Identifier(this, *pair.first);
-}
-
 } // namespace mint
 
 namespace std {

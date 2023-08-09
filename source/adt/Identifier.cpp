@@ -14,16 +14,21 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+#include <cstring>
+
 #include "adt/Identifier.hpp"
+#include "utility/Assert.hpp"
 
 namespace mint {
-[[nodiscard]] auto IdentifierSet::empty_id() noexcept -> Identifier {
-  return emplace("");
-}
-
-Identifier::Identifier(IdentifierSet *set, std::string_view data) noexcept
+Identifier::Identifier(StringSet *set, std::string_view data) noexcept
     : set(set), data(data) {
   MINT_ASSERT(set != nullptr);
+}
+
+Identifier Identifier::create(StringSet *set,
+                              std::string_view string) noexcept {
+  MINT_ASSERT(set != nullptr);
+  return {set, set->emplace(string)};
 }
 
 // #NOTE: since identifiers are interned, comparison can be
@@ -39,7 +44,7 @@ auto Identifier::view() const noexcept -> std::string_view { return data; }
 auto Identifier::empty() const noexcept -> bool { return data.empty(); }
 
 auto Identifier::globalQualification() const noexcept -> Identifier {
-  return set->empty_id();
+  return create(set, "");
 }
 
 [[nodiscard]] auto Identifier::isQualified() const noexcept -> bool {
@@ -67,14 +72,14 @@ auto Identifier::globalQualification() const noexcept -> Identifier {
     if (*cursor == ':') {
       ++cursor; // eat ':'
       ++cursor; // eat ':'
-      return set->emplace(data.begin(),
-                          static_cast<std::string_view::size_type>(
-                              std::distance(data.begin(), cursor.base())));
+      return create(
+          set, {data.begin(), static_cast<std::string_view::size_type>(
+                                  std::distance(data.begin(), cursor.base()))});
     }
 
     ++cursor;
   }
-  return set->empty_id();
+  return globalQualification();
 }
 
 [[nodiscard]] auto Identifier::firstScope() const noexcept -> Identifier {
@@ -82,15 +87,15 @@ auto Identifier::globalQualification() const noexcept -> Identifier {
   auto end = data.end();
   while (cursor != end) {
     if (*cursor == ':') {
-      return set->emplace(data.begin(),
-                          static_cast<std::string_view::size_type>(
-                              std::distance(data.begin(), cursor)));
+      return create(set,
+                    {data.begin(), static_cast<std::string_view::size_type>(
+                                       std::distance(data.begin(), cursor))});
     }
 
     ++cursor;
   }
 
-  return set->empty_id();
+  return globalQualification();
 }
 
 [[nodiscard]] auto Identifier::restScope() const noexcept -> Identifier {
@@ -105,8 +110,8 @@ auto Identifier::globalQualification() const noexcept -> Identifier {
     if (*cursor == ':') {
       ++cursor; // eat ':'
       ++cursor; // eat ':'
-      return set->emplace(cursor, static_cast<std::string_view::size_type>(
-                                      std::distance(cursor, end)));
+      return create(set, {cursor, static_cast<std::string_view::size_type>(
+                                      std::distance(cursor, end))});
     }
 
     cursor++;
@@ -126,9 +131,9 @@ auto Identifier::globalQualification() const noexcept -> Identifier {
   while (cursor != end) {
     if (*cursor == ':') {
       //--cursor;
-      return set->emplace(cursor.base(),
-                          static_cast<std::string_view::size_type>(
-                              std::distance(cursor.base(), data.end())));
+      return create(
+          set, {cursor.base(), static_cast<std::string_view::size_type>(
+                                   std::distance(cursor.base(), data.end()))});
     }
     ++cursor;
   }
@@ -143,14 +148,14 @@ auto Identifier::globalQualification() const noexcept -> Identifier {
     std::string new_name{scope};
     new_name += "::";
     new_name += data;
-    return set->emplace(std::move(new_name));
+    return create(set, new_name);
   }
   // data begins with "::", place the new scope qualifier
   // between the global qualifier and the rest of the qualifications
   std::string new_name{"::"};
   new_name += scope;
   new_name += data;
-  return set->emplace(std::move(new_name));
+  return create(set, new_name);
 }
 
 /* https://llvm.org/docs/LangRef.html#identifiers */
@@ -172,7 +177,7 @@ auto Identifier::globalQualification() const noexcept -> Identifier {
     }
   }
 
-  return set->emplace(std::move(llvm_name));
+  return create(set, llvm_name);
 }
 
 // #NOTE:

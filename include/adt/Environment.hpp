@@ -17,6 +17,7 @@
 #pragma once
 #include <iostream>
 
+#include "llvm/ADT/StringSet.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/LLVMContext.h"
@@ -29,12 +30,17 @@
 #include "adt/ImportSet.hpp"
 #include "adt/InsertionPoint.hpp"
 #include "adt/Scope.hpp"
-#include "adt/StringSet.hpp"
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
 #include "ast/Ast.hpp"
 #include "scan/Parser.hpp"
+
+// #TODO: move Environment to the core directory
+// #TODO: split the llvm functionality into it's
+// own class. Then Environment can be linked without
+// the llvm object files. (ideally the entire frontend
+// can be linked without llvm.)
 
 namespace mint {
 // Allocates the data-structures necessary for the
@@ -43,10 +49,8 @@ class Environment {
   fs::path m_file;
   DirectorySearcher m_directory_searcher;
   ImportSet m_import_set;
-  IdentifierSet m_identifier_set;
-  StringSet m_string_set;
   TypeInterner m_type_interner;
-  // AstAllocator ast_allocator;
+  StringSet m_string_set;
   BinopTable m_binop_table;
   UnopTable m_unop_table;
   UseBeforeDefMap m_use_before_def_map;
@@ -120,9 +124,6 @@ public:
   auto getIdentifier(std::string_view name) noexcept -> Identifier;
 
   auto getLambdaName() noexcept -> Identifier;
-
-  //**** String Set Interface ****//
-  auto internString(std::string_view string) noexcept -> std::string_view;
 
   //**** ImportSet interface ****//
   auto alreadyImported(fs::path const &filename) noexcept -> bool;
@@ -198,6 +199,9 @@ public:
   auto hasInsertionPoint() const noexcept -> bool;
   auto exchangeInsertionPoint(InsertionPoint point = InsertionPoint{}) noexcept
       -> InsertionPoint;
+
+  //**** LLVM String Set Interface ****//
+  auto internString(std::string_view string) noexcept -> std::string_view;
 
   //**** LLVM Module Interface ****//
   auto getLLVMModule() noexcept -> llvm::Module &;

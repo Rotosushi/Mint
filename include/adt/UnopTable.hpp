@@ -28,8 +28,6 @@
 namespace mint {
 class Environment;
 
-// #TODO: both of these can return without wrapping in a Result<T>
-// #TODO: UnopEvalFn no longer needs a reference to the environment.
 using UnopEvalFn = ast::Ptr (*)(ast::Ast *right);
 using UnopCodegenFn = llvm::Value *(*)(llvm::Value *right, Environment &env);
 

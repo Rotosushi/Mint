@@ -16,7 +16,6 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <string>
-#include <string_view>
 #include <unordered_set>
 
 namespace mint {

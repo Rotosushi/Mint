@@ -32,10 +32,8 @@ Environment::Environment(std::istream *in, std::ostream *out,
                          std::unique_ptr<llvm::Module> llvm_module,
                          std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder,
                          llvm::TargetMachine *llvm_target_machine) noexcept
-    : m_global_scope(Scope::createGlobalScope(m_identifier_set.empty_id())),
-      m_local_scope(m_global_scope), m_parser(this, in), m_input(in),
-      m_output(out), m_error_output(errout), m_log_output(log),
-      m_llvm_context(std::move(llvm_context)),
+    : m_parser(this, in), m_input(in), m_output(out), m_error_output(errout),
+      m_log_output(log), m_llvm_context(std::move(llvm_context)),
       m_llvm_module(std::move(llvm_module)),
       m_llvm_ir_builder(std::move(llvm_ir_builder)),
       m_llvm_target_machine(llvm_target_machine) {
@@ -44,6 +42,9 @@ Environment::Environment(std::istream *in, std::ostream *out,
   MINT_ASSERT(errout != nullptr);
 
   MINT_ASSERT(llvm_target_machine != nullptr);
+
+  m_global_scope = Scope::createGlobalScope(getIdentifier(""));
+  m_local_scope = m_global_scope;
 
   InitializeBuiltinBinops(this);
   InitializeBuiltinUnops(this);
@@ -147,6 +148,7 @@ auto Environment::endOfInput() const noexcept -> bool {
 }
 auto Environment::parse() -> Result<ast::Ptr> { return m_parser.parse(); }
 
+//**** Scope Interface ****//
 auto Environment::localScope() noexcept -> std::shared_ptr<Scope> {
   return m_local_scope;
 }
@@ -197,20 +199,14 @@ auto Environment::fileSearch(fs::path file) noexcept
 
 //**** Identifier Set Interface ****//
 auto Environment::getIdentifier(std::string_view name) noexcept -> Identifier {
-  return m_identifier_set.emplace(name);
+  return Identifier::create(&m_string_set, name);
 }
 
 auto Environment::getLambdaName() noexcept -> Identifier {
   static std::size_t count = 0U;
   std::string name{"l"};
   name += std::to_string(count++);
-  return m_identifier_set.emplace(std::move(name));
-}
-
-//**** String Set Interface ****//
-auto Environment::internString(std::string_view string) noexcept
-    -> std::string_view {
-  return m_string_set.emplace(string);
+  return Identifier::create(&m_string_set, name);
 }
 
 //**** ImportSet interface ****/
@@ -345,6 +341,12 @@ auto Environment::exchangeInsertionPoint(InsertionPoint point) noexcept
     m_llvm_ir_builder->SetInsertPoint(point.basic_block, point.it);
 
   return result;
+}
+
+//**** String Set Interface ****//
+auto Environment::internString(std::string_view string) noexcept
+    -> std::string_view {
+  return m_string_set.emplace(string);
 }
 
 //**** LLVM Module Interface ****//
