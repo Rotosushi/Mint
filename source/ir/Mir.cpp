@@ -75,35 +75,40 @@ std::pair<detail::Index, Mir::pointer> Mir::emplace_back(Args &&...args) {
   return {m_index++, &ref};
 }
 
-std::pair<detail::Index, Mir::pointer> Mir::emplaceLet(Identifier name) {
-  return emplace_back<Let>(name);
+std::pair<detail::Index, Mir::pointer> Mir::emplaceLet(Identifier name,
+                                                       Location *sl) {
+  return emplace_back<Let>(sl, name);
 }
 
-std::pair<detail::Index, Mir::pointer> Mir::emplaceBinop(Binop::Op op) {
-  return emplace_back<Binop>(op);
+std::pair<detail::Index, Mir::pointer> Mir::emplaceBinop(Binop::Op op,
+                                                         Location *sl) {
+  return emplace_back<Binop>(sl, op);
 }
 
-std::pair<detail::Index, Mir::pointer> Mir::emplaceCall() {
-  return emplace_back<Call>();
+std::pair<detail::Index, Mir::pointer> Mir::emplaceCall(Location *sl) {
+  return emplace_back<Call>(sl);
 }
 
-std::pair<detail::Index, Mir::pointer> Mir::emplaceUnop(Unop::Op op) {
-  return emplace_back<Unop>(op);
+std::pair<detail::Index, Mir::pointer> Mir::emplaceUnop(Unop::Op op,
+                                                        Location *sl) {
+  return emplace_back<Unop>(sl, op);
+}
+
+std::pair<detail::Index, Mir::pointer> Mir::emplaceImport(std::string_view file,
+                                                          Location *sl) {
+  return emplace_back<Import>(sl, file);
 }
 
 std::pair<detail::Index, Mir::pointer>
-Mir::emplaceImport(std::string_view file) {
-  return emplace_back<Import>(file);
+Mir::emplaceModule(Identifier name, boost::container::vector<Mir> expressions,
+                   Location *sl) {
+  return emplace_back<Module>(sl, name, std::move(expressions));
 }
 
 std::pair<detail::Index, Mir::pointer>
-Mir::emplaceModule(Identifier name, boost::container::vector<Mir> expressions) {
-  return emplace_back<Module>(name, std::move(expressions));
-}
-
-std::pair<detail::Index, Mir::pointer>
-Mir::emplaceLambda(FormalArguments arguments, type::Ptr result_type) {
-  return emplace_back<Lambda>(std::move(arguments), result_type);
+Mir::emplaceLambda(FormalArguments arguments, type::Ptr result_type,
+                   Location *sl) {
+  return emplace_back<Lambda>(sl, std::move(arguments), result_type);
 }
 } // namespace ir
 } // namespace mint

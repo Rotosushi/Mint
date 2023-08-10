@@ -55,12 +55,9 @@ common/utility/
 
 core/
 
-phase1/
-phase1/scan/
+scan/
 
-phase2/
-phase2/typecheck 
-phase2/evaluate
+typecheck/
+evaluate/
 
-phase3/
-phase3/codegen
+codegen/

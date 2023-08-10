@@ -15,38 +15,47 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <expected>
+#include <variant>
 
 #include "adt/Error.hpp"
 #include "utility/Assert.hpp"
 
 namespace mint {
+class Unknown {};
+
 template <class T> class Result {
-  std::expected<T, Error> data;
+  using Variant = std::variant<T, Unknown, Error>;
+
+  Variant data;
 
 public:
-  Result(T t) noexcept : data(std::move(t)) {}
-  Result(Error e) noexcept : data(std::unexpect, std::move(e)) {}
+  Result() noexcept : data(std::in_place_type<Unknown>) {}
+  Result(T t) noexcept : data(std::in_place_type<T>, std::move(t)) {}
+  Result(Error e) noexcept : data(std::in_place_type<Error>, std::move(e)) {}
   Result(Error::Kind kind) noexcept : data(std::unexpect, kind) {}
   Result(Error::Kind kind, Location location, std::string_view message) noexcept
       : data(std::unexpect, kind, location, message) {}
 
-  operator bool() const noexcept { return data.has_value(); }
+  operator bool() const noexcept { return success(); }
 
-  [[nodiscard]] auto hasValue() const noexcept -> bool {
-    return data.has_value();
+  [[nodiscard]] auto success() const noexcept -> bool {
+    return std::holds_alternative<T>(data);
   }
 
-  [[nodiscard]] auto hasError() const noexcept -> bool {
-    return !data.has_value();
+  [[nodiscard]] auto unknown() const noexcept -> bool {
+    return std::holds_alternative<Unknown>(data);
+  }
+
+  [[nodiscard]] auto failure() const noexcept -> bool {
+    return std::holds_alternative<Error>(data);
   }
 
   [[nodiscard]] auto value() noexcept -> T & {
-    MINT_ASSERT(hasValue());
+    MINT_ASSERT(success());
     return data.value();
   }
   [[nodiscard]] auto error() noexcept -> Error & {
-    MINT_ASSERT(hasError());
+    MINT_ASSERT(failure());
     return data.error();
   }
 };

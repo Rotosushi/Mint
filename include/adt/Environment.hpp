@@ -39,8 +39,8 @@
 // #TODO: move Environment to the core directory
 // #TODO: split the llvm functionality into it's
 // own class. Then Environment can be linked without
-// the llvm object files. (ideally the entire frontend
-// can be linked without llvm.)
+// the llvm object files. (ideally the whole compiler
+// save for codegen can be linked without llvm.)
 
 namespace mint {
 // Allocates the data-structures necessary for the
@@ -54,11 +54,6 @@ class Environment {
   BinopTable m_binop_table;
   UnopTable m_unop_table;
   UseBeforeDefMap m_use_before_def_map;
-  //  #NOTE: since we only have std::weak_ptrs
-  //  back up the tree of scopes, we must hold
-  //  a shared_ptr to the top of the tree.
-  //  so when we traverse to a new scope,
-  //  all of the scopes stay alive.
   std::shared_ptr<Scope> m_global_scope;
   std::shared_ptr<Scope> m_local_scope;
   Parser m_parser;

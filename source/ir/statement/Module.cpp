@@ -19,8 +19,8 @@
 
 namespace mint {
 namespace ir {
-Module::Module(Identifier name, Expressions expressions) noexcept
-    : m_name(name), m_expressions(std::move(expressions)) {}
+Module::Module(Location *sl, Identifier name, Expressions expressions) noexcept
+    : detail::Base(sl), m_name(name), m_expressions(std::move(expressions)) {}
 Module::Module(Module const &other) noexcept
     : m_name(other.m_name), m_expressions(other.m_expressions) {}
 Module::Module(Module &&other) noexcept

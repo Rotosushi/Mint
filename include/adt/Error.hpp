@@ -25,8 +25,52 @@
 #include "adt/UseBeforeDefNames.hpp"
 #include "scan/Location.hpp"
 
+// #NOTE: Errors are currently returned by value in most cases.
+// this works fine for single errors. however I think it would
+// be interesting and useful to create a list of errors within
+// the environment, create errors and place them into that list
+// then return a reference to that error, instead of the error
+// itself.
+// this has the major benefiet of reducing the amount of copying
+// of errors during parsing, typechecking, evaluation, and codegen.
+// #TODO: add a ErrorList (or similar) data structure to the
+// environment. to hold errors as they are generated.
+// #NOTE: this brings up the idea of the success path and
+// failure path of the compiler. currently, each major pass
+// of the compiler; (If i am using 'pass' correctly as understood
+// by other languages) parse, typecheck, evaluate, codegen,
+// are defined by their success path and failure path. and this
+// behavior is encapsulated within the Result<T, E> class.
+// which holds the success or failure of the function call,
+// and returns the data relevant to either path.
+// What I am coming up to is noticing the structure
+// as it relates to UseBeforeDef errors. as of now, UseBeforeDef
+// is an Error, and it is handled on the failure path of the compiler.
+// however UBD is not handled the same way as other errors, and as such
+// it adds a layer of complexity to the failure path.
+// This is tolerable only in so far as there is only one kind of
+// non-error error. if there is more than one, Then an abstraction
+// is needed to encapsulate this non-error, non-success path and
+// it's set of values. Then these things can be handled more
+// systematically. An initial guess would simply be to modify
+// Result<T, E> to Result<T, E, U> where T is the success path
+// E is the error path, and U is the undecided/indeterminite path.
+// (though maybe T, F, U is clearer? it's E for Error btw.
+// T = true, F = false, U = maybe)
+// the U path encapsulates the Idea that while computation cannot
+// continue down the path it took, the success or failure of the
+// expression has not been decided.
+// variable use before definition is an example of the U path.
+// The compiler cannot decide if the variables use is incorrect
+// or correct until at a point later in the process.
+// another example of a U path is runtime only expressions within
+// the comptime context. Runtime only expressions are both possible
+// and necessary, and yet sometimes there are contexts where their
+// use must be disallowed.
+
 namespace mint {
 class Scope;
+
 class Error {
 public:
   struct Default {

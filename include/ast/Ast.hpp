@@ -85,8 +85,6 @@ protected:
       : m_prev_ast{nullptr}, m_cached_type{nullptr}, m_kind{kind},
         m_attributes{attributes}, m_location{location} {}
 
-  struct Protected {};
-
   auto cachedType(type::Ptr type) const noexcept -> type::Ptr {
     return m_cached_type = type;
   }

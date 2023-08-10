@@ -15,33 +15,39 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "boost/container/vector.hpp"
 
-#include "adt/Identifier.hpp"
-#include "ir/detail/Base.hpp"
+#include "scan/Location.hpp"
+#include "type/Type.hpp"
+
+#include "utility/Assert.hpp"
 
 namespace mint {
 namespace ir {
-class Mir;
-
-class Module : public detail::Base {
-public:
-  using Expressions = boost::container::vector<Mir>;
-
-private:
-  Identifier m_name;
-  Expressions m_expressions;
+namespace detail {
+// the base class of ir elements which need to keep
+// track of a computed type and a source location.
+class Base {
+  mutable type::Ptr m_cached_type;
+  Location *m_source_location;
 
 public:
-  Module(Location *sl, Identifier name, Expressions expressions) noexcept;
-  Module(Module const &other) noexcept;
-  Module(Module &&other) noexcept;
-  auto operator=(Module const &other) noexcept -> Module &;
-  auto operator=(Module &&other) noexcept -> Module &;
-  ~Module() noexcept;
+  Base(Location *source_location) noexcept
+      : m_cached_type(nullptr), m_source_location(source_location) {
+    MINT_ASSERT(source_location != nullptr);
+  }
 
-  [[nodiscard]] auto name() const noexcept -> Identifier;
-  [[nodiscard]] auto expressions() noexcept -> Expressions &;
+  auto cachedType(type::Ptr type) const noexcept -> type::Ptr {
+    return m_cached_type = type;
+  }
+
+  auto hasCachedType() const noexcept -> bool {
+    return m_cached_type == nullptr;
+  }
+
+  auto sourceLocation() const noexcept -> Location * {
+    return m_source_location;
+  }
 };
+} // namespace detail
 } // namespace ir
 } // namespace mint

@@ -18,7 +18,7 @@
 #include <string_view>
 
 namespace mint {
-auto stringify(std::string_view string) noexcept -> std::string_view {
+inline auto stringify(std::string_view string) noexcept -> std::string_view {
   auto cursor = std::next(string.begin());
   auto end = std::prev(string.end());
 

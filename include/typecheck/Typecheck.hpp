@@ -15,33 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "boost/container/vector.hpp"
 
-#include "adt/Identifier.hpp"
-#include "ir/detail/Base.hpp"
+#include "adt/Result.hpp"
+#include "ir/Mir.hpp"
+#include "type/Type.hpp"
 
 namespace mint {
-namespace ir {
-class Mir;
+class Environment;
 
-class Module : public detail::Base {
-public:
-  using Expressions = boost::container::vector<Mir>;
-
-private:
-  Identifier m_name;
-  Expressions m_expressions;
-
-public:
-  Module(Location *sl, Identifier name, Expressions expressions) noexcept;
-  Module(Module const &other) noexcept;
-  Module(Module &&other) noexcept;
-  auto operator=(Module const &other) noexcept -> Module &;
-  auto operator=(Module &&other) noexcept -> Module &;
-  ~Module() noexcept;
-
-  [[nodiscard]] auto name() const noexcept -> Identifier;
-  [[nodiscard]] auto expressions() noexcept -> Expressions &;
-};
-} // namespace ir
+Result<type::Ptr> typecheck(ir::Mir &ir, Environment &env) noexcept;
 } // namespace mint

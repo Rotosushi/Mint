@@ -44,6 +44,10 @@ class Instruction;
 
 class Mir {
 public:
+  // #TODO: replace boost::container::vector
+  // with a handrolled vector like type which
+  // can handle forward declared types.
+  // (#NOTE: maybe based around std::unique_ptr<T[]>)
   using Ir = boost::container::vector<Instruction>;
   using iterator = Ir::iterator;
   using const_iterator = Ir::const_iterator;
@@ -84,15 +88,17 @@ public:
   [[nodiscard]] auto operator[](std::size_t index) const noexcept
       -> const_reference;
 
-  std::pair<detail::Index, pointer> emplaceLet(Identifier name);
-  std::pair<detail::Index, pointer> emplaceBinop(Binop::Op op);
-  std::pair<detail::Index, pointer> emplaceCall();
-  std::pair<detail::Index, pointer> emplaceUnop(Unop::Op op);
-  std::pair<detail::Index, pointer> emplaceImport(std::string_view file);
+  std::pair<detail::Index, pointer> emplaceLet(Identifier name, Location *sl);
+  std::pair<detail::Index, pointer> emplaceBinop(Binop::Op op, Location *sl);
+  std::pair<detail::Index, pointer> emplaceCall(Location *sl);
+  std::pair<detail::Index, pointer> emplaceUnop(Unop::Op op, Location *sl);
+  std::pair<detail::Index, pointer> emplaceImport(std::string_view file,
+                                                  Location *sl);
   std::pair<detail::Index, pointer>
-  emplaceModule(Identifier name, boost::container::vector<Mir> expressions);
-  std::pair<detail::Index, pointer> emplaceLambda(FormalArguments arguments,
-                                                  type::Ptr result_type);
+  emplaceModule(Identifier name, boost::container::vector<Mir> expressions,
+                Location *sl);
+  std::pair<detail::Index, pointer>
+  emplaceLambda(FormalArguments arguments, type::Ptr result_type, Location *sl);
 };
 } // namespace ir
 } // namespace mint

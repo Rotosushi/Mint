@@ -118,7 +118,7 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   // this one and relying upon this definitions type can be
   // typechecked
   if (auto bound = env.partialBindName(name(), attributes(), type);
-      bound.hasError())
+      bound.failure())
     return bound.error();
 
   // #NOTE:

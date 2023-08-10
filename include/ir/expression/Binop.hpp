@@ -19,7 +19,7 @@
 
 namespace mint {
 namespace ir {
-class Binop {
+class Binop : public detail::Base {
 public:
   enum Op {
     Plus,
@@ -44,7 +44,7 @@ private:
   detail::Parameter m_right;
 
 public:
-  Binop(Op op) noexcept : m_op(op) {}
+  Binop(Location *sl, Op op) noexcept : detail::Base(sl), m_op(op) {}
   Binop(Binop const &other) noexcept = default;
   Binop(Binop &&other) noexcept = default;
   auto operator=(Binop const &other) noexcept -> Binop & = default;

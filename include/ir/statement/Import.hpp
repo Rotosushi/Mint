@@ -15,15 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include "ir/detail/Base.hpp"
 #include <string_view>
 
 namespace mint {
 namespace ir {
-class Import {
+class Import : public detail::Base {
   std::string_view m_file;
 
 public:
-  Import(std::string_view file) noexcept : m_file(file) {}
+  Import(Location *sl, std::string_view file) noexcept
+      : detail::Base(sl), m_file(file) {}
   Import(Import const &other) noexcept = default;
   Import(Import &&other) noexcept = default;
   auto operator=(Import const &other) noexcept -> Import & = default;

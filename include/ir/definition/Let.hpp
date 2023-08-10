@@ -20,12 +20,13 @@
 
 namespace mint {
 namespace ir {
-class Let {
+class Let : public detail::Base {
   Identifier m_name;
   detail::Parameter m_parameter;
 
 public:
-  Let(Identifier name) noexcept : m_name(name) {}
+  Let(Location *sl, Identifier name) noexcept
+      : detail::Base(sl), m_name(name) {}
   Let(Let const &other) noexcept = default;
   Let(Let &&other) noexcept = default;
   auto operator=(Let const &other) noexcept -> Let & = default;

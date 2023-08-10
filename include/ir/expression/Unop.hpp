@@ -19,7 +19,7 @@
 
 namespace mint {
 namespace ir {
-class Unop {
+class Unop : public detail::Base {
 public:
   enum Op {
     Neg,
@@ -31,7 +31,7 @@ private:
   detail::Parameter m_right;
 
 public:
-  Unop(Op op) noexcept : m_op(op) {}
+  Unop(Location *sl, Op op) noexcept : detail::Base(sl), m_op(op) {}
   Unop(Unop const &other) noexcept = default;
   Unop(Unop &&other) noexcept = default;
   auto operator=(Unop const &other) noexcept -> Unop & = default;

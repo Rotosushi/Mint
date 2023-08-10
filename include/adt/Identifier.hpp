@@ -21,12 +21,10 @@
 
 namespace mint {
 
-/*
-  start = [a-zA-Z_];
-  continue = [a-zA-Z0-9_];
-  separator = "::";
-  id= start continue* (separator continue+)*;
-*/
+//   start = [a-zA-Z_];
+//   continue = [a-zA-Z0-9_];
+//   separator = "::";
+//   id= start continue* (separator continue+)*;
 class Identifier {
 private:
   StringSet *set;
@@ -53,22 +51,18 @@ public:
   // "::x"            -> true
   // "a::x"           -> true
   // "a0::...::aN::x" -> true
-  // */
   [[nodiscard]] auto isQualified() const noexcept -> bool;
 
-  // /*
   // does this identifier begin with global scope?
-
   // "x"              -> false
   // "::x"            -> true
   // "a::x"           -> false
   // "a0::...::aN::x" -> false
-  // */
   [[nodiscard]] auto isGloballyQualified() const noexcept -> bool;
 
-  // #NOTE: qualifications does not return an Identifier
+  // #WARNING: qualifications does not return a valid Identifier
   // because the qualifications of an Identifier are not
-  // themselves a valid identifier.
+  // themselves a valid identifier, from the perspective of lookup.
   // #NOTE: this function assumes that it is given a valid
   // Identifier
   //  "x"              -> ""
@@ -83,32 +77,26 @@ public:
   //  "a0::...::aN::x" -> "a0"
   [[nodiscard]] auto firstScope() const noexcept -> Identifier;
 
-  // /*
   //   "x"              -> ""
   //   "::x"            -> ""
   //   "a::x"           -> ""
   //   "a0::...::aN::x" -> "a1::...::aN::x"
-  // */
   [[nodiscard]] auto restScope() const noexcept -> Identifier;
 
-  // /*
   //   "x"              -> "x"
   //   "::x"            -> "x"
   //   "a::x"           -> "x"
   //   "a0::...::aN::x" -> "x"
-  // */
   [[nodiscard]] auto variable() const noexcept -> Identifier;
 
-  // /*
   //   "x",   "a"           -> "a::x"
   //   "::x", "a"           -> "::x"
   //   "a::x", "b"          -> "b::a::x"
   //   "a0::...::aN::x"     -> "b::a0::...::aN::x"
-  // */
   [[nodiscard]] auto prependScope(Identifier scope) const noexcept
       -> Identifier;
 
-  /* https://llvm.org/docs/LangRef.html#identifiers */
+  // https://llvm.org/docs/LangRef.html#identifiers
   [[nodiscard]] auto convertForLLVM() const noexcept -> Identifier;
 };
 
@@ -127,6 +115,8 @@ inline auto operator<<(std::ostream &out, Identifier const &id) noexcept
 } // namespace mint
 
 namespace std {
+// specialize std::less to work with Identifiers,
+// so we can use them as keys in ordered maps and sets.
 template <> struct less<mint::Identifier> {
   auto operator()(mint::Identifier const &l, mint::Identifier const &r) const
       -> bool {
@@ -141,14 +131,16 @@ template <> struct less<mint::Identifier> {
     else if (llen > rlen) {
       return false;
     } else { // llen == rlen
+      if (left.front() != right.front())
+        return false;
+
       return strncmp(left.begin(), right.begin(), llen) < 0;
     }
   }
 };
-/*
-  specialize std::hash to work with identifiers,
-  so we can use identifiers directly in maps and sets
-*/
+
+//  specialize std::hash to work with identifiers,
+//  so we can use identifiers as keys in unordered maps and sets
 template <> struct hash<mint::Identifier> {
   auto operator()(mint::Identifier const &id) const -> std::size_t {
     return std::hash<std::string_view>{}(id.view());

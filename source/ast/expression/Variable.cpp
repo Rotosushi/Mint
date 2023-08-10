@@ -92,7 +92,7 @@ Result<ast::Ptr> Variable::evaluate(Environment &env) noexcept {
   // #NOTE: enforce that typecheck was called before
   MINT_ASSERT(cachedTypeOrAssert());
   auto result = env.lookupBinding(m_name);
-  MINT_ASSERT(result.hasValue());
+  MINT_ASSERT(result.success());
   auto binding = result.value();
 
   // we cannot evaluate a variable given a
@@ -109,7 +109,7 @@ Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {
   // #NOTE: enforce that typecheck was called before
   MINT_ASSERT(cachedTypeOrAssert());
   auto result = env.lookupBinding(m_name);
-  MINT_ASSERT(result.hasValue());
+  MINT_ASSERT(result.success());
   auto binding = result.value();
 
   // we cannot codegen a variable given a
