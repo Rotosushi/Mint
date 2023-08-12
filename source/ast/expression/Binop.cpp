@@ -48,43 +48,43 @@ Ptr Binop::clone_impl() const noexcept {
                 m_right->clone());
 }
 
-ir::Binop::Op Binop::convert(Token op) noexcept {
-  switch (op) {
-  case Token::Plus:
-    return ir::Binop::Plus;
-  case Token::Minus:
-    return ir::Binop::Minus;
-  case Token::Star:
-    return ir::Binop::Star;
-  case Token::Divide:
-    return ir::Binop::Divide;
-  case Token::Modulo:
-    return ir::Binop::Modulo;
-  case Token::Not:
-    return ir::Binop::Not;
-  case Token::And:
-    return ir::Binop::And;
-  case Token::Or:
-    return ir::Binop::Or;
-  case Token::LessThan:
-    return ir::Binop::LessThan;
-  case Token::LessThanOrEqual:
-    return ir::Binop::LessThanOrEqual;
-  case Token::EqualEqual:
-    return ir::Binop::EqualEqual;
-  case Token::NotEqual:
-    return ir::Binop::NotEqual;
-  case Token::GreaterThan:
-    return ir::Binop::GreaterThan;
-  case Token::GreaterThanOrEqual:
-    return ir::Binop::GreaterThanOrEqual;
-  default:
-    abort("bad binop op token");
-  }
-}
+// ir::Binop::Op Binop::convert(Token op) noexcept {
+//   switch (op) {
+//   case Token::Plus:
+//     return ir::Binop::Plus;
+//   case Token::Minus:
+//     return ir::Binop::Minus;
+//   case Token::Star:
+//     return ir::Binop::Star;
+//   case Token::Divide:
+//     return ir::Binop::Divide;
+//   case Token::Modulo:
+//     return ir::Binop::Modulo;
+//   case Token::Not:
+//     return ir::Binop::Not;
+//   case Token::And:
+//     return ir::Binop::And;
+//   case Token::Or:
+//     return ir::Binop::Or;
+//   case Token::LessThan:
+//     return ir::Binop::LessThan;
+//   case Token::LessThanOrEqual:
+//     return ir::Binop::LessThanOrEqual;
+//   case Token::EqualEqual:
+//     return ir::Binop::EqualEqual;
+//   case Token::NotEqual:
+//     return ir::Binop::NotEqual;
+//   case Token::GreaterThan:
+//     return ir::Binop::GreaterThan;
+//   case Token::GreaterThanOrEqual:
+//     return ir::Binop::GreaterThanOrEqual;
+//   default:
+//     abort("bad binop op token");
+//   }
+// }
 
 ir::detail::Parameter Binop::flatten_impl(ir::Mir &ir) const noexcept {
-  auto pair = ir.emplaceBinop(convert(m_op));
+  auto pair = ir.emplaceBinop(m_op);
   auto instruction = pair.second;
   auto &binop = instruction->binop();
   binop.left() = m_left->flatten_impl(ir);

@@ -20,7 +20,7 @@
 
 namespace mint {
 namespace ir {
-class Call : public detail::Base {
+class Call {
 public:
   using Arguments = std::vector<detail::Parameter>;
 
@@ -29,8 +29,7 @@ private:
   Arguments m_arguments;
 
 public:
-  Call(Location *sl) noexcept : detail::Base(sl) {}
-
+  Call() noexcept = default;
   Call(Call const &other) noexcept = default;
   Call(Call &&other) noexcept = default;
   auto operator=(Call const &other) noexcept -> Call & = default;

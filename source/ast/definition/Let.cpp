@@ -64,7 +64,7 @@ ir::detail::Parameter Let::flatten_impl(ir::Mir &ir) const noexcept {
   auto pair = ir.emplaceLet(name());
   auto &let = pair.second->let();
   let.parameter() = m_ast->flatten_impl(ir);
-  return pair.first;
+  return {pair.first};
 }
 
 void Let::print(std::ostream &out) const noexcept {
@@ -117,8 +117,7 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   // partial binding, such that definitions appearing after
   // this one and relying upon this definitions type can be
   // typechecked
-  if (auto bound = env.partialBindName(name(), attributes(), type);
-      bound.failure())
+  if (auto bound = env.declareName(name(), attributes(), type); bound.failure())
     return bound.error();
 
   // #NOTE:

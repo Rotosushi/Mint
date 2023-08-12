@@ -974,8 +974,55 @@ module B {
 
 B::b matches ::B::b iff we add global qualifications
 
+---------------------------------------------------------------------------------
+can we use a std::multimap to implement the UBDMap?
 
+there are a few issues, mainly surrounding the interaction between 
+use-before-def and modules/namespaces, related to the lookup process.
 
+lookup walks up the scope tree.
+qualified lookup can reach any point in the tree from any other point.
+
+the way we have handled this has been on a case by case basis.
+
+case 1: see if the def name matches the undef name 
+
+case 2: the undef name is globally qualified, so we 
+  globally qualify the def name and see if they match
+
+case 3: the def name appears in a scope higher than the 
+  scope of the ubd definition. thus unqualified lookup 
+  will reach the new definition from the ubd definition.
+
+case 4: the def name is qualified, so that 
+  by qualified lookup the ubd definition would resolve
+  the definition. so we prepend the qualifications of the 
+  def name to the ubd name and see if they match.
+
+case 1 can be handled by the st::multimap interface directly,
+
+case 2 requires modifying the passed in name, so this can be 
+handled by adding some complexity to the lookup method,
+
+case 3 requires comparing the name to the undef name unqualified,
+  after comparing the scope name of the ubd def to the scope of 
+  the def name 
+
+case 4 requires the qualifications of the ubd def name and the 
+  normal name.
+
+we can handle each of these cases with a lookup in the map each.
+which makes for 4 queries per lookup, as opposed to handrolling 
+something where we can combine the checks into a single call.
+where we check each case for each name, instead of checking 
+every name for a single case and then restarting with the new name.
+
+however, is there another approach that would make this simpler?
+
+well, we can abandon use before def and implement forward declarations.
+(which I don't love)
+or we could come up with another strategy for solvign ubd.
+which might exist idk.
 
 
 ()()()()()()()()()()()()()

@@ -93,7 +93,7 @@ Result<type::Ptr> Lambda::typecheck(Environment &env) const noexcept {
 
   for (auto &argument : m_arguments) {
     argument_types.emplace_back(argument.type);
-    env.partialBindName(argument.name, argument.attributes, argument.type);
+    env.declareName(argument.name, argument.attributes, argument.type);
   }
 
   auto result = m_body->typecheck(env);
@@ -166,7 +166,7 @@ Result<llvm::Value *> Lambda::codegen(Environment &env) noexcept {
   for (auto &argument : m_arguments) {
     auto &llvm_arg = *llvm_arg_cursor;
     auto result =
-        env.partialBindName(argument.name, argument.attributes, argument.type);
+        env.declareName(argument.name, argument.attributes, argument.type);
     if (!result) {
       cleanup();
       return result.error();

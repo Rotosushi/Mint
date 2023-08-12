@@ -16,42 +16,43 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include "ir/detail/Parameter.hpp"
+#include "scan/Token.hpp"
 
 namespace mint {
 namespace ir {
-class Binop : public detail::Base {
+class Binop {
 public:
-  enum Op {
-    Plus,
-    Minus,
-    Star,
-    Divide,
-    Modulo,
-    Not,
-    And,
-    Or,
-    LessThan,
-    LessThanOrEqual,
-    EqualEqual,
-    NotEqual,
-    GreaterThan,
-    GreaterThanOrEqual,
-  };
+  // enum Op {
+  //   Plus,
+  //   Minus,
+  //   Star,
+  //   Divide,
+  //   Modulo,
+  //   Not,
+  //   And,
+  //   Or,
+  //   LessThan,
+  //   LessThanOrEqual,
+  //   EqualEqual,
+  //   NotEqual,
+  //   GreaterThan,
+  //   GreaterThanOrEqual,
+  // };
 
 private:
-  Op m_op;
+  Token m_op;
   detail::Parameter m_left;
   detail::Parameter m_right;
 
 public:
-  Binop(Location *sl, Op op) noexcept : detail::Base(sl), m_op(op) {}
+  Binop(Token op) noexcept : m_op(op) {}
   Binop(Binop const &other) noexcept = default;
   Binop(Binop &&other) noexcept = default;
   auto operator=(Binop const &other) noexcept -> Binop & = default;
   auto operator=(Binop &&other) noexcept -> Binop & = default;
   ~Binop() noexcept = default;
 
-  [[nodiscard]] auto op() const noexcept -> Op { return m_op; }
+  [[nodiscard]] auto op() const noexcept -> Token { return m_op; }
   [[nodiscard]] auto left() noexcept -> detail::Parameter & { return m_left; }
   [[nodiscard]] auto right() noexcept -> detail::Parameter & { return m_right; }
 };

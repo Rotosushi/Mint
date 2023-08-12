@@ -23,16 +23,16 @@
 
 namespace mint {
 namespace ir {
-class Lambda : public detail::Base {
+class Lambda {
 private:
   FormalArguments m_arguments;
   type::Ptr m_result_type;
   detail::Parameter m_body;
 
 public:
-  Lambda(Location *sl, FormalArguments arguments,
+  Lambda(FormalArguments arguments,
          type::Ptr result_type) noexcept
-      : detail::Base(sl), m_arguments(std::move(arguments)),
+      : m_arguments(std::move(arguments)),
         m_result_type(result_type) {}
   Lambda(Lambda const &other) noexcept = default;
   Lambda(Lambda &&other) noexcept = default;

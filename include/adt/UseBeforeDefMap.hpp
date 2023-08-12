@@ -31,49 +31,49 @@ class Environment;
 
 // class which holds terms which use a name before
 // it is defined, until those names are defined.
-class UBDMap {
-public:
-  using Key = Identifier;
-  struct Value {
-    ir::Mir mir;
-    std::shared_ptr<Scope> scope;
-  };
+// class UBDMap {
+// public:
+//   using Key = Identifier;
+//   struct Value {
+//     ir::Mir mir;
+//     std::shared_ptr<Scope> scope;
+//   };
 
-  using Map = std::multimap<Key, Value>;
+//   using Map = std::multimap<Key, Value>;
 
-  class iterator : public Map::iterator {
-  public:
-    iterator(Map::iterator i) noexcept : Map::iterator(i) {}
+//   class iterator : public Map::iterator {
+//   public:
+//     iterator(Map::iterator i) noexcept : Map::iterator(i) {}
 
-    auto name() noexcept -> Identifier { return (*this)->first; }
-    auto ir() noexcept -> ir::Mir & { return (*this)->second.mir; }
-    auto scope() noexcept -> std::shared_ptr<Scope> & {
-      return (*this)->second.scope;
-    }
-  };
+//     auto name() noexcept -> Identifier { return (*this)->first; }
+//     auto ir() noexcept -> ir::Mir & { return (*this)->second.mir; }
+//     auto scope() noexcept -> std::shared_ptr<Scope> & {
+//       return (*this)->second.scope;
+//     }
+//   };
 
-  class Range {
-    iterator m_first;
-    iterator m_last;
+//   class Range {
+//     iterator m_first;
+//     iterator m_last;
 
-  public:
-    Range(std::pair<Map::iterator, Map::iterator> pair) noexcept
-        : m_first(pair.first), m_last(pair.second) {}
+//   public:
+//     Range(std::pair<Map::iterator, Map::iterator> pair) noexcept
+//         : m_first(pair.first), m_last(pair.second) {}
 
-    auto begin() noexcept -> iterator { return m_first; }
-    auto end() noexcept -> iterator { return m_last; }
-  };
+//     auto begin() noexcept -> iterator { return m_first; }
+//     auto end() noexcept -> iterator { return m_last; }
+//   };
 
-private:
-  Map m_map;
+// private:
+//   Map m_map;
 
-public:
-  auto emplace(Identifier name, ir::Mir mir,
-               std::shared_ptr<Scope> &scope) noexcept -> iterator;
-  auto lookup(Identifier name) noexcept -> Range;
-  auto erase(iterator pos) -> iterator;
-  auto erase(Range range) -> iterator;
-};
+// public:
+//   auto emplace(Identifier name, ir::Mir mir,
+//                std::shared_ptr<Scope> &scope) noexcept -> iterator;
+//   auto lookup(Identifier name) noexcept -> Range;
+//   auto erase(iterator pos) -> iterator;
+//   auto erase(Range range) -> iterator;
+// };
 
 class UseBeforeDefMap {
 public:
@@ -152,5 +152,4 @@ public:
   resolveRuntimeValueOfUseBeforeDef(Environment &env,
                                     Identifier def_name) noexcept;
 };
-
 } // namespace mint

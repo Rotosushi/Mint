@@ -17,8 +17,8 @@
 #pragma once
 
 #include "ast/expression/Expression.hpp"
-#include "scan/Token.hpp"
 #include "ir/expression/Binop.hpp"
+#include "scan/Token.hpp"
 
 namespace mint {
 namespace ast {
@@ -31,7 +31,7 @@ protected:
   Ptr clone_impl() const noexcept override;
   ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
 
-  static ir::Binop::Op convert(Token op) noexcept;
+  // static ir::Binop::Op convert(Token op) noexcept;
 
 public:
   Binop(Attributes attributes, Location location, Token op, Ptr left,

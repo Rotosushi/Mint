@@ -42,21 +42,21 @@ Ptr Unop::clone_impl() const noexcept {
   return create(attributes(), location(), m_op, m_right->clone());
 }
 
-ir::Unop::Op Unop::convert(Token op) noexcept {
-  switch (op) {
-  case Token::Minus:
-    return ir::Unop::Neg;
+// ir::Unop::Op Unop::convert(Token op) noexcept {
+//   switch (op) {
+//   case Token::Minus:
+//     return ir::Unop::Neg;
 
-  case Token::Not:
-    return ir::Unop::Not;
+//   case Token::Not:
+//     return ir::Unop::Not;
 
-  default:
-    abort("bad unop token");
-  }
-}
+//   default:
+//     abort("bad unop token");
+//   }
+// }
 
 ir::detail::Parameter Unop::flatten_impl(ir::Mir &ir) const noexcept {
-  auto pair = ir.emplaceUnop(convert(m_op));
+  auto pair = ir.emplaceUnop(m_op);
   auto &unop = pair.second->unop();
   unop.right() = m_right->flatten_impl(ir);
   return pair.first;

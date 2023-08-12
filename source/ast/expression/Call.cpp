@@ -165,7 +165,7 @@ Result<ast::Ptr> Call::evaluate(Environment &env) noexcept {
   auto &callee_arguments = callee->arguments();
   for (auto &argument : callee_arguments) {
     auto bound =
-        env.partialBindName(argument.name, argument.attributes, argument.type);
+        env.declareName(argument.name, argument.attributes, argument.type);
     if (!bound)
       return bound.error();
     auto binding = bound.value();

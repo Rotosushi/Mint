@@ -19,30 +19,29 @@
 #include "ast/definition/Definition.hpp"
 
 namespace mint {
+// auto UBDMap::emplace(Identifier name, ir::Mir mir,
+//                      std::shared_ptr<Scope> &scope) noexcept
+//     -> UBDMap::iterator {
+//   return m_map.emplace(name, std::move(mir), scope);
+// }
 
-auto UBDMap::emplace(Identifier name, ir::Mir mir,
-                     std::shared_ptr<Scope> &scope) noexcept
-    -> UBDMap::iterator {
-  return m_map.emplace(name, std::move(mir), scope);
-}
+// auto UBDMap::lookup(Identifier name) noexcept -> Range {
+//   return m_map.equal_range(name);
+// }
 
-auto UBDMap::lookup(Identifier name) noexcept -> Range {
-  return m_map.equal_range(name);
-}
+// auto UBDMap::erase(iterator pos) noexcept -> iterator {
+//   if (pos == m_map.end())
+//     return pos;
 
-auto UBDMap::erase(iterator pos) noexcept -> iterator {
-  if (pos == m_map.end())
-    return pos;
+//   return m_map.erase(pos);
+// }
 
-  return m_map.erase(pos);
-}
+// auto UBDMap::erase(Range range) noexcept -> iterator {
+//   if (range.begin() == m_map.end())
+//     return m_map.end();
 
-auto UBDMap::erase(Range range) noexcept -> iterator {
-  if (range.begin() == m_map.end())
-    return m_map.end();
-
-  return m_map.erase(range.begin(), range.end());
-}
+//   return m_map.erase(range.begin(), range.end());
+// }
 
 UseBeforeDefMap::iterator::iterator(Elements::iterator iter) noexcept
     : Elements::iterator(iter) {}

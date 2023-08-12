@@ -232,8 +232,8 @@ auto Environment::bindName(Identifier name, Attributes attributes,
                                  std::move(comptime_value), runtime_value);
 }
 
-auto Environment::partialBindName(Identifier name, Attributes attributes,
-                                  type::Ptr type) noexcept
+auto Environment::declareName(Identifier name, Attributes attributes,
+                              type::Ptr type) noexcept
     -> mint::Result<mint::Bindings::Binding> {
   return m_local_scope->partialBindName(name, attributes, type);
 }

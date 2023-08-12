@@ -141,8 +141,8 @@ public:
                 ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
       -> mint::Result<mint::Bindings::Binding>;
 
-  auto partialBindName(Identifier name, Attributes attributes,
-                       type::Ptr type) noexcept
+  auto declareName(Identifier name, Attributes attributes,
+                   type::Ptr type) noexcept
       -> mint::Result<mint::Bindings::Binding>;
 
   auto lookupBinding(Identifier name) noexcept

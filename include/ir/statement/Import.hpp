@@ -20,12 +20,11 @@
 
 namespace mint {
 namespace ir {
-class Import : public detail::Base {
+class Import {
   std::string_view m_file;
 
 public:
-  Import(Location *sl, std::string_view file) noexcept
-      : detail::Base(sl), m_file(file) {}
+  Import(std::string_view file) noexcept : m_file(file) {}
   Import(Import const &other) noexcept = default;
   Import(Import &&other) noexcept = default;
   auto operator=(Import const &other) noexcept -> Import & = default;

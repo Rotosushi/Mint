@@ -33,7 +33,7 @@ namespace detail {
 // represents an argument to a given MIR instruction.
 // This class is meant to be trivially-copyable
 // and small.
-class Parameter : public Base {
+class Parameter {
 public:
   using Variant = std::variant<Scalar, Identifier, Index>;
 
@@ -41,15 +41,15 @@ private:
   Variant m_variant;
 
 public:
-  Parameter(Location *sl) noexcept : Base(sl), m_variant() {}
-  Parameter(Location *sl, bool boolean) noexcept
-      : Base(sl), m_variant(std::in_place_type<Scalar>, boolean) {}
-  Parameter(Location *sl, int integer) noexcept
-      : Base(sl), m_variant(std::in_place_type<Scalar>, integer) {}
-  Parameter(Location *sl, Identifier name) noexcept
-      : Base(sl), m_variant(std::in_place_type<Identifier>, name) {}
-  Parameter(Location *sl, Index index) noexcept
-      : Base(sl), m_variant(std::in_place_type<Index>, index) {}
+  Parameter() noexcept : m_variant() {}
+  Parameter(bool boolean) noexcept
+      : m_variant(std::in_place_type<Scalar>, boolean) {}
+  Parameter(int integer) noexcept
+      : m_variant(std::in_place_type<Scalar>, integer) {}
+  Parameter(Identifier name) noexcept
+      : m_variant(std::in_place_type<Identifier>, name) {}
+  Parameter(Index index) noexcept
+      : m_variant(std::in_place_type<Index>, index) {}
   Parameter(Parameter const &other) noexcept = default;
   Parameter(Parameter &&other) noexcept = default;
   auto operator=(Parameter const &other) noexcept -> Parameter & = default;

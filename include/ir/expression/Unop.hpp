@@ -16,29 +16,30 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include "ir/detail/Parameter.hpp"
+#include "scan/Token.hpp"
 
 namespace mint {
 namespace ir {
-class Unop : public detail::Base {
+class Unop {
 public:
-  enum Op {
-    Neg,
-    Not,
-  };
+  // enum Op {
+  //   Neg,
+  //   Not,
+  // };
 
 private:
-  Op m_op;
+  Token m_op;
   detail::Parameter m_right;
 
 public:
-  Unop(Location *sl, Op op) noexcept : detail::Base(sl), m_op(op) {}
+  Unop(Token op) noexcept : m_op(op) {}
   Unop(Unop const &other) noexcept = default;
   Unop(Unop &&other) noexcept = default;
   auto operator=(Unop const &other) noexcept -> Unop & = default;
   auto operator=(Unop &&other) noexcept -> Unop & = default;
   ~Unop() noexcept = default;
 
-  [[nodiscard]] auto op() const noexcept -> Op { return m_op; }
+  [[nodiscard]] auto op() const noexcept -> Token { return m_op; }
   [[nodiscard]] auto right() noexcept -> detail::Parameter & { return m_right; }
 };
 } // namespace ir

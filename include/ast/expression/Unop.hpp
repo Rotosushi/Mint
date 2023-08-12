@@ -30,7 +30,7 @@ protected:
   Ptr clone_impl() const noexcept override;
   ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
 
-  static ir::Unop::Op convert(Token op) noexcept;
+  // static ir::Unop::Op convert(Token op) noexcept;
 
 public:
   Unop(Attributes attributes, Location location, Token op, Ptr right) noexcept;

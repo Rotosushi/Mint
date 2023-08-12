@@ -76,6 +76,8 @@ public:
   [[nodiscard]] auto size() const noexcept -> std::size_t;
   void reserve(std::size_t size) noexcept;
 
+  [[nodiscard]] auto index() noexcept -> detail::Index &;
+  [[nodiscard]] auto index() const noexcept -> detail::Index const &;
   [[nodiscard]] auto ir() noexcept -> Ir &;
   [[nodiscard]] auto ir() const noexcept -> Ir const &;
 
@@ -84,21 +86,19 @@ public:
   [[nodiscard]] auto begin() const noexcept -> const_iterator;
   [[nodiscard]] auto end() const noexcept -> const_iterator;
 
-  [[nodiscard]] auto operator[](std::size_t index) noexcept -> reference;
-  [[nodiscard]] auto operator[](std::size_t index) const noexcept
+  [[nodiscard]] auto operator[](detail::Index index) noexcept -> reference;
+  [[nodiscard]] auto operator[](detail::Index index) const noexcept
       -> const_reference;
 
-  std::pair<detail::Index, pointer> emplaceLet(Identifier name, Location *sl);
-  std::pair<detail::Index, pointer> emplaceBinop(Binop::Op op, Location *sl);
-  std::pair<detail::Index, pointer> emplaceCall(Location *sl);
-  std::pair<detail::Index, pointer> emplaceUnop(Unop::Op op, Location *sl);
-  std::pair<detail::Index, pointer> emplaceImport(std::string_view file,
-                                                  Location *sl);
+  std::pair<detail::Index, pointer> emplaceLet(Identifier name);
+  std::pair<detail::Index, pointer> emplaceBinop(Token op);
+  std::pair<detail::Index, pointer> emplaceCall();
+  std::pair<detail::Index, pointer> emplaceUnop(Token op);
+  std::pair<detail::Index, pointer> emplaceImport(std::string_view file);
   std::pair<detail::Index, pointer>
-  emplaceModule(Identifier name, boost::container::vector<Mir> expressions,
-                Location *sl);
-  std::pair<detail::Index, pointer>
-  emplaceLambda(FormalArguments arguments, type::Ptr result_type, Location *sl);
+  emplaceModule(Identifier name, boost::container::vector<Mir> expressions);
+  std::pair<detail::Index, pointer> emplaceLambda(FormalArguments arguments,
+                                                  type::Ptr result_type);
 };
 } // namespace ir
 } // namespace mint

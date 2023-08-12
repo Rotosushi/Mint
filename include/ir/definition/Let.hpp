@@ -20,13 +20,13 @@
 
 namespace mint {
 namespace ir {
-class Let : public detail::Base {
+class Let {
   Identifier m_name;
+  // type::Ptr m_annotation;
   detail::Parameter m_parameter;
 
 public:
-  Let(Location *sl, Identifier name) noexcept
-      : detail::Base(sl), m_name(name) {}
+  Let(Identifier name) noexcept : m_name(name) {}
   Let(Let const &other) noexcept = default;
   Let(Let &&other) noexcept = default;
   auto operator=(Let const &other) noexcept -> Let & = default;
@@ -34,6 +34,9 @@ public:
   ~Let() noexcept = default;
 
   [[nodiscard]] auto name() const noexcept -> Identifier { return m_name; }
+  // [[nodiscard]] auto annotation() const noexcept -> type::Ptr {
+  //   return m_annotation;
+  // }
   [[nodiscard]] auto parameter() noexcept -> detail::Parameter & {
     return m_parameter;
   }

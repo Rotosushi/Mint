@@ -32,9 +32,9 @@ public:
   Result() noexcept : data(std::in_place_type<Unknown>) {}
   Result(T t) noexcept : data(std::in_place_type<T>, std::move(t)) {}
   Result(Error e) noexcept : data(std::in_place_type<Error>, std::move(e)) {}
-  Result(Error::Kind kind) noexcept : data(std::unexpect, kind) {}
+  Result(Error::Kind kind) noexcept : data(std::in_place_type<Error>, kind) {}
   Result(Error::Kind kind, Location location, std::string_view message) noexcept
-      : data(std::unexpect, kind, location, message) {}
+      : data(std::in_place_type<Error>, kind, location, message) {}
 
   operator bool() const noexcept { return success(); }
 
@@ -52,11 +52,11 @@ public:
 
   [[nodiscard]] auto value() noexcept -> T & {
     MINT_ASSERT(success());
-    return data.value();
+    return std::get<T>(data);
   }
   [[nodiscard]] auto error() noexcept -> Error & {
     MINT_ASSERT(failure());
-    return data.error();
+    return std::get<Error>(data);
   }
 };
 } // namespace mint

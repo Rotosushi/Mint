@@ -24,7 +24,7 @@ namespace mint {
 namespace ir {
 class Mir;
 
-class Module : public detail::Base {
+class Module {
 public:
   using Expressions = boost::container::vector<Mir>;
 
@@ -33,7 +33,7 @@ private:
   Expressions m_expressions;
 
 public:
-  Module(Location *sl, Identifier name, Expressions expressions) noexcept;
+  Module(Identifier name, Expressions expressions) noexcept;
   Module(Module const &other) noexcept;
   Module(Module &&other) noexcept;
   auto operator=(Module const &other) noexcept -> Module &;

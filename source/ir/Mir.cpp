@@ -49,6 +49,8 @@ auto Mir::empty() const noexcept -> bool { return m_ir.empty(); }
 auto Mir::size() const noexcept -> std::size_t { return m_ir.size(); }
 void Mir::reserve(std::size_t size) noexcept { m_ir.reserve(size); }
 
+auto Mir::index() noexcept -> detail::Index & { return m_index; }
+auto Mir::index() const noexcept -> detail::Index const & { return m_index; }
 auto Mir::ir() noexcept -> Ir & { return m_ir; }
 auto Mir::ir() const noexcept -> Ir const & { return m_ir; }
 
@@ -57,15 +59,15 @@ auto Mir::end() noexcept -> iterator { return m_ir.end(); }
 auto Mir::begin() const noexcept -> const_iterator { return m_ir.begin(); }
 auto Mir::end() const noexcept -> const_iterator { return m_ir.end(); }
 
-[[nodiscard]] auto Mir::operator[](std::size_t index) noexcept -> reference {
+[[nodiscard]] auto Mir::operator[](detail::Index index) noexcept -> reference {
   MINT_ASSERT(index < size());
-  return m_ir[index];
+  return m_ir[index.index()];
 }
 
-[[nodiscard]] auto Mir::operator[](std::size_t index) const noexcept
+[[nodiscard]] auto Mir::operator[](detail::Index index) const noexcept
     -> const_reference {
   MINT_ASSERT(index < size());
-  return m_ir[index];
+  return m_ir[index.index()];
 }
 
 template <class T, class... Args>
@@ -75,40 +77,35 @@ std::pair<detail::Index, Mir::pointer> Mir::emplace_back(Args &&...args) {
   return {m_index++, &ref};
 }
 
-std::pair<detail::Index, Mir::pointer> Mir::emplaceLet(Identifier name,
-                                                       Location *sl) {
-  return emplace_back<Let>(sl, name);
+std::pair<detail::Index, Mir::pointer> Mir::emplaceLet(Identifier name) {
+  return emplace_back<Let>(name);
 }
 
-std::pair<detail::Index, Mir::pointer> Mir::emplaceBinop(Binop::Op op,
-                                                         Location *sl) {
-  return emplace_back<Binop>(sl, op);
+std::pair<detail::Index, Mir::pointer> Mir::emplaceBinop(Token op) {
+  return emplace_back<Binop>(op);
 }
 
-std::pair<detail::Index, Mir::pointer> Mir::emplaceCall(Location *sl) {
-  return emplace_back<Call>(sl);
+std::pair<detail::Index, Mir::pointer> Mir::emplaceCall() {
+  return emplace_back<Call>();
 }
 
-std::pair<detail::Index, Mir::pointer> Mir::emplaceUnop(Unop::Op op,
-                                                        Location *sl) {
-  return emplace_back<Unop>(sl, op);
-}
-
-std::pair<detail::Index, Mir::pointer> Mir::emplaceImport(std::string_view file,
-                                                          Location *sl) {
-  return emplace_back<Import>(sl, file);
+std::pair<detail::Index, Mir::pointer> Mir::emplaceUnop(Token op) {
+  return emplace_back<Unop>(op);
 }
 
 std::pair<detail::Index, Mir::pointer>
-Mir::emplaceModule(Identifier name, boost::container::vector<Mir> expressions,
-                   Location *sl) {
-  return emplace_back<Module>(sl, name, std::move(expressions));
+Mir::emplaceImport(std::string_view file) {
+  return emplace_back<Import>(file);
 }
 
 std::pair<detail::Index, Mir::pointer>
-Mir::emplaceLambda(FormalArguments arguments, type::Ptr result_type,
-                   Location *sl) {
-  return emplace_back<Lambda>(sl, std::move(arguments), result_type);
+Mir::emplaceModule(Identifier name, boost::container::vector<Mir> expressions) {
+  return emplace_back<Module>(name, std::move(expressions));
+}
+
+std::pair<detail::Index, Mir::pointer>
+Mir::emplaceLambda(FormalArguments arguments, type::Ptr result_type) {
+  return emplace_back<Lambda>(std::move(arguments), result_type);
 }
 } // namespace ir
 } // namespace mint
