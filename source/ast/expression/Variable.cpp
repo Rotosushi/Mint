@@ -38,8 +38,13 @@ Ptr Variable::clone_impl() const noexcept {
 }
 
 ir::detail::Parameter
-Variable::flatten_impl([[maybe_unused]] ir::Mir &ir) const noexcept {
-  return {m_name};
+Variable::flatten_impl(ir::Mir &ir,
+                       [[maybe_unused]] bool immediate) const noexcept {
+  if (immediate)
+    return {m_name};
+
+  auto pair = ir.emplaceScalar({m_name});
+  return pair.first;
 }
 
 void Variable::print(std::ostream &out) const noexcept { out << m_name; }

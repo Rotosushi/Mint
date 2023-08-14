@@ -83,12 +83,14 @@ Ptr Binop::clone_impl() const noexcept {
 //   }
 // }
 
-ir::detail::Parameter Binop::flatten_impl(ir::Mir &ir) const noexcept {
+ir::detail::Parameter
+Binop::flatten_impl(ir::Mir &ir,
+                    [[maybe_unused]] bool immediate) const noexcept {
   auto pair = ir.emplaceBinop(m_op);
   auto instruction = pair.second;
-  auto &binop = instruction->binop();
-  binop.left() = m_left->flatten_impl(ir);
-  binop.right() = m_right->flatten_impl(ir);
+  auto &binop = instruction.binop();
+  binop.left() = m_left->flatten_impl(ir, true);
+  binop.right() = m_right->flatten_impl(ir, true);
   return pair.first;
 }
 

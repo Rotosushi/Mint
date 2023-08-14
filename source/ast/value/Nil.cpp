@@ -36,9 +36,13 @@ Ptr Nil::clone_impl() const noexcept {
   return create(attributes(), location());
 }
 
-ir::detail::Parameter
-Nil::flatten_impl([[maybe_unused]] ir::Mir &ir) const noexcept {
-  return {};
+ir::detail::Parameter Nil::flatten_impl(ir::Mir &ir,
+                                        bool immediate) const noexcept {
+  if (immediate)
+    return {};
+
+  auto pair = ir.emplaceScalar({});
+  return pair.first;
 }
 
 void Nil::print(std::ostream &out) const noexcept { out << "nil"; }

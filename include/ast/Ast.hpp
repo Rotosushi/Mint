@@ -154,10 +154,12 @@ public:
   [[nodiscard]] virtual Result<llvm::Value *>
   codegen(Environment &env) noexcept = 0;
 
-  virtual ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept = 0;
+  virtual ir::detail::Parameter flatten_impl(ir::Mir &ir,
+                                             bool immediate) const noexcept = 0;
+
   [[nodiscard]] ir::Mir flatten() const noexcept {
     ir::Mir result;
-    flatten_impl(result);
+    flatten_impl(result, false);
     return result;
   }
 };

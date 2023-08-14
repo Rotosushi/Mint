@@ -61,7 +61,7 @@ private:
   Ir m_ir;
 
   template <class T, class... Args>
-  std::pair<detail::Index, Mir::pointer> emplace_back(Args &&...args);
+  std::pair<detail::Index, reference> emplace_back(Args &&...args);
 
 public:
   Mir() noexcept;
@@ -90,15 +90,16 @@ public:
   [[nodiscard]] auto operator[](detail::Index index) const noexcept
       -> const_reference;
 
-  std::pair<detail::Index, pointer> emplaceLet(Identifier name);
-  std::pair<detail::Index, pointer> emplaceBinop(Token op);
-  std::pair<detail::Index, pointer> emplaceCall();
-  std::pair<detail::Index, pointer> emplaceUnop(Token op);
-  std::pair<detail::Index, pointer> emplaceImport(std::string_view file);
-  std::pair<detail::Index, pointer>
+  std::pair<detail::Index, reference> emplaceScalar(detail::Scalar scalar);
+  std::pair<detail::Index, reference> emplaceLet(Identifier name);
+  std::pair<detail::Index, reference> emplaceBinop(Token op);
+  std::pair<detail::Index, reference> emplaceCall();
+  std::pair<detail::Index, reference> emplaceUnop(Token op);
+  std::pair<detail::Index, reference> emplaceImport(std::string_view file);
+  std::pair<detail::Index, reference>
   emplaceModule(Identifier name, boost::container::vector<Mir> expressions);
-  std::pair<detail::Index, pointer> emplaceLambda(FormalArguments arguments,
-                                                  type::Ptr result_type);
+  std::pair<detail::Index, reference> emplaceLambda(FormalArguments arguments,
+                                                    type::Ptr result_type);
 };
 } // namespace ir
 } // namespace mint

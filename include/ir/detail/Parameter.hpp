@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "adt/Identifier.hpp"
 #include "ir/detail/Base.hpp"
 #include "ir/detail/Index.hpp"
 #include "ir/detail/Scalar.hpp"
@@ -35,7 +34,7 @@ namespace detail {
 // and small.
 class Parameter {
 public:
-  using Variant = std::variant<Scalar, Identifier, Index>;
+  using Variant = std::variant<Scalar, Index>;
 
 private:
   Variant m_variant;
@@ -47,7 +46,7 @@ public:
   Parameter(int integer) noexcept
       : m_variant(std::in_place_type<Scalar>, integer) {}
   Parameter(Identifier name) noexcept
-      : m_variant(std::in_place_type<Identifier>, name) {}
+      : m_variant(std::in_place_type<Scalar>, name) {}
   Parameter(Index index) noexcept
       : m_variant(std::in_place_type<Index>, index) {}
   Parameter(Parameter const &other) noexcept = default;

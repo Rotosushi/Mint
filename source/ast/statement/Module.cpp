@@ -50,7 +50,9 @@ Ptr Module::clone_impl() const noexcept {
   return create(attributes(), location(), m_name, std::move(expressions));
 }
 
-ir::detail::Parameter Module::flatten_impl(ir::Mir &ir) const noexcept {
+ir::detail::Parameter
+Module::flatten_impl(ir::Mir &ir,
+                     [[maybe_unused]] bool immediate) const noexcept {
   //  construct an Mir object to represent
   //  instructions within the module
   ir::Module::Expressions expressions;

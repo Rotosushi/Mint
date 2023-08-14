@@ -31,7 +31,8 @@ private:
 
 protected:
   Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir,
+                                     bool immediate) const noexcept override;
 
 public:
   Call(Attributes attributes, Location location, ast::Ptr callee,

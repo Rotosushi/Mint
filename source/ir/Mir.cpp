@@ -71,39 +71,48 @@ auto Mir::end() const noexcept -> const_iterator { return m_ir.end(); }
 }
 
 template <class T, class... Args>
-std::pair<detail::Index, Mir::pointer> Mir::emplace_back(Args &&...args) {
+std::pair<detail::Index, Mir::reference> Mir::emplace_back(Args &&...args) {
+  // For some reason returning a reference to the variant
+  // within the vector corrupts the variant.
   auto ref =
       m_ir.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);
-  return {m_index++, &ref};
+  std::pair<detail::Index, Mir::reference> result{m_index, ref};
+  m_index++;
+  return result;
 }
 
-std::pair<detail::Index, Mir::pointer> Mir::emplaceLet(Identifier name) {
+std::pair<detail::Index, Mir::reference>
+Mir::emplaceScalar(detail::Scalar scalar) {
+  return emplace_back<detail::Scalar>(scalar);
+}
+
+std::pair<detail::Index, Mir::reference> Mir::emplaceLet(Identifier name) {
   return emplace_back<Let>(name);
 }
 
-std::pair<detail::Index, Mir::pointer> Mir::emplaceBinop(Token op) {
+std::pair<detail::Index, Mir::reference> Mir::emplaceBinop(Token op) {
   return emplace_back<Binop>(op);
 }
 
-std::pair<detail::Index, Mir::pointer> Mir::emplaceCall() {
+std::pair<detail::Index, Mir::reference> Mir::emplaceCall() {
   return emplace_back<Call>();
 }
 
-std::pair<detail::Index, Mir::pointer> Mir::emplaceUnop(Token op) {
+std::pair<detail::Index, Mir::reference> Mir::emplaceUnop(Token op) {
   return emplace_back<Unop>(op);
 }
 
-std::pair<detail::Index, Mir::pointer>
+std::pair<detail::Index, Mir::reference>
 Mir::emplaceImport(std::string_view file) {
   return emplace_back<Import>(file);
 }
 
-std::pair<detail::Index, Mir::pointer>
+std::pair<detail::Index, Mir::reference>
 Mir::emplaceModule(Identifier name, boost::container::vector<Mir> expressions) {
   return emplace_back<Module>(name, std::move(expressions));
 }
 
-std::pair<detail::Index, Mir::pointer>
+std::pair<detail::Index, Mir::reference>
 Mir::emplaceLambda(FormalArguments arguments, type::Ptr result_type) {
   return emplace_back<Lambda>(std::move(arguments), result_type);
 }

@@ -25,7 +25,8 @@ class Boolean : public Value {
 
 protected:
   Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir,
+                                     bool immediate) const noexcept override;
 
 public:
   Boolean(Attributes attributes, Location location, bool value) noexcept;

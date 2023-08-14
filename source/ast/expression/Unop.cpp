@@ -55,10 +55,12 @@ Ptr Unop::clone_impl() const noexcept {
 //   }
 // }
 
-ir::detail::Parameter Unop::flatten_impl(ir::Mir &ir) const noexcept {
+ir::detail::Parameter
+Unop::flatten_impl(ir::Mir &ir,
+                   [[maybe_unused]] bool immediate) const noexcept {
   auto pair = ir.emplaceUnop(m_op);
-  auto &unop = pair.second->unop();
-  unop.right() = m_right->flatten_impl(ir);
+  auto &unop = pair.second.unop();
+  unop.right() = m_right->flatten_impl(ir, true);
   return pair.first;
 }
 

@@ -12,4 +12,5 @@ target_link_options(mint_core PUBLIC
 )
 target_link_libraries(mint_core 
   mint_adt
+  mint_typecheck
 )

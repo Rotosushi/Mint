@@ -63,7 +63,8 @@ class Let : public Definition {
 
 protected:
   Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir,
+                                     bool immediate) const noexcept override;
 
 public:
   Let(Attributes attributes, Location location,

@@ -17,12 +17,14 @@
 #pragma once
 #include <variant>
 
+#include "adt/Identifier.hpp"
+
 namespace mint {
 namespace ir {
 namespace detail {
 class Scalar {
 public:
-  using Variant = std::variant<std::monostate, bool, int>;
+  using Variant = std::variant<std::monostate, bool, int, Identifier>;
 
 private:
   Variant m_variant;
@@ -32,6 +34,8 @@ public:
   Scalar(bool boolean) noexcept
       : m_variant(std::in_place_type<bool>, boolean) {}
   Scalar(int integer) noexcept : m_variant(std::in_place_type<int>, integer) {}
+  Scalar(Identifier name) noexcept
+      : m_variant(std::in_place_type<Identifier>, name) {}
   Scalar(Scalar const &other) noexcept = default;
   Scalar(Scalar &&other) noexcept = default;
   auto operator=(Scalar const &other) noexcept -> Scalar & = default;

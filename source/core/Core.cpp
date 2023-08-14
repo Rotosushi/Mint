@@ -18,6 +18,8 @@
 #include "adt/Environment.hpp"
 #include "codegen/LLVMUtility.hpp"
 
+#include "typecheck/Typecheck.hpp"
+
 namespace mint {
 [[nodiscard]] int repl(Environment &env, bool do_print) {
   auto &out = env.getOutputStream();
@@ -36,35 +38,66 @@ namespace mint {
     }
     auto &ast = parse_result.value();
 
-    auto typecheck_result = ast->typecheck(env);
+    auto ir = ast->flatten();
+    auto typecheck_result = typecheck(ir, env);
     if (!typecheck_result) {
       auto &error = typecheck_result.error();
-      if (!error.isUseBeforeDef()) {
-        env.printErrorWithSource(error);
-        continue;
-      }
-
-      if (auto failed = env.bindUseBeforeDef(error, ast)) {
-        env.printErrorWithSource(failed.value());
-      }
+      env.printErrorWithSource(error);
       continue;
     }
-    auto &type = typecheck_result.value();
-
-    auto evaluate_result = ast->evaluate(env);
-    if (!evaluate_result) {
-      env.printErrorWithSource(evaluate_result.error());
-      continue;
-    }
-    auto &value = evaluate_result.value();
+    auto type = typecheck_result.value();
 
     if (do_print)
-      out << ast << " : " << type << " => " << value << "\n";
-
-    env.addAstToModule(ast);
+      out << ast << ": " << type << "\n";
   }
 
   return EXIT_SUCCESS;
+
+  // auto &out = env.getOutputStream();
+  // while (true) {
+  //   if (do_print)
+  //     out << "# ";
+
+  //   auto parse_result = env.parse();
+  //   if (!parse_result) {
+  //     auto &error = parse_result.error();
+  //     if (error.kind() == Error::Kind::EndOfInput)
+  //       break;
+
+  //     env.printErrorWithSource(error);
+  //     continue;
+  //   }
+  //   auto &ast = parse_result.value();
+
+  //   auto typecheck_result = ast->typecheck(env);
+  //   if (!typecheck_result) {
+  //     auto &error = typecheck_result.error();
+  //     if (!error.isUseBeforeDef()) {
+  //       env.printErrorWithSource(error);
+  //       continue;
+  //     }
+
+  //     if (auto failed = env.bindUseBeforeDef(error, ast)) {
+  //       env.printErrorWithSource(failed.value());
+  //     }
+  //     continue;
+  //   }
+  //   auto &type = typecheck_result.value();
+
+  //   auto evaluate_result = ast->evaluate(env);
+  //   if (!evaluate_result) {
+  //     env.printErrorWithSource(evaluate_result.error());
+  //     continue;
+  //   }
+  //   auto &value = evaluate_result.value();
+
+  //   if (do_print)
+  //     out << ast << " : " << type << " => " << value << "\n";
+
+  //   env.addAstToModule(ast);
+  // }
+
+  // return EXIT_SUCCESS;
 }
 
 //  Parse, Typecheck, and Evaluate each ast within the source file

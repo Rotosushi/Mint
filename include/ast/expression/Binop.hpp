@@ -29,7 +29,8 @@ class Binop : public Expression {
 
 protected:
   Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir,
+                                     bool immediate) const noexcept override;
 
   // static ir::Binop::Op convert(Token op) noexcept;
 

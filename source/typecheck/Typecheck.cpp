@@ -39,6 +39,15 @@ struct TypecheckScalar {
   Result<type::Ptr> operator()([[maybe_unused]] int &integer) noexcept {
     return env->getIntegerType();
   }
+
+  Result<type::Ptr> operator()(Identifier &name) noexcept {
+    auto result = env->lookupBinding(name);
+    if (!result)
+      return result.error();
+    // #TODO: handle use-before-def
+    // #TODO: create a type cache
+    return result.value().type();
+  }
 };
 
 Result<type::Ptr> typecheck(ir::detail::Scalar &scalar,
@@ -63,15 +72,6 @@ struct TypecheckParameter {
 
   Result<type::Ptr> operator()(ir::detail::Scalar &scalar) noexcept {
     return typecheck(scalar, *env);
-  }
-
-  Result<type::Ptr> operator()(Identifier &variable) noexcept {
-    auto result = env->lookupBinding(variable);
-    if (!result)
-      return result.error();
-    // #TODO: handle use-before-def
-    // #TODO: create a type cache
-    return result.value().type();
   }
 
   Result<type::Ptr> operator()(ir::detail::Index &index) noexcept {
@@ -188,7 +188,12 @@ struct TypecheckInstruction {
   }
 
   Result<type::Ptr> operator()([[maybe_unused]] ir::Import &import) noexcept {
-    // #TODO: handle import
+    if (env->alreadyImported(import.file()))
+      return env->getNilType();
+
+    if (!env->fileExists(import.file()))
+      return {Error::Kind::FileNotFound};
+
     return env->getNilType();
   }
 
