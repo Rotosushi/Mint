@@ -45,7 +45,8 @@ private:
   detail::Parameter m_right;
 
 public:
-  Binop(Token op) noexcept : m_op(op) {}
+  Binop(Token op, detail::Parameter left, detail::Parameter right) noexcept
+      : m_op(op), m_left(left), m_right(right) {}
   Binop(Binop const &other) noexcept = default;
   Binop(Binop &&other) noexcept = default;
   auto operator=(Binop const &other) noexcept -> Binop & = default;

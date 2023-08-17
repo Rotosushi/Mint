@@ -56,7 +56,7 @@ Result<type::Ptr> typecheck(ir::detail::Scalar &scalar,
   return visitor(scalar);
 }
 
-Result<type::Ptr> typecheck(ir::detail::Index &index, ir::Mir &ir,
+Result<type::Ptr> typecheck(ir::detail::Index index, ir::Mir &ir,
                             Environment &env) noexcept;
 
 struct TypecheckParameter {
@@ -244,14 +244,13 @@ struct TypecheckInstruction {
   }
 };
 
-Result<type::Ptr> typecheck(ir::detail::Index &index, ir::Mir &ir,
+Result<type::Ptr> typecheck(ir::detail::Index index, ir::Mir &ir,
                             Environment &env) noexcept {
   TypecheckInstruction visitor(ir, env);
   return visitor(index);
 }
 
 Result<type::Ptr> typecheck(ir::Mir &ir, Environment &env) noexcept {
-  ir::detail::Index index{0};
-  return typecheck(index, ir, env);
+  return typecheck(ir.root(), ir, env);
 }
 } // namespace mint

@@ -14,6 +14,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+#pragma once
 #include <vector>
 
 #include "ir/detail/Parameter.hpp"
@@ -29,7 +30,8 @@ private:
   Arguments m_arguments;
 
 public:
-  Call() noexcept = default;
+  Call(detail::Parameter callee, Arguments arguments) noexcept
+      : m_callee(callee), m_arguments(std::move(arguments)) {}
   Call(Call const &other) noexcept = default;
   Call(Call &&other) noexcept = default;
   auto operator=(Call const &other) noexcept -> Call & = default;

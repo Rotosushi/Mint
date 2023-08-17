@@ -44,8 +44,7 @@ Ptr Import::clone_impl() const noexcept {
 ir::detail::Parameter
 Import::flatten_impl(ir::Mir &ir,
                      [[maybe_unused]] bool immediate) const noexcept {
-  auto pair = ir.emplaceImport(m_filename);
-  return pair.first;
+  return ir.emplaceImport(m_filename);
 }
 
 void Import::print(std::ostream &out) const noexcept {

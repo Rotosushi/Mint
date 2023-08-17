@@ -26,7 +26,8 @@ class Let {
   detail::Parameter m_parameter;
 
 public:
-  Let(Identifier name) noexcept : m_name(name) {}
+  Let(Identifier name, detail::Parameter parameter) noexcept
+      : m_name(name), m_parameter(parameter) {}
   Let(Let const &other) noexcept = default;
   Let(Let &&other) noexcept = default;
   auto operator=(Let const &other) noexcept -> Let & = default;

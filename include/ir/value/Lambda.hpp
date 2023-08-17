@@ -30,10 +30,10 @@ private:
   detail::Parameter m_body;
 
 public:
-  Lambda(FormalArguments arguments,
-         type::Ptr result_type) noexcept
-      : m_arguments(std::move(arguments)),
-        m_result_type(result_type) {}
+  Lambda(FormalArguments arguments, type::Ptr result_type,
+         detail::Parameter body) noexcept
+      : m_arguments(std::move(arguments)), m_result_type(result_type),
+        m_body(body) {}
   Lambda(Lambda const &other) noexcept = default;
   Lambda(Lambda &&other) noexcept = default;
   auto operator=(Lambda const &other) noexcept -> Lambda & = default;

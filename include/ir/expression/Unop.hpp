@@ -32,7 +32,7 @@ private:
   detail::Parameter m_right;
 
 public:
-  Unop(Token op) noexcept : m_op(op) {}
+  Unop(Token op, detail::Parameter right) noexcept : m_op(op), m_right(right) {}
   Unop(Unop const &other) noexcept = default;
   Unop(Unop &&other) noexcept = default;
   auto operator=(Unop const &other) noexcept -> Unop & = default;

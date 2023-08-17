@@ -21,6 +21,7 @@
 #include "adt/Identifier.hpp"
 #include "ir/detail/Index.hpp"
 #include "ir/expression/Binop.hpp"
+#include "ir/expression/Call.hpp"
 #include "ir/expression/Unop.hpp"
 #include "ir/value/Lambda.hpp"
 
@@ -60,8 +61,7 @@ private:
   detail::Index m_index;
   Ir m_ir;
 
-  template <class T, class... Args>
-  std::pair<detail::Index, reference> emplace_back(Args &&...args);
+  template <class T, class... Args> detail::Index emplace_back(Args &&...args);
 
 public:
   Mir() noexcept;
@@ -76,8 +76,7 @@ public:
   [[nodiscard]] auto size() const noexcept -> std::size_t;
   void reserve(std::size_t size) noexcept;
 
-  [[nodiscard]] auto index() noexcept -> detail::Index &;
-  [[nodiscard]] auto index() const noexcept -> detail::Index const &;
+  [[nodiscard]] auto root() const noexcept -> detail::Index;
   [[nodiscard]] auto ir() noexcept -> Ir &;
   [[nodiscard]] auto ir() const noexcept -> Ir const &;
 
@@ -90,16 +89,18 @@ public:
   [[nodiscard]] auto operator[](detail::Index index) const noexcept
       -> const_reference;
 
-  std::pair<detail::Index, reference> emplaceScalar(detail::Scalar scalar);
-  std::pair<detail::Index, reference> emplaceLet(Identifier name);
-  std::pair<detail::Index, reference> emplaceBinop(Token op);
-  std::pair<detail::Index, reference> emplaceCall();
-  std::pair<detail::Index, reference> emplaceUnop(Token op);
-  std::pair<detail::Index, reference> emplaceImport(std::string_view file);
-  std::pair<detail::Index, reference>
-  emplaceModule(Identifier name, boost::container::vector<Mir> expressions);
-  std::pair<detail::Index, reference> emplaceLambda(FormalArguments arguments,
-                                                    type::Ptr result_type);
+  detail::Index emplaceScalar(detail::Scalar scalar);
+  detail::Index emplaceLet(Identifier name, detail::Parameter parameter);
+  detail::Index emplaceBinop(Token op, detail::Parameter left,
+                             detail::Parameter right);
+  detail::Index emplaceCall(detail::Parameter callee,
+                            ir::Call::Arguments arguments);
+  detail::Index emplaceUnop(Token op, detail::Parameter right);
+  detail::Index emplaceImport(std::string_view file);
+  detail::Index emplaceModule(Identifier name,
+                              boost::container::vector<Mir> expressions);
+  detail::Index emplaceLambda(FormalArguments arguments, type::Ptr result_type,
+                              detail::Parameter body);
 };
 } // namespace ir
 } // namespace mint

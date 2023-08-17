@@ -43,8 +43,7 @@ Variable::flatten_impl(ir::Mir &ir,
   if (immediate)
     return {m_name};
 
-  auto pair = ir.emplaceScalar({m_name});
-  return pair.first;
+  return ir.emplaceScalar({m_name});
 }
 
 void Variable::print(std::ostream &out) const noexcept { out << m_name; }

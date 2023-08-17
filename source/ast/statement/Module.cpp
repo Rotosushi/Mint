@@ -53,16 +53,13 @@ Ptr Module::clone_impl() const noexcept {
 ir::detail::Parameter
 Module::flatten_impl(ir::Mir &ir,
                      [[maybe_unused]] bool immediate) const noexcept {
-  //  construct an Mir object to represent
-  //  instructions within the module
   ir::Module::Expressions expressions;
   expressions.reserve(m_expressions.size());
   for (auto &expression : m_expressions) {
     expressions.emplace_back(expression->flatten());
   }
-  // insert the module instruction into the current Mir object
-  auto pair = ir.emplaceModule(m_name, std::move(expressions));
-  return pair.first;
+
+  return ir.emplaceModule(m_name, std::move(expressions));
 }
 
 void Module::print(std::ostream &out) const noexcept {

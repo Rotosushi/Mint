@@ -45,8 +45,7 @@ ir::detail::Parameter Integer::flatten_impl(ir::Mir &ir,
   if (immediate)
     return {m_value};
 
-  auto pair = ir.emplaceScalar({m_value});
-  return pair.first;
+  return ir.emplaceScalar({m_value});
 }
 
 Result<type::Ptr> Integer::typecheck(Environment &env) const noexcept {
