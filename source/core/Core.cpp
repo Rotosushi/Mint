@@ -41,6 +41,10 @@ namespace mint {
     auto ir = ast->flatten();
     auto typecheck_result = typecheck(ir, env);
     if (!typecheck_result) {
+      if (typecheck_result.recoverable()) {
+        continue;
+      }
+
       auto &error = typecheck_result.error();
       env.printErrorWithSource(error);
       continue;

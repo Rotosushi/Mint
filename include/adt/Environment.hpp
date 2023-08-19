@@ -36,11 +36,16 @@
 #include "ast/Ast.hpp"
 #include "scan/Parser.hpp"
 
-// #TODO: move Environment to the core directory
 // #TODO: split the llvm functionality into it's
 // own class. Then Environment can be linked without
 // the llvm object files. (ideally the whole compiler
-// save for codegen can be linked without llvm.)
+// save for the codegen lib can be linked without llvm.)
+
+// #TODO: the import mechanism can reuse the repl function
+// iff we add a stack of std::istream * and methods for
+// push and pop to the interface of the env. as we can
+// open an imported file, push it's ifstream * onto the
+// stack, call repl, then pop.
 
 namespace mint {
 // Allocates the data-structures necessary for the
@@ -152,6 +157,10 @@ public:
   auto qualifyName(Identifier name) noexcept -> Identifier;
 
   //**** Use Before Def Interface ****//
+  std::optional<Error> bindUseBeforeDef(Identifier undef, Identifier def,
+                                        std::shared_ptr<Scope> const &scope,
+                                        ir::Mir ir) noexcept;
+
   std::optional<Error> bindUseBeforeDef(Error const &error,
                                         ast::Ptr ast) noexcept;
 

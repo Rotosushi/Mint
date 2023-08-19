@@ -16,8 +16,8 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include "ir/detail/Base.hpp"
+#include "ir/detail/Immediate.hpp"
 #include "ir/detail/Index.hpp"
-#include "ir/detail/Scalar.hpp"
 
 namespace mint {
 namespace ir {
@@ -34,19 +34,19 @@ namespace detail {
 // and small.
 class Parameter {
 public:
-  using Variant = std::variant<Scalar, Index>;
+  using Variant = std::variant<Immediate, Index>;
 
 private:
   Variant m_variant;
 
 public:
-  Parameter() noexcept : m_variant() {}
+  Parameter() noexcept : m_variant(std::in_place_type<Immediate>) {}
   Parameter(bool boolean) noexcept
-      : m_variant(std::in_place_type<Scalar>, boolean) {}
+      : m_variant(std::in_place_type<Immediate>, boolean) {}
   Parameter(int integer) noexcept
-      : m_variant(std::in_place_type<Scalar>, integer) {}
+      : m_variant(std::in_place_type<Immediate>, integer) {}
   Parameter(Identifier name) noexcept
-      : m_variant(std::in_place_type<Scalar>, name) {}
+      : m_variant(std::in_place_type<Immediate>, name) {}
   Parameter(Index index) noexcept
       : m_variant(std::in_place_type<Index>, index) {}
   Parameter(Parameter const &other) noexcept = default;

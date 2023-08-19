@@ -17,6 +17,7 @@
 #include "typecheck/Typecheck.hpp"
 #include "adt/Environment.hpp"
 #include "ir/Instruction.hpp"
+#include "utility/Abort.hpp"
 
 namespace mint {
 struct TypecheckScalar {
@@ -39,25 +40,51 @@ struct TypecheckScalar {
   Result<type::Ptr> operator()([[maybe_unused]] int &integer) noexcept {
     return env->getIntegerType();
   }
-
-  Result<type::Ptr> operator()(Identifier &name) noexcept {
-    auto result = env->lookupBinding(name);
-    if (!result)
-      return result.error();
-    // #TODO: handle use-before-def
-    // #TODO: create a type cache
-    return result.value().type();
-  }
 };
 
-Result<type::Ptr> typecheck(ir::detail::Scalar &scalar,
-                            Environment &env) noexcept {
+static Result<type::Ptr> typecheck(ir::detail::Scalar &scalar,
+                                   Environment &env) noexcept {
   TypecheckScalar visitor(env);
   return visitor(scalar);
 }
 
-Result<type::Ptr> typecheck(ir::detail::Index index, ir::Mir &ir,
-                            Environment &env) noexcept;
+struct TypecheckImmediate {
+  Environment *env;
+
+  TypecheckImmediate(Environment &env) noexcept : env(&env) {}
+
+  Result<type::Ptr> operator()(ir::detail::Immediate &immediate) noexcept {
+    return std::visit(*this, immediate.variant());
+  }
+
+  Result<type::Ptr> operator()(ir::detail::Scalar &scalar) noexcept {
+    return typecheck(scalar, *env);
+  }
+
+  Result<type::Ptr> operator()(Identifier &name) noexcept {
+    auto result = env->lookupBinding(name);
+    if (!result) {
+      auto &error = result.error();
+      if (error.kind() != Error::Kind::NameUnboundInScope)
+        return {error.kind()};
+
+      return Recoverable{name, env->nearestNamedScope()};
+    }
+
+    auto type = result.value().type();
+    // #TODO: create a type cache
+    return type;
+  }
+};
+
+static Result<type::Ptr> typecheck(ir::detail::Immediate &immediate,
+                                   Environment &env) noexcept {
+  TypecheckImmediate visitor(env);
+  return visitor(immediate);
+}
+
+static Result<type::Ptr> typecheck(ir::detail::Index index, ir::Mir &ir,
+                                   Environment &env) noexcept;
 
 struct TypecheckParameter {
   ir::Mir *ir;
@@ -70,8 +97,8 @@ struct TypecheckParameter {
     return std::visit(*this, parameter.variant());
   }
 
-  Result<type::Ptr> operator()(ir::detail::Scalar &scalar) noexcept {
-    return typecheck(scalar, *env);
+  Result<type::Ptr> operator()(ir::detail::Immediate &immediate) noexcept {
+    return typecheck(immediate, *env);
   }
 
   Result<type::Ptr> operator()(ir::detail::Index &index) noexcept {
@@ -79,10 +106,38 @@ struct TypecheckParameter {
   }
 };
 
-Result<type::Ptr> typecheck(ir::detail::Parameter &parameter, ir::Mir &ir,
-                            Environment &env) noexcept {
+static Result<type::Ptr> typecheck(ir::detail::Parameter &parameter,
+                                   ir::Mir &ir, Environment &env) noexcept {
   TypecheckParameter visitor(ir, env);
   return visitor(parameter);
+}
+
+struct handleLetUBDVisitor {
+  Identifier m_def;
+  Environment *m_env;
+
+  handleLetUseBeforeDef(Identifier def, Environment &env) noexcept
+      : m_def(def), m_env(&env) {}
+
+  Result<type::Ptr> operator()(Recoverable const &recoverable) noexcept {
+    std::visit(*this, recoverable.data());
+  }
+
+  Result<type::Ptr>
+  operator()([[maybe_unused]] std::monostate const &nil) noexcept {
+    abort("Cannot handle default Recoverable.");
+  }
+
+  Result<type::Ptr> operator()(Recoverable::UBD const &ubd) noexcept {
+    if (auto failed = env->bindUseBeforeDef(ubd.undef_name, m_def, ubd.local_scope, ))
+  }
+};
+
+static Result<type::Ptr> handleLetUBD(Recoverable const &recoverable,
+                                      Identifier def,
+                                      Environment &env) noexcept {
+  handleLetUBDVisitor visitor(def, env);
+  return visitor(recoverable);
 }
 
 struct TypecheckInstruction {
@@ -96,8 +151,8 @@ struct TypecheckInstruction {
     return std::visit(*this, (*ir)[index].variant());
   }
 
-  Result<type::Ptr> operator()(ir::detail::Scalar &scalar) noexcept {
-    return typecheck(scalar, *env);
+  Result<type::Ptr> operator()(ir::detail::Immediate &immediate) noexcept {
+    return typecheck(immediate, *env);
   }
 
   Result<type::Ptr> operator()(ir::Let &let) noexcept {
@@ -106,8 +161,14 @@ struct TypecheckInstruction {
       return {Error::Kind::NameAlreadyBoundInScope};
 
     auto result = typecheck(let.parameter(), *ir, *env);
-    if (!result)
+    if (!result) {
+      if (result.recoverable()) {
+        return handleLetUBD(result.unknown(), env->qualifyName(let.name()),
+                            *env);
+      }
+
       return result;
+    }
 
     // #TODO: handle optional type annotation
     // #TODO: handle bound variable attributes
@@ -244,8 +305,8 @@ struct TypecheckInstruction {
   }
 };
 
-Result<type::Ptr> typecheck(ir::detail::Index index, ir::Mir &ir,
-                            Environment &env) noexcept {
+static Result<type::Ptr> typecheck(ir::detail::Index index, ir::Mir &ir,
+                                   Environment &env) noexcept {
   TypecheckInstruction visitor(ir, env);
   return visitor(index);
 }

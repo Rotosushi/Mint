@@ -49,7 +49,7 @@ ir::detail::Parameter Boolean::flatten_impl(ir::Mir &ir,
   if (immediate)
     return {m_value};
 
-  return ir.emplaceScalar({m_value});
+  return ir.emplaceImmediate({m_value});
 }
 
 Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {

@@ -17,26 +17,32 @@
 #pragma once
 #include <variant>
 
+#include "adt/Identifier.hpp"
+#include "ir/detail/Scalar.hpp"
+
 namespace mint {
 namespace ir {
 namespace detail {
-class Scalar {
+class Immediate {
 public:
-  using Variant = std::variant<std::monostate, bool, int>;
+  using Variant = std::variant<Scalar, Identifier>;
 
 private:
   Variant m_variant;
 
 public:
-  Scalar() noexcept = default;
-  Scalar(bool boolean) noexcept
-      : m_variant(std::in_place_type<bool>, boolean) {}
-  Scalar(int integer) noexcept : m_variant(std::in_place_type<int>, integer) {}
-  Scalar(Scalar const &other) noexcept = default;
-  Scalar(Scalar &&other) noexcept = default;
-  auto operator=(Scalar const &other) noexcept -> Scalar & = default;
-  auto operator=(Scalar &&other) noexcept -> Scalar & = default;
-  ~Scalar() noexcept = default;
+  Immediate() noexcept = default;
+  Immediate(bool boolean) noexcept
+      : m_variant(std::in_place_type<Scalar>, boolean) {}
+  Immediate(int integer) noexcept
+      : m_variant(std::in_place_type<Scalar>, integer) {}
+  Immediate(Identifier name) noexcept
+      : m_variant(std::in_place_type<Identifier>, name) {}
+  Immediate(Immediate const &other) noexcept = default;
+  Immediate(Immediate &&other) noexcept = default;
+  auto operator=(Immediate const &other) noexcept -> Immediate & = default;
+  auto operator=(Immediate &&other) noexcept -> Immediate & = default;
+  ~Immediate() noexcept = default;
 
   [[nodiscard]] auto variant() noexcept -> Variant & { return m_variant; }
 };

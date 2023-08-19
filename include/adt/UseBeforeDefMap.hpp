@@ -81,6 +81,7 @@ public:
     Identifier m_ubd_name;
     Identifier m_ubd_def_name;
     Identifier m_scope_name;
+    ir::Mir m_def_ir;
     ast::Ptr m_ubd_def_ast;
     std::shared_ptr<Scope> m_scope;
     bool m_being_resolved;
@@ -94,6 +95,7 @@ public:
     [[nodiscard]] auto ubd_name() noexcept -> Identifier;
     [[nodiscard]] auto ubd_def_name() noexcept -> Identifier;
     [[nodiscard]] auto ubd_def_ast() noexcept -> ast::Ptr &;
+    [[nodiscard]] auto ubd_def_ir() noexcept -> ir::Mir &;
     [[nodiscard]] auto scope_name() noexcept -> Identifier;
     [[nodiscard]] auto scope() noexcept -> std::shared_ptr<Scope> &;
     [[nodiscard]] auto being_resolved() noexcept -> bool;
@@ -128,10 +130,14 @@ public:
   void erase(Range range) noexcept;
 
   void insert(Identifier ubd_name, Identifier ubd_def_name,
-              Identifier scope_name, ast::Ptr ast,
+              Identifier scope_name, ir::Mir ir, ast::Ptr ast,
               std::shared_ptr<Scope> scope) noexcept;
   void insert(Element &&element) noexcept;
   void insert(Elements &&elements) noexcept;
+
+  std::optional<Error> bindUseBeforeDef(Identifier undef, Identifier def,
+                                        std::shared_ptr<Scope> const &scope,
+                                        ir::Mir ir) noexcept;
 
   std::optional<Error> bindUseBeforeDef(Error const &error,
                                         ast::Ptr ast) noexcept;

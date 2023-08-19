@@ -16,7 +16,6 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include "boost/container/vector.hpp"
-#include <utility>
 
 #include "adt/Identifier.hpp"
 #include "ir/detail/Index.hpp"
@@ -89,7 +88,7 @@ public:
   [[nodiscard]] auto operator[](detail::Index index) const noexcept
       -> const_reference;
 
-  detail::Index emplaceScalar(detail::Scalar scalar);
+  detail::Index emplaceImmediate(detail::Immediate immediate);
   detail::Index emplaceLet(Identifier name, detail::Parameter parameter);
   detail::Index emplaceBinop(Token op, detail::Parameter left,
                              detail::Parameter right);

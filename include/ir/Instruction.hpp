@@ -26,10 +26,12 @@ namespace ir {
 // Node? Element?
 // I was sort of planning on using Mir to mean the entire
 // flattened Ast. but maybe Mir fits better here? idk
+
+// represents a flattened node within the AST
 class Instruction {
 public:
-  using Variant = std::variant<detail::Scalar, Let, Binop, Call, Unop, Import,
-                               Module, Lambda>;
+  using Variant = std::variant<detail::Immediate, Let, Binop, Call, Unop,
+                               Import, Module, Lambda>;
 
 private:
   Variant m_variant;
@@ -57,8 +59,8 @@ public:
 
   [[nodiscard]] auto variant() noexcept -> Variant & { return m_variant; }
 
-  [[nodiscard]] auto scalar() -> detail::Scalar & {
-    return std::get<detail::Scalar>(m_variant);
+  [[nodiscard]] auto immediate() -> detail::Immediate & {
+    return std::get<detail::Immediate>(m_variant);
   }
   [[nodiscard]] auto let() -> Let & { return std::get<Let>(m_variant); }
   [[nodiscard]] auto binop() -> Binop & { return std::get<Binop>(m_variant); }

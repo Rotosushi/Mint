@@ -35,6 +35,7 @@
 // of errors during parsing, typechecking, evaluation, and codegen.
 // #TODO: add a ErrorList (or similar) data structure to the
 // environment. to hold errors as they are generated.
+
 // #NOTE: this brings up the idea of the success path and
 // failure path of the compiler. currently, each major pass
 // of the compiler; (If i am using 'pass' correctly as understood
@@ -54,10 +55,10 @@
 // it's set of values. Then these things can be handled more
 // systematically. An initial guess would simply be to modify
 // Result<T, E> to Result<T, E, U> where T is the success path
-// E is the error path, and U is the undecided/indeterminite path.
+// E is the error path, and U is the recoverable path.
 // (though maybe T, F, U is clearer? it's E for Error btw.
-// T = true, F = false, U = maybe)
-// the U path encapsulates the Idea that while computation cannot
+// T = true, F = false, U = unknown)
+// the U path encapsulates the idea that while computation cannot
 // continue down the path it took, the success or failure of the
 // expression has not been decided.
 // variable use before definition is an example of the U path.
@@ -66,11 +67,25 @@
 // another example of a U path is runtime only expressions within
 // the comptime context. Runtime only expressions are both possible
 // and necessary, and yet sometimes there are contexts where their
-// use must be disallowed.
+// use must be disallowed. this is allowed in the general sense,
+// as it does not hamper codegeneration, however in a strict compile time
+// context this is raised to an error.
+// #NOTE: the way that I want to describe this third path is a
+// recoverable error. so maybe that should be a 'kind' or 'category' of error.
+// and not handled within the result class.
+// though in the result class it is much easier the not nest the
+// code handling the recoverable error within the scope of the
+// code handling unrecoverable errors. especially when using
+// conditional continues within loops. (which we do in the repl,
+// and import mechanism)
 
 namespace mint {
 class Scope;
+// #TODO: refactor to use std::expected, as we no longer track
+// UBD here.
 
+// Represents a error which occurs during compilation that is
+// relevant to the programer
 class Error {
 public:
   struct Default {
@@ -86,6 +101,7 @@ public:
   using Data = std::variant<std::monostate, Default, UseBeforeDef>;
 
   enum class Kind {
+
     // parser errors
     EndOfInput,
 

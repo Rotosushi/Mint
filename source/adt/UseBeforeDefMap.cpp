@@ -58,6 +58,9 @@ UseBeforeDefMap::iterator::iterator(Elements::iterator iter) noexcept
     -> ast::Ptr & {
   return (*this)->m_ubd_def_ast;
 }
+auto UseBeforeDefMap::ubd_def_ir() noexcept -> ir::Mir & {
+  return (*this)->m_def_ir;
+}
 [[nodiscard]] auto UseBeforeDefMap::iterator::scope_name() noexcept
     -> Identifier {
   return (*this)->m_scope_name;
@@ -205,7 +208,7 @@ void UseBeforeDefMap::erase(Range range) noexcept {
 }
 
 void UseBeforeDefMap::insert(Identifier ubd_name, Identifier ubd_def_name,
-                             Identifier scope_name, ast::Ptr ast,
+                             Identifier scope_name, ir::Mir ir, ast::Ptr ast,
                              std::shared_ptr<Scope> scope) noexcept {
   // #NOTE: we allow multiple definitions to be bound to
   // the same undef name, however we want to prevent the
@@ -216,7 +219,7 @@ void UseBeforeDefMap::insert(Identifier ubd_name, Identifier ubd_def_name,
     return;
 
   elements.emplace(elements.end(), ubd_name, ubd_def_name, scope_name,
-                   std::move(ast), scope, false);
+                   std::move(ir), std::move(ast), scope, false);
 }
 
 void UseBeforeDefMap::insert(Element &&element) noexcept {
@@ -230,6 +233,20 @@ void UseBeforeDefMap::insert(Element &&element) noexcept {
 void UseBeforeDefMap::insert(Elements &&elements) noexcept {
   for (auto &&element : elements)
     insert(std::move(element));
+}
+
+std::optional<Error>
+UseBeforeDefMap::bindUseBeforeDef(Identifier undef, Identifier def,
+                                  std::shared_ptr<Scope> const &scope,
+                                  ir::Mir ir) noexcept {
+  auto scope_name = scope->qualifiedName();
+
+  if (undef == def) {
+    return {Error::Kind::TypeCannotBeResolved};
+  }
+
+  insert(undef, def, scope_name, std::move(ir), {}, scope);
+  return std::nullopt;
 }
 
 std::optional<Error> UseBeforeDefMap::bindUseBeforeDef(Error const &error,
@@ -247,7 +264,7 @@ std::optional<Error> UseBeforeDefMap::bindUseBeforeDef(Error const &error,
     return failed;
   }
 
-  insert(ubd_name, ubd_def_name, scope_name, std::move(ast), scope);
+  insert(ubd_name, ubd_def_name, scope_name, {}, std::move(ast), scope);
   return std::nullopt;
 }
 

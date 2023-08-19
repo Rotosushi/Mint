@@ -41,7 +41,7 @@ ir::detail::Parameter Nil::flatten_impl(ir::Mir &ir,
   if (immediate)
     return {};
 
-  return ir.emplaceScalar({});
+  return ir.emplaceImmediate({});
 }
 
 void Nil::print(std::ostream &out) const noexcept { out << "nil"; }

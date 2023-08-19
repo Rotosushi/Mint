@@ -251,6 +251,14 @@ auto Environment::qualifyName(Identifier name) noexcept -> Identifier {
 }
 
 //**** Use Before Def Interface ****/
+std::optional<Error>
+Environment::bindUseBeforeDef(Identifier undef, Identifier def,
+                              std::shared_ptr<Scope> const &scope,
+                              ir::Mir ir) noexcept {
+  return m_use_before_def_map.bindUseBeforeDef(undef, def, scope,
+                                               std::move(ir));
+}
+
 std::optional<Error> Environment::bindUseBeforeDef(Error const &error,
                                                    ast::Ptr ast) noexcept {
   return m_use_before_def_map.bindUseBeforeDef(error, std::move(ast));

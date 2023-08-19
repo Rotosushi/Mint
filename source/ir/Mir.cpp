@@ -77,8 +77,8 @@ detail::Index Mir::emplace_back(Args &&...args) {
   return m_index++;
 }
 
-detail::Index Mir::emplaceScalar(detail::Scalar scalar) {
-  return emplace_back<detail::Scalar>(scalar);
+detail::Index Mir::emplaceImmediate(detail::Immediate immediate) {
+  return emplace_back<detail::Immediate>(immediate);
 }
 
 detail::Index Mir::emplaceLet(Identifier name, detail::Parameter parameter) {
