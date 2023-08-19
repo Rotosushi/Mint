@@ -47,6 +47,8 @@ public:
       : m_variant(std::in_place_type<Immediate>, integer) {}
   Parameter(Identifier name) noexcept
       : m_variant(std::in_place_type<Immediate>, name) {}
+  Parameter(Immediate immediate) noexcept
+      : m_variant(std::in_place_type<Immediate>, immediate) {}
   Parameter(Index index) noexcept
       : m_variant(std::in_place_type<Index>, index) {}
   Parameter(Parameter const &other) noexcept = default;

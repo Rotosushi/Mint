@@ -14,3 +14,28 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+#include "adt/Recoverable.hpp"
+
+namespace mint {
+// #NOTE: each visitor could just as well be called functor
+
+struct ToErrorVisitor {
+  Error operator()(Recoverable &recoverable) noexcept {
+    return std::visit(*this, recoverable.data());
+  }
+
+  Error operator()([[maybe_unused]] std::monostate &nil) noexcept {
+    // #NOTE: default Error's abort when printed!
+    return Error::Kind::Default;
+  }
+
+  Error operator()(Recoverable::UBD &ubd) noexcept {
+    return {Error::Kind::NameUnboundInScope, Location{}, ubd.undef_name};
+  }
+};
+
+auto Recoverable::toError() noexcept -> Error {
+  ToErrorVisitor visitor;
+  return visitor(*this);
+}
+} // namespace mint

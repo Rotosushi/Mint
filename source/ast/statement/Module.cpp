@@ -77,7 +77,7 @@ Result<type::Ptr> Module::typecheck(Environment &env) const noexcept {
   for (auto &expression : m_expressions) {
     auto result = expression->typecheck(env);
     if (!result) {
-      auto &error = result.error();
+      auto error = result.error();
       if (!error.isUseBeforeDef()) {
         env.unbindScope(m_name);
         env.popScope();
@@ -105,7 +105,7 @@ Result<ast::Ptr> Module::evaluate(Environment &env) noexcept {
   for (auto &expression : m_expressions) {
     auto result = expression->evaluate(env);
     if (!result) {
-      auto &error = result.error();
+      auto error = result.error();
 
       if (!error.isUseBeforeDef()) {
         env.unbindScope(m_name);
@@ -133,7 +133,7 @@ Result<llvm::Value *> Module::codegen(Environment &env) noexcept {
   for (auto &expression : m_expressions) {
     auto result = expression->codegen(env);
     if (!result) {
-      auto &error = result.error();
+      auto error = result.error();
 
       if (!error.isUseBeforeDef()) {
         env.unbindScope(m_name);

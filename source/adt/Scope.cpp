@@ -364,7 +364,7 @@ void Scope::unbindScope(Identifier name) { return m_scopes->unbind(name); }
   auto first = name.firstScope();
   auto found = m_scopes->lookup(first);
   if (!found) {
-    return {std::move(found.error())};
+    return found.error();
   }
   auto &scope = found.value();
 
@@ -393,7 +393,7 @@ void Scope::unbindScope(Identifier name) { return m_scopes->unbind(name); }
     }
 
     // "x" isn't in scope.
-    return {std::move(found.error())};
+    return found.error();
   }
 
   // name is of the form "a0::...::aN::x"

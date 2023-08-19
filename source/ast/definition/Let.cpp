@@ -92,7 +92,7 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   */
   auto term_type_result = m_ast->typecheck(env);
   if (!term_type_result) {
-    auto &error = term_type_result.error();
+    auto error = term_type_result.error();
     if (error.isUseBeforeDef())
       setUseBeforeDef(error.getUseBeforeDef());
     return term_type_result;

@@ -48,7 +48,7 @@ Variable::flatten_impl(ir::Mir &ir,
 
 void Variable::print(std::ostream &out) const noexcept { out << m_name; }
 
-auto Variable::handleUseBeforeDef(Error &error, Environment &env) const noexcept
+auto Variable::handleUseBeforeDef(Error error, Environment &env) const noexcept
     -> Error {
   // if this is not a use-before-def variable
   if (error.kind() != Error::Kind::NameUnboundInScope) {

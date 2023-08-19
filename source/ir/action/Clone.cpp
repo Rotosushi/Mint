@@ -19,47 +19,107 @@
 
 namespace mint {
 namespace ir {
-struct cloneParameterVisitor {
+[[nodiscard]] static detail::Parameter clone(Mir &source, Mir &target,
+                                             detail::Index index) noexcept;
+
+struct CloneParameterVisitor {
   Mir &m_source;
   Mir &m_target;
 
-};
-
-[[nodiscard]] static void clone(Mir &source, Mir &target,
-                                detail::Parameter &parameter) noexcept {
-  cloneParameterVisitor visitor(source, target);
-  visitor(parameter);
-}
-
-struct cloneInstructionVisitor {
-  Mir &m_source;
-  Mir &m_target;
-
-  cloneInstructionVisitor(Mir &source, Mir &target) noexcept
+  CloneParameterVisitor(Mir &source, Mir &target) noexcept
       : m_source(source), m_target(target) {}
 
-  void operator()(detail::Index index) noexcept {
-    std::visit(*this, m_source[index].variant());
+  detail::Parameter operator()(detail::Parameter &parameter) noexcept {
+    return std::visit(*this, parameter.variant());
   }
 
-  void operator()(detail::Immediate &immediate) noexcept {
-    m_target.emplaceImmediate(immediate);
+  detail::Parameter operator()(detail::Immediate &immediate) noexcept {
+    return immediate;
   }
 
-  void operator()(Let &let) noexcept { m_target.emplaceLet(let.name(), ) }
-
-  void operator()(Binop &binop) noexcept {}
-  void operator()(Call &call) noexcept {}
-  void operator()(Unop &unop) noexcept {}
-  void operator()(Import &import) noexcept {}
-  void operator()(Module &module_) noexcept {}
-  void operator()(Lambda &lambda) noexcept {}
+  detail::Parameter operator()(detail::Index &index) noexcept {
+    return clone(m_source, m_target, index);
+  }
 };
+
+[[nodiscard]] static detail::Parameter
+clone(Mir &source, Mir &target, detail::Parameter &parameter) noexcept {
+  CloneParameterVisitor visitor(source, target);
+  return visitor(parameter);
+}
+
+struct CloneInstructionVisitor {
+  Mir &m_source;
+  Mir &m_target;
+
+  CloneInstructionVisitor(Mir &source, Mir &target) noexcept
+      : m_source(source), m_target(target) {}
+
+  detail::Parameter operator()(detail::Index index) noexcept {
+    return std::visit(*this, m_source[index].variant());
+  }
+
+  detail::Parameter operator()(detail::Immediate &immediate) noexcept {
+    return m_target.emplaceImmediate(immediate);
+  }
+
+  detail::Parameter operator()(Let &let) noexcept {
+    return m_target.emplaceLet(let.name(),
+                               clone(m_source, m_target, let.parameter()));
+  }
+
+  detail::Parameter operator()(Binop &binop) noexcept {
+    return m_target.emplaceBinop(binop.op(),
+                                 clone(m_source, m_target, binop.left()),
+                                 clone(m_source, m_target, binop.right()));
+  }
+
+  detail::Parameter operator()(Call &call) noexcept {
+    auto callee = clone(m_source, m_target, call.callee());
+
+    Call::Arguments arguments;
+    arguments.reserve(call.arguments().size());
+    for (auto &argument : call.arguments()) {
+      arguments.emplace_back(clone(m_source, m_target, argument));
+    }
+
+    return m_target.emplaceCall(callee, std::move(arguments));
+  }
+
+  detail::Parameter operator()(Unop &unop) noexcept {
+    return m_target.emplaceUnop(unop.op(),
+                                clone(m_source, m_target, unop.right()));
+  }
+
+  detail::Parameter operator()(Import &import) noexcept {
+    return m_target.emplaceImport(import.file());
+  }
+
+  detail::Parameter operator()(Module &module_) noexcept {
+    Module::Expressions expressions;
+    expressions.reserve(module_.expressions().size());
+    for (auto &expression : module_.expressions()) {
+      expressions.emplace_back(clone(expression));
+    }
+
+    return m_target.emplaceModule(module_.name(), std::move(expressions));
+  }
+
+  detail::Parameter operator()(Lambda &lambda) noexcept {
+    return m_target.emplaceLambda(lambda.arguments(), lambda.result_type(),
+                                  clone(m_source, m_target, lambda.body()));
+  }
+};
+
+[[nodiscard]] static detail::Parameter clone(Mir &source, Mir &target,
+                                             detail::Index index) noexcept {
+  CloneInstructionVisitor visitor(source, target);
+  return visitor(index);
+}
 
 [[nodiscard]] Mir clone(Mir &ir, detail::Index index) noexcept {
   Mir target;
-  cloneInstructionVisitor visitor(ir, target);
-  visitor(index);
+  [[maybe_unused]] auto p = clone(ir, target, index);
   return target;
 }
 } // namespace ir

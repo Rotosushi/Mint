@@ -17,6 +17,7 @@
 #include "typecheck/Typecheck.hpp"
 #include "adt/Environment.hpp"
 #include "ir/Instruction.hpp"
+#include "ir/action/Clone.hpp"
 #include "utility/Abort.hpp"
 
 namespace mint {
@@ -64,7 +65,7 @@ struct TypecheckImmediate {
   Result<type::Ptr> operator()(Identifier &name) noexcept {
     auto result = env->lookupBinding(name);
     if (!result) {
-      auto &error = result.error();
+      auto error = result.error();
       if (error.kind() != Error::Kind::NameUnboundInScope)
         return {error.kind()};
 
@@ -112,42 +113,57 @@ static Result<type::Ptr> typecheck(ir::detail::Parameter &parameter,
   return visitor(parameter);
 }
 
-struct handleLetUBDVisitor {
+struct TypecheckRecoverableVisitor {
+  Recoverable *recoverable;
+  ir::Mir *ir;
+  ir::detail::Index index;
   Identifier m_def;
   Environment *m_env;
 
-  handleLetUseBeforeDef(Identifier def, Environment &env) noexcept
-      : m_def(def), m_env(&env) {}
+  TypecheckRecoverableVisitor(Recoverable &recoverable, ir::Mir &ir,
+                              ir::detail::Index index, Identifier def,
+                              Environment &env) noexcept
+      : recoverable(&recoverable), ir(&ir), index(index), m_def(def),
+        m_env(&env) {}
 
-  Result<type::Ptr> operator()(Recoverable const &recoverable) noexcept {
-    std::visit(*this, recoverable.data());
+  Result<type::Ptr> operator()() noexcept {
+    return std::visit(*this, recoverable->data());
   }
 
   Result<type::Ptr>
   operator()([[maybe_unused]] std::monostate const &nil) noexcept {
-    abort("Cannot handle default Recoverable.");
+    return {Error::Kind::Default};
   }
 
   Result<type::Ptr> operator()(Recoverable::UBD const &ubd) noexcept {
-    if (auto failed = env->bindUseBeforeDef(ubd.undef_name, m_def, ubd.local_scope, ))
+    if (auto failed = m_env->bindUseBeforeDef(
+            ubd.undef_name, m_def, ubd.local_scope, clone(*ir, index))) {
+      return failed.value();
+    }
+
+    return Recovered{};
   }
 };
 
-static Result<type::Ptr> handleLetUBD(Recoverable const &recoverable,
-                                      Identifier def,
-                                      Environment &env) noexcept {
-  handleLetUBDVisitor visitor(def, env);
-  return visitor(recoverable);
+static Result<type::Ptr> handleTypecheckRecoverable(Recoverable &recoverable,
+                                                    ir::Mir &ir,
+                                                    ir::detail::Index index,
+                                                    Identifier def,
+                                                    Environment &env) noexcept {
+  TypecheckRecoverableVisitor visitor(recoverable, ir, index, def, env);
+  return visitor();
 }
 
 struct TypecheckInstruction {
   ir::Mir *ir;
+  ir::detail::Index index;
   Environment *env;
 
-  TypecheckInstruction(ir::Mir &ir, Environment &env) noexcept
-      : ir(&ir), env(&env) {}
+  TypecheckInstruction(ir::Mir &ir, ir::detail::Index index,
+                       Environment &env) noexcept
+      : ir(&ir), index(index), env(&env) {}
 
-  Result<type::Ptr> operator()(ir::detail::Index &index) noexcept {
+  Result<type::Ptr> operator()() noexcept {
     return std::visit(*this, (*ir)[index].variant());
   }
 
@@ -163,19 +179,23 @@ struct TypecheckInstruction {
     auto result = typecheck(let.parameter(), *ir, *env);
     if (!result) {
       if (result.recoverable()) {
-        return handleLetUBD(result.unknown(), env->qualifyName(let.name()),
-                            *env);
+        return handleTypecheckRecoverable(result.unknown(), *ir, index,
+                                          env->qualifyName(let.name()), *env);
       }
 
       return result;
     }
+    auto type = result.value();
 
     // #TODO: handle optional type annotation
-    // #TODO: handle bound variable attributes
-    if (auto bound = env->declareName(let.name(), {}, result.value());
-        bound.failure()) {
+    // #TODO: add bound variable attributes
+    if (auto bound = env->declareName(let.name(), {}, type); !bound) {
       return bound.error();
     }
+
+    auto qualifiedName = env->qualifyName(let.name());
+    if (auto failed = env->resolveTypeOfUseBeforeDef(qualifiedName))
+      return failed.value();
 
     return result.value();
   }
@@ -307,8 +327,8 @@ struct TypecheckInstruction {
 
 static Result<type::Ptr> typecheck(ir::detail::Index index, ir::Mir &ir,
                                    Environment &env) noexcept {
-  TypecheckInstruction visitor(ir, env);
-  return visitor(index);
+  TypecheckInstruction visitor(ir, index, env);
+  return visitor();
 }
 
 Result<type::Ptr> typecheck(ir::Mir &ir, Environment &env) noexcept {

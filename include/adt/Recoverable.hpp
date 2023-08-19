@@ -18,11 +18,18 @@
 #include <memory>
 #include <variant>
 
+#include "adt/Error.hpp"
 #include "adt/Identifier.hpp"
 #include "utility/Assert.hpp"
 
 namespace mint {
 class Scope;
+
+// Represents the case where the algorithm failed in a
+// recoverable way, and that was handled by the algorithm.
+// so the driver code can continue processing.
+class Recovered {};
+
 // Represents the case where an algorithm can go no further
 // yet may be recoverable.
 class Recoverable {
@@ -43,25 +50,16 @@ private:
 
 public:
   Recoverable() noexcept = default;
-  Recoverable(Identifier undef, std::shared_ptr<Scope> &local_scope) noexcept
-      : m_data(std::in_place_type<UBD>, undef, local_scope) {}
+  Recoverable(Identifier undef, std::shared_ptr<Scope> local_scope) noexcept
+      : m_data(std::in_place_type<UBD>, undef, std::move(local_scope)) {}
   ~Recoverable() noexcept = default;
   Recoverable(Recoverable const &other) noexcept = default;
   Recoverable(Recoverable &&other) noexcept = default;
   auto operator=(Recoverable const &other) noexcept -> Recoverable & = default;
   auto operator=(Recoverable &&other) noexcept -> Recoverable & = default;
 
-  [[nodiscard]] constexpr auto isUseBeforeDef() const noexcept -> bool {
-    return std::holds_alternative<UBD>(m_data);
-  }
+  [[nodiscard]] constexpr auto data() noexcept -> Data & { return m_data; }
 
-  [[nodiscard]] constexpr auto data() const noexcept -> Data const & {
-    return m_data;
-  }
-
-  [[nodiscard]] constexpr auto useBeforeDef() noexcept -> UBD & {
-    MINT_ASSERT(isUseBeforeDef());
-    return std::get<UBD>(m_data);
-  }
+  [[nodiscard]] auto toError() noexcept -> Error;
 };
 } // namespace mint

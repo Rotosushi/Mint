@@ -19,13 +19,15 @@
 
 #include "adt/Error.hpp"
 #include "adt/Recoverable.hpp"
+#include "utility/Abort.hpp"
 #include "utility/Assert.hpp"
 
 namespace mint {
 // Represents the Result of a given algorithm, which may
 // succeed, fail, or fail in a recoverable way.
 template <class T> class Result {
-  using Variant = std::variant<std::monostate, T, Recoverable, Error>;
+  using Variant =
+      std::variant<std::monostate, T, Recoverable, Recovered, Error>;
 
   Variant data;
 
@@ -34,6 +36,8 @@ public:
   Result(T t) noexcept : data(std::in_place_type<T>, std::move(t)) {}
   Result(Recoverable r) noexcept
       : data(std::in_place_type<Recoverable>, std::move(r)) {}
+  Result(Recovered r) noexcept
+      : data(std::in_place_type<Recovered>, std::move(r)) {}
   Result(Error e) noexcept : data(std::in_place_type<Error>, std::move(e)) {}
   Result(Error::Kind kind) noexcept : data(std::in_place_type<Error>, kind) {}
   Result(Error::Kind kind, Location location, std::string_view message) noexcept
@@ -49,6 +53,10 @@ public:
     return std::holds_alternative<Recoverable>(data);
   }
 
+  [[nodiscard]] auto recovered() const noexcept -> bool {
+    return std::holds_alternative<Recovered>(data);
+  }
+
   [[nodiscard]] auto failure() const noexcept -> bool {
     return std::holds_alternative<Error>(data);
   }
@@ -61,9 +69,14 @@ public:
     MINT_ASSERT(recoverable());
     return std::get<Recoverable>(data);
   }
-  [[nodiscard]] auto error() noexcept -> Error & {
-    MINT_ASSERT(failure());
-    return std::get<Error>(data);
+  [[nodiscard]] auto error() noexcept -> Error {
+    if (failure())
+      return std::get<Error>(data);
+
+    if (recoverable())
+      return std::get<Recoverable>(data).toError();
+
+    abort("cannot create an error from the given result.");
   }
 };
 } // namespace mint

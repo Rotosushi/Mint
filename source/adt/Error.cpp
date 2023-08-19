@@ -94,7 +94,7 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
     return "Global initializer not a constant";
 
   default:
-    abort("Unknown Error::Kind");
+    abort("Bad Error::Kind");
   }
 }
 
@@ -157,8 +157,8 @@ void Error::print(std::ostream &out,
       out << bad_source << "\n";
       underline(out, loc, bad_source);
     }
-    out << "\n";
   }
+  out << "\n";
 }
 
 auto Error::kind() const noexcept -> Error::Kind { return m_kind; }

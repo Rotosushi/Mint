@@ -78,7 +78,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
   while (!parser.endOfInput()) {
     auto parse_result = parser.parse();
     if (!parse_result) {
-      auto &error = parse_result.error();
+      auto error = parse_result.error();
       if (error.kind() == Error::Kind::EndOfInput)
         break;
       parser.printErrorWithSource(error_out, error);
@@ -88,7 +88,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
 
     auto typecheck_result = ast->typecheck(env);
     if (!typecheck_result) {
-      auto &error = typecheck_result.error();
+      auto error = typecheck_result.error();
       if (!error.isUseBeforeDef()) {
         parser.printErrorWithSource(error_out, error);
         return {Error::Kind::ImportFailed, location(), m_filename};
@@ -103,7 +103,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
 
     auto evaluate_result = ast->evaluate(env);
     if (!evaluate_result) {
-      auto &error = evaluate_result.error();
+      auto error = evaluate_result.error();
       parser.printErrorWithSource(error_out, error);
       return {Error::Kind::ImportFailed, location(), m_filename};
     }

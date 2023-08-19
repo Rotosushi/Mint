@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <optional>
 #include <vector>
 
 #include "adt/Argument.hpp"
@@ -59,9 +58,8 @@ public:
     return m_arguments;
   }
   [[nodiscard]] auto body() noexcept -> detail::Parameter & { return m_body; }
-  [[nodiscard]] auto result_type() const noexcept -> std::optional<type::Ptr> {
-    return m_result_type == nullptr ? std::optional<type::Ptr>{}
-                                    : std::optional<type::Ptr>{m_result_type};
+  [[nodiscard]] auto result_type() const noexcept -> type::Ptr {
+    return m_result_type;
   }
 };
 } // namespace ir

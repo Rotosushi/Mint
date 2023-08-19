@@ -81,8 +81,9 @@
 
 namespace mint {
 class Scope;
-// #TODO: refactor to use std::expected, as we no longer track
-// UBD here.
+// #TODO: refactor, as we no longer track UBD here.
+// #TODO: make errors cheap to pass around, by
+// storing their actual contents in a list somewhere else.
 
 // Represents a error which occurs during compilation that is
 // relevant to the programer
@@ -101,6 +102,7 @@ public:
   using Data = std::variant<std::monostate, Default, UseBeforeDef>;
 
   enum class Kind {
+    Default,
 
     // parser errors
     EndOfInput,

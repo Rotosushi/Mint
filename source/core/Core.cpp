@@ -29,7 +29,7 @@ namespace mint {
 
     auto parse_result = env.parse();
     if (!parse_result) {
-      auto &error = parse_result.error();
+      auto error = parse_result.error();
       if (error.kind() == Error::Kind::EndOfInput)
         break;
 
@@ -41,11 +41,11 @@ namespace mint {
     auto ir = ast->flatten();
     auto typecheck_result = typecheck(ir, env);
     if (!typecheck_result) {
-      if (typecheck_result.recoverable()) {
+      if (typecheck_result.recovered()) {
         continue;
       }
 
-      auto &error = typecheck_result.error();
+      auto error = typecheck_result.error();
       env.printErrorWithSource(error);
       continue;
     }

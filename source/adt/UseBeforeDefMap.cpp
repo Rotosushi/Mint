@@ -58,7 +58,7 @@ UseBeforeDefMap::iterator::iterator(Elements::iterator iter) noexcept
     -> ast::Ptr & {
   return (*this)->m_ubd_def_ast;
 }
-auto UseBeforeDefMap::ubd_def_ir() noexcept -> ir::Mir & {
+auto UseBeforeDefMap::iterator::ubd_def_ir() noexcept -> ir::Mir & {
   return (*this)->m_def_ir;
 }
 [[nodiscard]] auto UseBeforeDefMap::iterator::scope_name() noexcept
@@ -284,8 +284,8 @@ std::optional<Error> UseBeforeDefMap::bindUseBeforeDef(Elements &elements,
     return failed;
   }
 
-  elements.emplace_back(ubd_name, ubd_def_name, scope_name, std::move(ast),
-                        scope);
+  elements.emplace_back(ubd_name, ubd_def_name, scope_name, ir::Mir{},
+                        std::move(ast), scope);
   return std::nullopt;
 }
 
@@ -309,7 +309,7 @@ UseBeforeDefMap::resolveTypeOfUseBeforeDef(Environment &env,
 
     auto result = ubd_def_ast->typecheck(env);
     if (!result) {
-      auto &error = result.error();
+      auto error = result.error();
       if (!error.isUseBeforeDef()) {
         it.being_resolved(false);
         env.exchangeLocalScope(old_local_scope);
@@ -352,7 +352,7 @@ std::optional<Error> UseBeforeDefMap::resolveComptimeValueOfUseBeforeDef(
 
     auto result = ubd_def_ast->evaluate(env);
     if (!result) {
-      auto &error = result.error();
+      auto error = result.error();
       if (!error.isUseBeforeDef()) {
         it.being_resolved(false);
         env.exchangeLocalScope(old_local_scope);
