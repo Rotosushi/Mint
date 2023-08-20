@@ -172,6 +172,10 @@ struct TypecheckInstruction {
   }
 
   Result<type::Ptr> operator()(ir::Let &let) noexcept {
+    // #BUG when resolving a ubd def
+    // let a = b;
+    // let b = 1;
+    // 'b' was already bound in the map.
     auto found = env->lookupLocalBinding(let.name());
     if (found) // #TODO: better error messages
       return {Error::Kind::NameAlreadyBoundInScope};

@@ -121,22 +121,7 @@ namespace std {
 template <> struct less<mint::Identifier> {
   auto operator()(mint::Identifier const &l, mint::Identifier const &r) const
       -> bool {
-    auto left = l.view();
-    auto right = r.view();
-    auto llen = left.length();
-    auto rlen = right.length();
-    // is left is a shorter string, it's less than
-    if (llen < rlen) {
-      return true;
-    } // if left is a longer string, it's not less than
-    else if (llen > rlen) {
-      return false;
-    } else { // llen == rlen
-      if (left.front() != right.front())
-        return false;
-
-      return strncmp(left.begin(), right.begin(), llen) < 0;
-    }
+    return l.view() < r.view();
   }
 };
 
