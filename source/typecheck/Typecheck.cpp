@@ -113,16 +113,16 @@ static Result<type::Ptr> typecheck(ir::detail::Parameter &parameter,
   return visitor(parameter);
 }
 
-struct TypecheckRecoverableVisitor {
+struct RecoverableErrorVisitor {
   Recoverable *recoverable;
   ir::Mir *ir;
   ir::detail::Index index;
   Identifier m_def;
   Environment *m_env;
 
-  TypecheckRecoverableVisitor(Recoverable &recoverable, ir::Mir &ir,
-                              ir::detail::Index index, Identifier def,
-                              Environment &env) noexcept
+  RecoverableErrorVisitor(Recoverable &recoverable, ir::Mir &ir,
+                          ir::detail::Index index, Identifier def,
+                          Environment &env) noexcept
       : recoverable(&recoverable), ir(&ir), index(index), m_def(def),
         m_env(&env) {}
 
@@ -145,12 +145,12 @@ struct TypecheckRecoverableVisitor {
   }
 };
 
-static Result<type::Ptr> handleTypecheckRecoverable(Recoverable &recoverable,
-                                                    ir::Mir &ir,
-                                                    ir::detail::Index index,
-                                                    Identifier def,
-                                                    Environment &env) noexcept {
-  TypecheckRecoverableVisitor visitor(recoverable, ir, index, def, env);
+static Result<type::Ptr> handleRecoverableError(Recoverable &recoverable,
+                                                ir::Mir &ir,
+                                                ir::detail::Index index,
+                                                Identifier def,
+                                                Environment &env) noexcept {
+  RecoverableErrorVisitor visitor(recoverable, ir, index, def, env);
   return visitor();
 }
 
@@ -179,8 +179,8 @@ struct TypecheckInstruction {
     auto result = typecheck(let.parameter(), *ir, *env);
     if (!result) {
       if (result.recoverable()) {
-        return handleTypecheckRecoverable(result.unknown(), *ir, index,
-                                          env->qualifyName(let.name()), *env);
+        return handleRecoverableError(result.unknown(), *ir, index,
+                                      env->qualifyName(let.name()), *env);
       }
 
       return result;
@@ -197,7 +197,7 @@ struct TypecheckInstruction {
     if (auto failed = env->resolveTypeOfUseBeforeDef(qualifiedName))
       return failed.value();
 
-    return result.value();
+    return env->getNilType();
   }
 
   Result<type::Ptr> operator()(ir::Binop &binop) noexcept {

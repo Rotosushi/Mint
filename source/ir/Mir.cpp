@@ -45,11 +45,17 @@ auto Mir::operator=(Mir &&other) noexcept -> Mir & {
   return *this;
 }
 
+Mir::operator bool() const noexcept { return !empty(); }
 auto Mir::empty() const noexcept -> bool { return m_ir.empty(); }
 auto Mir::size() const noexcept -> std::size_t { return m_ir.size(); }
 void Mir::reserve(std::size_t size) noexcept { m_ir.reserve(size); }
 
-auto Mir::root() const noexcept -> detail::Index { return m_index - 1; }
+auto Mir::root() const noexcept -> detail::Index {
+  if (m_index == 0)
+    return 0;
+
+  return m_index - 1;
+}
 auto Mir::ir() noexcept -> Ir & { return m_ir; }
 auto Mir::ir() const noexcept -> Ir const & { return m_ir; }
 

@@ -27,6 +27,12 @@ namespace mint {
 // succeed, fail, or fail in a recoverable way.
 template <class T> class Result {
   using Variant =
+      // #NOTE: I am torn between putting Recoverable, Recovered
+      // here in this variant, or in the Error class itself.
+      // its here because it is simple conceptually to ask
+      // "is this result recovered"
+      // however its also simple to ask "is the error recovered"
+      // it just might not make sense to have a recovered error.
       std::variant<std::monostate, T, Recoverable, Recovered, Error>;
 
   Variant data;

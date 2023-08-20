@@ -17,6 +17,7 @@
 #include "adt/UseBeforeDefMap.hpp"
 #include "adt/Environment.hpp"
 #include "ast/definition/Definition.hpp"
+#include "typecheck/Typecheck.hpp"
 
 namespace mint {
 // auto UBDMap::emplace(Identifier name, ir::Mir mir,
@@ -303,22 +304,41 @@ UseBeforeDefMap::resolveTypeOfUseBeforeDef(Environment &env,
     // construct it in the correct scope.
     auto old_local_scope = env.exchangeLocalScope(it.scope());
 
-    auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
-    // #NOTE: since we are resolving the ubd here, we can clear the error
-    ubd_def_ast->clearUseBeforeDef();
+    if (it.ubd_def_ast()) {
+      auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
+      // #NOTE: since we are resolving the ubd here, we can clear the error
+      ubd_def_ast->clearUseBeforeDef();
 
-    auto result = ubd_def_ast->typecheck(env);
-    if (!result) {
-      auto error = result.error();
-      if (!error.isUseBeforeDef()) {
-        it.being_resolved(false);
-        env.exchangeLocalScope(old_local_scope);
-        return error;
+      auto result = ubd_def_ast->typecheck(env);
+      if (!result) {
+        auto error = result.error();
+        if (!error.isUseBeforeDef()) {
+          it.being_resolved(false);
+          env.exchangeLocalScope(old_local_scope);
+          return error;
+        }
+
+        // handle another use before def error.
+        bindUseBeforeDef(stage, error, std::move(it.ubd_def_ast()));
+        old_entries.append(it);
       }
+    } else if (it.ubd_def_ir()) {
+      auto &ubd_ir = it.ubd_def_ir();
 
-      // handle another use before def error.
-      bindUseBeforeDef(stage, error, std::move(it.ubd_def_ast()));
-      old_entries.append(it);
+      auto result = typecheck(ubd_ir, env);
+      if (!result) {
+        if (result.recovered()) {
+          // bindUseBeforeDef was called by the resolver
+          old_entries.append(it);
+          // fallthrough
+        } else {
+          it.being_resolved(false);
+          env.exchangeLocalScope(old_local_scope);
+          return result.error();
+        }
+      }
+    } else {
+      abort("cannot resolve type of UBD.");
     }
 
     env.exchangeLocalScope(old_local_scope);

@@ -71,6 +71,7 @@ public:
   auto operator=(Mir const &other) noexcept -> Mir &;
   auto operator=(Mir &&other) noexcept -> Mir &;
 
+  [[nodiscard]] explicit operator bool() const noexcept;
   [[nodiscard]] auto empty() const noexcept -> bool;
   [[nodiscard]] auto size() const noexcept -> std::size_t;
   void reserve(std::size_t size) noexcept;
