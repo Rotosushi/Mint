@@ -153,6 +153,7 @@ private:
   auto parseUnop() noexcept -> Result<ast::Ptr>;
   auto parseParens() noexcept -> Result<ast::Ptr>;
   auto parseLambda() noexcept -> Result<ast::Ptr>;
+  
   auto parseType() noexcept -> Result<type::Ptr>;
   auto parseNilType() noexcept -> Result<type::Ptr>;
   auto parseBooleanType() noexcept -> Result<type::Ptr>;

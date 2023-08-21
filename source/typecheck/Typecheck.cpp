@@ -156,6 +156,8 @@ struct RecoverableErrorVisitor {
   }
 };
 
+// #TODO: this function has way too many arguments.
+// but all of them are necessary. So I guess ill let it slide.
 static Result<type::Ptr> handleRecoverableError(Recoverable &recoverable,
                                                 ir::Mir &ir,
                                                 ir::detail::Index index,
