@@ -95,7 +95,18 @@ struct TypecheckParameter {
       : ir(&ir), env(&env) {}
 
   Result<type::Ptr> operator()(ir::detail::Parameter &parameter) noexcept {
-    return std::visit(*this, parameter.variant());
+    auto cached_type = parameter.cachedType();
+    if (cached_type != nullptr) {
+      return cached_type;
+    }
+
+    auto result = std::visit(*this, parameter.variant());
+    if (!result) {
+      return result;
+    }
+
+    parameter.cachedType(result.value());
+    return result;
   }
 
   Result<type::Ptr> operator()(ir::detail::Immediate &immediate) noexcept {
@@ -164,7 +175,20 @@ struct TypecheckInstruction {
       : ir(&ir), index(index), env(&env) {}
 
   Result<type::Ptr> operator()() noexcept {
-    return std::visit(*this, (*ir)[index].variant());
+    auto &instruction = (*ir)[index];
+
+    auto cached_type = instruction.cachedType();
+    if (cached_type != nullptr) {
+      return cached_type;
+    }
+
+    auto result = std::visit(*this, instruction.variant());
+    if (!result) {
+      return result;
+    }
+
+    instruction.cachedType(result.value());
+    return result;
   }
 
   Result<type::Ptr> operator()(ir::detail::Immediate &immediate) noexcept {

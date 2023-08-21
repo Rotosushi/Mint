@@ -90,18 +90,15 @@ detail::Index Mir::emplaceParens(detail::Parameter parameter) {
   return emplace_back<Parens>(parameter);
 }
 
-detail::Index Mir::emplaceLet(Identifier name, detail::Parameter parameter) {
-  return emplace_back<Let>(name, parameter);
+detail::Index Mir::emplaceLet(Identifier name,
+                              std::optional<type::Ptr> annotation,
+                              detail::Parameter parameter) {
+  return emplace_back<Let>(name, annotation, parameter);
 }
 
 detail::Index Mir::emplaceBinop(Token op, detail::Parameter left,
                                 detail::Parameter right) {
   return emplace_back<Binop>(op, left, right);
-}
-
-detail::Index Mir::emplaceCall(detail::Parameter callee,
-                               Call::Arguments arguments) {
-  return emplace_back<Call>(callee, std::move(arguments));
 }
 
 detail::Index Mir::emplaceUnop(Token op, detail::Parameter right) {
@@ -115,6 +112,11 @@ detail::Index Mir::emplaceImport(std::string_view file) {
 detail::Index Mir::emplaceModule(Identifier name,
                                  boost::container::vector<Mir> expressions) {
   return emplace_back<Module>(name, std::move(expressions));
+}
+
+detail::Index Mir::emplaceCall(detail::Parameter callee,
+                               Call::Arguments arguments) {
+  return emplace_back<Call>(callee, std::move(arguments));
 }
 
 detail::Index Mir::emplaceLambda(FormalArguments arguments,

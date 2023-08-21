@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "ir/action/Print.hpp"
+#include "ir/Instruction.hpp"
 
 namespace mint::ir {
 struct PrintScalarVisitor {
@@ -56,10 +57,10 @@ struct PrintImmediateVisitor {
 
 void print(std::ostream &out, detail::Immediate &immediate) noexcept {
   PrintImmediateVisitor visitor(out);
-  visitor(out, immediate);
+  visitor(immediate);
 }
 
-struct print(std::ostream &out, Mir &mir, detail::Index index) noexcept;
+void print(std::ostream &out, Mir &mir, detail::Index index) noexcept;
 
 struct PrintParameterVisitor {
   std::ostream &out;
@@ -110,10 +111,82 @@ struct PrintInstructionVisitor {
 
   void operator()(Let &let) noexcept {
     out << "let " << let.name();
+
+    if (auto annotation = let.annotation()) {
+      out << ": " << annotation.value();
+    }
+
     out << " = ";
     print(out, mir, let.parameter());
   }
+
+  void operator()(Binop &binop) noexcept {
+    print(out, mir, binop.left());
+    out << " " << binop.op() << " ";
+    print(out, mir, binop.right());
+  }
+
+  void operator()(Unop &unop) noexcept {
+    out << " " << unop.op();
+    print(out, mir, unop.right());
+  }
+
+  void operator()(Import &i) noexcept { out << "import " << i.file() << ";"; }
+
+  void operator()(Module &m) noexcept {
+    out << "module " << m.name() << " { \n";
+
+    for (auto &expression : m.expressions()) {
+      print(out, expression);
+      out << "\n";
+    }
+
+    out << "}";
+  }
+
+  void operator()(Call &call) noexcept {
+    print(out, mir, call.callee());
+    out << "(";
+
+    auto index = 0U;
+    auto size = call.arguments().size();
+    for (auto &argument : call.arguments()) {
+      print(out, mir, argument);
+
+      if (index++ < (size - 1)) {
+        out << ", ";
+      }
+    }
+
+    out << ")";
+  }
+
+  void operator()(Lambda &lambda) noexcept {
+    out << "\\";
+
+    auto index = 0U;
+    auto size = lambda.arguments().size();
+    for (auto argument : lambda.arguments()) {
+      out << argument.name << ": " << argument.type;
+
+      if (index++ < (size - 1)) {
+        out << ", ";
+      }
+    }
+
+    if (lambda.result_type() != nullptr) {
+      out << " -> " << lambda.result_type();
+    }
+
+    out << " => ";
+    print(out, mir, lambda.body());
+  }
 };
+
+void print(std::ostream &out, Mir &mir, detail::Index index) noexcept {
+  PrintInstructionVisitor visitor(out, mir);
+  visitor(index);
+}
 
 void print(std::ostream &out, Mir &mir) noexcept {
   print(out, mir, mir.root());

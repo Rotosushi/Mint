@@ -17,6 +17,7 @@
 #pragma once
 #include "ir/detail/Immediate.hpp"
 #include "ir/detail/Index.hpp"
+#include "type/Type.hpp"
 
 namespace mint {
 namespace ir {
@@ -35,25 +36,34 @@ public:
   using Variant = std::variant<Immediate, Index>;
 
 private:
+  type::Ptr m_cached_type;
   Variant m_variant;
 
 public:
-  Parameter() noexcept : m_variant(std::in_place_type<Immediate>) {}
+  Parameter() noexcept
+      : m_cached_type(nullptr), m_variant(std::in_place_type<Immediate>) {}
   Parameter(bool boolean) noexcept
-      : m_variant(std::in_place_type<Immediate>, boolean) {}
+      : m_cached_type(nullptr),
+        m_variant(std::in_place_type<Immediate>, boolean) {}
   Parameter(int integer) noexcept
-      : m_variant(std::in_place_type<Immediate>, integer) {}
+      : m_cached_type(nullptr),
+        m_variant(std::in_place_type<Immediate>, integer) {}
   Parameter(Identifier name) noexcept
-      : m_variant(std::in_place_type<Immediate>, name) {}
+      : m_cached_type(nullptr), m_variant(std::in_place_type<Immediate>, name) {
+  }
   Parameter(Immediate immediate) noexcept
-      : m_variant(std::in_place_type<Immediate>, immediate) {}
+      : m_cached_type(nullptr),
+        m_variant(std::in_place_type<Immediate>, immediate) {}
   Parameter(Index index) noexcept
-      : m_variant(std::in_place_type<Index>, index) {}
+      : m_cached_type(nullptr), m_variant(std::in_place_type<Index>, index) {}
   Parameter(Parameter const &other) noexcept = default;
   Parameter(Parameter &&other) noexcept = default;
   auto operator=(Parameter const &other) noexcept -> Parameter & = default;
   auto operator=(Parameter &&other) noexcept -> Parameter & = default;
   ~Parameter() noexcept = default;
+
+  [[nodiscard]] type::Ptr cachedType() const noexcept { return m_cached_type; }
+  type::Ptr cachedType(type::Ptr type) noexcept { return m_cached_type = type; }
 
   [[nodiscard]] auto variant() noexcept -> Variant & { return m_variant; }
 };

@@ -15,19 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <optional>
+
 #include "adt/Identifier.hpp"
 #include "ir/detail/Parameter.hpp"
+#include "type/Type.hpp"
 
 namespace mint {
 namespace ir {
 class Let {
   Identifier m_name;
-  // type::Ptr m_annotation;
+  std::optional<type::Ptr> m_annotation;
   detail::Parameter m_parameter;
 
 public:
-  Let(Identifier name, detail::Parameter parameter) noexcept
-      : m_name(name), m_parameter(parameter) {}
+  Let(Identifier name, std::optional<type::Ptr> annotation,
+      detail::Parameter parameter) noexcept
+      : m_name(name), m_annotation(annotation), m_parameter(parameter) {}
   Let(Let const &other) noexcept = default;
   Let(Let &&other) noexcept = default;
   auto operator=(Let const &other) noexcept -> Let & = default;
@@ -35,9 +39,9 @@ public:
   ~Let() noexcept = default;
 
   [[nodiscard]] auto name() const noexcept -> Identifier { return m_name; }
-  // [[nodiscard]] auto annotation() const noexcept -> type::Ptr {
-  //   return m_annotation;
-  // }
+  [[nodiscard]] auto annotation() const noexcept -> std::optional<type::Ptr> {
+    return m_annotation;
+  }
   [[nodiscard]] auto parameter() noexcept -> detail::Parameter & {
     return m_parameter;
   }

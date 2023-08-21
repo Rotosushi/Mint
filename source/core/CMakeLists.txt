@@ -11,6 +11,7 @@ target_link_options(mint_core PUBLIC
   ${llvm_system_libs}
 )
 target_link_libraries(mint_core 
+  mint_ir 
   mint_adt
   mint_typecheck
 )

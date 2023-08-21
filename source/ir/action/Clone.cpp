@@ -73,7 +73,7 @@ struct CloneInstructionVisitor {
   }
 
   detail::Parameter operator()(Let &let) noexcept {
-    return m_target.emplaceLet(let.name(),
+    return m_target.emplaceLet(let.name(), let.annotation(),
                                clone(m_source, m_target, let.parameter()));
   }
 

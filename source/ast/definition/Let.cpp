@@ -62,7 +62,7 @@ Ptr Let::clone_impl() const noexcept {
 
 ir::detail::Parameter
 Let::flatten_impl(ir::Mir &ir, [[maybe_unused]] bool immediate) const noexcept {
-  return ir.emplaceLet(name(), m_ast->flatten_impl(ir, true));
+  return ir.emplaceLet(name(), annotation(), m_ast->flatten_impl(ir, true));
 }
 
 void Let::print(std::ostream &out) const noexcept {

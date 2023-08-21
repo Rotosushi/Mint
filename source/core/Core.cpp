@@ -17,7 +17,7 @@
 #include "core/Core.hpp"
 #include "adt/Environment.hpp"
 #include "codegen/LLVMUtility.hpp"
-
+#include "ir/action/Print.hpp"
 #include "typecheck/Typecheck.hpp"
 
 namespace mint {
@@ -37,8 +37,8 @@ namespace mint {
       continue;
     }
     auto &ast = parse_result.value();
-
     auto ir = ast->flatten();
+
     auto typecheck_result = typecheck(ir, env);
     if (!typecheck_result) {
       if (typecheck_result.recovered()) {
@@ -52,7 +52,7 @@ namespace mint {
     auto type = typecheck_result.value();
 
     if (do_print)
-      out << ast << ": " << type << "\n";
+      out << ir << ": " << type << "\n";
   }
 
   return EXIT_SUCCESS;

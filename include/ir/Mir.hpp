@@ -79,15 +79,16 @@ public:
   detail::Index emplaceImmediate(detail::Immediate immediate);
   detail::Index emplaceAffix(detail::Parameter parameter);
   detail::Index emplaceParens(detail::Parameter parameter);
-  detail::Index emplaceLet(Identifier name, detail::Parameter parameter);
+  detail::Index emplaceLet(Identifier name, std::optional<type::Ptr> annotation,
+                           detail::Parameter parameter);
   detail::Index emplaceBinop(Token op, detail::Parameter left,
                              detail::Parameter right);
-  detail::Index emplaceCall(detail::Parameter callee,
-                            ir::Call::Arguments arguments);
   detail::Index emplaceUnop(Token op, detail::Parameter right);
   detail::Index emplaceImport(std::string_view file);
   detail::Index emplaceModule(Identifier name,
                               boost::container::vector<Mir> expressions);
+  detail::Index emplaceCall(detail::Parameter callee,
+                            ir::Call::Arguments arguments);
   detail::Index emplaceLambda(FormalArguments arguments, type::Ptr result_type,
                               detail::Parameter body);
 };
