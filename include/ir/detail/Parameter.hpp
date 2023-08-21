@@ -22,16 +22,15 @@
 namespace mint {
 namespace ir {
 namespace detail {
-// #TODO: maybe ir/value/ isn't the best directory for this?
-// the intention is that "Parameters represent an indirect value."
-//
 // #TODO: maybe "Parameter" isn't the best name for this?
 // the intention is that "Instructions use this to refer
-// to their parameters."
+// to their parameters. such that they receive the benefiet
+// of holding onto scalar parameters directly without having
+// to worry about the mechanics of that."
 
 // represents an argument to a given MIR instruction.
 // This class is meant to be trivially-copyable
-// and small.
+// and as small as possible.
 class Parameter {
 public:
   using Variant = std::variant<Immediate, Index>;
@@ -58,6 +57,11 @@ public:
   ~Parameter() noexcept = default;
 
   [[nodiscard]] auto variant() noexcept -> Variant & { return m_variant; }
+};
+
+class Param {
+public:
+  using Variant = std::variant<Parameter, >;
 };
 } // namespace detail
 } // namespace ir

@@ -27,8 +27,8 @@ class TypeInterner {
   public:
     template <class... Args> type::Ptr emplace(Args &&...args) noexcept {
       std::forward_list<type::Type> potential;
-      potential.emplace_front(type::Type::Variant{std::in_place_type<T>,
-                                                  std::forward<Args>(args)...});
+      potential.emplace_front(std::in_place_type<T>,
+                              std::forward<Args>(args)...);
       type::Ptr type = &potential.front();
 
       for (auto &element : set)
@@ -40,28 +40,18 @@ class TypeInterner {
     }
   };
 
-  class LambdaTypes {
-    std::forward_list<type::Type> set;
-
-  public:
-    type::Ptr emplace(type::Ptr function_type) noexcept {
-      return &set.emplace_front(
-          type::Type::Variant{std::in_place_type<type::Lambda>, function_type});
-    }
-  };
-
   type::Type boolean_type;
   type::Type integer_type;
   type::Type nil_type;
 
   Composite<type::Function> function_types;
-  LambdaTypes lamdba_types;
+  Composite<type::Lambda> lamdba_types;
 
 public:
   TypeInterner() noexcept
-      : boolean_type(type::Type::Variant{std::in_place_type<type::Boolean>}),
-        integer_type(type::Type::Variant{std::in_place_type<type::Integer>}),
-        nil_type(type::Type::Variant{std::in_place_type<type::Nil>}) {}
+      : boolean_type(std::in_place_type<type::Boolean>),
+        integer_type(std::in_place_type<type::Integer>),
+        nil_type(std::in_place_type<type::Nil>) {}
 
   auto getBooleanType() noexcept -> type::Ptr { return &boolean_type; }
   auto getIntegerType() noexcept -> type::Ptr { return &integer_type; }

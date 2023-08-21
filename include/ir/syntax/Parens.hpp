@@ -15,24 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-
-#include "type/Type.hpp"
+#include "ir/detail/Parameter.hpp"
 
 namespace mint {
-namespace type {
-class Nil : public Type {
+namespace ir {
+class Parens {
+  detail::Parameter m_parameter;
+
 public:
-  Nil() noexcept;
-  ~Nil() noexcept override = default;
+  Parens(detail::Parameter parameter) noexcept : m_parameter(parameter) {}
 
-  static auto classof(Ptr type) noexcept -> bool;
-
-  [[nodiscard]] bool equals(Ptr right) const noexcept override;
-  void print(std::ostream &out) const noexcept override;
-
-private:
-  [[nodiscard]] llvm::Type *
-  toLLVMImpl(Environment &env) const noexcept override;
+  [[nodiscard]] detail::Parameter parameter() const noexcept {
+    return m_parameter;
+  }
 };
-} // namespace type
+} // namespace ir
 } // namespace mint

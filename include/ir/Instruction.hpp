@@ -43,7 +43,7 @@ public:
   // #NOTE: since an Instruction is representing a 'flattened'
   // AST node, and there is no way to store pointers consistently
   // within a std::vector. an instruction can only by valid
-  // with respect to the  given Mir it is currently
+  // with respect to the given Mir it is currently
   // residing in. Thus there is no reason why a single
   // instruction should be copied or moved.
   // Only whole vectors can be validly copied or

@@ -32,6 +32,9 @@ namespace type {
 struct Type {
   using Variant = std::variant<Nil, Boolean, Integer, Function, Lambda>;
   Variant variant;
+
+  template <class... Args>
+  Type(Args &&...args) noexcept : variant(std::forward<Args>(args)...) {}
 };
 
 bool equals(Ptr left, Ptr right) noexcept;

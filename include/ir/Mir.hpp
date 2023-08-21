@@ -28,26 +28,18 @@ namespace mint {
 namespace ir {
 class Instruction;
 
-// #TODO: maybe write a parser for ir, as well as a print
-// function, such that we can emit and read back the IR
-// to a file. this might come in handy for parallel
-// compilation.
-// #NOTE: the existence of parenthesis, means that binops
-// and unops must conservatively place parens around their
-// parameters, for any parameter that is not scalar.
-// just in case the programmer specified an Ast infix
-// expression which broke precedence rules with one or
-// more parenthesis. (theoretically speaking only if
-// the parameter is itself another binop or unop,
-// but that would mean looking at the Instruction referenced
-// by the parameter, not just the parameter.)
+// #TODO: rewrite the parser to produce ir, as well as print
+// #TODO: IR is kinda a misnomer if we are using it to represent
+// enough of the syntax such that it can be used to recreate the
+// source code which created it. it's more of a mix between an
+// Intermediate Representation and an Abstract Syntax Tree.
 
 class Mir {
 public:
   // #TODO: replace boost::container::vector
   // with a handrolled vector like type which
   // can handle forward declared types.
-  // (#NOTE: maybe based around std::unique_ptr<T[]>)
+  // (#NOTE: maybe using std::unique_ptr<T[]>)
   using Ir = boost::container::vector<Instruction>;
   using iterator = Ir::iterator;
   using const_iterator = Ir::const_iterator;
