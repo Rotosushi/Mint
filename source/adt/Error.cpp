@@ -78,7 +78,7 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
   case Error::Kind::ResultTypeMismatch:
     return "Result Type annotation doesn't match computed type";
 
-  case Error::Kind::CannotCallObject:
+  case Error::Kind::CannotCallType:
     return "Cannot Call object";
   case Error::Kind::ArgumentTypeMismatch:
     return "Argument Types are not equal";

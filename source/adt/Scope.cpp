@@ -102,8 +102,8 @@ auto Bindings::bind(Key key, Attributes attributes, type::Ptr type,
   return {Binding{pair.first}};
 }
 
-auto Bindings::partialBind(Key key, Attributes attributes,
-                           type::Ptr type) noexcept -> Result<Binding> {
+auto Bindings::declare(Key key, Attributes attributes, type::Ptr type) noexcept
+    -> Result<Binding> {
   if (auto found = lookup(key))
     return {Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
 
@@ -141,10 +141,10 @@ auto ScopeTable::Entry::bind(Identifier name, Attributes attributes,
                                 std::move(comptime_value), runtime_value);
 }
 
-auto ScopeTable::Entry::partialBind(Identifier name, Attributes attributes,
-                                    type::Ptr type) noexcept
+auto ScopeTable::Entry::declare(Identifier name, Attributes attributes,
+                                type::Ptr type) noexcept
     -> Result<Bindings::Binding> {
-  return iter->second->partialBindName(name, attributes, type);
+  return iter->second->declareName(name, attributes, type);
 }
 
 [[nodiscard]] auto ScopeTable::Entry::lookupBinding(Identifier name) noexcept
@@ -331,10 +331,9 @@ auto Scope::bindName(Identifier name, Attributes attributes, type::Ptr type,
                           runtime_value);
 }
 
-auto Scope::partialBindName(Identifier name, Attributes attributes,
-                            type::Ptr type) noexcept
-    -> Result<Bindings::Binding> {
-  return m_bindings->partialBind(name, attributes, type);
+auto Scope::declareName(Identifier name, Attributes attributes,
+                        type::Ptr type) noexcept -> Result<Bindings::Binding> {
+  return m_bindings->declare(name, attributes, type);
 }
 
 auto Scope::bindScope(Identifier name) -> ScopeTable::Entry {

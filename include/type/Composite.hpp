@@ -15,35 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <optional>
-#include <ostream>
-#include <variant>
+#include <vector>
 
-#include "llvm/IR/Type.h"
-#include "llvm/Support/Casting.h"
-
-#include "type/Composite.hpp"
-#include "type/Scalar.hpp"
+#include "TypeForwardDeclaration.hpp"
 
 namespace mint {
-class Environment;
-
 namespace type {
-struct Type {
-  using Variant = std::variant<Nil, Boolean, Integer, Function, Lambda>;
-  Variant variant;
+struct Function {
+  using Arguments = std::vector<Ptr>;
+  Ptr result_type;
+  Arguments arguments;
 };
 
-bool equals(Ptr left, Ptr right) noexcept;
-bool callable(Ptr type) noexcept;
-
-void print(std::ostream &out, Ptr type) noexcept;
-
-llvm::Type *toLLVM(Ptr left, Environment &env) noexcept;
-
-inline auto operator<<(std::ostream &out, Ptr type) -> std::ostream & {
-  print(out, type);
-  return out;
-}
+struct Lambda {
+  Ptr function_type;
+};
 } // namespace type
 } // namespace mint

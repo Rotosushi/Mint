@@ -181,15 +181,14 @@ public:
   auto lookupUnop(Token op) noexcept -> std::optional<UnopTable::Unop>;
 
   //**** TypeInterner Interface ****//
-  auto getBooleanType() noexcept -> type::Boolean const *;
-  auto getIntegerType() noexcept -> type::Integer const *;
-  auto getNilType() noexcept -> type::Nil const *;
+  auto getBooleanType() noexcept -> type::Ptr;
+  auto getIntegerType() noexcept -> type::Ptr;
+  auto getNilType() noexcept -> type::Ptr;
 
   auto getFunctionType(type::Ptr result_type,
                        type::Function::Arguments argument_types) noexcept
-      -> type::Function const *;
-  auto getLambdaType(type::Function const *function_type) noexcept
-      -> type::Lambda const *;
+      -> type::Ptr;
+  auto getLambdaType(type::Ptr function_type) noexcept -> type::Ptr;
 
   //**** LLVM interface ****//
   //**** LLVM Helpers *****//

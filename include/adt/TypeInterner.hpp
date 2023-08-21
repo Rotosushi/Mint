@@ -17,21 +17,22 @@
 #pragma once
 #include <forward_list>
 
-#include "type/All.hpp"
+#include "type/Type.hpp"
 
 namespace mint {
 class TypeInterner {
   template <class T> class Composite {
-    std::forward_list<T> set;
+    std::forward_list<type::Type> set;
 
   public:
-    template <class... Args> T const *emplace(Args &&...args) noexcept {
-      std::forward_list<T> potential;
-      potential.emplace_front(std::forward<Args>(args)...);
-      auto const *type = &potential.front();
+    template <class... Args> type::Ptr emplace(Args &&...args) noexcept {
+      std::forward_list<type::Type> potential;
+      potential.emplace_front(type::Type::Variant{std::in_place_type<T>,
+                                                  std::forward<Args>(args)...});
+      type::Ptr type = &potential.front();
 
       for (auto &element : set)
-        if (element.equals(type))
+        if (equals(type, &element))
           return &element;
 
       set.splice_after(set.before_begin(), potential);
@@ -40,38 +41,39 @@ class TypeInterner {
   };
 
   class LambdaTypes {
-    std::forward_list<type::Lambda> set;
+    std::forward_list<type::Type> set;
 
   public:
-    type::Lambda const *emplace(type::Function const *function_type) noexcept {
-      return &set.emplace_front(function_type);
+    type::Ptr emplace(type::Ptr function_type) noexcept {
+      return &set.emplace_front(
+          type::Type::Variant{std::in_place_type<type::Lambda>, function_type});
     }
   };
 
-  type::Boolean boolean_type;
-  type::Integer integer_type;
-  type::Nil nil_type;
+  type::Type boolean_type;
+  type::Type integer_type;
+  type::Type nil_type;
 
   Composite<type::Function> function_types;
   LambdaTypes lamdba_types;
 
 public:
-  auto getBooleanType() const noexcept -> type::Boolean const * {
-    return &boolean_type;
-  }
-  auto getIntegerType() const noexcept -> type::Integer const * {
-    return &integer_type;
-  }
-  auto getNilType() const noexcept -> type::Nil const * { return &nil_type; }
+  TypeInterner() noexcept
+      : boolean_type(type::Type::Variant{std::in_place_type<type::Boolean>}),
+        integer_type(type::Type::Variant{std::in_place_type<type::Integer>}),
+        nil_type(type::Type::Variant{std::in_place_type<type::Nil>}) {}
+
+  auto getBooleanType() noexcept -> type::Ptr { return &boolean_type; }
+  auto getIntegerType() noexcept -> type::Ptr { return &integer_type; }
+  auto getNilType() noexcept -> type::Ptr { return &nil_type; }
 
   auto getFunctionType(type::Ptr result_type,
                        type::Function::Arguments arguments) noexcept
-      -> type::Function const * {
+      -> type::Ptr {
     return function_types.emplace(result_type, arguments);
   }
 
-  auto getLambdaType(type::Function const *function_type) noexcept
-      -> type::Lambda const * {
+  auto getLambdaType(type::Ptr function_type) noexcept -> type::Ptr {
     return lamdba_types.emplace(function_type);
   }
 };

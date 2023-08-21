@@ -75,7 +75,7 @@ public:
   auto bind(Key key, Attributes attributes, type::Ptr type,
             ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
       -> Result<Binding>;
-  auto partialBind(Key key, Attributes attributes, type::Ptr type) noexcept
+  auto declare(Key key, Attributes attributes, type::Ptr type) noexcept
       -> Result<Binding>;
 
   [[nodiscard]] auto lookup(Key key) noexcept -> Result<Binding>;
@@ -103,8 +103,8 @@ public:
     auto bind(Identifier name, Attributes attributes, type::Ptr type,
               ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
         -> Result<Bindings::Binding>;
-    auto partialBind(Identifier name, Attributes attributes,
-                     type::Ptr type) noexcept -> Result<Bindings::Binding>;
+    auto declare(Identifier name, Attributes attributes,
+                 type::Ptr type) noexcept -> Result<Bindings::Binding>;
 
     [[nodiscard]] auto lookupBinding(Identifier name) noexcept
         -> Result<Bindings::Binding>;
@@ -189,8 +189,8 @@ public:
   auto bindName(Identifier name, Attributes attributes, type::Ptr type,
                 ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
       -> Result<Bindings::Binding>;
-  auto partialBindName(Identifier name, Attributes attributes,
-                       type::Ptr type) noexcept -> Result<Bindings::Binding>;
+  auto declareName(Identifier name, Attributes attributes,
+                   type::Ptr type) noexcept -> Result<Bindings::Binding>;
 
   auto bindScope(Identifier name) -> ScopeTable::Entry;
   void unbindScope(Identifier name);

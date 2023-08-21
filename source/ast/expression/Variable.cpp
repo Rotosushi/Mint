@@ -121,7 +121,7 @@ Result<llvm::Value *> Variable::codegen(Environment &env) noexcept {
   if (!binding.hasRuntimeValue())
     return handleUseBeforeDef(env);
 
-  auto type = binding.type()->toLLVM(env);
+  auto type = toLLVM(binding.type(), env);
   auto value = binding.runtimeValueOrAssert();
 
   if (!env.hasInsertionPoint()) {

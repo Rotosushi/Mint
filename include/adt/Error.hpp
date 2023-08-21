@@ -145,7 +145,7 @@ public:
     ResultTypeMismatch,
 
     // Call errors
-    CannotCallObject,
+    CannotCallType,
     ArgumentTypeMismatch,
     ArgumentNumberMismatch,
 

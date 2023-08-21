@@ -16,9 +16,9 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
-#include "type/scalar/Boolean.hpp"
-#include "type/scalar/Integer.hpp"
-#include "type/scalar/Nil.hpp"
-
-#include "type/composite/Function.hpp"
-#include "type/composite/Lambda.hpp"
+namespace mint {
+namespace type {
+class Type;
+using Ptr = Type *;
+} // namespace type
+} // namespace mint

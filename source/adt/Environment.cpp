@@ -235,7 +235,7 @@ auto Environment::bindName(Identifier name, Attributes attributes,
 auto Environment::declareName(Identifier name, Attributes attributes,
                               type::Ptr type) noexcept
     -> mint::Result<mint::Bindings::Binding> {
-  return m_local_scope->partialBindName(name, attributes, type);
+  return m_local_scope->declareName(name, attributes, type);
 }
 
 auto Environment::lookupBinding(Identifier name) noexcept
@@ -300,25 +300,24 @@ auto Environment::lookupUnop(Token op) noexcept
 }
 
 //**** TypeInterner Interface ****/
-auto Environment::getBooleanType() noexcept -> type::Boolean const * {
+auto Environment::getBooleanType() noexcept -> type::Ptr {
   return m_type_interner.getBooleanType();
 }
-auto Environment::getIntegerType() noexcept -> type::Integer const * {
+auto Environment::getIntegerType() noexcept -> type::Ptr {
   return m_type_interner.getIntegerType();
 }
-auto Environment::getNilType() noexcept -> type::Nil const * {
+auto Environment::getNilType() noexcept -> type::Ptr {
   return m_type_interner.getNilType();
 }
 
 auto Environment::getFunctionType(
     type::Ptr result_type, type::Function::Arguments argument_types) noexcept
-    -> type::Function const * {
+    -> type::Ptr {
   return m_type_interner.getFunctionType(result_type,
                                          std::move(argument_types));
 }
 
-auto Environment::getLambdaType(type::Function const *function_type) noexcept
-    -> type::Lambda const * {
+auto Environment::getLambdaType(type::Ptr function_type) noexcept -> type::Ptr {
   return m_type_interner.getLambdaType(function_type);
 }
 

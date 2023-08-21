@@ -106,7 +106,7 @@ Result<type::Ptr> Lambda::typecheck(Environment &env) const noexcept {
   // if the user specified a result_type, compare it against
   // result the type of the body.
   if (m_result_type != nullptr) {
-    if (!result_type->equals(m_result_type)) {
+    if (!type::equals(result_type, m_result_type)) {
       std::stringstream message;
       message << "Expected type [" << m_result_type << "] Computed type ["
               << result_type << "]";
@@ -141,14 +141,14 @@ Result<ast::Ptr> Lambda::evaluate([[maybe_unused]] Environment &env) noexcept {
 //   -) put everything back where it was
 //   -) return the function pointer as the result.
 Result<llvm::Value *> Lambda::codegen(Environment &env) noexcept {
-  // #NOTE: enforce that typecheck was called before
-  MINT_ASSERT(cachedTypeOrAssert());
   env.pushScope();
 
-  auto function_type =
-      llvm::cast<type::Lambda>(cachedTypeOrAssert())->function_type();
-  auto llvm_function_type =
-      llvm::cast<llvm::FunctionType>(function_type->toLLVM(env));
+  auto type = cachedTypeOrAssert();
+  MINT_ASSERT(std::holds_alternative<type::Lambda>(type->variant));
+  auto lambda_type = std::get<type::Lambda>(type->variant);
+
+  auto llvm_function_type = llvm::cast<llvm::FunctionType>(
+      type::toLLVM(lambda_type.function_type, env));
   auto llvm_lambda_name = env.getLambdaName();
   auto function_callee =
       env.getOrInsertFunction(llvm_lambda_name, llvm_function_type);

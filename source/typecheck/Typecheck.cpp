@@ -229,14 +229,27 @@ struct TypecheckInstruction {
     if (!callee)
       return callee;
 
-    // #TODO: extend this to handle lambdas or functions.
-    auto callee_type = llvm::dyn_cast<type::Lambda>(callee.value());
-    if (callee_type == nullptr)
-      return {Error::Kind::CannotCallObject};
-    auto function_type = callee_type->function_type();
+    auto callee_type = callee.value();
+    if (!type::callable(callee_type))
+      return {Error::Kind::CannotCallType};
+
+    type::Function *function_type = nullptr;
+    auto &variant = callee_type->variant;
+    if (std::holds_alternative<type::Lambda>(variant)) {
+      auto lambda_type = std::get_if<type::Lambda>(&variant);
+      auto ptr = lambda_type->function_type;
+      function_type = std::get_if<type::Function>(&ptr->variant);
+
+    } else if (std::holds_alternative<type::Function>(variant)) {
+      function_type = std::get_if<type::Function>(&variant);
+
+    } else {
+      abort("bad callable type!");
+    }
+    MINT_ASSERT(function_type != nullptr);
 
     auto &actual_arguments = call.arguments();
-    auto &formal_arguments = function_type->arguments();
+    auto &formal_arguments = function_type->arguments;
     if (formal_arguments.size() != actual_arguments.size())
       return {Error::Kind::ArgumentNumberMismatch};
 
@@ -247,13 +260,13 @@ struct TypecheckInstruction {
         return result;
 
       auto formal_argument_type = *cursor;
-      if (!formal_argument_type->equals(result.value()))
+      if (!type::equals(formal_argument_type, result.value()))
         return {Error::Kind::ArgumentTypeMismatch};
 
       ++cursor;
     }
 
-    return function_type->result_type();
+    return function_type->result_type;
   }
 
   Result<type::Ptr> operator()(ir::Unop &unop) noexcept {

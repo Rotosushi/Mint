@@ -18,7 +18,6 @@
 #include "adt/Environment.hpp"
 #include "ast/value/Lambda.hpp"
 #include "ir/Instruction.hpp"
-#include "type/composite/Lambda.hpp"
 
 namespace mint {
 namespace ast {
@@ -91,16 +90,29 @@ Result<type::Ptr> Call::typecheck(Environment &env) const noexcept {
   // #NOTE: lambda's are the only callable in the language
   // currently. this will be made more robust in the event
   // that multiple types are callable.
-  auto callee_type = llvm::dyn_cast<type::Lambda>(callee_result.value());
-  if (callee_type == nullptr) {
+  auto &type = callee_result.value();
+  if (!type::callable(type)) {
     std::stringstream message;
     message << m_callee;
-    return {Error::Kind::CannotCallObject, m_callee->location(),
-            message.view()};
+    return {Error::Kind::CannotCallType, m_callee->location(), message.view()};
   }
-  auto function_type = callee_type->function_type();
 
-  auto &callee_arguments = function_type->arguments();
+  type::Function *function_type = nullptr;
+  auto &variant = type->variant;
+  if (std::holds_alternative<type::Lambda>(variant)) {
+    auto lambda_type = std::get_if<type::Lambda>(&variant);
+    auto ptr = lambda_type->function_type;
+    function_type = std::get_if<type::Function>(&ptr->variant);
+
+  } else if (std::holds_alternative<type::Function>(variant)) {
+    function_type = std::get_if<type::Function>(&variant);
+
+  } else {
+    abort("bad callable type!");
+  }
+  MINT_ASSERT(function_type != nullptr);
+
+  auto &callee_arguments = function_type->arguments;
   if (callee_arguments.size() != m_arguments.size()) {
     std::stringstream message;
     message << "Expected [" << m_arguments.size() << "] arguments, received ["
@@ -116,7 +128,7 @@ Result<type::Ptr> Call::typecheck(Environment &env) const noexcept {
     auto argument_type = argument_result.value();
     auto callee_argument_type = *callee_cursor;
 
-    if (!argument_type->equals(callee_argument_type)) {
+    if (!equals(argument_type, callee_argument_type)) {
       std::stringstream message;
       message << "Expected type [" << callee_argument_type
               << "], received type [" << argument_type << "]";
@@ -127,7 +139,7 @@ Result<type::Ptr> Call::typecheck(Environment &env) const noexcept {
     ++callee_cursor;
   }
 
-  return cachedType(function_type->result_type());
+  return cachedType(function_type->result_type);
 }
 
 // #NOTE: evaluate the callee down to a lambda,
@@ -211,14 +223,19 @@ Result<llvm::Value *> Call::codegen(Environment &env) noexcept {
     actual_arguments.emplace_back(result.value());
   }
 
+  // this is a direct call to the function
   if (auto function = llvm::dyn_cast<llvm::Function>(callee_result.value());
       function != nullptr) {
     return env.createLLVMCall(function, actual_arguments);
-  } else {
-    // #NOTE: we assume this call is going through a function pointer.
-    auto lambda_type = llvm::cast<type::Lambda>(m_callee->cachedTypeOrAssert());
-    auto llvm_function_type = llvm::cast<llvm::FunctionType>(
-        lambda_type->function_type()->toLLVM(env));
+
+  } else { // this call is going through a function pointer.
+    auto type = m_callee->cachedTypeOrAssert();
+    auto lambda_type = std::get_if<type::Lambda>(&type->variant);
+    auto function_type = lambda_type->function_type;
+    MINT_ASSERT(std::holds_alternative<type::Function>(function_type->variant));
+
+    auto llvm_function_type =
+        llvm::cast<llvm::FunctionType>(type::toLLVM(function_type, env));
     auto llvm_function_pointer = callee_result.value();
     return env.createLLVMCall(llvm_function_type, llvm_function_pointer,
                               actual_arguments);

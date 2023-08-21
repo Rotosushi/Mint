@@ -103,7 +103,7 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   if (anno.has_value()) {
     auto &annotated_type = anno.value();
 
-    if (!annotated_type->equals(type)) {
+    if (!equals(type, annotated_type)) {
       std::stringstream message;
       message << annotated_type << " != " << type;
       return {Error::Kind::LetTypeMismatch, location(), message.view()};
@@ -192,7 +192,7 @@ Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
   auto value = codegen_result.value();
 
   auto type = m_ast->cachedTypeOrAssert();
-  auto llvm_type = type->toLLVM(env);
+  auto llvm_type = type::toLLVM(type, env);
 
   // #TODO: add support for generating locals
   // #TODO: factor this section into a function
