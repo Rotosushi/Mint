@@ -40,7 +40,7 @@ Ptr Affix::clone_impl() const noexcept {
 
 ir::detail::Parameter Affix::flatten_impl(ir::Mir &ir,
                                           bool immediate) const noexcept {
-  return m_ast->flatten_impl(ir, immediate);
+  return ir.emplaceAffix(m_ast->flatten_impl(ir, immediate));
 }
 
 void Affix::print(std::ostream &out) const noexcept { out << m_ast << ";"; }

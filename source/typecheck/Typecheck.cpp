@@ -171,6 +171,14 @@ struct TypecheckInstruction {
     return typecheck(immediate, *env);
   }
 
+  Result<type::Ptr> operator()(ir::Affix &affix) noexcept {
+    return typecheck(affix.parameter(), *ir, *env);
+  }
+
+  Result<type::Ptr> operator()(ir::Parens &parens) noexcept {
+    return typecheck(parens.parameter(), *ir, *env);
+  }
+
   Result<type::Ptr> operator()(ir::Let &let) noexcept {
     // #BUG when resolving a ubd def
     // let a = b;

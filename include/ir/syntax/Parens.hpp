@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "ir/detail/Parameter.hpp"
+#include "ir/detail/Index.hpp"
 
 namespace mint {
 namespace ir {
@@ -25,9 +25,7 @@ class Parens {
 public:
   Parens(detail::Parameter parameter) noexcept : m_parameter(parameter) {}
 
-  [[nodiscard]] detail::Parameter parameter() const noexcept {
-    return m_parameter;
-  }
+  [[nodiscard]] detail::Parameter &parameter() noexcept { return m_parameter; }
 };
 } // namespace ir
 } // namespace mint

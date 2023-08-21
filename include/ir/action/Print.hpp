@@ -15,24 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <string_view>
+#include <ostream>
 
-namespace mint {
-namespace ir {
-class Import {
-  std::string_view m_file;
+#include "ir/Mir.hpp"
 
-public:
-  Import(std::string_view file) noexcept : m_file(file) {}
-  Import(Import const &other) noexcept = default;
-  Import(Import &&other) noexcept = default;
-  auto operator=(Import const &other) noexcept -> Import & = default;
-  auto operator=(Import &&other) noexcept -> Import & = default;
-  ~Import() noexcept = default;
+namespace mint::ir {
+void print(std::ostream &out, Mir &mir) noexcept;
 
-  [[nodiscard]] auto file() const noexcept -> std::string_view {
-    return m_file;
-  }
-};
-} // namespace ir
-} // namespace mint
+inline std::ostream &operator<<(std::ostream &out, Mir &mir) noexcept {
+  print(out, mir);
+  return out;
+}
+} // namespace mint::ir

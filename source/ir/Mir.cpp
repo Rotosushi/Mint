@@ -59,11 +59,6 @@ auto Mir::root() const noexcept -> detail::Index {
 auto Mir::ir() noexcept -> Ir & { return m_ir; }
 auto Mir::ir() const noexcept -> Ir const & { return m_ir; }
 
-auto Mir::begin() noexcept -> iterator { return m_ir.begin(); }
-auto Mir::end() noexcept -> iterator { return m_ir.end(); }
-auto Mir::begin() const noexcept -> const_iterator { return m_ir.begin(); }
-auto Mir::end() const noexcept -> const_iterator { return m_ir.end(); }
-
 [[nodiscard]] auto Mir::operator[](detail::Index index) noexcept -> reference {
   MINT_ASSERT(index < size());
   return m_ir[index.index()];
@@ -85,6 +80,14 @@ detail::Index Mir::emplace_back(Args &&...args) {
 
 detail::Index Mir::emplaceImmediate(detail::Immediate immediate) {
   return emplace_back<detail::Immediate>(immediate);
+}
+
+detail::Index Mir::emplaceAffix(detail::Parameter parameter) {
+  return emplace_back<Affix>(parameter);
+}
+
+detail::Index Mir::emplaceParens(detail::Parameter parameter) {
+  return emplace_back<Parens>(parameter);
 }
 
 detail::Index Mir::emplaceLet(Identifier name, detail::Parameter parameter) {

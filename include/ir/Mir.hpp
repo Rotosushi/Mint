@@ -72,16 +72,13 @@ public:
   [[nodiscard]] auto ir() noexcept -> Ir &;
   [[nodiscard]] auto ir() const noexcept -> Ir const &;
 
-  [[nodiscard]] auto begin() noexcept -> iterator;
-  [[nodiscard]] auto end() noexcept -> iterator;
-  [[nodiscard]] auto begin() const noexcept -> const_iterator;
-  [[nodiscard]] auto end() const noexcept -> const_iterator;
-
   [[nodiscard]] auto operator[](detail::Index index) noexcept -> reference;
   [[nodiscard]] auto operator[](detail::Index index) const noexcept
       -> const_reference;
 
   detail::Index emplaceImmediate(detail::Immediate immediate);
+  detail::Index emplaceAffix(detail::Parameter parameter);
+  detail::Index emplaceParens(detail::Parameter parameter);
   detail::Index emplaceLet(Identifier name, detail::Parameter parameter);
   detail::Index emplaceBinop(Token op, detail::Parameter left,
                              detail::Parameter right);

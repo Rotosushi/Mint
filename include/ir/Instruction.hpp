@@ -30,8 +30,8 @@ namespace ir {
 // represents a flattened node within the AST
 class Instruction {
 public:
-  using Variant = std::variant<detail::Immediate, Let, Binop, Call, Unop,
-                               Import, Module, Lambda>;
+  using Variant = std::variant<detail::Immediate, Affix, Parens, Let, Binop,
+                               Call, Unop, Import, Module, Lambda>;
 
 private:
   Variant m_variant;
@@ -58,23 +58,6 @@ public:
   ~Instruction() noexcept = default;
 
   [[nodiscard]] auto variant() noexcept -> Variant & { return m_variant; }
-
-  [[nodiscard]] auto immediate() -> detail::Immediate & {
-    return std::get<detail::Immediate>(m_variant);
-  }
-  [[nodiscard]] auto let() -> Let & { return std::get<Let>(m_variant); }
-  [[nodiscard]] auto binop() -> Binop & { return std::get<Binop>(m_variant); }
-  [[nodiscard]] auto call() -> Call & { return std::get<Call>(m_variant); }
-  [[nodiscard]] auto unop() -> Unop & { return std::get<Unop>(m_variant); }
-  [[nodiscard]] auto import() -> Import & {
-    return std::get<Import>(m_variant);
-  }
-  [[nodiscard]] auto module_() -> Module & {
-    return std::get<Module>(m_variant);
-  }
-  [[nodiscard]] auto lambda() -> Lambda & {
-    return std::get<Lambda>(m_variant);
-  }
 };
 } // namespace ir
 

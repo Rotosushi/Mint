@@ -63,6 +63,15 @@ struct CloneInstructionVisitor {
     return m_target.emplaceImmediate(immediate);
   }
 
+  detail::Parameter operator()(Affix &affix) noexcept {
+    return m_target.emplaceAffix(clone(m_source, m_target, affix.parameter()));
+  }
+
+  detail::Parameter operator()(Parens &parens) noexcept {
+    return m_target.emplaceParens(
+        clone(m_source, m_target, parens.parameter()));
+  }
+
   detail::Parameter operator()(Let &let) noexcept {
     return m_target.emplaceLet(let.name(),
                                clone(m_source, m_target, let.parameter()));

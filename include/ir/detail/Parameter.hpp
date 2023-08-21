@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "ir/detail/Base.hpp"
 #include "ir/detail/Immediate.hpp"
 #include "ir/detail/Index.hpp"
 
@@ -57,11 +56,6 @@ public:
   ~Parameter() noexcept = default;
 
   [[nodiscard]] auto variant() noexcept -> Variant & { return m_variant; }
-};
-
-class Param {
-public:
-  using Variant = std::variant<Parameter, >;
 };
 } // namespace detail
 } // namespace ir

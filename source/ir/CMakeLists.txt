@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 set(MINT_IR_SOURCES 
+  ${MINT_SOURCE_DIR}/ir/action/Print.cpp
   ${MINT_SOURCE_DIR}/ir/action/Clone.cpp
   ${MINT_SOURCE_DIR}/ir/statement/Module.cpp 
   ${MINT_SOURCE_DIR}/ir/Mir.cpp 

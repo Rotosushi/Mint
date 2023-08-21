@@ -25,9 +25,7 @@ class Affix {
 public:
   Affix(detail::Parameter parameter) noexcept : m_parameter(parameter) {}
 
-  [[nodiscard]] detail::Parameter parameter() const noexcept {
-    return m_parameter;
-  }
+  [[nodiscard]] detail::Parameter &parameter() noexcept { return m_parameter; }
 };
 } // namespace ir
 } // namespace mint

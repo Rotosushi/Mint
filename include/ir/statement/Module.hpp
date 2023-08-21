@@ -18,7 +18,6 @@
 #include "boost/container/vector.hpp"
 
 #include "adt/Identifier.hpp"
-#include "ir/detail/Base.hpp"
 
 namespace mint {
 namespace ir {
