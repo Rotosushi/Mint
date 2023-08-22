@@ -22,6 +22,7 @@
 #include <system_error>
 #include <variant>
 
+#include "adt/SourceLocation.hpp"
 #include "adt/UseBeforeDefNames.hpp"
 #include "scan/Location.hpp"
 
@@ -94,12 +95,17 @@ public:
     std::string message;
   };
 
+  struct SLocation {
+    SourceLocation location;
+    std::string message;
+  };
+
   struct UseBeforeDef {
     UseBeforeDefNames names;
     std::shared_ptr<Scope> scope;
   };
 
-  using Data = std::variant<std::monostate, Default, UseBeforeDef>;
+  using Data = std::variant<std::monostate, Default, SLocation, UseBeforeDef>;
 
   enum class Kind {
     Default,
@@ -166,6 +172,7 @@ private:
 public:
   Error(Kind kind) noexcept;
   Error(Kind kind, Location location, std::string_view message) noexcept;
+  Error(Kind kind, SourceLocation location, std::string_view message) noexcept;
   Error(Kind kind, UseBeforeDefNames names,
         std::shared_ptr<Scope> scope) noexcept;
   Error(UseBeforeDef const &usedef) noexcept;
@@ -180,8 +187,9 @@ public:
   static void underline(std::ostream &out, Location location,
                         std::string_view bad_source) noexcept;
 
-  void print(std::ostream &out,
-             std::string_view bad_source = "") const noexcept;
+  void print(std::ostream &out, std::string_view bad_source) const noexcept;
+
+  void print(std::ostream &out) const noexcept;
 
   auto kind() const noexcept -> Kind;
 };

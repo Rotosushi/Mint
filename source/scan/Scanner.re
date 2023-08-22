@@ -83,6 +83,7 @@ auto Scanner::getText() const noexcept -> std::string_view {
 auto Scanner::getLocation() const noexcept -> Location { return location; }
 
 /*!re2c
+  re2c:api = custom;
   re2c:api:style = free-form;
   re2c:yyfill:enable = 0;
   re2c:eof = 0;
@@ -92,10 +93,10 @@ auto Scanner::getLocation() const noexcept -> Location { return location; }
   re2c:define:YYMARKER = "marker";
   re2c:define:YYLIMIT = "end";
   re2c:define:YYPEEK   = "(*cursor);";
-  re2c:define:YYSKIP   = "(cursor++);";
+  re2c:define:YYSKIP   = "(++cursor);";
   re2c:define:YYBACKUP = "(marker = cursor);";
   re2c:define:YYRESTORE = "(cursor = marker);";
-  re2c:define:YYLESSTHAN = "(end > (end - cursor));";
+  re2c:define:YYLESSTHAN = "(cursor >= end)";
 
   start = "::"?[a-zA-Z_];
   continue = [a-zA-Z0-9_];

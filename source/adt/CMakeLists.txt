@@ -9,6 +9,9 @@ add_library(mint_adt STATIC
   ${MINT_SOURCE_DIR}/adt/Identifier.cpp 
   ${MINT_SOURCE_DIR}/adt/ImportSet.cpp
   ${MINT_SOURCE_DIR}/adt/Recoverable.cpp
+
+  ${MINT_SOURCE_DIR}/adt/SourceBuffer.cpp
+
   ${MINT_SOURCE_DIR}/adt/Scope.cpp
   ${MINT_SOURCE_DIR}/adt/UnopTable.cpp
   ${MINT_SOURCE_DIR}/adt/UseBeforeDefMap.cpp 

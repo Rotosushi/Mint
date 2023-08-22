@@ -14,14 +14,5 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "d7262df6e4ac17d9cd047b121e5fbd12fb704d1a"
-#define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
-#define MINT_DEBUG 1
-// NOLINTEND
-// clang-format on
+#include "scan/MirParser.hpp"
+

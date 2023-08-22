@@ -15,8 +15,15 @@ re2c_generate_scanner(
   ${MINT_SOURCE_DIR}/scan/Scanner.cpp
 )
 
+re2c_generate_scanner(
+  ${MINT_SOURCE_DIR}/scan/Lexer.re 
+  ${MINT_SOURCE_DIR}/scan/Lexer.cpp
+)
+
 add_library(mint_scan STATIC 
+  ${MINT_SOURCE_DIR}/scan/MirParser.cpp
   ${MINT_SOURCE_DIR}/scan/Parser.cpp
+  ${MINT_SOURCE_DIR}/scan/Lexer.cpp
   ${MINT_SOURCE_DIR}/scan/Scanner.cpp
   ${MINT_SOURCE_DIR}/scan/Token.cpp
 )
@@ -24,6 +31,11 @@ set_property(
   TARGET mint_scan 
   APPEND 
   PROPERTY ADDITIONAL_CLEAN_FILES ${MINT_SOURCE_DIR}/scan/Scanner.cpp 
+)
+set_property(
+  TARGET mint_scan 
+  APPEND 
+  PROPERTY ADDITIONAL_CLEAN_FILES ${MINT_SOURCE_DIR}/scan/Lexer.cpp 
 )
 target_include_directories(mint_scan PUBLIC ${MINT_INCLUDE_DIR} ${LLVM_INCLUDE_DIRS})
 target_compile_options(mint_scan PUBLIC ${CXX_OPTIONS} ${llvm_cxxflags})

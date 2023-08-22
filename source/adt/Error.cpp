@@ -102,6 +102,10 @@ Error::Error(Kind kind) noexcept : m_kind(kind) {}
 Error::Error(Kind kind, Location location, std::string_view message) noexcept
     : m_kind(kind),
       m_data(std::in_place_type<Default>, location, std::string(message)) {}
+Error::Error(Kind kind, SourceLocation location,
+             std::string_view message) noexcept
+    : m_kind(kind),
+      m_data(std::in_place_type<SLocation>, location, std::string(message)) {}
 Error::Error(Kind kind, UseBeforeDefNames names,
              std::shared_ptr<Scope> scope) noexcept
     : m_kind(kind), m_data(std::in_place_type<UseBeforeDef>, names, scope) {}
@@ -158,6 +162,38 @@ void Error::print(std::ostream &out,
       underline(out, loc, bad_source);
     }
   }
+  out << "\n";
+}
+
+void Error::print(std::ostream &out) const noexcept {
+  out << "Error: " << KindToView(m_kind);
+
+  if (std::holds_alternative<Default>(m_data)) {
+    auto &def = std::get<Default>(m_data);
+
+    auto &loc = def.location;
+    auto &msg = def.message;
+
+    out << " @ [" << loc.fline << ":" << loc.fcolumn << "]";
+    out << " -- [" << msg << "]\n";
+  }
+
+  if (std::holds_alternative<SLocation>(m_data)) {
+    auto &sl = std::get<SLocation>(m_data);
+
+    auto &loc = sl.location.location();
+    auto &src = sl.location.view();
+    auto &msg = sl.message;
+
+    out << " @ [" << loc.fline << ":" << loc.fcolumn << "]";
+    out << " -- [" << msg << "]\n";
+
+    if (!src.empty()) {
+      out << src << "\n";
+      underline(out, loc, src);
+    }
+  }
+
   out << "\n";
 }
 

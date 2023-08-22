@@ -15,13 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "d7262df6e4ac17d9cd047b121e5fbd12fb704d1a"
-#define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
-#define MINT_DEBUG 1
-// NOLINTEND
-// clang-format on
+#include <string_view>
+
+#include "scan/Location.hpp"
+#include "utility/Assert.hpp"
+
+namespace mint {
+class SourceLocation {
+private:
+  Location *m_location;
+  std::string_view m_view;
+
+public:
+  SourceLocation(Location *location, std::string_view view) noexcept
+      : m_location(location), m_view(view) {
+    MINT_ASSERT(location != nullptr);
+  }
+
+  Location const &location() const noexcept { return *m_location; }
+  std::string_view const &view() const noexcept { return m_view; }
+};
+} // namespace mint
