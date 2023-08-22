@@ -38,10 +38,12 @@ private:
   Stack m_stack;
 
 public:
-  SourceBufferList() {
-    auto buffer = &m_list.emplace_back(InputStream{&std::cin});
+  SourceBufferList(InputStream &&in) {
+    auto buffer = &m_list.emplace_back(std::move(in));
     m_stack.push(buffer);
   }
+
+  auto size() const noexcept { return m_stack.size(); }
 
   SourceBuffer *peek() { return m_stack.top(); }
   SourceBuffer *push(std::fstream &&fin) {
@@ -50,9 +52,9 @@ public:
     return buffer;
   }
   SourceBuffer *pop() {
-    auto top = m_stack.top();
-    m_stack.pop();
-    return top;
+    if (m_stack.size() > 1)
+      m_stack.pop();
+    return m_stack.top();
   }
 };
 } // namespace mint

@@ -21,6 +21,10 @@
 #include "utility/Stringify.hpp"
 
 namespace mint {
+MirParser::MirParser(Environment &env) noexcept
+    : m_env(&env), m_sources(InputStream{env.getInputStream()}),
+      m_lexer(m_sources.peek()), m_current_token(Token::End) {}
+
 Result<ir::detail::Parameter> MirParser::parseTop(ir::Mir &mir) {
   fill();
   if (endOfInput()) {
@@ -53,7 +57,7 @@ Result<ir::detail::Parameter> MirParser::parseModule(ir::Mir &mir) {
     return recover(Error::Kind::ExpectedIdentifier);
   }
 
-  auto id = env->getIdentifier(text());
+  auto id = m_env->getIdentifier(text());
   next();
 
   if (!expect(Token::BeginBrace)) {
@@ -116,7 +120,7 @@ Result<ir::detail::Parameter> MirParser::parseLet(ir::Mir &mir) {
     return recover(Error::Kind::ExpectedIdentifier);
   }
 
-  auto id = env->getIdentifier(text());
+  auto id = m_env->getIdentifier(text());
   next();
 
   std::optional<type::Ptr> annotation;
@@ -322,7 +326,7 @@ MirParser::parseInteger([[maybe_unused]] ir::Mir &mir) {
 
 Result<ir::detail::Parameter>
 MirParser::parseVariable([[maybe_unused]] ir::Mir &mir) {
-  auto name = env->getIdentifier(text());
+  auto name = m_env->getIdentifier(text());
   next();
   return {name};
 }
@@ -366,7 +370,7 @@ Result<ir::detail::Parameter> MirParser::parseLambda(ir::Mir &mir) {
       return recover(Error::Kind::ExpectedIdentifier);
     }
 
-    auto name = env->getIdentifier(text());
+    auto name = m_env->getIdentifier(text());
     next();
 
     if (!expect(Token::Colon)) {
@@ -436,17 +440,17 @@ Result<type::Ptr> MirParser::parseType() {
 }
 Result<type::Ptr> MirParser::parseNilType() {
   next();
-  return env->getNilType();
+  return m_env->getNilType();
 }
 
 Result<type::Ptr> MirParser::parseBooleanType() {
   next();
-  return env->getBooleanType();
+  return m_env->getBooleanType();
 }
 
 Result<type::Ptr> MirParser::parseIntegerType() {
   next();
-  return env->getIntegerType();
+  return m_env->getIntegerType();
 }
 
 Result<type::Ptr> MirParser::parseFunctionType() {
@@ -473,6 +477,6 @@ Result<type::Ptr> MirParser::parseFunctionType() {
     return result;
   }
 
-  return env->getFunctionType(result.value(), std::move(arguments));
+  return m_env->getFunctionType(result.value(), std::move(arguments));
 }
 } // namespace mint

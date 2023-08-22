@@ -32,8 +32,9 @@ Environment::Environment(std::istream *in, std::ostream *out,
                          std::unique_ptr<llvm::Module> llvm_module,
                          std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder,
                          llvm::TargetMachine *llvm_target_machine) noexcept
-    : m_parser(this, in), m_input(in), m_output(out), m_error_output(errout),
-      m_log_output(log), m_llvm_context(std::move(llvm_context)),
+    : m_input(in), m_output(out), m_error_output(errout), m_log_output(log),
+      m_parser(this, in), m_mir_parser(*this),
+      m_llvm_context(std::move(llvm_context)),
       m_llvm_module(std::move(llvm_module)),
       m_llvm_ir_builder(std::move(llvm_ir_builder)),
       m_llvm_target_machine(llvm_target_machine) {
@@ -148,6 +149,19 @@ auto Environment::endOfInput() const noexcept -> bool {
 }
 auto Environment::parse() -> Result<ast::Ptr> { return m_parser.parse(); }
 
+//**** MirParser interface ****//
+auto Environment::endOfMirInput() const noexcept -> bool {
+  return m_mir_parser.endOfInput();
+}
+
+void Environment::pushActiveSourceFile(std::fstream &&fin) {
+  m_mir_parser.pushSourceFile(std::move(fin));
+}
+
+void Environment::popActiveSourceFile() { m_mir_parser.popSourceFile(); }
+
+Result<ir::Mir> Environment::parseMir() { return m_mir_parser.parse(); }
+
 //**** Scope Interface ****//
 auto Environment::localScope() noexcept -> std::shared_ptr<Scope> {
   return m_local_scope;
@@ -216,17 +230,6 @@ auto Environment::alreadyImported(fs::path const &filename) noexcept -> bool {
 
 void Environment::addImport(fs::path const &filename) noexcept {
   m_import_set.insert(filename);
-}
-
-//**** SourceBufferList interface ****//
-SourceBuffer *Environment::peekSourceBuffer() {
-  return m_source_buffer_list.peek();
-}
-SourceBuffer *Environment::pushSourceBuffer(std::fstream &&fin) {
-  return m_source_buffer_list.push(std::move(fin));
-}
-SourceBuffer *Environment::popSourceBuffer() {
-  return m_source_buffer_list.pop();
 }
 
 //**** Scope interface ****//

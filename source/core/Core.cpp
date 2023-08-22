@@ -27,7 +27,7 @@ namespace mint {
     if (do_print)
       out << "# ";
 
-    auto parse_result = env.parse();
+    auto parse_result = env.parseMir();
     if (!parse_result) {
       auto error = parse_result.error();
       if (error.kind() == Error::Kind::EndOfInput)
@@ -36,8 +36,7 @@ namespace mint {
       env.printErrorWithSource(error);
       continue;
     }
-    auto &ast = parse_result.value();
-    auto ir = ast->flatten();
+    auto &ir = parse_result.value();
 
     auto typecheck_result = typecheck(ir, env);
     if (!typecheck_result) {

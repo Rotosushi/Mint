@@ -34,10 +34,8 @@ private:
   Variant m_variant;
 
 public:
-  InputStream(std::istream *in) noexcept
-      : m_variant(std::in_place_type<std::istream *>, in) {
-    MINT_ASSERT(in != nullptr);
-  }
+  InputStream(std::istream &in) noexcept
+      : m_variant(std::in_place_type<std::istream *>, &in) {}
   InputStream(std::fstream &&fin) noexcept
       : m_variant(std::in_place_type<std::fstream>, std::move(fin)) {}
 

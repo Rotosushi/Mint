@@ -30,11 +30,11 @@
 #include "adt/ImportSet.hpp"
 #include "adt/InsertionPoint.hpp"
 #include "adt/Scope.hpp"
-#include "adt/SourceBufferList.hpp"
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
 #include "ast/Ast.hpp"
+#include "scan/MirParser.hpp"
 #include "scan/Parser.hpp"
 
 // #TODO: split the llvm functionality into it's
@@ -52,24 +52,26 @@ namespace mint {
 // Allocates the data-structures necessary for the
 // compilation process.
 class Environment {
+  std::istream *m_input;
+  std::ostream *m_output;
+  std::ostream *m_error_output;
+  std::ostream *m_log_output;
+
   fs::path m_file;
+  std::shared_ptr<Scope> m_global_scope;
+  std::shared_ptr<Scope> m_local_scope;
+  std::vector<ast::Ptr> m_module;
+
   DirectorySearcher m_directory_searcher;
   ImportSet m_import_set;
-  SourceBufferList m_source_buffer_list;
   TypeInterner m_type_interner;
   StringSet m_string_set;
   BinopTable m_binop_table;
   UnopTable m_unop_table;
   UseBeforeDefMap m_use_before_def_map;
-  std::shared_ptr<Scope> m_global_scope;
-  std::shared_ptr<Scope> m_local_scope;
-  Parser m_parser;
-  std::vector<ast::Ptr> m_module;
 
-  std::istream *m_input;
-  std::ostream *m_output;
-  std::ostream *m_error_output;
-  std::ostream *m_log_output;
+  Parser m_parser;
+  MirParser m_mir_parser;
 
   std::unique_ptr<llvm::LLVMContext> m_llvm_context;
   std::unique_ptr<llvm::Module> m_llvm_module;
@@ -111,6 +113,13 @@ public:
   auto endOfInput() const noexcept -> bool;
   auto parse() -> Result<ast::Ptr>;
 
+  //**** MirParser interface ****//
+  auto endOfMirInput() const noexcept -> bool;
+  Result<ir::Mir> parseMir();
+
+  void pushActiveSourceFile(std::fstream &&fin);
+  void popActiveSourceFile();
+
   //**** global "module" interface ****//
   void addAstToModule(ast::Ptr ast) noexcept;
   std::vector<ast::Ptr> &getModule() noexcept;
@@ -131,11 +140,6 @@ public:
   auto alreadyImported(fs::path const &filename) noexcept -> bool;
 
   void addImport(fs::path const &filename) noexcept;
-
-  //**** SourceBufferList interface ****//
-  SourceBuffer *peekSourceBuffer();
-  SourceBuffer *pushSourceBuffer(std::fstream &&fin);
-  SourceBuffer *popSourceBuffer();
 
   //**** Scope interface ****//
   auto localScope() noexcept -> std::shared_ptr<Scope>;

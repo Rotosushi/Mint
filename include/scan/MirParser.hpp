@@ -19,6 +19,7 @@
 
 #include "adt/Attributes.hpp"
 #include "adt/Result.hpp"
+#include "adt/SourceBufferList.hpp"
 #include "ir/Mir.hpp"
 #include "scan/Lexer.hpp"
 
@@ -28,18 +29,20 @@ class Environment;
 class MirParser {
 public:
 private:
-  Environment *env;
+  Environment *m_env;
+  SourceBufferList m_sources;
   Lexer m_lexer;
   Token m_current_token;
   Attributes m_attributes;
 
 public:
-  MirParser(Environment &env, SourceBuffer *source) noexcept
-      : env(&env), m_lexer(source) {}
+  MirParser(Environment &env) noexcept;
 
-  SourceBuffer *exchangeSource(SourceBuffer *source) noexcept {
-    return m_lexer.exchangeSource(source);
+  void pushSourceFile(std::fstream &&fin) {
+    m_lexer.exchangeSource(m_sources.push(std::move(fin)));
   }
+
+  void popSourceFile() { m_lexer.exchangeSource(m_sources.pop()); }
 
   bool endOfInput() const noexcept {
     return m_lexer.eof() && m_lexer.endOfInput();
@@ -81,7 +84,7 @@ private:
   }
 
   void fill() noexcept {
-    auto at_end = peek(Token::End);
+    auto at_end = m_current_token == Token::End;
     auto more_source = !m_lexer.eof();
     auto good = m_lexer.good();
     if (at_end && more_source && good) {

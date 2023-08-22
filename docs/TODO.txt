@@ -1,9 +1,5 @@
 The immediate to do list (in no particular order)
 
-#TODO: refactor the parser to generate an Mir directly 
-
-#TODO: create a SourceBuffer class which manages a buffer of source code
-
 #TODO: replace mint::Location with a string_view of the relevant source code 
       within the source buffer. mint::Source I think. Then usages of the 
       referenced source code can happen directly
