@@ -60,9 +60,8 @@ Ptr Let::clone_impl() const noexcept {
   return create(attributes(), location(), annotation(), name(), m_ast->clone());
 }
 
-ir::detail::Parameter
-Let::flatten_impl(ir::Mir &ir, [[maybe_unused]] bool immediate) const noexcept {
-  return ir.emplaceLet(name(), annotation(), m_ast->flatten_impl(ir, true));
+ir::detail::Parameter Let::flatten_impl(ir::Mir &ir) const noexcept {
+  return ir.emplaceLet(name(), annotation(), m_ast->flatten_impl(ir));
 }
 
 void Let::print(std::ostream &out) const noexcept {
@@ -79,7 +78,7 @@ void Let::print(std::ostream &out) const noexcept {
 
 Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
   if (isUseBeforeDef())
-    return {getUseBeforeDef()};
+    return Error{getUseBeforeDef()};
 
   auto found = env.lookupLocalBinding(name());
   if (found) {
@@ -131,7 +130,7 @@ Result<type::Ptr> Let::typecheck(Environment &env) const noexcept {
 
 Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
   if (isUseBeforeDef())
-    return {getUseBeforeDef()};
+    return Error{getUseBeforeDef()};
 
   //  #NOTE: enforce that typecheck was called before
   MINT_ASSERT(cachedTypeOrAssert());
@@ -173,7 +172,7 @@ Result<ast::Ptr> Let::evaluate(Environment &env) noexcept {
 //  create the variable representing the value at runtime.
 Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
   if (isUseBeforeDef())
-    return {getUseBeforeDef()};
+    return Error{getUseBeforeDef()};
 
   // #NOTE: enforce that typecheck was called before
   MINT_ASSERT(cachedTypeOrAssert());
@@ -184,7 +183,8 @@ Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
   auto binding = found.value();
 
   if (binding.hasRuntimeValue())
-    return {Error::Kind::NameAlreadyBoundInScope, location(), name().view()};
+    return Error{Error::Kind::NameAlreadyBoundInScope, location(),
+                 name().view()};
 
   auto codegen_result = m_ast->codegen(env);
   if (!codegen_result)
@@ -207,8 +207,8 @@ Result<llvm::Value *> Let::codegen(Environment &env) noexcept {
     variable =
         createLLVMGlobalVariable(env, llvm_name.view(), llvm_type, constant);
   } else {
-    return {Error::Kind::GlobalInitNotConstant, m_ast->location(),
-            toString(value)};
+    return Error{Error::Kind::GlobalInitNotConstant, m_ast->location(),
+                 toString(value)};
   }
 
   binding.setRuntimeValue(variable);

@@ -30,6 +30,7 @@
 #include "adt/ImportSet.hpp"
 #include "adt/InsertionPoint.hpp"
 #include "adt/Scope.hpp"
+#include "adt/SourceBufferList.hpp"
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
@@ -54,6 +55,7 @@ class Environment {
   fs::path m_file;
   DirectorySearcher m_directory_searcher;
   ImportSet m_import_set;
+  SourceBufferList m_source_buffer_list;
   TypeInterner m_type_interner;
   StringSet m_string_set;
   BinopTable m_binop_table;
@@ -129,6 +131,11 @@ public:
   auto alreadyImported(fs::path const &filename) noexcept -> bool;
 
   void addImport(fs::path const &filename) noexcept;
+
+  //**** SourceBufferList interface ****//
+  SourceBuffer *peekSourceBuffer();
+  SourceBuffer *pushSourceBuffer(std::fstream &&fin);
+  SourceBuffer *popSourceBuffer();
 
   //**** Scope interface ****//
   auto localScope() noexcept -> std::shared_ptr<Scope>;

@@ -42,9 +42,8 @@ Ptr Parens::clone_impl() const noexcept {
   return create(attributes(), location(), m_ast->clone());
 }
 
-ir::detail::Parameter Parens::flatten_impl(ir::Mir &ir,
-                                           bool immediate) const noexcept {
-  return ir.emplaceParens(m_ast->flatten_impl(ir, immediate));
+ir::detail::Parameter Parens::flatten_impl(ir::Mir &ir) const noexcept {
+  return ir.emplaceParens(m_ast->flatten_impl(ir));
 }
 
 Result<type::Ptr> Parens::typecheck(Environment &env) const noexcept {

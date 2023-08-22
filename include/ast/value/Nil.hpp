@@ -23,8 +23,7 @@ namespace ast {
 class Nil : public Value {
 protected:
   Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir,
-                                     bool immediate) const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
 
 public:
   Nil(Attributes attributes, Location location) noexcept;

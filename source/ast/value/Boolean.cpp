@@ -44,12 +44,9 @@ Ptr Boolean::clone_impl() const noexcept {
   return create(attributes(), location(), m_value);
 }
 
-ir::detail::Parameter Boolean::flatten_impl(ir::Mir &ir,
-                                            bool immediate) const noexcept {
-  if (immediate)
-    return {m_value};
-
-  return ir.emplaceImmediate({m_value});
+ir::detail::Parameter
+Boolean::flatten_impl([[maybe_unused]] ir::Mir &ir) const noexcept {
+  return {m_value};
 }
 
 Result<type::Ptr> Boolean::typecheck(Environment &env) const noexcept {

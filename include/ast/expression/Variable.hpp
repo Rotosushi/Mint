@@ -26,8 +26,7 @@ class Variable : public Expression {
 
 protected:
   Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir,
-                                     bool immediate) const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
 
 public:
   Variable(Attributes attributes, Location location, Identifier name) noexcept;

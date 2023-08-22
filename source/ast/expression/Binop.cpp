@@ -83,11 +83,9 @@ Ptr Binop::clone_impl() const noexcept {
 //   }
 // }
 
-ir::detail::Parameter
-Binop::flatten_impl(ir::Mir &ir,
-                    [[maybe_unused]] bool immediate) const noexcept {
-  return ir.emplaceBinop(m_op, m_left->flatten_impl(ir, true),
-                         m_right->flatten_impl(ir, true));
+ir::detail::Parameter Binop::flatten_impl(ir::Mir &ir) const noexcept {
+  return ir.emplaceBinop(m_op, m_left->flatten_impl(ir),
+                         m_right->flatten_impl(ir));
 }
 
 Result<type::Ptr> Binop::typecheck(Environment &env) const noexcept {

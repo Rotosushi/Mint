@@ -57,11 +57,8 @@ Ptr Lambda::clone_impl() const noexcept {
                 m_body->clone());
 }
 
-ir::detail::Parameter
-Lambda::flatten_impl(ir::Mir &ir,
-                     [[maybe_unused]] bool immediate) const noexcept {
-  return ir.emplaceLambda(m_arguments, m_result_type,
-                          m_body->flatten_impl(ir, true));
+ir::detail::Parameter Lambda::flatten_impl(ir::Mir &ir) const noexcept {
+  return ir.emplaceLambda(m_arguments, m_result_type, m_body->flatten_impl(ir));
 }
 
 void Lambda::print(std::ostream &out) const noexcept {

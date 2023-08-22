@@ -174,8 +174,9 @@ struct PrintInstructionVisitor {
       }
     }
 
-    if (lambda.result_type() != nullptr) {
-      out << " -> " << lambda.result_type();
+    auto annotation = lambda.result_type();
+    if (annotation) {
+      out << " -> " << annotation.value();
     }
 
     out << " => ";

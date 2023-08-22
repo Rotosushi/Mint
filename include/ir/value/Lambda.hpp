@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <optional>
 #include <vector>
 
 #include "adt/Argument.hpp"
@@ -40,13 +41,13 @@ class Lambda {
   // from the Mir where it was defined?
 private:
   FormalArguments m_arguments;
-  type::Ptr m_result_type;
+  std::optional<type::Ptr> m_annotation;
   detail::Parameter m_body;
 
 public:
-  Lambda(FormalArguments arguments, type::Ptr result_type,
+  Lambda(FormalArguments arguments, std::optional<type::Ptr> annotation,
          detail::Parameter body) noexcept
-      : m_arguments(std::move(arguments)), m_result_type(result_type),
+      : m_arguments(std::move(arguments)), m_annotation(annotation),
         m_body(body) {}
   Lambda(Lambda const &other) noexcept = default;
   Lambda(Lambda &&other) noexcept = default;
@@ -58,8 +59,8 @@ public:
     return m_arguments;
   }
   [[nodiscard]] auto body() noexcept -> detail::Parameter & { return m_body; }
-  [[nodiscard]] auto result_type() const noexcept -> type::Ptr {
-    return m_result_type;
+  [[nodiscard]] auto result_type() const noexcept -> std::optional<type::Ptr> {
+    return m_annotation;
   }
 };
 } // namespace ir

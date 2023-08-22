@@ -25,8 +25,7 @@ class Integer : public Value {
 
 protected:
   Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir,
-                                     bool immediate) const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
 
 public:
   Integer(Attributes attributes, Location location, int value) noexcept;

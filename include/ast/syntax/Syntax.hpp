@@ -36,8 +36,7 @@ protected:
       : Ast{kind, attributes, location} {}
 
   [[nodiscard]] virtual Ptr clone_impl() const noexcept = 0;
-  virtual ir::detail::Parameter flatten_impl(ir::Mir &ir,
-                                             bool immediate) const noexcept = 0;
+  virtual ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept = 0;
 
 public:
   ~Syntax() noexcept override = default;

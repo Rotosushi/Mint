@@ -59,10 +59,6 @@ struct CloneInstructionVisitor {
     return std::visit(*this, m_source[index].variant());
   }
 
-  detail::Parameter operator()(detail::Immediate &immediate) noexcept {
-    return m_target.emplaceImmediate(immediate);
-  }
-
   detail::Parameter operator()(Affix &affix) noexcept {
     return m_target.emplaceAffix(clone(m_source, m_target, affix.parameter()));
   }

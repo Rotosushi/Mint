@@ -50,9 +50,7 @@ Ptr Module::clone_impl() const noexcept {
   return create(attributes(), location(), m_name, std::move(expressions));
 }
 
-ir::detail::Parameter
-Module::flatten_impl(ir::Mir &ir,
-                     [[maybe_unused]] bool immediate) const noexcept {
+ir::detail::Parameter Module::flatten_impl(ir::Mir &ir) const noexcept {
   ir::Module::Expressions expressions;
   expressions.reserve(m_expressions.size());
   for (auto &expression : m_expressions) {

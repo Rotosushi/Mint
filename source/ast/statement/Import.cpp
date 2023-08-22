@@ -41,9 +41,7 @@ Ptr Import::clone_impl() const noexcept {
   return create(attributes(), location(), m_filename);
 }
 
-ir::detail::Parameter
-Import::flatten_impl(ir::Mir &ir,
-                     [[maybe_unused]] bool immediate) const noexcept {
+ir::detail::Parameter Import::flatten_impl(ir::Mir &ir) const noexcept {
   return ir.emplaceImport(m_filename);
 }
 

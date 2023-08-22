@@ -50,15 +50,13 @@ Ptr Call::clone_impl() const noexcept {
                 std::move(cloned_arguments));
 }
 
-ir::detail::Parameter
-Call::flatten_impl(ir::Mir &ir,
-                   [[maybe_unused]] bool immediate) const noexcept {
-  auto callee = m_callee->flatten_impl(ir, true);
+ir::detail::Parameter Call::flatten_impl(ir::Mir &ir) const noexcept {
+  auto callee = m_callee->flatten_impl(ir);
 
   ir::Call::Arguments arguments;
   arguments.reserve(m_arguments.size());
   for (auto &argument : m_arguments) {
-    arguments.emplace_back(argument->flatten_impl(ir, true));
+    arguments.emplace_back(argument->flatten_impl(ir));
   }
 
   return ir.emplaceCall(callee, std::move(arguments));

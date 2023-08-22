@@ -39,6 +39,9 @@ template <class T> class Result {
 
 public:
   Result() noexcept = default;
+  template <class... Args>
+  Result(Args &&...args) noexcept
+      : data(std::in_place_type<T>, std::forward<Args>(args)...) {}
   Result(T t) noexcept : data(std::in_place_type<T>, std::move(t)) {}
   Result(Recoverable r) noexcept
       : data(std::in_place_type<Recoverable>, std::move(r)) {}

@@ -25,8 +25,7 @@ class Affix : public Syntax {
 
 protected:
   Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir,
-                                     bool immediate) const noexcept override;
+  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
 
 public:
   Affix(Attributes attributes, Location location, Ptr ast) noexcept;

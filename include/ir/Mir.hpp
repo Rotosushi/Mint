@@ -76,7 +76,6 @@ public:
   [[nodiscard]] auto operator[](detail::Index index) const noexcept
       -> const_reference;
 
-  detail::Index emplaceImmediate(detail::Immediate immediate);
   detail::Index emplaceAffix(detail::Parameter parameter);
   detail::Index emplaceParens(detail::Parameter parameter);
   detail::Index emplaceLet(Identifier name, std::optional<type::Ptr> annotation,
@@ -89,7 +88,8 @@ public:
                               boost::container::vector<Mir> expressions);
   detail::Index emplaceCall(detail::Parameter callee,
                             ir::Call::Arguments arguments);
-  detail::Index emplaceLambda(FormalArguments arguments, type::Ptr result_type,
+  detail::Index emplaceLambda(FormalArguments arguments,
+                              std::optional<type::Ptr> annotation,
                               detail::Parameter body);
 };
 } // namespace ir

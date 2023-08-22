@@ -22,15 +22,13 @@
 #include "scan/Scanner.hpp"
 
 /*
-top = visibility? declaration
+top = visibility? let
+    | module
     | import
     | term
 
 visibility = "public"
            | "private"
-
-declaration = let
-            | module
 
 import = "import" string-literal ";"
 
@@ -135,9 +133,8 @@ private:
                     std::string_view message) noexcept -> Error;
 
   auto parseTop() noexcept -> Result<ast::Ptr>;
-  auto parseDeclaration(bool is_public) noexcept -> Result<ast::Ptr>;
-  auto parseModule(bool is_public) noexcept -> Result<ast::Ptr>;
-  auto parseLet(bool is_public) noexcept -> Result<ast::Ptr>;
+  auto parseModule() noexcept -> Result<ast::Ptr>;
+  auto parseLet() noexcept -> Result<ast::Ptr>;
   auto parseImport() noexcept -> Result<ast::Ptr>;
   auto parseTerm() noexcept -> Result<ast::Ptr>;
   auto parseAffix() noexcept -> Result<ast::Ptr>;
@@ -153,7 +150,7 @@ private:
   auto parseUnop() noexcept -> Result<ast::Ptr>;
   auto parseParens() noexcept -> Result<ast::Ptr>;
   auto parseLambda() noexcept -> Result<ast::Ptr>;
-  
+
   auto parseType() noexcept -> Result<type::Ptr>;
   auto parseNilType() noexcept -> Result<type::Ptr>;
   auto parseBooleanType() noexcept -> Result<type::Ptr>;

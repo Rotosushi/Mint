@@ -209,7 +209,7 @@ auto Environment::getLambdaName() noexcept -> Identifier {
   return Identifier::create(&m_string_set, name);
 }
 
-//**** ImportSet interface ****/
+//**** ImportSet interface ****//
 auto Environment::alreadyImported(fs::path const &filename) noexcept -> bool {
   return m_import_set.contains(filename);
 }
@@ -218,8 +218,18 @@ void Environment::addImport(fs::path const &filename) noexcept {
   m_import_set.insert(filename);
 }
 
-//**** Scope interface ****/
+//**** SourceBufferList interface ****//
+SourceBuffer *Environment::peekSourceBuffer() {
+  return m_source_buffer_list.peek();
+}
+SourceBuffer *Environment::pushSourceBuffer(std::fstream &&fin) {
+  return m_source_buffer_list.push(std::move(fin));
+}
+SourceBuffer *Environment::popSourceBuffer() {
+  return m_source_buffer_list.pop();
+}
 
+//**** Scope interface ****//
 void Environment::unbindScope(Identifier name) noexcept {
   m_local_scope->unbindScope(name);
 }
@@ -250,7 +260,7 @@ auto Environment::qualifyName(Identifier name) noexcept -> Identifier {
   return m_local_scope->qualifyName(name);
 }
 
-//**** Use Before Def Interface ****/
+//**** Use Before Def Interface ****//
 std::optional<Error>
 Environment::bindUseBeforeDef(Identifier undef, Identifier def,
                               std::shared_ptr<Scope> const &scope,
@@ -281,7 +291,7 @@ Environment::resolveRuntimeValueOfUseBeforeDef(Identifier def_name) noexcept {
                                                                 def_name);
 }
 
-//**** BinopTable Interface ****/
+//**** BinopTable Interface ****//
 auto Environment::createBinop(Token op) noexcept -> BinopTable::Binop {
   return m_binop_table.emplace(op);
 }
@@ -290,7 +300,7 @@ auto Environment::lookupBinop(Token op) noexcept
   return m_binop_table.lookup(op);
 }
 
-//**** UnopTable Interface ****/
+//**** UnopTable Interface ****//
 auto Environment::createUnop(Token op) noexcept -> UnopTable::Unop {
   return m_unop_table.emplace(op);
 }
@@ -299,7 +309,7 @@ auto Environment::lookupUnop(Token op) noexcept
   return m_unop_table.lookup(op);
 }
 
-//**** TypeInterner Interface ****/
+//**** TypeInterner Interface ****//
 auto Environment::getBooleanType() noexcept -> type::Ptr {
   return m_type_interner.getBooleanType();
 }
@@ -321,8 +331,8 @@ auto Environment::getLambdaType(type::Ptr function_type) noexcept -> type::Ptr {
   return m_type_interner.getLambdaType(function_type);
 }
 
-/**** LLVM interfaces ****/
-/**** LLVM Helpers *****/
+//**** LLVM interfaces ****//
+//**** LLVM Helpers *****//
 auto Environment::createBasicBlock(llvm::Twine const &name) noexcept
     -> llvm::BasicBlock * {
   return llvm::BasicBlock::Create(*m_llvm_context, name);

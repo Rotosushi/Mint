@@ -18,6 +18,7 @@
 #include <fstream>
 #include <istream>
 #include <string>
+#include <variant>
 
 #include "utility/Assert.hpp"
 
@@ -28,30 +29,45 @@ namespace mint {
 // alive until their contents are fully buffered.)
 class InputStream {
 private:
-  std::istream *m_in;
+  using Variant = std::variant<std::istream *, std::fstream>;
+
+  Variant m_variant;
 
 public:
-  InputStream(std::istream *in) noexcept : m_in(in) {
+  InputStream(std::istream *in) noexcept
+      : m_variant(std::in_place_type<std::istream *>, in) {
     MINT_ASSERT(in != nullptr);
   }
+  InputStream(std::fstream &&fin) noexcept
+      : m_variant(std::in_place_type<std::fstream>, std::move(fin)) {}
 
-  bool eof() const noexcept { return m_in->eof(); }
-  bool good() const noexcept { return m_in->good(); }
+  bool eof() const noexcept {
+    if (std::holds_alternative<std::istream *>(m_variant)) {
+      return std::get<std::istream *>(m_variant)->eof();
+    } else {
+      return std::get<std::fstream>(m_variant).eof();
+    }
+  }
+
+  bool good() const noexcept {
+    if (std::holds_alternative<std::istream *>(m_variant)) {
+      return std::get<std::istream *>(m_variant)->good();
+    } else {
+      return std::get<std::fstream>(m_variant).good();
+    }
+  }
 
   std::string getline() noexcept {
     std::string buffer;
-    std::getline(*m_in, buffer, '\n');
+
+    if (std::holds_alternative<std::istream *>(m_variant)) {
+      std::getline(*(std::get<std::istream *>(m_variant)), buffer, '\n');
+    } else {
+      std::getline(std::get<std::fstream>(m_variant), buffer, '\n');
+    }
+
     buffer += '\n';
     return buffer;
   }
-};
-
-class FileInputStream : InputStream {
-private:
-  std::fstream m_fin;
-
-public:
-  FileInputStream(std::fstream &&fin)
-      : InputStream(&fin), m_fin(std::move(fin)) {}
 };
 } // namespace mint

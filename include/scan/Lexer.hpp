@@ -48,7 +48,7 @@ public:
   void skip() noexcept { m_source->skip(); }
   void backup() noexcept { m_source->backup(); }
   void restore() noexcept { m_source->restore(); }
-  bool endOfInput() noexcept { return m_source->endOfInput(); }
+  bool endOfInput() const noexcept { return m_source->endOfInput(); }
 
   bool eof() const noexcept { return m_source->eof(); }
   bool good() const noexcept { return m_source->good(); }

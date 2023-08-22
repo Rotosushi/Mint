@@ -55,10 +55,8 @@ Ptr Unop::clone_impl() const noexcept {
 //   }
 // }
 
-ir::detail::Parameter
-Unop::flatten_impl(ir::Mir &ir,
-                   [[maybe_unused]] bool immediate) const noexcept {
-  return ir.emplaceUnop(m_op, m_right->flatten_impl(ir, true));
+ir::detail::Parameter Unop::flatten_impl(ir::Mir &ir) const noexcept {
+  return ir.emplaceUnop(m_op, m_right->flatten_impl(ir));
 }
 
 void Unop::print(std::ostream &out) const noexcept {

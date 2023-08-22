@@ -15,7 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <bitset>
 
+#include "adt/Attributes.hpp"
 #include "adt/Result.hpp"
 #include "ir/Mir.hpp"
 #include "scan/Lexer.hpp"
@@ -26,23 +28,40 @@ class Environment;
 class MirParser {
 public:
 private:
+  Environment *env;
   Lexer m_lexer;
   Token m_current_token;
+  Attributes m_attributes;
 
 public:
-  MirParser(SourceBuffer *source) noexcept : m_lexer(source) {}
+  MirParser(Environment &env, SourceBuffer *source) noexcept
+      : env(&env), m_lexer(source) {}
 
   SourceBuffer *exchangeSource(SourceBuffer *source) noexcept {
     return m_lexer.exchangeSource(source);
   }
 
-  bool endOfInput() const noexcept;
+  bool endOfInput() const noexcept {
+    return m_lexer.eof() && m_lexer.endOfInput();
+  }
 
-  Result<ir::Mir> parse();
+  Result<ir::Mir> parse() {
+    ir::Mir mir;
+
+    auto result = parseTop(mir);
+    if (!result) {
+      return result.error();
+    }
+
+    return mir;
+  }
 
 private:
   std::string_view text() const noexcept { return m_lexer.viewToken(); }
   Location location() const noexcept { return m_lexer.currentLocation(); }
+  SourceLocation source() const noexcept {
+    return m_lexer.source(m_lexer.currentLocation());
+  }
   SourceLocation source(Location const &location) const noexcept {
     return m_lexer.source(location);
   }
@@ -79,10 +98,14 @@ private:
     return {kind, source, message};
   }
 
+  Error recover(Error::Kind kind) noexcept {
+    return recover(kind, source(), "");
+  }
+
   Result<ir::detail::Parameter> parseTop(ir::Mir &mir);
-  Result<ir::detail::Parameter> parseModule(ir::Mir &mir, bool is_public);
-  Result<ir::detail::Parameter> parseImport(ir::Mir &mir, bool is_public);
-  Result<ir::detail::Parameter> parseLet(ir::Mir &mir, bool is_public);
+  Result<ir::detail::Parameter> parseModule(ir::Mir &mir);
+  Result<ir::detail::Parameter> parseImport(ir::Mir &mir);
+  Result<ir::detail::Parameter> parseLet(ir::Mir &mir);
   Result<ir::detail::Parameter> parseTerm(ir::Mir &mir);
 
   Result<ir::detail::Parameter> parseAffix(ir::Mir &mir);

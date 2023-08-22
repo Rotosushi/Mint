@@ -30,7 +30,7 @@ public:
 
 private:
   // dependencies
-  InputStream *m_in;
+  InputStream m_in;
 
   // details
   mutable std::list<Location> m_locations;
@@ -48,12 +48,12 @@ private:
   void append(std::string_view text) noexcept;
 
 public:
-  SourceBuffer(InputStream *in) noexcept : m_in(in) {
+  SourceBuffer(InputStream &&in) noexcept : m_in(std::move(in)) {
     m_cursor = m_token = m_marker = m_end = m_buffer.end();
   }
 
-  bool eof() const noexcept { return m_in->eof(); }
-  bool good() const noexcept { return m_in->good(); }
+  bool eof() const noexcept { return m_in.eof(); }
+  bool good() const noexcept { return m_in.good(); }
 
   iterator &cursor() noexcept { return m_cursor; }
   iterator &token() noexcept { return m_token; }
@@ -65,7 +65,7 @@ public:
   void skip() noexcept { ++m_cursor; }
   void backup() noexcept { m_marker = m_cursor; }
   void restore() noexcept { m_cursor = m_token; }
-  bool endOfInput() noexcept { return m_cursor >= m_end; }
+  bool endOfInput() const noexcept { return m_cursor >= m_end; }
 
   std::string_view viewToken() const noexcept { return {m_token, m_cursor}; }
 
@@ -78,33 +78,8 @@ public:
   SourceLocation source(Location const &location) const noexcept;
 
   void fill() noexcept {
-    auto line = m_in->getline();
+    auto line = m_in.getline();
     append(line);
   }
 };
-
-// nothing needs to inherit from SourceBuffer if
-// SourceBuffer simply gets input from a stream-like
-// class which can refer to std::cin
-// or own a std::fstream.
-
-// a buffer holding the source code from the REPL
-// as the user inputs it.
-// class REPLBuffer {
-// public:
-// private:
-//   std::istream &m_in;
-
-// public:
-// };
-
-// a buffer holding the source code for a given
-// source file. takes ownership of the given file.
-// class FileBuffer {
-// public:
-// private:
-//   std::fstream m_file;
-
-// public:
-// };
 } // namespace mint

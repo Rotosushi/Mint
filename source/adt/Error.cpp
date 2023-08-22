@@ -28,32 +28,40 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
   case Error::Kind::UnknownBinop:
     return "Unknown Binop";
 
-  case Error::Kind::ExpectedABasicTerm:
+  case Error::Kind::ExpectedBasic:
     return "Expected a basic term [nil, true, false, [0-9]+, ...]";
-  case Error::Kind::ExpectedADeclaration:
-    return "Expected a declaration [module, let]";
-  case Error::Kind::ExpectedAType:
+  case Error::Kind::ExpectedType:
     return "Expected a type [Nil, Boolean, Integer]";
-  case Error::Kind::ExpectedAnEquals:
-    return "Expected a '='";
-  case Error::Kind::ExpectedAColon:
-    return "Expected a ':'";
-  case Error::Kind::ExpectedASemicolon:
-    return "Expected a ';'";
-  case Error::Kind::ExpectedAnIdentifier:
+  case Error::Kind::ExpectedEquals:
+    return "Expected '='";
+  case Error::Kind::ExpectedColon:
+    return "Expected ':'";
+  case Error::Kind::ExpectedSemicolon:
+    return "Expected ';'";
+  case Error::Kind::ExpectedBackSlash:
+    return "Expected '\\'";
+  case Error::Kind::ExpectedIdentifier:
     return "Expected an identifier";
-  case Error::Kind::ExpectedAClosingParen:
-    return "Expected a ')'";
-  case Error::Kind::ExpectedABeginBrace:
-    return "Expected a '{'";
-  case Error::Kind::ExpectedAEndBrace:
-    return "Expected a '}'";
-  case Error::Kind::ExpectedARightArrow:
+  case Error::Kind::ExpectedBeginParen:
+    return "Expected '('";
+  case Error::Kind::ExpectedEndParen:
+    return "Expected ')'";
+  case Error::Kind::ExpectedBeginBrace:
+    return "Expected '{'";
+  case Error::Kind::ExpectedEndBrace:
+    return "Expected '}'";
+  case Error::Kind::ExpectedRightArrow:
     return "Expected '->'";
-  case Error::Kind::ExpectedAEqualsRightArrow:
+  case Error::Kind::ExpectedEqualsRightArrow:
     return "Expected '=>'";
   case Error::Kind::ExpectedText:
     return "Expected text [\"...\"]";
+  case Error::Kind::ExpectedKeywordLet:
+    return "Expected keyword 'let'";
+  case Error::Kind::ExpectedKeywordModule:
+    return "Expected keyword 'module'";
+  case Error::Kind::ExpectedKeywordImport:
+    return "Expected keyword 'import'";
 
   case Error::Kind::FileNotFound:
     return "File not found";

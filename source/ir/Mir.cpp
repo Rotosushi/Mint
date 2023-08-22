@@ -78,10 +78,6 @@ detail::Index Mir::emplace_back(Args &&...args) {
   return m_index++;
 }
 
-detail::Index Mir::emplaceImmediate(detail::Immediate immediate) {
-  return emplace_back<detail::Immediate>(immediate);
-}
-
 detail::Index Mir::emplaceAffix(detail::Parameter parameter) {
   return emplace_back<Affix>(parameter);
 }
@@ -120,9 +116,9 @@ detail::Index Mir::emplaceCall(detail::Parameter callee,
 }
 
 detail::Index Mir::emplaceLambda(FormalArguments arguments,
-                                 type::Ptr result_type,
+                                 std::optional<type::Ptr> annotation,
                                  detail::Parameter body) {
-  return emplace_back<Lambda>(std::move(arguments), result_type, body);
+  return emplace_back<Lambda>(std::move(arguments), annotation, body);
 }
 } // namespace ir
 } // namespace mint

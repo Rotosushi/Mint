@@ -148,47 +148,40 @@ auto Parser::parseTop() noexcept -> Result<ast::Ptr> {
   if (endOfInput())
     return handle_error(Error::Kind::EndOfInput);
 
-  if (peek(Token::Public)) {
-    next();
-    return parseDeclaration(/* is_public = */ true);
-  } else if (peek(Token::Private)) {
-    next();
-    return parseDeclaration(/* is_public = */ false);
-  } else if (predictsDeclaration(current)) {
-    return parseDeclaration(/* is_public = */ false);
-  } else if (peek(Token::Import)) {
-    return parseImport();
-  } else {
-    return parseTerm();
+  if (peek(Token::Public) || peek(Token::Private) || peek(Token::Let)) {
+    return parseLet();
   }
-}
 
-/*
-  declaration = let
-              | module
-*/
-auto Parser::parseDeclaration(bool is_public) noexcept -> Result<ast::Ptr> {
-  if (peek(Token::Let))
-    return parseLet(is_public);
-  else if (peek(Token::Module))
-    return parseModule(is_public);
-  else
-    return handle_error(Error::Kind::ExpectedADeclaration);
+  if (peek(Token::Module)) {
+    return parseModule();
+  }
+
+  if (peek(Token::Import)) {
+    return parseImport();
+  }
+
+  return parseTerm();
 }
 
 /*
   let = "let" identifier (":" type)? "=" term
 */
-auto Parser::parseLet(bool is_public) noexcept -> Result<ast::Ptr> {
+auto Parser::parseLet() noexcept -> Result<ast::Ptr> {
   Attributes attributes = default_attributes;
-  attributes.isPublic(is_public);
   std::optional<type::Ptr> annotation;
   auto left_loc = location();
-  MINT_ASSERT(peek(Token::Let));
-  next(); // eat 'let'
+
+  if (expect(Token::Public)) {
+    attributes.isPublic(true);
+  } else if (expect(Token::Private)) {
+    attributes.isPublic(false);
+  }
+
+  if (!expect(Token::Let))
+    return handle_error(Error::Kind::ExpectedKeywordLet);
 
   if (!peek(Token::Identifier))
-    return handle_error(Error::Kind::ExpectedAnIdentifier);
+    return handle_error(Error::Kind::ExpectedIdentifier);
 
   auto id = env->getIdentifier(text());
   next(); // eat identifier
@@ -202,7 +195,7 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<ast::Ptr> {
   }
 
   if (!expect(Token::Equal))
-    return handle_error(Error::Kind::ExpectedAnEquals);
+    return handle_error(Error::Kind::ExpectedEquals);
 
   auto affix = parseTerm();
   if (!affix)
@@ -217,22 +210,21 @@ auto Parser::parseLet(bool is_public) noexcept -> Result<ast::Ptr> {
 /*
   module = "module" identifier "{" top* "}"
 */
-auto Parser::parseModule(bool is_public) noexcept -> Result<ast::Ptr> {
+auto Parser::parseModule() noexcept -> Result<ast::Ptr> {
   Attributes attributes = default_attributes;
-  attributes.isPublic(is_public);
   auto left_loc = location();
   /* "module" identifier "{" */
   MINT_ASSERT(peek(Token::Module));
   next(); // eat 'module'
 
   if (!peek(Token::Identifier))
-    return handle_error(Error::Kind::ExpectedAnIdentifier);
+    return handle_error(Error::Kind::ExpectedIdentifier);
 
   auto id = env->getIdentifier(text());
   next();
 
   if (!expect(Token::BeginBrace))
-    return handle_error(Error::Kind::ExpectedABeginBrace);
+    return handle_error(Error::Kind::ExpectedBeginBrace);
 
   ast::Module::Expressions expressions;
   /* top* '}' */
@@ -265,7 +257,7 @@ auto Parser::parseImport() noexcept -> Result<ast::Ptr> {
   next(); // eat string
 
   if (!expect(Token::Semicolon))
-    return handle_error(Error::Kind::ExpectedASemicolon);
+    return handle_error(Error::Kind::ExpectedSemicolon);
 
   auto right_loc = location();
   Location import_loc = {left_loc, right_loc};
@@ -284,7 +276,7 @@ auto Parser::parseTerm() noexcept -> Result<ast::Ptr> {
   auto &affix = result.value();
 
   if (!expect(Token::Semicolon))
-    return handle_error(Error::Kind::ExpectedASemicolon);
+    return handle_error(Error::Kind::ExpectedSemicolon);
 
   auto right_loc = location();
   Location term_loc = {left_loc, right_loc};
@@ -325,7 +317,7 @@ auto Parser::parseCall() noexcept -> Result<ast::Ptr> {
     }
 
     if (!expect(Token::EndParen))
-      return handle_error(Error::Kind::ExpectedAClosingParen);
+      return handle_error(Error::Kind::ExpectedEndParen);
 
     auto rhs_loc = location();
     Location call_loc = {lhs_loc, rhs_loc};
@@ -449,7 +441,7 @@ auto Parser::parseBasic() noexcept -> Result<ast::Ptr> {
     return parseLambda();
 
   default:
-    return handle_error(Error::Kind::ExpectedABasicTerm);
+    return handle_error(Error::Kind::ExpectedBasic);
   }
 }
 
@@ -509,7 +501,7 @@ auto Parser::parseParens() noexcept -> Result<ast::Ptr> {
   auto &ast = affix.value();
 
   if (!expect(Token::EndParen))
-    return handle_error(Error::Kind::ExpectedAClosingParen);
+    return handle_error(Error::Kind::ExpectedEndParen);
 
   auto loc = ast->location();
   return ast::Parens::create(default_attributes, loc, std::move(ast));
@@ -523,13 +515,13 @@ auto Parser::parseLambda() noexcept -> Result<ast::Ptr> {
 
   auto parseArgument = [&]() -> Result<FormalArgument> {
     if (!peek(Token::Identifier))
-      return handle_error(Error::Kind::ExpectedAnIdentifier);
+      return handle_error(Error::Kind::ExpectedIdentifier);
 
     auto name = env->getIdentifier(text());
     next();
 
     if (!expect(Token::Colon))
-      return handle_error(Error::Kind::ExpectedAColon);
+      return handle_error(Error::Kind::ExpectedColon);
 
     auto result = parseType();
     if (!result)
@@ -570,7 +562,7 @@ auto Parser::parseLambda() noexcept -> Result<ast::Ptr> {
 
   // parse the body
   if (!expect(Token::EqRArrow)) // eat '=>'
-    return handle_error(Error::Kind::ExpectedAEqualsRightArrow);
+    return handle_error(Error::Kind::ExpectedEqualsRightArrow);
 
   auto result = parseAffix();
   if (!result)
@@ -601,7 +593,7 @@ auto Parser::parseType() noexcept -> Result<type::Ptr> {
     return parseFunctionType();
 
   default:
-    return handle_error(Error::Kind::ExpectedAType);
+    return handle_error(Error::Kind::ExpectedType);
   }
 }
 
@@ -635,7 +627,7 @@ auto Parser::parseFunctionType() noexcept -> Result<type::Ptr> {
     } while (expect(Token::Comma)); // eat ','
 
   if (!expect(Token::RArrow)) // eat '->'
-    return handle_error(Error::Kind::ExpectedARightArrow);
+    return handle_error(Error::Kind::ExpectedRightArrow);
 
   auto result = parseType();
   if (!result)
