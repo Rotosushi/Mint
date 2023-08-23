@@ -18,20 +18,22 @@
 #include <optional>
 
 #include "adt/Identifier.hpp"
+#include "ir/detail/IrBase.hpp"
 #include "ir/detail/Parameter.hpp"
 #include "type/Type.hpp"
 
 namespace mint {
 namespace ir {
-class Let {
+class Let : public detail::IrBase {
   Identifier m_name;
   std::optional<type::Ptr> m_annotation;
   detail::Parameter m_parameter;
 
 public:
-  Let(Identifier name, std::optional<type::Ptr> annotation,
+  Let(SourceLocation *sl, Identifier name, std::optional<type::Ptr> annotation,
       detail::Parameter parameter) noexcept
-      : m_name(name), m_annotation(annotation), m_parameter(parameter) {}
+      : detail::IrBase(sl), m_name(name), m_annotation(annotation),
+        m_parameter(parameter) {}
   Let(Let const &other) noexcept = default;
   Let(Let &&other) noexcept = default;
   auto operator=(Let const &other) noexcept -> Let & = default;

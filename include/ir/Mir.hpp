@@ -76,19 +76,21 @@ public:
   [[nodiscard]] auto operator[](detail::Index index) const noexcept
       -> const_reference;
 
-  detail::Index emplaceAffix(detail::Parameter parameter);
-  detail::Index emplaceParens(detail::Parameter parameter);
-  detail::Index emplaceLet(Identifier name, std::optional<type::Ptr> annotation,
+  detail::Index emplaceAffix(SourceLocation *sl, detail::Parameter parameter);
+  detail::Index emplaceParens(SourceLocation *sl, detail::Parameter parameter);
+  detail::Index emplaceLet(SourceLocation *sl, Identifier name,
+                           std::optional<type::Ptr> annotation,
                            detail::Parameter parameter);
-  detail::Index emplaceBinop(Token op, detail::Parameter left,
-                             detail::Parameter right);
-  detail::Index emplaceUnop(Token op, detail::Parameter right);
-  detail::Index emplaceImport(std::string_view file);
-  detail::Index emplaceModule(Identifier name,
+  detail::Index emplaceBinop(SourceLocation *sl, Token op,
+                             detail::Parameter left, detail::Parameter right);
+  detail::Index emplaceUnop(SourceLocation *sl, Token op,
+                            detail::Parameter right);
+  detail::Index emplaceImport(SourceLocation *sl, std::string_view file);
+  detail::Index emplaceModule(SourceLocation *sl, Identifier name,
                               boost::container::vector<Mir> expressions);
-  detail::Index emplaceCall(detail::Parameter callee,
+  detail::Index emplaceCall(SourceLocation *sl, detail::Parameter callee,
                             ir::Call::Arguments arguments);
-  detail::Index emplaceLambda(FormalArguments arguments,
+  detail::Index emplaceLambda(SourceLocation *sl, FormalArguments arguments,
                               std::optional<type::Ptr> annotation,
                               detail::Parameter body);
 };

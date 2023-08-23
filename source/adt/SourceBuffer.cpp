@@ -55,7 +55,7 @@ void SourceBuffer::append(std::string_view text) noexcept {
   m_token = begin + toffset;
 }
 
-SourceLocation SourceBuffer::source(Location const &location) const noexcept {
+std::string_view SourceBuffer::source(Location const &location) const noexcept {
   auto cursor = m_buffer.begin();
   auto end = m_buffer.end();
   std::size_t lines_seen = 1;
@@ -73,10 +73,15 @@ SourceLocation SourceBuffer::source(Location const &location) const noexcept {
     while (eol != end && *eol != '\n')
       ++eol;
 
-    return {saveLocation(location), {cursor, eol}};
+    return {cursor, eol};
   }
 
-  return {saveLocation(location), {}};
+  return {};
+}
+
+SourceLocation *
+SourceBuffer::getSourceLocation(Location const &location) const noexcept {
+  return &m_locations.emplace_back(SourceLocation{location, source(location)});
 }
 
 } // namespace mint

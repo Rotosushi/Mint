@@ -16,14 +16,16 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include "ir/detail/Index.hpp"
+#include "ir/detail/IrBase.hpp"
 
 namespace mint {
 namespace ir {
-class Parens {
+class Parens : public detail::IrBase {
   detail::Parameter m_parameter;
 
 public:
-  Parens(detail::Parameter parameter) noexcept : m_parameter(parameter) {}
+  Parens(SourceLocation *sl, detail::Parameter parameter) noexcept
+      : detail::IrBase(sl), m_parameter(parameter) {}
 
   [[nodiscard]] detail::Parameter &parameter() noexcept { return m_parameter; }
 };

@@ -15,15 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include "ir/detail/IrBase.hpp"
 #include "ir/detail/Parameter.hpp"
 
 namespace mint {
 namespace ir {
-class Affix {
+class Affix : public detail::IrBase {
   detail::Parameter m_parameter;
 
 public:
-  Affix(detail::Parameter parameter) noexcept : m_parameter(parameter) {}
+  Affix(SourceLocation *sl, detail::Parameter parameter) noexcept
+      : detail::IrBase(sl), m_parameter(parameter) {}
 
   [[nodiscard]] detail::Parameter &parameter() noexcept { return m_parameter; }
 };

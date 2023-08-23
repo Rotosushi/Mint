@@ -17,11 +17,12 @@
 #pragma once
 #include <vector>
 
+#include "ir/detail/IrBase.hpp"
 #include "ir/detail/Parameter.hpp"
 
 namespace mint {
 namespace ir {
-class Call {
+class Call : public detail::IrBase {
 public:
   using Arguments = std::vector<detail::Parameter>;
 
@@ -30,8 +31,10 @@ private:
   Arguments m_arguments;
 
 public:
-  Call(detail::Parameter callee, Arguments arguments) noexcept
-      : m_callee(callee), m_arguments(std::move(arguments)) {}
+  Call(SourceLocation *sl, detail::Parameter callee,
+       Arguments arguments) noexcept
+      : detail::IrBase(sl), m_callee(callee),
+        m_arguments(std::move(arguments)) {}
   Call(Call const &other) noexcept = default;
   Call(Call &&other) noexcept = default;
   auto operator=(Call const &other) noexcept -> Call & = default;

@@ -15,22 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <string_view>
+#include "adt/SourceLocation.hpp"
 
-#include "scan/Location.hpp"
 #include "utility/Assert.hpp"
 
-namespace mint {
-class SourceLocation {
-private:
-  Location m_location;
-  std::string_view m_view;
+namespace mint::ir::detail {
+class IrBase {
+  SourceLocation const *m_source_location;
+
+protected:
+  void setSL(SourceLocation const *sl) noexcept {
+    MINT_ASSERT(sl != nullptr);
+    m_source_location = sl;
+  }
 
 public:
-  SourceLocation(Location location, std::string_view view) noexcept
-      : m_location(location), m_view(view) {}
+  IrBase(SourceLocation const *source_location) noexcept
+      : m_source_location(source_location) {
+    MINT_ASSERT(source_location != nullptr);
+  }
 
-  Location const &location() const noexcept { return m_location; }
-  std::string_view const &view() const noexcept { return m_view; }
+  SourceLocation const &sourceLocation() const noexcept {
+    return *m_source_location;
+  }
 };
-} // namespace mint
+} // namespace mint::ir::detail

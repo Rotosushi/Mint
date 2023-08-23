@@ -33,7 +33,7 @@ private:
   InputStream m_in;
 
   // details
-  mutable std::list<Location> m_locations;
+  mutable std::list<SourceLocation> m_locations;
   Location m_current_location;
   std::string m_buffer;
   iterator m_cursor;
@@ -41,9 +41,7 @@ private:
   iterator m_marker;
   iterator m_end;
 
-  Location *saveLocation(Location const &location) const noexcept {
-    return &m_locations.emplace_front(location);
-  }
+  std::string_view source(Location const &location) const noexcept;
 
   void append(std::string_view text) noexcept;
 
@@ -69,13 +67,12 @@ public:
 
   std::string_view viewToken() const noexcept { return {m_token, m_cursor}; }
 
+  void updateCurrentLocation() noexcept;
   Location const &currentLocation() const noexcept {
     return m_current_location;
   }
 
-  void updateCurrentLocation() noexcept;
-
-  SourceLocation source(Location const &location) const noexcept;
+  SourceLocation *getSourceLocation(Location const &location) const noexcept;
 
   void fill() noexcept {
     auto line = m_in.getline();

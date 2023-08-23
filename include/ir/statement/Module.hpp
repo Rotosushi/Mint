@@ -18,12 +18,13 @@
 #include "boost/container/vector.hpp"
 
 #include "adt/Identifier.hpp"
+#include "ir/detail/IrBase.hpp"
 
 namespace mint {
 namespace ir {
 class Mir;
 
-class Module {
+class Module : detail::IrBase {
 public:
   using Expressions = boost::container::vector<Mir>;
 
@@ -32,7 +33,7 @@ private:
   Expressions m_expressions;
 
 public:
-  Module(Identifier name, Expressions expressions) noexcept;
+  Module(SourceLocation *sl, Identifier name, Expressions expressions) noexcept;
   Module(Module const &other) noexcept;
   Module(Module &&other) noexcept;
   auto operator=(Module const &other) noexcept -> Module &;

@@ -15,12 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include "ir/detail/IrBase.hpp"
 #include "ir/detail/Parameter.hpp"
 #include "scan/Token.hpp"
 
 namespace mint {
 namespace ir {
-class Unop {
+class Unop : public detail::IrBase {
 public:
   // enum Op {
   //   Neg,
@@ -32,7 +33,8 @@ private:
   detail::Parameter m_right;
 
 public:
-  Unop(Token op, detail::Parameter right) noexcept : m_op(op), m_right(right) {}
+  Unop(SourceLocation *sl, Token op, detail::Parameter right) noexcept
+      : detail::IrBase(sl), m_op(op), m_right(right) {}
   Unop(Unop const &other) noexcept = default;
   Unop(Unop &&other) noexcept = default;
   auto operator=(Unop const &other) noexcept -> Unop & = default;

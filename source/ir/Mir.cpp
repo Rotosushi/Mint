@@ -78,47 +78,51 @@ detail::Index Mir::emplace_back(Args &&...args) {
   return m_index++;
 }
 
-detail::Index Mir::emplaceAffix(detail::Parameter parameter) {
-  return emplace_back<Affix>(parameter);
+detail::Index Mir::emplaceAffix(SourceLocation *sl,
+                                detail::Parameter parameter) {
+  return emplace_back<Affix>(sl, parameter);
 }
 
-detail::Index Mir::emplaceParens(detail::Parameter parameter) {
-  return emplace_back<Parens>(parameter);
+detail::Index Mir::emplaceParens(SourceLocation *sl,
+                                 detail::Parameter parameter) {
+  return emplace_back<Parens>(sl, parameter);
 }
 
-detail::Index Mir::emplaceLet(Identifier name,
+detail::Index Mir::emplaceLet(SourceLocation *sl, Identifier name,
                               std::optional<type::Ptr> annotation,
                               detail::Parameter parameter) {
-  return emplace_back<Let>(name, annotation, parameter);
+  return emplace_back<Let>(sl, name, annotation, parameter);
 }
 
-detail::Index Mir::emplaceBinop(Token op, detail::Parameter left,
+detail::Index Mir::emplaceBinop(SourceLocation *sl, Token op,
+                                detail::Parameter left,
                                 detail::Parameter right) {
-  return emplace_back<Binop>(op, left, right);
+  return emplace_back<Binop>(sl, op, left, right);
 }
 
-detail::Index Mir::emplaceUnop(Token op, detail::Parameter right) {
-  return emplace_back<Unop>(op, right);
+detail::Index Mir::emplaceUnop(SourceLocation *sl, Token op,
+                               detail::Parameter right) {
+  return emplace_back<Unop>(sl, op, right);
 }
 
-detail::Index Mir::emplaceImport(std::string_view file) {
-  return emplace_back<Import>(file);
+detail::Index Mir::emplaceImport(SourceLocation *sl, std::string_view file) {
+  return emplace_back<Import>(sl, file);
 }
 
-detail::Index Mir::emplaceModule(Identifier name,
+detail::Index Mir::emplaceModule(SourceLocation *sl, Identifier name,
                                  boost::container::vector<Mir> expressions) {
-  return emplace_back<Module>(name, std::move(expressions));
+  return emplace_back<Module>(sl, name, std::move(expressions));
 }
 
-detail::Index Mir::emplaceCall(detail::Parameter callee,
+detail::Index Mir::emplaceCall(SourceLocation *sl, detail::Parameter callee,
                                Call::Arguments arguments) {
-  return emplace_back<Call>(callee, std::move(arguments));
+  return emplace_back<Call>(sl, callee, std::move(arguments));
 }
 
-detail::Index Mir::emplaceLambda(FormalArguments arguments,
+detail::Index Mir::emplaceLambda(SourceLocation *sl, FormalArguments arguments,
                                  std::optional<type::Ptr> annotation,
                                  detail::Parameter body) {
-  return emplace_back<Lambda>(std::move(arguments), annotation, body);
+  return emplace_back<Lambda>(sl, std::move(arguments), annotation, body);
 }
 } // namespace ir
 } // namespace mint

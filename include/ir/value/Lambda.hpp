@@ -19,11 +19,12 @@
 #include <vector>
 
 #include "adt/Argument.hpp"
+#include "ir/detail/IrBase.hpp"
 #include "ir/detail/Parameter.hpp"
 
 namespace mint {
 namespace ir {
-class Lambda {
+class Lambda : public detail::IrBase {
   // #TODO: lambda's cannot be represented as they are.
   // for one simple reason, as they are they can only
   // be called within the Mir in which they reside.
@@ -45,10 +46,10 @@ private:
   detail::Parameter m_body;
 
 public:
-  Lambda(FormalArguments arguments, std::optional<type::Ptr> annotation,
-         detail::Parameter body) noexcept
-      : m_arguments(std::move(arguments)), m_annotation(annotation),
-        m_body(body) {}
+  Lambda(SourceLocation *sl, FormalArguments arguments,
+         std::optional<type::Ptr> annotation, detail::Parameter body) noexcept
+      : detail::IrBase(sl), m_arguments(std::move(arguments)),
+        m_annotation(annotation), m_body(body) {}
   Lambda(Lambda const &other) noexcept = default;
   Lambda(Lambda &&other) noexcept = default;
   auto operator=(Lambda const &other) noexcept -> Lambda & = default;
