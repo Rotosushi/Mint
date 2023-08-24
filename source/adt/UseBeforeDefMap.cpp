@@ -17,6 +17,8 @@
 #include "adt/UseBeforeDefMap.hpp"
 #include "adt/Environment.hpp"
 #include "ast/definition/Definition.hpp"
+#include "core/Codegen.hpp"
+#include "core/Evaluate.hpp"
 #include "core/Typecheck.hpp"
 
 namespace mint {
@@ -30,10 +32,6 @@ UseBeforeDefMap::iterator::iterator(Elements::iterator iter) noexcept
 [[nodiscard]] auto UseBeforeDefMap::iterator::ubd_def_name() noexcept
     -> Identifier {
   return (*this)->m_ubd_def_name;
-}
-[[nodiscard]] auto UseBeforeDefMap::iterator::ubd_def_ast() noexcept
-    -> ast::Ptr & {
-  return (*this)->m_ubd_def_ast;
 }
 auto UseBeforeDefMap::iterator::ubd_def_ir() noexcept -> ir::Mir & {
   return (*this)->m_def_ir;
@@ -185,7 +183,7 @@ void UseBeforeDefMap::erase(Range range) noexcept {
 }
 
 void UseBeforeDefMap::insert(Identifier ubd_name, Identifier ubd_def_name,
-                             Identifier scope_name, ir::Mir ir, ast::Ptr ast,
+                             Identifier scope_name, ir::Mir ir,
                              std::shared_ptr<Scope> scope) noexcept {
   // #NOTE: we allow multiple definitions to be bound to
   // the same undef name, however we want to prevent the
@@ -196,7 +194,7 @@ void UseBeforeDefMap::insert(Identifier ubd_name, Identifier ubd_def_name,
     return;
 
   elements.emplace(elements.end(), ubd_name, ubd_def_name, scope_name,
-                   std::move(ir), std::move(ast), scope, false);
+                   std::move(ir), scope, false);
 }
 
 void UseBeforeDefMap::insert(Element &&element) noexcept {
@@ -222,47 +220,24 @@ UseBeforeDefMap::bindUseBeforeDef(Identifier undef, Identifier def,
     return {Error::Kind::TypeCannotBeResolved};
   }
 
-  insert(undef, def, scope_name, std::move(ir), {}, scope);
-  return std::nullopt;
-}
-
-std::optional<Error> UseBeforeDefMap::bindUseBeforeDef(Error const &error,
-                                                       ast::Ptr ast) noexcept {
-  MINT_ASSERT(error.isUseBeforeDef());
-  auto ubd = error.getUseBeforeDef();
-  auto &names = ubd.names;
-  auto &scope = ubd.scope;
-  auto ubd_name = names.undef;
-  auto ubd_def_name = names.def;
-  auto scope_name = scope->qualifiedName();
-
-  auto ubd_def_ast = llvm::cast<ast::Definition>(ast.get());
-  if (auto failed = ubd_def_ast->checkUseBeforeDef(ubd)) {
-    return failed;
-  }
-
-  insert(ubd_name, ubd_def_name, scope_name, {}, std::move(ast), scope);
+  insert(undef, def, scope_name, std::move(ir), scope);
   return std::nullopt;
 }
 
 std::optional<Error> UseBeforeDefMap::bindUseBeforeDef(Elements &elements,
                                                        Error const &error,
-                                                       ast::Ptr ast) noexcept {
+                                                       ir::Mir mir) noexcept {
   MINT_ASSERT(error.isUseBeforeDef());
   auto ubd = error.getUseBeforeDef();
-  auto &names = ubd.names;
-  auto &scope = ubd.scope;
-  auto ubd_name = names.undef;
-  auto ubd_def_name = names.def;
-  auto scope_name = scope->qualifiedName();
+  auto undef = ubd.names.undef;
+  auto def = ubd.names.def;
+  auto scope_name = ubd.scope->qualifiedName();
 
-  auto ubd_def_ast = llvm::cast<ast::Definition>(ast.get());
-  if (auto failed = ubd_def_ast->checkUseBeforeDef(ubd)) {
-    return failed;
+  if (undef == def) {
+    return {Error::Kind::TypeCannotBeResolved};
   }
 
-  elements.emplace_back(ubd_name, ubd_def_name, scope_name, ir::Mir{},
-                        std::move(ast), scope);
+  elements.emplace_back(undef, def, scope_name, std::move(mir), ubd.scope);
   return std::nullopt;
 }
 
@@ -280,41 +255,17 @@ UseBeforeDefMap::resolveTypeOfUseBeforeDef(Environment &env,
     // construct it in the correct scope.
     auto old_local_scope = env.exchangeLocalScope(it.scope());
 
-    if (it.ubd_def_ast()) {
-      auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
-      // #NOTE: since we are resolving the ubd here, we can clear the error
-      ubd_def_ast->clearUseBeforeDef();
+    auto &ubd_ir = it.ubd_def_ir();
 
-      auto result = ubd_def_ast->typecheck(env);
-      if (!result) {
-        auto error = result.error();
-        if (!error.isUseBeforeDef()) {
-          it.being_resolved(false);
-          env.exchangeLocalScope(old_local_scope);
-          return error;
-        }
-
-        // handle another use before def error.
-        bindUseBeforeDef(stage, error, std::move(it.ubd_def_ast()));
-        old_entries.append(it);
+    auto result = typecheck(ubd_ir, env);
+    if (!result) {
+      if (!result.recovered()) {
+        it.being_resolved(false);
+        env.exchangeLocalScope(old_local_scope);
+        return result.error();
       }
-    } else if (it.ubd_def_ir()) {
-      auto &ubd_ir = it.ubd_def_ir();
 
-      auto result = typecheck(ubd_ir, env);
-      if (!result) {
-        if (result.recovered()) {
-          // bindUseBeforeDef was called by the resolver
-          old_entries.append(it);
-          // fallthrough
-        } else {
-          it.being_resolved(false);
-          env.exchangeLocalScope(old_local_scope);
-          return result.error();
-        }
-      }
-    } else {
-      abort("cannot resolve type of UBD.");
+      old_entries.append(it);
     }
 
     env.exchangeLocalScope(old_local_scope);
@@ -340,23 +291,16 @@ std::optional<Error> UseBeforeDefMap::resolveComptimeValueOfUseBeforeDef(
     it.being_resolved(true);
     auto old_local_scope = env.exchangeLocalScope(it.scope());
 
-    auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
-    ubd_def_ast->clearUseBeforeDef();
+    auto &ubd_ir = it.ubd_def_ir();
 
-    // sanity check that we have called typecheck on this definition.
-    MINT_ASSERT(ubd_def_ast->cachedTypeOrAssert() != nullptr);
-
-    auto result = ubd_def_ast->evaluate(env);
+    auto result = evaluate(ubd_ir, env);
     if (!result) {
-      auto error = result.error();
-      if (!error.isUseBeforeDef()) {
+      if (!result.recovered()) {
         it.being_resolved(false);
         env.exchangeLocalScope(old_local_scope);
-        return error;
+        return result.error();
       }
 
-      // handle another use before def error.
-      bindUseBeforeDef(stage, error, std::move(it.ubd_def_ast()));
       old_entries.append(it);
     }
 
@@ -382,25 +326,24 @@ std::optional<Error> UseBeforeDefMap::resolveRuntimeValueOfUseBeforeDef(
     it.being_resolved(true);
     auto old_local_scope = env.exchangeLocalScope(it.scope());
 
-    auto ubd_def_ast = llvm::cast<ast::Definition>(it.ubd_def_ast().get());
-    ubd_def_ast->clearUseBeforeDef();
+    auto &ubd_ir = it.ubd_def_ir();
 
-    // sanity check that we have called typecheck on this definition.
-    MINT_ASSERT(ubd_def_ast->cachedTypeOrAssert() != nullptr);
-
-    auto result = ubd_def_ast->codegen(env);
+    auto result = codegen(ubd_ir, env);
     if (!result) {
-      it.being_resolved(false);
-      env.exchangeLocalScope(old_local_scope);
-      return result.error();
+      if (!result.recovered()) {
+        it.being_resolved(false);
+        env.exchangeLocalScope(old_local_scope);
+        return result.error();
+      }
     }
 
     env.exchangeLocalScope(old_local_scope);
     it.being_resolved(false);
   }
 
-  // #NOTE: codegen is the last step when processing an ast.
-  // so we can safely remove these entries from the ubd map
+  // #NOTE: codegen is the last step when processing ir.
+  // so we can safely remove these entries from the ubd map,
+  // as they are no longer needed.
   erase(range);
 
   if (!stage.empty())

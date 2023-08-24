@@ -17,12 +17,11 @@
 #pragma once
 #include "boost/container/vector.hpp"
 
+#include "adt/Argument.hpp"
 #include "adt/Identifier.hpp"
-#include "ir/detail/Index.hpp"
-#include "ir/expression/Binop.hpp"
-#include "ir/expression/Call.hpp"
-#include "ir/expression/Unop.hpp"
-#include "ir/value/Lambda.hpp"
+#include "adt/SourceLocation.hpp"
+#include "ir/detail/Parameter.hpp"
+#include "scan/Token.hpp"
 
 namespace mint {
 namespace ir {
@@ -56,7 +55,6 @@ private:
 
 public:
   Mir() noexcept;
-  Mir(Ir ir) noexcept;
   Mir(Mir const &other) noexcept;
   Mir(Mir &&other) noexcept;
   ~Mir() noexcept;
@@ -89,10 +87,9 @@ public:
   detail::Index emplaceModule(SourceLocation *sl, Identifier name,
                               boost::container::vector<Mir> expressions);
   detail::Index emplaceCall(SourceLocation *sl, detail::Parameter callee,
-                            ir::Call::Arguments arguments);
+                            std::vector<detail::Parameter> arguments);
   detail::Index emplaceLambda(SourceLocation *sl, FormalArguments arguments,
-                              std::optional<type::Ptr> annotation,
-                              detail::Parameter body);
+                              std::optional<type::Ptr> annotation, Mir body);
 };
 } // namespace ir
 } // namespace mint

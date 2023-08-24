@@ -19,23 +19,23 @@
 #include <vector>
 
 #include "adt/Argument.hpp"
+#include "ir/Mir.hpp"
 #include "ir/detail/IrBase.hpp"
-#include "ir/detail/Parameter.hpp"
 
 namespace mint {
 namespace ir {
+
 class Lambda : public detail::IrBase {
 private:
   FormalArguments m_arguments;
   std::optional<type::Ptr> m_annotation;
-  // #TODO refactor the body to be an ir::Mir
-  detail::Parameter m_body;
+  Mir m_body;
 
 public:
   Lambda(SourceLocation *sl, FormalArguments arguments,
-         std::optional<type::Ptr> annotation, detail::Parameter body) noexcept
+         std::optional<type::Ptr> annotation, Mir body) noexcept
       : detail::IrBase(sl), m_arguments(std::move(arguments)),
-        m_annotation(annotation), m_body(body) {}
+        m_annotation(annotation), m_body(std::move(body)) {}
   Lambda(Lambda const &other) noexcept = default;
   Lambda(Lambda &&other) noexcept = default;
   auto operator=(Lambda const &other) noexcept -> Lambda & = default;
@@ -45,10 +45,10 @@ public:
   [[nodiscard]] auto arguments() const noexcept -> FormalArguments const & {
     return m_arguments;
   }
-  [[nodiscard]] auto body() noexcept -> detail::Parameter & { return m_body; }
-  [[nodiscard]] auto result_type() const noexcept -> std::optional<type::Ptr> {
+  [[nodiscard]] auto annotation() const noexcept -> std::optional<type::Ptr> {
     return m_annotation;
   }
+  [[nodiscard]] auto body() noexcept -> Mir & { return m_body; }
 };
 } // namespace ir
 } // namespace mint

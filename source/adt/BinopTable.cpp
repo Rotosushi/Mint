@@ -20,8 +20,7 @@
 #include "ast/value/Integer.hpp"
 
 namespace mint {
-[[nodiscard]] auto BinopOverload::evaluate(ir::Scalar left,
-                                           ir::Scalar right)
+[[nodiscard]] auto BinopOverload::evaluate(ir::Scalar left, ir::Scalar right)
     -> ir::Scalar {
   return eval(left, right);
 }
@@ -81,11 +80,10 @@ auto BinopTable::emplace(Token op) -> Binop {
   return table.emplace(std::make_pair(op, BinopOverloads{})).first;
 }
 
-auto eval_binop_add(ir::Scalar left, ir::Scalar right)
-    -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<int>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
-  return {std::get<int>(left.variant()) + std::get<int>(right.variant())};
+auto eval_binop_add(ir::Scalar left, ir::Scalar right) -> ir::Scalar {
+  MINT_ASSERT(left.holds<int>());
+  MINT_ASSERT(right.holds<int>());
+  return {left.get<int>() + right.get<int>()};
 }
 
 auto gen_binop_add(llvm::Value *left, llvm::Value *right, Environment &env)
@@ -93,11 +91,10 @@ auto gen_binop_add(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMAdd(left, right);
 }
 
-auto eval_binop_sub(ir::Scalar left, ir::Scalar right)
-    -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<int>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
-  return {std::get<int>(left.variant()) - std::get<int>(right.variant())};
+auto eval_binop_sub(ir::Scalar left, ir::Scalar right) -> ir::Scalar {
+  MINT_ASSERT(left.holds<int>());
+  MINT_ASSERT(right.holds<int>());
+  return {left.get<int>() - right.get<int>()};
 }
 
 auto gen_binop_sub(llvm::Value *left, llvm::Value *right, Environment &env)
@@ -105,11 +102,10 @@ auto gen_binop_sub(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMSub(left, right);
 }
 
-auto eval_binop_mult(ir::Scalar left, ir::Scalar right)
-    -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<int>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
-  return {std::get<int>(left.variant()) * std::get<int>(right.variant())};
+auto eval_binop_mult(ir::Scalar left, ir::Scalar right) -> ir::Scalar {
+  MINT_ASSERT(left.holds<int>());
+  MINT_ASSERT(right.holds<int>());
+  return {left.get<int>() * right.get<int>()};
 }
 
 auto gen_binop_mult(llvm::Value *left, llvm::Value *right, Environment &env)
@@ -117,11 +113,10 @@ auto gen_binop_mult(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMMul(left, right);
 }
 
-auto eval_binop_div(ir::Scalar left, ir::Scalar right)
-    -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<int>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
-  return {std::get<int>(left.variant()) / std::get<int>(right.variant())};
+auto eval_binop_div(ir::Scalar left, ir::Scalar right) -> ir::Scalar {
+  MINT_ASSERT(left.holds<int>());
+  MINT_ASSERT(right.holds<int>());
+  return {left.get<int>() / right.get<int>()};
 }
 
 auto gen_binop_div(llvm::Value *left, llvm::Value *right, Environment &env)
@@ -129,11 +124,10 @@ auto gen_binop_div(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMSDiv(left, right);
 }
 
-auto eval_binop_mod(ir::Scalar left, ir::Scalar right)
-    -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<int>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
-  return {std::get<int>(left.variant()) % std::get<int>(right.variant())};
+auto eval_binop_mod(ir::Scalar left, ir::Scalar right) -> ir::Scalar {
+  MINT_ASSERT(left.holds<int>());
+  MINT_ASSERT(right.holds<int>());
+  return {left.get<int>() % right.get<int>()};
 }
 
 auto gen_binop_mod(llvm::Value *left, llvm::Value *right, Environment &env)
@@ -141,11 +135,10 @@ auto gen_binop_mod(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMSRem(left, right);
 }
 
-auto eval_binop_and(ir::Scalar left, ir::Scalar right)
-    -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<bool>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<bool>(right.variant()));
-  return {std::get<bool>(left.variant()) && std::get<bool>(right.variant())};
+auto eval_binop_and(ir::Scalar left, ir::Scalar right) -> ir::Scalar {
+  MINT_ASSERT(left.holds<bool>());
+  MINT_ASSERT(right.holds<bool>());
+  return {left.get<bool>() && right.get<bool>()};
 }
 
 auto gen_binop_and(llvm::Value *left, llvm::Value *right, Environment &env)
@@ -153,11 +146,10 @@ auto gen_binop_and(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMAnd(left, right);
 }
 
-auto eval_binop_or(ir::Scalar left, ir::Scalar right)
-    -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<bool>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<bool>(right.variant()));
-  return {std::get<bool>(left.variant()) || std::get<bool>(right.variant())};
+auto eval_binop_or(ir::Scalar left, ir::Scalar right) -> ir::Scalar {
+  MINT_ASSERT(left.holds<bool>());
+  MINT_ASSERT(right.holds<bool>());
+  return {left.get<bool>() || right.get<bool>()};
 }
 
 auto gen_binop_or(llvm::Value *left, llvm::Value *right, Environment &env)
@@ -165,12 +157,11 @@ auto gen_binop_or(llvm::Value *left, llvm::Value *right, Environment &env)
   return env.createLLVMOr(left, right);
 }
 
-auto eval_binop_integer_equality(ir::Scalar left,
-                                 ir::Scalar right)
+auto eval_binop_integer_equality(ir::Scalar left, ir::Scalar right)
     -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<int>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
-  return {std::get<int>(left.variant()) == std::get<int>(right.variant())};
+  MINT_ASSERT(left.holds<int>());
+  MINT_ASSERT(right.holds<int>());
+  return {left.get<int>() == right.get<int>()};
 }
 
 auto gen_binop_integer_equality(llvm::Value *left, llvm::Value *right,
@@ -178,12 +169,11 @@ auto gen_binop_integer_equality(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpEQ(left, right);
 }
 
-auto eval_binop_boolean_equality(ir::Scalar left,
-                                 ir::Scalar right)
+auto eval_binop_boolean_equality(ir::Scalar left, ir::Scalar right)
     -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<bool>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<bool>(right.variant()));
-  return {std::get<bool>(left.variant()) == std::get<bool>(right.variant())};
+  MINT_ASSERT(left.holds<bool>());
+  MINT_ASSERT(right.holds<bool>());
+  return {left.get<bool>() == right.get<bool>()};
 }
 
 auto gen_binop_boolean_equality(llvm::Value *left, llvm::Value *right,
@@ -191,12 +181,11 @@ auto gen_binop_boolean_equality(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpEQ(left, right);
 }
 
-auto eval_binop_integer_inequality(ir::Scalar left,
-                                   ir::Scalar right)
+auto eval_binop_integer_inequality(ir::Scalar left, ir::Scalar right)
     -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<int>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
-  return {std::get<int>(left.variant()) != std::get<int>(right.variant())};
+  MINT_ASSERT(left.holds<int>());
+  MINT_ASSERT(right.holds<int>());
+  return {left.get<int>() != right.get<int>()};
 }
 
 auto gen_binop_integer_inequality(llvm::Value *left, llvm::Value *right,
@@ -204,12 +193,11 @@ auto gen_binop_integer_inequality(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpNE(left, right);
 }
 
-auto eval_binop_boolean_inequality(ir::Scalar left,
-                                   ir::Scalar right)
+auto eval_binop_boolean_inequality(ir::Scalar left, ir::Scalar right)
     -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<bool>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<bool>(right.variant()));
-  return {std::get<bool>(left.variant()) != std::get<bool>(right.variant())};
+  MINT_ASSERT(left.holds<bool>());
+  MINT_ASSERT(right.holds<bool>());
+  return {left.get<bool>() != right.get<bool>()};
 }
 
 auto gen_binop_boolean_inequality(llvm::Value *left, llvm::Value *right,
@@ -217,11 +205,10 @@ auto gen_binop_boolean_inequality(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpNE(left, right);
 }
 
-auto eval_binop_less_than(ir::Scalar left, ir::Scalar right)
-    -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<int>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
-  return {std::get<int>(left.variant()) < std::get<int>(right.variant())};
+auto eval_binop_less_than(ir::Scalar left, ir::Scalar right) -> ir::Scalar {
+  MINT_ASSERT(left.holds<int>());
+  MINT_ASSERT(right.holds<int>());
+  return {left.get<int>() < right.get<int>()};
 }
 
 auto gen_binop_less_than(llvm::Value *left, llvm::Value *right,
@@ -229,12 +216,11 @@ auto gen_binop_less_than(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpSLT(left, right);
 }
 
-auto eval_binop_less_than_or_equal(ir::Scalar left,
-                                   ir::Scalar right)
+auto eval_binop_less_than_or_equal(ir::Scalar left, ir::Scalar right)
     -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<int>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
-  return {std::get<int>(left.variant()) <= std::get<int>(right.variant())};
+  MINT_ASSERT(left.holds<int>());
+  MINT_ASSERT(right.holds<int>());
+  return {left.get<int>() <= right.get<int>()};
 }
 
 auto gen_binop_less_than_or_equal(llvm::Value *left, llvm::Value *right,
@@ -242,11 +228,10 @@ auto gen_binop_less_than_or_equal(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpSLE(left, right);
 }
 
-auto eval_binop_greater_than(ir::Scalar left, ir::Scalar right)
-    -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<int>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
-  return {std::get<int>(left.variant()) > std::get<int>(right.variant())};
+auto eval_binop_greater_than(ir::Scalar left, ir::Scalar right) -> ir::Scalar {
+  MINT_ASSERT(left.holds<int>());
+  MINT_ASSERT(right.holds<int>());
+  return {left.get<int>() > right.get<int>()};
 }
 
 auto gen_binop_greater_than(llvm::Value *left, llvm::Value *right,
@@ -254,12 +239,11 @@ auto gen_binop_greater_than(llvm::Value *left, llvm::Value *right,
   return env.createLLVMICmpSGT(left, right);
 }
 
-auto eval_binop_greater_than_or_equal(ir::Scalar left,
-                                      ir::Scalar right)
+auto eval_binop_greater_than_or_equal(ir::Scalar left, ir::Scalar right)
     -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<int>(left.variant()));
-  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
-  return {std::get<int>(left.variant()) >= std::get<int>(right.variant())};
+  MINT_ASSERT(left.holds<int>());
+  MINT_ASSERT(right.holds<int>());
+  return {left.get<int>() >= right.get<int>()};
 }
 
 auto gen_binop_greater_than_or_equal(llvm::Value *left, llvm::Value *right,

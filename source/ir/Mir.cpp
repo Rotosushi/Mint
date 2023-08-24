@@ -25,15 +25,17 @@ namespace ir {
 // that Mir is defined, because any IR Instruction which
 // is composed of a series of Instructions itself, (Module, Block)
 // is composed of a Mir.
-Mir::Mir() noexcept : m_ir() {}
-Mir::Mir(Ir ir) noexcept : m_ir(std::move(ir)) {}
-Mir::Mir(Mir const &other) noexcept : m_ir(other.m_ir) {}
-Mir::Mir(Mir &&other) noexcept : m_ir(std::move(other.m_ir)) {}
+Mir::Mir() noexcept : m_index(), m_ir() {}
+Mir::Mir(Mir const &other) noexcept
+    : m_index(other.m_index), m_ir(other.m_ir) {}
+Mir::Mir(Mir &&other) noexcept
+    : m_index(other.m_index), m_ir(std::move(other.m_ir)) {}
 Mir::~Mir() noexcept {}
 auto Mir::operator=(Mir const &other) noexcept -> Mir & {
   if (this == &other)
     return *this;
 
+  m_index = other.m_index;
   m_ir = other.m_ir;
   return *this;
 }
@@ -41,6 +43,7 @@ auto Mir::operator=(Mir &&other) noexcept -> Mir & {
   if (this == &other)
     return *this;
 
+  m_index = other.m_index;
   m_ir = std::move(other.m_ir);
   return *this;
 }
@@ -115,13 +118,13 @@ detail::Index Mir::emplaceModule(SourceLocation *sl, Identifier name,
 }
 
 detail::Index Mir::emplaceCall(SourceLocation *sl, detail::Parameter callee,
-                               Call::Arguments arguments) {
+                               std::vector<detail::Parameter> arguments) {
   return emplace_back<Call>(sl, callee, std::move(arguments));
 }
 
 detail::Index Mir::emplaceLambda(SourceLocation *sl, FormalArguments arguments,
                                  std::optional<type::Ptr> annotation,
-                                 detail::Parameter body) {
+                                 Mir body) {
   return emplace_back<Lambda>(sl, std::move(arguments), annotation, body);
 }
 } // namespace ir

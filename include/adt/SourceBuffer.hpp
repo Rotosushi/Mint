@@ -60,7 +60,7 @@ public:
   char &peek() noexcept { return *m_cursor; }
   void skip() noexcept { ++m_cursor; }
   void backup() noexcept { m_marker = m_cursor; }
-  void restore() noexcept { m_cursor = m_token; }
+  void restore() noexcept { m_cursor = m_marker; }
   bool endOfInput() const noexcept { return m_cursor >= m_end; }
 
   std::string_view viewToken() const noexcept { return {m_token, m_cursor}; }

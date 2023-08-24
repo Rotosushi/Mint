@@ -20,6 +20,7 @@
 namespace mint {
 namespace ir {
 [[nodiscard]] Mir clone(Mir &ir, detail::Index index) noexcept;
+
 [[nodiscard]] inline Mir clone(Mir &ir) noexcept {
   return clone(ir, ir.root());
 }

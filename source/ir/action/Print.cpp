@@ -174,13 +174,13 @@ struct PrintInstructionVisitor {
       }
     }
 
-    auto annotation = lambda.result_type();
+    auto annotation = lambda.annotation();
     if (annotation) {
       out << " -> " << annotation.value();
     }
 
     out << " => ";
-    print(out, mir, lambda.body());
+    print(out, lambda.body());
   }
 };
 

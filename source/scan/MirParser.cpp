@@ -430,7 +430,8 @@ Result<ir::detail::Parameter> MirParser::parseLambda(ir::Mir &mir) {
     return recover(Error::Kind::ExpectedEqualsRightArrow);
   }
 
-  auto result = parseAffix(mir);
+  ir::Mir body;
+  auto result = parseAffix(body);
   if (!result) {
     return result;
   }
@@ -438,7 +439,7 @@ Result<ir::detail::Parameter> MirParser::parseLambda(ir::Mir &mir) {
   auto rhs_loc = location();
   Location lambda_loc{lhs_loc, rhs_loc};
   return mir.emplaceLambda(source(lambda_loc), std::move(arguments), annotation,
-                           result.value());
+                           std::move(body));
 }
 
 Result<type::Ptr> MirParser::parseType() {

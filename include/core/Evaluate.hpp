@@ -18,33 +18,11 @@
 
 #include "adt/Result.hpp"
 #include "ir/Mir.hpp"
+#include "ir/value/Value.hpp"
 #include "type/Type.hpp"
 
 namespace mint {
 class Environment;
 
-// What does evaluate do it's work upon?
-// ir::Values. Which are variants of
-// all literals that are possible in the
-// language. that is, ir::detail::Scalar,
-// and Lambdas. however, lambdas are themselves
-// only fully representable as ir::Mir's.
-// so that's easy, we just use an ir::Mir as a
-// standin for lambdas.
-// well, okay great, what about structs, unions,
-// tuples, etc?
-// worry about that wehn we get there?
-// they will be storable in an ir::Mir at the very least.
-// but then isn't that an ambiguity? how do we know
-// if the ir::Mir is a Lambda or a struct or whatever else?
-// a tag works. well, iff we make ir::Lambda hold an ir::Mir to
-// represent it's body, then we can use an ir::Lambda directly
-// within a ir::Value, and the tag comes for free.
-// it still leaves open the representation of everything else,
-// but it's easy to imagine how those things can be distinguished
-// once they are within the ir::Value.
-// do operators work on ir::Values instead of ir::Scalars then?
-// only if we decide to overload operators over more complex types
-// internally.
-
+Result<ir::Value> evaluate(ir::Mir &mir, Environment &env);
 } // namespace mint

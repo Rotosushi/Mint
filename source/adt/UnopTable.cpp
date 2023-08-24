@@ -80,9 +80,8 @@ auto UnopTable::emplace(Token op) noexcept -> Unop {
 }
 
 auto eval_unop_minus(ir::Scalar right) -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
-  int value = std::get<int>(right.variant());
-  return {-value};
+  MINT_ASSERT(right.holds<int>());
+  return {-right.get<int>()};
 }
 
 auto codegen_unop_minus(llvm::Value *right, Environment &env) -> llvm::Value * {
@@ -90,9 +89,8 @@ auto codegen_unop_minus(llvm::Value *right, Environment &env) -> llvm::Value * {
 }
 
 auto eval_unop_not(ir::Scalar right) -> ir::Scalar {
-  MINT_ASSERT(std::holds_alternative<bool>(right.variant()));
-  bool value = std::get<bool>(right.variant());
-  return {!value};
+  MINT_ASSERT(right.holds<bool>());
+  return {!right.get<bool>()};
 }
 
 auto codegen_unop_not(llvm::Value *right, Environment &env) -> llvm::Value * {

@@ -38,6 +38,14 @@ public:
   ~Scalar() noexcept = default;
 
   [[nodiscard]] auto variant() noexcept -> Variant & { return m_variant; }
+
+  template <class T> [[nodiscard]] bool holds() const noexcept {
+    return std::holds_alternative<T>(m_variant);
+  }
+
+  template <class T> [[nodiscard]] T &get() noexcept {
+    return std::get<T>(m_variant);
+  }
 };
 } // namespace ir
 } // namespace mint

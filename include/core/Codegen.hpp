@@ -14,12 +14,14 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "core/Evaluate.hpp"
-#include "adt/Environment.hpp"
+#pragma once
+
+#include "adt/Result.hpp"
+#include "ir/Mir.hpp"
+#include "llvm/IR/Value.h"
 
 namespace mint {
-Result<ir::Value> evaluate([[maybe_unused]] ir::Mir &mir,
-                           [[maybe_unused]] Environment &env) {
-  return {};
-}
+class Environment;
+
+Result<llvm::Value *> codegen(ir::Mir &mir, Environment &env);
 } // namespace mint

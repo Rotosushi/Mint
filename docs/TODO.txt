@@ -10,3 +10,8 @@ The immediate to do list (in no particular order)
   It's the directory for all of the runtime facilities as expressed 
   as generators of llvm ir.
   alt; backend runtime llvmgen
+
+
+#TODO: add a proper function class, allow them
+to be coerced into lambda's for the purposes of
+passing as arguments.

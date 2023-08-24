@@ -271,11 +271,6 @@ Environment::bindUseBeforeDef(Identifier undef, Identifier def,
                                                std::move(ir));
 }
 
-std::optional<Error> Environment::bindUseBeforeDef(Error const &error,
-                                                   ast::Ptr ast) noexcept {
-  return m_use_before_def_map.bindUseBeforeDef(error, std::move(ast));
-}
-
 std::optional<Error>
 Environment::resolveTypeOfUseBeforeDef(Identifier def_name) noexcept {
   return m_use_before_def_map.resolveTypeOfUseBeforeDef(*this, def_name);

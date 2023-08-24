@@ -116,8 +116,7 @@ struct CloneInstructionVisitor {
 
   detail::Parameter operator()(Lambda &lambda) noexcept {
     return m_target.emplaceLambda(lambda.sourceLocation(), lambda.arguments(),
-                                  lambda.result_type(),
-                                  clone(m_source, m_target, lambda.body()));
+                                  lambda.annotation(), clone(lambda.body()));
   }
 };
 

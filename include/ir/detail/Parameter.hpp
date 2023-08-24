@@ -66,6 +66,14 @@ public:
   type::Ptr cachedType(type::Ptr type) noexcept { return m_cached_type = type; }
 
   [[nodiscard]] auto variant() noexcept -> Variant & { return m_variant; }
+
+  template <class T> [[nodiscard]] bool holds() const noexcept {
+    return std::holds_alternative<T>(m_variant);
+  }
+
+  template <class T> [[nodiscard]] T &get() noexcept {
+    return std::get<T>(m_variant);
+  }
 };
 } // namespace detail
 } // namespace ir

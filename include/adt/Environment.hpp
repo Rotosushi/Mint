@@ -105,7 +105,8 @@ public:
 
   // //**** Parser interface ****//
   // void setIStream(std::istream *in) noexcept;
-  // [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
+  // [[nodiscard]] auto extractSourceLine(Location const &location) const
+  // noexcept
   //     -> std::string_view;
   // void printErrorWithSource(Error const &error) const noexcept;
   // auto endOfInput() const noexcept -> bool;
@@ -169,9 +170,6 @@ public:
   std::optional<Error> bindUseBeforeDef(Identifier undef, Identifier def,
                                         std::shared_ptr<Scope> const &scope,
                                         ir::Mir ir) noexcept;
-
-  std::optional<Error> bindUseBeforeDef(Error const &error,
-                                        ast::Ptr ast) noexcept;
 
   std::optional<Error> resolveTypeOfUseBeforeDef(Identifier def_name) noexcept;
 

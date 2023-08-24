@@ -20,7 +20,6 @@
 #include <optional>
 
 #include "adt/UseBeforeDefNames.hpp"
-#include "ast/Ast.hpp"
 
 #include "adt/Identifier.hpp"
 #include "adt/Scope.hpp"
@@ -29,52 +28,6 @@
 namespace mint {
 class Environment;
 
-// class which holds terms which use a name before
-// it is defined, until those names are defined.
-// class UBDMap {
-// public:
-//   using Key = Identifier;
-//   struct Value {
-//     ir::Mir mir;
-//     std::shared_ptr<Scope> scope;
-//   };
-
-//   using Map = std::multimap<Key, Value>;
-
-//   class iterator : public Map::iterator {
-//   public:
-//     iterator(Map::iterator i) noexcept : Map::iterator(i) {}
-
-//     auto name() noexcept -> Identifier { return (*this)->first; }
-//     auto ir() noexcept -> ir::Mir & { return (*this)->second.mir; }
-//     auto scope() noexcept -> std::shared_ptr<Scope> & {
-//       return (*this)->second.scope;
-//     }
-//   };
-
-//   class Range {
-//     iterator m_first;
-//     iterator m_last;
-
-//   public:
-//     Range(std::pair<Map::iterator, Map::iterator> pair) noexcept
-//         : m_first(pair.first), m_last(pair.second) {}
-
-//     auto begin() noexcept -> iterator { return m_first; }
-//     auto end() noexcept -> iterator { return m_last; }
-//   };
-
-// private:
-//   Map m_map;
-
-// public:
-//   auto emplace(Identifier name, ir::Mir mir,
-//                std::shared_ptr<Scope> &scope) noexcept -> iterator;
-//   auto lookup(Identifier name) noexcept -> Range;
-//   auto erase(iterator pos) -> iterator;
-//   auto erase(Range range) -> iterator;
-// };
-
 class UseBeforeDefMap {
 public:
   struct Element {
@@ -82,7 +35,6 @@ public:
     Identifier m_ubd_def_name;
     Identifier m_scope_name;
     ir::Mir m_def_ir;
-    ast::Ptr m_ubd_def_ast;
     std::shared_ptr<Scope> m_scope;
     bool m_being_resolved;
   };
@@ -94,7 +46,6 @@ public:
 
     [[nodiscard]] auto ubd_name() noexcept -> Identifier;
     [[nodiscard]] auto ubd_def_name() noexcept -> Identifier;
-    [[nodiscard]] auto ubd_def_ast() noexcept -> ast::Ptr &;
     [[nodiscard]] auto ubd_def_ir() noexcept -> ir::Mir &;
     [[nodiscard]] auto scope_name() noexcept -> Identifier;
     [[nodiscard]] auto scope() noexcept -> std::shared_ptr<Scope> &;
@@ -130,7 +81,7 @@ public:
   void erase(Range range) noexcept;
 
   void insert(Identifier ubd_name, Identifier ubd_def_name,
-              Identifier scope_name, ir::Mir ir, ast::Ptr ast,
+              Identifier scope_name, ir::Mir ir,
               std::shared_ptr<Scope> scope) noexcept;
   void insert(Element &&element) noexcept;
   void insert(Elements &&elements) noexcept;
@@ -139,12 +90,9 @@ public:
                                         std::shared_ptr<Scope> const &scope,
                                         ir::Mir ir) noexcept;
 
-  std::optional<Error> bindUseBeforeDef(Error const &error,
-                                        ast::Ptr ast) noexcept;
-
 private:
   std::optional<Error> bindUseBeforeDef(Elements &elements, Error const &error,
-                                        ast::Ptr ast) noexcept;
+                                        ir::Mir mir) noexcept;
 
 public:
   std::optional<Error> resolveTypeOfUseBeforeDef(Environment &env,
