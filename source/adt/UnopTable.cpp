@@ -20,7 +20,8 @@
 #include "ast/value/Integer.hpp"
 
 namespace mint {
-[[nodiscard]] auto UnopOverload::evaluate(ast::Ast *right) -> ast::Ptr {
+[[nodiscard]] auto UnopOverload::evaluate(ir::detail::Scalar right)
+    -> ir::detail::Scalar {
   return eval(right);
 }
 [[nodiscard]] auto UnopOverload::codegen(llvm::Value *right, Environment &env)
@@ -79,18 +80,20 @@ auto UnopTable::emplace(Token op) noexcept -> Unop {
   return table.emplace(op, UnopOverloads{}).first;
 }
 
-auto eval_unop_minus(ast::Ast *right) -> ast::Ptr {
-  auto *integer = llvm::cast<ast::Integer>(right);
-  return ast::Integer::create({}, {}, -(integer->value()));
+auto eval_unop_minus(ir::detail::Scalar right) -> ir::detail::Scalar {
+  MINT_ASSERT(std::holds_alternative<int>(right.variant()));
+  int value = std::get<int>(right.variant());
+  return {-value};
 }
 
 auto codegen_unop_minus(llvm::Value *right, Environment &env) -> llvm::Value * {
   return env.createLLVMNeg(right);
 }
 
-auto eval_unop_not(ast::Ast *right) -> ast::Ptr {
-  auto *boolean = llvm::cast<ast::Boolean>(right);
-  return ast::Boolean::create({}, {}, !(boolean->value()));
+auto eval_unop_not(ir::detail::Scalar right) -> ir::detail::Scalar {
+  MINT_ASSERT(std::holds_alternative<bool>(right.variant()));
+  bool value = std::get<bool>(right.variant());
+  return {!value};
 }
 
 auto codegen_unop_not(llvm::Value *right, Environment &env) -> llvm::Value * {

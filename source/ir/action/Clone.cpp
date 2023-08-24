@@ -60,21 +60,23 @@ struct CloneInstructionVisitor {
   }
 
   detail::Parameter operator()(Affix &affix) noexcept {
-    return m_target.emplaceAffix(clone(m_source, m_target, affix.parameter()));
+    return m_target.emplaceAffix(affix.sourceLocation(),
+                                 clone(m_source, m_target, affix.parameter()));
   }
 
   detail::Parameter operator()(Parens &parens) noexcept {
     return m_target.emplaceParens(
-        clone(m_source, m_target, parens.parameter()));
+        parens.sourceLocation(), clone(m_source, m_target, parens.parameter()));
   }
 
   detail::Parameter operator()(Let &let) noexcept {
-    return m_target.emplaceLet(let.name(), let.annotation(),
+    return m_target.emplaceLet(let.sourceLocation(), let.name(),
+                               let.annotation(),
                                clone(m_source, m_target, let.parameter()));
   }
 
   detail::Parameter operator()(Binop &binop) noexcept {
-    return m_target.emplaceBinop(binop.op(),
+    return m_target.emplaceBinop(binop.sourceLocation(), binop.op(),
                                  clone(m_source, m_target, binop.left()),
                                  clone(m_source, m_target, binop.right()));
   }
@@ -88,16 +90,17 @@ struct CloneInstructionVisitor {
       arguments.emplace_back(clone(m_source, m_target, argument));
     }
 
-    return m_target.emplaceCall(callee, std::move(arguments));
+    return m_target.emplaceCall(call.sourceLocation(), callee,
+                                std::move(arguments));
   }
 
   detail::Parameter operator()(Unop &unop) noexcept {
-    return m_target.emplaceUnop(unop.op(),
+    return m_target.emplaceUnop(unop.sourceLocation(), unop.op(),
                                 clone(m_source, m_target, unop.right()));
   }
 
   detail::Parameter operator()(Import &import) noexcept {
-    return m_target.emplaceImport(import.file());
+    return m_target.emplaceImport(import.sourceLocation(), import.file());
   }
 
   detail::Parameter operator()(Module &module_) noexcept {
@@ -107,11 +110,13 @@ struct CloneInstructionVisitor {
       expressions.emplace_back(clone(expression));
     }
 
-    return m_target.emplaceModule(module_.name(), std::move(expressions));
+    return m_target.emplaceModule(module_.sourceLocation(), module_.name(),
+                                  std::move(expressions));
   }
 
   detail::Parameter operator()(Lambda &lambda) noexcept {
-    return m_target.emplaceLambda(lambda.arguments(), lambda.result_type(),
+    return m_target.emplaceLambda(lambda.sourceLocation(), lambda.arguments(),
+                                  lambda.result_type(),
                                   clone(m_source, m_target, lambda.body()));
   }
 };

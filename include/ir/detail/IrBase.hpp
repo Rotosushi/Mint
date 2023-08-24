@@ -21,22 +21,21 @@
 
 namespace mint::ir::detail {
 class IrBase {
-  SourceLocation const *m_source_location;
+  SourceLocation *m_source_location;
 
 protected:
-  void setSL(SourceLocation const *sl) noexcept {
+  void setSL(SourceLocation *sl) noexcept {
     MINT_ASSERT(sl != nullptr);
     m_source_location = sl;
   }
 
 public:
-  IrBase(SourceLocation const *source_location) noexcept
+  IrBase(SourceLocation *source_location) noexcept
       : m_source_location(source_location) {
     MINT_ASSERT(source_location != nullptr);
   }
 
-  SourceLocation const &sourceLocation() const noexcept {
-    return *m_source_location;
-  }
+  SourceLocation *sourceLocation() noexcept { return m_source_location; }
+  SourceLocation *sourceLocation() const noexcept { return m_source_location; }
 };
 } // namespace mint::ir::detail

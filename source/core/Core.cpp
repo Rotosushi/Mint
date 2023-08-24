@@ -33,7 +33,7 @@ namespace mint {
       if (error.kind() == Error::Kind::EndOfInput)
         break;
 
-      env.printErrorWithSource(error);
+      out << error;
       continue;
     }
     auto &ir = parse_result.value();
@@ -45,7 +45,7 @@ namespace mint {
       }
 
       auto error = typecheck_result.error();
-      env.printErrorWithSource(error);
+      out << error;
       continue;
     }
     auto type = typecheck_result.value();
@@ -55,53 +55,52 @@ namespace mint {
   }
 
   return EXIT_SUCCESS;
-
-  // auto &out = env.getOutputStream();
-  // while (true) {
-  //   if (do_print)
-  //     out << "# ";
-
-  //   auto parse_result = env.parse();
-  //   if (!parse_result) {
-  //     auto &error = parse_result.error();
-  //     if (error.kind() == Error::Kind::EndOfInput)
-  //       break;
-
-  //     env.printErrorWithSource(error);
-  //     continue;
-  //   }
-  //   auto &ast = parse_result.value();
-
-  //   auto typecheck_result = ast->typecheck(env);
-  //   if (!typecheck_result) {
-  //     auto &error = typecheck_result.error();
-  //     if (!error.isUseBeforeDef()) {
-  //       env.printErrorWithSource(error);
-  //       continue;
-  //     }
-
-  //     if (auto failed = env.bindUseBeforeDef(error, ast)) {
-  //       env.printErrorWithSource(failed.value());
-  //     }
-  //     continue;
-  //   }
-  //   auto &type = typecheck_result.value();
-
-  //   auto evaluate_result = ast->evaluate(env);
-  //   if (!evaluate_result) {
-  //     env.printErrorWithSource(evaluate_result.error());
-  //     continue;
-  //   }
-  //   auto &value = evaluate_result.value();
-
-  //   if (do_print)
-  //     out << ast << " : " << type << " => " << value << "\n";
-
-  //   env.addAstToModule(ast);
-  // }
-
-  // return EXIT_SUCCESS;
 }
+// auto &out = env.getOutputStream();
+// while (true) {
+//   if (do_print)
+//     out << "# ";
+
+//   auto parse_result = env.parse();
+//   if (!parse_result) {
+//     auto &error = parse_result.error();
+//     if (error.kind() == Error::Kind::EndOfInput)
+//       break;
+
+//     env.printErrorWithSource(error);
+//     continue;
+//   }
+//   auto &ast = parse_result.value();
+
+//   auto typecheck_result = ast->typecheck(env);
+//   if (!typecheck_result) {
+//     auto &error = typecheck_result.error();
+//     if (!error.isUseBeforeDef()) {
+//       env.printErrorWithSource(error);
+//       continue;
+//     }
+
+//     if (auto failed = env.bindUseBeforeDef(error, ast)) {
+//       env.printErrorWithSource(failed.value());
+//     }
+//     continue;
+//   }
+//   auto &type = typecheck_result.value();
+
+//   auto evaluate_result = ast->evaluate(env);
+//   if (!evaluate_result) {
+//     env.printErrorWithSource(evaluate_result.error());
+//     continue;
+//   }
+//   auto &value = evaluate_result.value();
+
+//   if (do_print)
+//     out << ast << " : " << type << " => " << value << "\n";
+
+//   env.addAstToModule(ast);
+// }
+
+// return EXIT_SUCCESS;
 
 //  Parse, Typecheck, and Evaluate each ast within the source file
 //  then Codegen all of the terms collected and emit all of that
@@ -119,29 +118,30 @@ namespace mint {
 //  A) bringing all of the results into a single output file and
 //  B) something else I am sure I haven't thought of.
 
-[[nodiscard]] int compile(Environment &env) {
-  auto found = env.fileSearch(env.sourceFile());
-  if (!found) {
-    env.printErrorWithSource(
-        {Error::Kind::FileNotFound, Location{}, env.sourceFile().c_str()});
-    return EXIT_FAILURE;
-  }
-  auto &file = found.value();
-  env.setIStream(&file);
+// [[nodiscard]] int compile(Environment &env) {
+//   auto found = env.fileSearch(env.sourceFile());
+//   if (!found) {
+//     out <<
+//         Error{Error::Kind::FileNotFound, Location{},
+//         env.sourceFile().c_str()});
+//     return EXIT_FAILURE;
+//   }
+//   auto &file = found.value();
+//   env.pushActiveSourceFile(std::move(file));
 
-  auto failed = repl(env, false);
-  if (failed == EXIT_FAILURE)
-    return EXIT_FAILURE;
+//   auto failed = repl(env, false);
+//   if (failed == EXIT_FAILURE)
+//     return EXIT_FAILURE;
 
-  for (auto &ast : env.getModule()) {
-    auto result = ast->codegen(env);
-    if (!result) {
-      env.printErrorWithSource(result.error());
-      return EXIT_FAILURE;
-    }
-  }
+//   for (auto &ast : env.getModule()) {
+//     auto result = ast->codegen(env);
+//     if (!result) {
+//       out << result.error();
+//       return EXIT_FAILURE;
+//     }
+//   }
 
-  return emitLLVMIR(env.getLLVMModule(), env.sourceFile(),
-                    env.getErrorStream());
-}
+//   return emitLLVMIR(env.getLLVMModule(), env.sourceFile(),
+//                     env.getErrorStream());
+// }
 } // namespace mint

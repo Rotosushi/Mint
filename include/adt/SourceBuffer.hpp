@@ -41,8 +41,6 @@ private:
   iterator m_marker;
   iterator m_end;
 
-  std::string_view source(Location const &location) const noexcept;
-
   void append(std::string_view text) noexcept;
 
 public:
@@ -71,6 +69,8 @@ public:
   Location const &currentLocation() const noexcept {
     return m_current_location;
   }
+
+  std::string_view source(Location const &location) const noexcept;
 
   SourceLocation *getSourceLocation(Location const &location) const noexcept;
 

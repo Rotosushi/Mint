@@ -65,8 +65,8 @@ public:
     return m_source->updateCurrentLocation();
   }
 
-  SourceLocation source(Location const &location) const noexcept {
-    return m_source->source(location);
+  SourceLocation *source(Location const &location) const noexcept {
+    return m_source->getSourceLocation(location);
   }
 
   Token lex() noexcept;

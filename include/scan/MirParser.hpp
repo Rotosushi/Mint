@@ -62,10 +62,10 @@ public:
 private:
   std::string_view text() const noexcept { return m_lexer.viewToken(); }
   Location location() const noexcept { return m_lexer.currentLocation(); }
-  SourceLocation source() const noexcept {
+  SourceLocation *source() const noexcept {
     return m_lexer.source(m_lexer.currentLocation());
   }
-  SourceLocation source(Location const &location) const noexcept {
+  SourceLocation *source(Location const &location) const noexcept {
     return m_lexer.source(location);
   }
 
@@ -93,7 +93,7 @@ private:
     }
   }
 
-  Error recover(Error::Kind kind, SourceLocation source,
+  Error recover(Error::Kind kind, SourceLocation *source,
                 std::string_view message) noexcept {
     while (!expect(Token::Semicolon) && !peek(Token::End))
       next();

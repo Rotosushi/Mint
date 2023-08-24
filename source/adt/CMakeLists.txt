@@ -23,7 +23,6 @@ target_link_options(mint_adt PUBLIC
   ${llvm_system_libs}
 )
 target_link_libraries(mint_adt
-  mint_ast
   mint_type
   mint_scan
   mint_codegen

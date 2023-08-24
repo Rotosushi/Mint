@@ -33,9 +33,7 @@
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
-#include "ast/Ast.hpp"
 #include "scan/MirParser.hpp"
-#include "scan/Parser.hpp"
 
 // #TODO: split the llvm functionality into it's
 // own class. Then Environment can be linked without
@@ -70,7 +68,7 @@ class Environment {
   UnopTable m_unop_table;
   UseBeforeDefMap m_use_before_def_map;
 
-  Parser m_parser;
+  // Parser m_parser;
   MirParser m_mir_parser;
 
   std::unique_ptr<llvm::LLVMContext> m_llvm_context;
@@ -105,13 +103,13 @@ public:
   fs::path &sourceFile() noexcept;
   void sourceFile(fs::path const &file) noexcept;
 
-  //**** Parser interface ****//
-  void setIStream(std::istream *in) noexcept;
-  [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
-      -> std::string_view;
-  void printErrorWithSource(Error const &error) const noexcept;
-  auto endOfInput() const noexcept -> bool;
-  auto parse() -> Result<ast::Ptr>;
+  // //**** Parser interface ****//
+  // void setIStream(std::istream *in) noexcept;
+  // [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
+  //     -> std::string_view;
+  // void printErrorWithSource(Error const &error) const noexcept;
+  // auto endOfInput() const noexcept -> bool;
+  // auto parse() -> Result<ast::Ptr>;
 
   //**** MirParser interface ****//
   auto endOfMirInput() const noexcept -> bool;

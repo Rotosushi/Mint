@@ -22,9 +22,7 @@ re2c_generate_scanner(
 
 add_library(mint_scan STATIC 
   ${MINT_SOURCE_DIR}/scan/MirParser.cpp
-  ${MINT_SOURCE_DIR}/scan/Parser.cpp
   ${MINT_SOURCE_DIR}/scan/Lexer.cpp
-  ${MINT_SOURCE_DIR}/scan/Scanner.cpp
   ${MINT_SOURCE_DIR}/scan/Token.cpp
 )
 set_property(
@@ -45,7 +43,6 @@ target_link_options(mint_scan PUBLIC
   ${llvm_system_libs}
 )
 target_link_libraries(mint_scan
-  mint_ast
   ${llvm_libs}
   ${LLVM_LIBRARY_DIRS}/liblldCommon.a
   ${LLVM_LIBRARY_DIRS}/liblldELF.a

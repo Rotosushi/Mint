@@ -96,7 +96,7 @@ public:
   };
 
   struct SLocation {
-    SourceLocation location;
+    SourceLocation *location;
     std::string message;
   };
 
@@ -176,7 +176,7 @@ private:
 public:
   Error(Kind kind) noexcept;
   Error(Kind kind, Location location, std::string_view message) noexcept;
-  Error(Kind kind, SourceLocation location, std::string_view message) noexcept;
+  Error(Kind kind, SourceLocation *location, std::string_view message) noexcept;
   Error(Kind kind, UseBeforeDefNames names,
         std::shared_ptr<Scope> scope) noexcept;
   Error(UseBeforeDef const &usedef) noexcept;

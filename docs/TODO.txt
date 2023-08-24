@@ -1,18 +1,12 @@
 The immediate to do list (in no particular order)
 
-#TODO: replace mint::Location with a string_view of the relevant source code 
-      within the source buffer. mint::Source I think. Then usages of the 
-      referenced source code can happen directly
+#TODO: move ir::detail::{Scalar, Parameter} out of the 
+  detail namespace, as they are used more extensively 
+  and outside of the ir itself.
 
-#TODO: refactor the parser and lexer to use a SourceBuffer instead of 
-        managing their own internal buffer
+#TODO: move Typecheck.hpp into the core directory
 
-#TODO: add a list of all SourceBuffers opened by the current environment 
-      to the environment.
-
-#TODO: add a working stack of SourceBuffers to the parser, such that the 
-      parser is able to safety switch between parsing one SourceBuffer and 
-      another in order to implement the import mechanism, while keeping the 
-      relevant source code around.
-
-#TODO: add Source tracking to MIR instructions.
+#TODO: rename the 'codegen' directory to something more meaningfull.
+  It's the directory for all of the runtime facilities as expressed 
+  as generators of llvm ir.
+  alt; backend runtime llvmgen

@@ -23,16 +23,16 @@ Module::Module(SourceLocation *sl, Identifier name,
                Expressions expressions) noexcept
     : detail::IrBase(sl), m_name(name), m_expressions(std::move(expressions)) {}
 Module::Module(Module const &other) noexcept
-    : detail::IrBase(&other.sourceLocation()), m_name(other.m_name),
+    : detail::IrBase(other.sourceLocation()), m_name(other.m_name),
       m_expressions(other.m_expressions) {}
 Module::Module(Module &&other) noexcept
-    : detail::IrBase(&other.sourceLocation()), m_name(other.m_name),
+    : detail::IrBase(other.sourceLocation()), m_name(other.m_name),
       m_expressions(std::move(other.m_expressions)) {}
 auto Module::operator=(Module const &other) noexcept -> Module & {
   if (this == &other)
     return *this;
 
-  setSL(&other.sourceLocation());
+  setSL(other.sourceLocation());
   m_name = other.m_name;
   m_expressions = other.m_expressions;
   return *this;
@@ -41,7 +41,7 @@ auto Module::operator=(Module &&other) noexcept -> Module & {
   if (this == &other)
     return *this;
 
-  setSL(&other.sourceLocation());
+  setSL(other.sourceLocation());
   m_name = other.m_name;
   m_expressions = std::move(other.m_expressions);
   return *this;

@@ -20,15 +20,18 @@
 #include <vector>
 
 #include "adt/Result.hpp"
-#include "ast/Ast.hpp"
+#include "ir/detail/Scalar.hpp"
 #include "scan/Token.hpp"
+#include "type/Type.hpp"
 
 #include "llvm/IR/Value.h"
 
 namespace mint {
 class Environment;
 
-using UnopEvalFn = ast::Ptr (*)(ast::Ast *right);
+// #NOTE: operators only need to access scalar values at comptime.
+// However that might not be the case as the language grows
+using UnopEvalFn = ir::detail::Scalar (*)(ir::detail::Scalar right);
 using UnopCodegenFn = llvm::Value *(*)(llvm::Value *right, Environment &env);
 
 struct UnopOverload {
@@ -37,7 +40,7 @@ struct UnopOverload {
   UnopEvalFn eval;
   UnopCodegenFn gen;
 
-  [[nodiscard]] auto evaluate(ast::Ast *right) -> ast::Ptr;
+  [[nodiscard]] auto evaluate(ir::detail::Scalar right) -> ir::detail::Scalar;
   [[nodiscard]] auto codegen(llvm::Value *right, Environment &env)
       -> llvm::Value *;
 };

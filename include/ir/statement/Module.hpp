@@ -24,7 +24,7 @@ namespace mint {
 namespace ir {
 class Mir;
 
-class Module : detail::IrBase {
+class Module : public detail::IrBase {
 public:
   using Expressions = boost::container::vector<Mir>;
 

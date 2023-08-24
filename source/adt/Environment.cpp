@@ -33,8 +33,7 @@ Environment::Environment(std::istream *in, std::ostream *out,
                          std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder,
                          llvm::TargetMachine *llvm_target_machine) noexcept
     : m_input(in), m_output(out), m_error_output(errout), m_log_output(log),
-      m_parser(this, in), m_mir_parser(*this),
-      m_llvm_context(std::move(llvm_context)),
+      m_mir_parser(*this), m_llvm_context(std::move(llvm_context)),
       m_llvm_module(std::move(llvm_module)),
       m_llvm_ir_builder(std::move(llvm_ir_builder)),
       m_llvm_target_machine(llvm_target_machine) {
@@ -130,24 +129,24 @@ fs::path &Environment::sourceFile() noexcept { return m_file; }
 
 void Environment::sourceFile(fs::path const &file) noexcept { m_file = file; }
 
-//**** Parser interface ****//
-void Environment::setIStream(std::istream *in) noexcept {
-  m_parser.setIstream(in);
-}
+// //**** Parser interface ****//
+// void Environment::setIStream(std::istream *in) noexcept {
+//   m_parser.setIstream(in);
+// }
 
-auto Environment::extractSourceLine(Location const &location) const noexcept
-    -> std::string_view {
-  return m_parser.extractSourceLine(location);
-}
+// auto Environment::extractSourceLine(Location const &location) const noexcept
+//     -> std::string_view {
+//   return m_parser.extractSourceLine(location);
+// }
 
-void Environment::printErrorWithSource(Error const &error) const noexcept {
-  m_parser.printErrorWithSource(*m_error_output, error);
-}
+// void Environment::printErrorWithSource(Error const &error) const noexcept {
+//   m_parser.printErrorWithSource(*m_error_output, error);
+// }
 
-auto Environment::endOfInput() const noexcept -> bool {
-  return m_parser.endOfInput();
-}
-auto Environment::parse() -> Result<ast::Ptr> { return m_parser.parse(); }
+// auto Environment::endOfInput() const noexcept -> bool {
+//   return m_parser.endOfInput();
+// }
+// auto Environment::parse() -> Result<ast::Ptr> { return m_parser.parse(); }
 
 //**** MirParser interface ****//
 auto Environment::endOfMirInput() const noexcept -> bool {

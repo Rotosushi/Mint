@@ -1,19 +1,17 @@
 cmake_minimum_required(VERSION 3.20)
 
 set(MINT_COMMON_LIBS
-  mint_scan
   mint_type
-  mint_ast
   mint_adt
   mint_core
   mint_utility
   mint_ir
   mint_typecheck
   mint_codegen
+  mint_scan
 )
 
 add_subdirectory(${MINT_SOURCE_DIR}/adt)
-add_subdirectory(${MINT_SOURCE_DIR}/ast)
 add_subdirectory(${MINT_SOURCE_DIR}/scan)
 add_subdirectory(${MINT_SOURCE_DIR}/type)
 add_subdirectory(${MINT_SOURCE_DIR}/utility)

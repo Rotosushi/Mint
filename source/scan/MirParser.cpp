@@ -47,7 +47,7 @@ Result<ir::detail::Parameter> MirParser::parseTop(ir::Mir &mir) {
 }
 
 Result<ir::detail::Parameter> MirParser::parseModule(ir::Mir &mir) {
-  // auto lhs_loc = location();
+  auto lhs_loc = location();
 
   if (!expect(Token::Module)) {
     return recover(Error::Kind::ExpectedKeywordModule);
@@ -75,13 +75,14 @@ Result<ir::detail::Parameter> MirParser::parseModule(ir::Mir &mir) {
     expressions.emplace_back(std::move(expression));
   }
 
-  // auto rhs_loc = location();
-  // Location module_loc{lhs_loc, rhs_loc};
-  return mir.emplaceModule(id, std::move(expressions));
+  auto rhs_loc = location();
+  Location module_loc{lhs_loc, rhs_loc};
+  return mir.emplaceModule(m_lexer.source(module_loc), id,
+                           std::move(expressions));
 }
 
 Result<ir::detail::Parameter> MirParser::parseImport(ir::Mir &mir) {
-  // auto lhs_loc = location();
+  auto lhs_loc = location();
 
   if (!expect(Token::Import)) {
     return recover(Error::Kind::ExpectedKeywordImport);
@@ -98,12 +99,13 @@ Result<ir::detail::Parameter> MirParser::parseImport(ir::Mir &mir) {
     return recover(Error::Kind::ExpectedSemicolon);
   }
 
-  // auto rhs_loc = location();
-  // Location import_loc{lhs_loc, rhs_loc};
-  return mir.emplaceImport(filename);
+  auto rhs_loc = location();
+  Location import_loc{lhs_loc, rhs_loc};
+  return mir.emplaceImport(source(import_loc), filename);
 }
 
 Result<ir::detail::Parameter> MirParser::parseLet(ir::Mir &mir) {
+  auto lhs_loc = location();
   // Attributes attributes;
 
   if (expect(Token::Public)) {
@@ -142,11 +144,13 @@ Result<ir::detail::Parameter> MirParser::parseLet(ir::Mir &mir) {
     return term;
   }
 
-  return mir.emplaceLet(id, annotation, term.value());
+  auto rhs_loc = location();
+  Location let_loc{lhs_loc, rhs_loc};
+  return mir.emplaceLet(source(let_loc), id, annotation, term.value());
 }
 
 Result<ir::detail::Parameter> MirParser::parseTerm(ir::Mir &mir) {
-
+  auto lhs_loc = location();
   auto affix = parseAffix(mir);
   if (!affix) {
     return affix;
@@ -156,10 +160,12 @@ Result<ir::detail::Parameter> MirParser::parseTerm(ir::Mir &mir) {
     return recover(Error::Kind::ExpectedSemicolon);
   }
 
+  auto rhs_loc = location();
+  Location affix_loc{lhs_loc, rhs_loc};
   // #TODO: Technically speaking, Term is an affix with a
   // following semicolon, so why is the Instruction representing
   // such called Affix and not Term?
-  return mir.emplaceAffix(affix.value());
+  return mir.emplaceAffix(source(affix_loc), affix.value());
 }
 
 Result<ir::detail::Parameter> MirParser::parseAffix(ir::Mir &mir) {
@@ -176,6 +182,7 @@ Result<ir::detail::Parameter> MirParser::parseAffix(ir::Mir &mir) {
 }
 
 Result<ir::detail::Parameter> MirParser::parseCall(ir::Mir &mir) {
+  auto lhs_loc = location();
   auto basic = parseBasic(mir);
   if (!basic) {
     return basic;
@@ -202,12 +209,15 @@ Result<ir::detail::Parameter> MirParser::parseCall(ir::Mir &mir) {
     return recover(Error::Kind::ExpectedEndParen);
   }
 
-  return mir.emplaceCall(basic.value(), std::move(arguments));
+  auto rhs_loc = location();
+  Location call_loc{lhs_loc, rhs_loc};
+  return mir.emplaceCall(source(call_loc), basic.value(), std::move(arguments));
 }
 
 Result<ir::detail::Parameter> MirParser::parseBinop(ir::Mir &mir,
                                                     ir::detail::Parameter left,
                                                     BinopPrecedence p) {
+  auto lhs_loc = location();
   Result<ir::detail::Parameter> result = left;
   Token op{Token::Error};
 
@@ -259,7 +269,10 @@ Result<ir::detail::Parameter> MirParser::parseBinop(ir::Mir &mir,
       result = temp;
     }
 
-    result = mir.emplaceBinop(op, result.value(), right.value());
+    auto rhs_loc = location();
+    Location binop_loc{lhs_loc, rhs_loc};
+    result =
+        mir.emplaceBinop(source(binop_loc), op, result.value(), right.value());
   }
 
   return result;
@@ -332,6 +345,7 @@ MirParser::parseVariable([[maybe_unused]] ir::Mir &mir) {
 }
 
 Result<ir::detail::Parameter> MirParser::parseUnop(ir::Mir &mir) {
+  auto lhs_loc = location();
   auto op = m_current_token;
   next();
 
@@ -340,10 +354,13 @@ Result<ir::detail::Parameter> MirParser::parseUnop(ir::Mir &mir) {
     return right;
   }
 
-  return mir.emplaceUnop(op, right.value());
+  auto rhs_loc = location();
+  Location unop_loc{lhs_loc, rhs_loc};
+  return mir.emplaceUnop(m_lexer.source(unop_loc), op, right.value());
 }
 
 Result<ir::detail::Parameter> MirParser::parseParens(ir::Mir &mir) {
+  auto lhs_loc = location();
   if (!expect(Token::BeginParen)) {
     return recover(Error::Kind::ExpectedBeginParen);
   }
@@ -357,10 +374,13 @@ Result<ir::detail::Parameter> MirParser::parseParens(ir::Mir &mir) {
     return recover(Error::Kind::ExpectedEndParen);
   }
 
-  return mir.emplaceParens(affix.value());
+  auto rhs_loc = location();
+  Location parens_loc{lhs_loc, rhs_loc};
+  return mir.emplaceParens(source(parens_loc), affix.value());
 }
 
 Result<ir::detail::Parameter> MirParser::parseLambda(ir::Mir &mir) {
+  auto lhs_loc = location();
   if (!expect(Token::BSlash)) {
     return recover(Error::Kind::ExpectedBackSlash);
   }
@@ -415,7 +435,10 @@ Result<ir::detail::Parameter> MirParser::parseLambda(ir::Mir &mir) {
     return result;
   }
 
-  return mir.emplaceLambda(std::move(arguments), annotation, result.value());
+  auto rhs_loc = location();
+  Location lambda_loc{lhs_loc, rhs_loc};
+  return mir.emplaceLambda(source(lambda_loc), std::move(arguments), annotation,
+                           result.value());
 }
 
 Result<type::Ptr> MirParser::parseType() {

@@ -110,7 +110,7 @@ Error::Error(Kind kind) noexcept : m_kind(kind) {}
 Error::Error(Kind kind, Location location, std::string_view message) noexcept
     : m_kind(kind),
       m_data(std::in_place_type<Default>, location, std::string(message)) {}
-Error::Error(Kind kind, SourceLocation location,
+Error::Error(Kind kind, SourceLocation *location,
              std::string_view message) noexcept
     : m_kind(kind),
       m_data(std::in_place_type<SLocation>, location, std::string(message)) {}
@@ -189,8 +189,8 @@ void Error::print(std::ostream &out) const noexcept {
   if (std::holds_alternative<SLocation>(m_data)) {
     auto &sl = std::get<SLocation>(m_data);
 
-    auto &loc = sl.location.location();
-    auto &src = sl.location.view();
+    auto &loc = sl.location->location();
+    auto &src = sl.location->view();
     auto &msg = sl.message;
 
     out << " @ [" << loc.fline << ":" << loc.fcolumn << "]";

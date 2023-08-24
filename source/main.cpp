@@ -37,10 +37,11 @@ auto main(int argc, char **argv) -> int {
 
   mint::Environment env = mint::Environment::create();
 
-  if (mint::input_filename.empty())
-    return repl(env, true);
-  else {
-    env.sourceFile(mint::input_filename.c_str());
-    return compile(env);
-  }
+  return repl(env, true);
+  // if (mint::input_filename.empty())
+  //   return repl(env, true);
+  // else {
+  //   env.sourceFile(mint::input_filename.c_str());
+  //   return compile(env);
+  // }
 }
