@@ -14,7 +14,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "core/Core.hpp"
+#include "core/Repl.hpp"
 #include "adt/Environment.hpp"
 #include "codegen/LLVMUtility.hpp"
 #include "core/Typecheck.hpp"

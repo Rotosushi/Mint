@@ -61,7 +61,7 @@
 
 #include "TestExpressions.hpp"
 #include "adt/Environment.hpp"
-#include "core/Core.hpp"
+#include "core/Repl.hpp"
 
 /*
   #NOTE: this function is rather inelegant

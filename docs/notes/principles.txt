@@ -17,15 +17,12 @@
 
 "As simple as it needs to be and no simpler"
 
-"Open for Extension, Closed for Modification"
-
-"DRY - Don't repeat yourself"
 "Single source of truth"
 
 "Don't be everything for everyone"
-"Single Responsibility"
 
 "YAGNI - You Aren't Going To Need It"
 "Don't try and solve a problem you don't have,
  or a problem you haven't encountered yet"
-"One step at a time, don't jump over any step"
+
+"One step at a time, don't skip any step"

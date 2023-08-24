@@ -18,7 +18,7 @@
 #include <iostream>
 
 #include "adt/Environment.hpp"
-#include "core/Core.hpp"
+#include "core/Repl.hpp"
 #include "utility/CommandLineOptions.hpp"
 
 #include "llvm/Support/CommandLine.h"

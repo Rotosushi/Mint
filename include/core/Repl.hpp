@@ -20,5 +20,4 @@ namespace mint {
 class Environment;
 
 [[nodiscard]] int repl(Environment &env, bool do_print);
-[[nodiscard]] int compile(Environment &env);
 } // namespace mint
