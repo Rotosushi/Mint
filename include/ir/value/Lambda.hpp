@@ -25,24 +25,10 @@
 namespace mint {
 namespace ir {
 class Lambda : public detail::IrBase {
-  // #TODO: lambda's cannot be represented as they are.
-  // for one simple reason, as they are they can only
-  // be called within the Mir in which they reside.
-  // We must be able to store a callable object within
-  // the symbol table itself, in the same way we must
-  // store scalar values within the symbol table.
-  // then call expressions in any given Mir may be able
-  // to call the stored lambda.
-  // I would say that the body of the lambda must itself be
-  // a Mir, however, this would not store the FormalArguments
-  // in the symbol table, so how could call expressions work?
-  // no, the entire lambda object must be stored. the only
-  // way I see that working is by having the symbol table hold
-  // a Mir. but then, how do we copy the lambda into that Mir
-  // from the Mir where it was defined?
 private:
   FormalArguments m_arguments;
   std::optional<type::Ptr> m_annotation;
+  // #TODO refactor the body to be an ir::Mir
   detail::Parameter m_body;
 
 public:

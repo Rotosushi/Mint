@@ -18,7 +18,7 @@
 #include <variant>
 
 #include "adt/Identifier.hpp"
-#include "ir/detail/Scalar.hpp"
+#include "ir/value/Scalar.hpp"
 
 namespace mint {
 namespace ir {

@@ -19,7 +19,6 @@
 
 namespace mint {
 namespace ir {
-namespace detail {
 class Scalar {
 public:
   using Variant = std::variant<std::monostate, bool, int>;
@@ -40,6 +39,5 @@ public:
 
   [[nodiscard]] auto variant() noexcept -> Variant & { return m_variant; }
 };
-} // namespace detail
 } // namespace ir
 } // namespace mint

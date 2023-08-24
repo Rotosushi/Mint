@@ -14,7 +14,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "typecheck/Typecheck.hpp"
+#include "core/Typecheck.hpp"
 #include "adt/Environment.hpp"
 #include "ir/Instruction.hpp"
 #include "ir/action/Clone.hpp"
@@ -26,7 +26,7 @@ struct TypecheckScalar {
 
   TypecheckScalar(Environment &env) noexcept : env(&env) {}
 
-  Result<type::Ptr> operator()(ir::detail::Scalar &scalar) noexcept {
+  Result<type::Ptr> operator()(ir::Scalar &scalar) noexcept {
     return std::visit(*this, scalar.variant());
   }
 
@@ -43,7 +43,7 @@ struct TypecheckScalar {
   }
 };
 
-static Result<type::Ptr> typecheck(ir::detail::Scalar &scalar,
+static Result<type::Ptr> typecheck(ir::Scalar &scalar,
                                    Environment &env) noexcept {
   TypecheckScalar visitor(env);
   return visitor(scalar);
@@ -58,7 +58,7 @@ struct TypecheckImmediate {
     return std::visit(*this, immediate.variant());
   }
 
-  Result<type::Ptr> operator()(ir::detail::Scalar &scalar) noexcept {
+  Result<type::Ptr> operator()(ir::Scalar &scalar) noexcept {
     return typecheck(scalar, *env);
   }
 

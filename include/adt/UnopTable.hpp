@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "adt/Result.hpp"
-#include "ir/detail/Scalar.hpp"
+#include "ir/value/Scalar.hpp"
 #include "scan/Token.hpp"
 #include "type/Type.hpp"
 
@@ -30,8 +30,10 @@ namespace mint {
 class Environment;
 
 // #NOTE: operators only need to access scalar values at comptime.
-// However that might not be the case as the language grows
-using UnopEvalFn = ir::detail::Scalar (*)(ir::detail::Scalar right);
+// However that might not be the case as the language grows,
+// #TODO: if Builtin Operators need access to any given value
+// and not just scalars, change this.
+using UnopEvalFn = ir::Scalar (*)(ir::Scalar right);
 using UnopCodegenFn = llvm::Value *(*)(llvm::Value *right, Environment &env);
 
 struct UnopOverload {
@@ -40,7 +42,7 @@ struct UnopOverload {
   UnopEvalFn eval;
   UnopCodegenFn gen;
 
-  [[nodiscard]] auto evaluate(ir::detail::Scalar right) -> ir::detail::Scalar;
+  [[nodiscard]] auto evaluate(ir::Scalar right) -> ir::Scalar;
   [[nodiscard]] auto codegen(llvm::Value *right, Environment &env)
       -> llvm::Value *;
 };

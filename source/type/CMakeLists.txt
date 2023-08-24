@@ -11,7 +11,7 @@ target_link_options(mint_type PUBLIC
   ${llvm_system_libs}
 )
 target_link_libraries(mint_type
-  ${llvm_libs}
-  ${LLVM_LIBRARY_DIRS}/liblldCommon.a
-  ${LLVM_LIBRARY_DIRS}/liblldELF.a
+  #${llvm_libs}
+  #${LLVM_LIBRARY_DIRS}/liblldCommon.a
+  #{LLVM_LIBRARY_DIRS}/liblldELF.a
 )

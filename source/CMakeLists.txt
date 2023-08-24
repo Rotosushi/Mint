@@ -6,7 +6,6 @@ set(MINT_COMMON_LIBS
   mint_core
   mint_utility
   mint_ir
-  mint_typecheck
   mint_codegen
   mint_scan
 )
@@ -15,7 +14,6 @@ add_subdirectory(${MINT_SOURCE_DIR}/adt)
 add_subdirectory(${MINT_SOURCE_DIR}/scan)
 add_subdirectory(${MINT_SOURCE_DIR}/type)
 add_subdirectory(${MINT_SOURCE_DIR}/utility)
-add_subdirectory(${MINT_SOURCE_DIR}/typecheck)
 add_subdirectory(${MINT_SOURCE_DIR}/codegen)
 add_subdirectory(${MINT_SOURCE_DIR}/ir)
 add_subdirectory(${MINT_SOURCE_DIR}/core)

@@ -22,7 +22,7 @@ struct PrintScalarVisitor {
   std::ostream &out;
   PrintScalarVisitor(std::ostream &out) noexcept : out(out) {}
 
-  void operator()(detail::Scalar &scalar) noexcept {
+  void operator()(Scalar &scalar) noexcept {
     std::visit(*this, scalar.variant());
   }
 
@@ -37,7 +37,7 @@ struct PrintScalarVisitor {
   void operator()(int integer) noexcept { out << integer; }
 };
 
-void print(std::ostream &out, detail::Scalar &scalar) {
+void print(std::ostream &out, Scalar &scalar) {
   PrintScalarVisitor visitor(out);
   visitor(scalar);
 }
@@ -50,7 +50,7 @@ struct PrintImmediateVisitor {
     std::visit(*this, immediate.variant());
   }
 
-  void operator()(detail::Scalar &scalar) noexcept { print(out, scalar); }
+  void operator()(Scalar &scalar) noexcept { print(out, scalar); }
 
   void operator()(Identifier &name) noexcept { out << name; }
 };

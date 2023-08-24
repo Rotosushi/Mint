@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 add_library(mint_core STATIC
   ${MINT_SOURCE_DIR}/core/Core.cpp 
+  ${MINT_SOURCE_DIR}/core/Typecheck.cpp 
 )
 target_include_directories(mint_core PUBLIC ${MINT_INCLUDE_DIR} ${LLVM_INCLUDE_DIRS})
 target_compile_options(mint_core PUBLIC ${CXX_OPTIONS} ${llvm_cxxflags})
@@ -13,5 +14,4 @@ target_link_options(mint_core PUBLIC
 target_link_libraries(mint_core 
   mint_ir 
   mint_adt
-  mint_typecheck
 )

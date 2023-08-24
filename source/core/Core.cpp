@@ -17,8 +17,8 @@
 #include "core/Core.hpp"
 #include "adt/Environment.hpp"
 #include "codegen/LLVMUtility.hpp"
+#include "core/Typecheck.hpp"
 #include "ir/action/Print.hpp"
-#include "typecheck/Typecheck.hpp"
 
 namespace mint {
 [[nodiscard]] int repl(Environment &env, bool do_print) {

@@ -14,14 +14,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "06023323139457ec7def4e0bb4d2f09ae63bc3b4"
-#define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
-#define MINT_DEBUG 1
-// NOLINTEND
-// clang-format on
+#include "core/Evaluate.hpp"
+#include "adt/Environment.hpp"
+
+namespace mint {} // namespace mint
