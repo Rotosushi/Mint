@@ -17,18 +17,29 @@
 #include "core/Repl.hpp"
 #include "adt/Environment.hpp"
 #include "codegen/LLVMUtility.hpp"
+#include "core/Evaluate.hpp"
 #include "core/Typecheck.hpp"
 #include "ir/action/Print.hpp"
 
 namespace mint {
 [[nodiscard]] int repl(Environment &env, bool do_print) {
   auto &out = env.getOutputStream();
+
+  bool good = false;
+  ir::Mir mir;
+
   while (true) {
-    if (do_print)
+    if (good) {
+      env.addMirToModule(std::move(mir));
+    }
+
+    if (do_print) {
       out << "# ";
+    }
 
     auto parse_result = env.parseMir();
     if (!parse_result) {
+      good = false;
       auto error = parse_result.error();
       if (error.kind() == Error::Kind::EndOfInput)
         break;
@@ -36,10 +47,11 @@ namespace mint {
       out << error;
       continue;
     }
-    auto &ir = parse_result.value();
+    mir = parse_result.value();
 
-    auto typecheck_result = typecheck(ir, env);
+    auto typecheck_result = typecheck(mir, env);
     if (!typecheck_result) {
+      good = false;
       if (typecheck_result.recovered()) {
         continue;
       }
@@ -50,8 +62,24 @@ namespace mint {
     }
     auto type = typecheck_result.value();
 
-    if (do_print)
-      out << ir << ": " << type << "\n";
+    auto evaluate_result = evaluate(mir, env);
+    if (!evaluate_result) {
+      good = false;
+      if (evaluate_result.recovered()) {
+        continue;
+      }
+
+      auto error = evaluate_result.error();
+      out << error;
+      continue;
+    }
+    auto &value = evaluate_result.value();
+
+    if (do_print) {
+      out << mir << ": " << type << " => " << value << "\n";
+    }
+
+    good = true;
   }
 
   return EXIT_SUCCESS;

@@ -129,25 +129,6 @@ fs::path &Environment::sourceFile() noexcept { return m_file; }
 
 void Environment::sourceFile(fs::path const &file) noexcept { m_file = file; }
 
-// //**** Parser interface ****//
-// void Environment::setIStream(std::istream *in) noexcept {
-//   m_parser.setIstream(in);
-// }
-
-// auto Environment::extractSourceLine(Location const &location) const noexcept
-//     -> std::string_view {
-//   return m_parser.extractSourceLine(location);
-// }
-
-// void Environment::printErrorWithSource(Error const &error) const noexcept {
-//   m_parser.printErrorWithSource(*m_error_output, error);
-// }
-
-// auto Environment::endOfInput() const noexcept -> bool {
-//   return m_parser.endOfInput();
-// }
-// auto Environment::parse() -> Result<ast::Ptr> { return m_parser.parse(); }
-
 //**** MirParser interface ****//
 auto Environment::endOfMirInput() const noexcept -> bool {
   return m_mir_parser.endOfInput();
@@ -189,12 +170,34 @@ void Environment::popScope() noexcept {
   exchangeLocalScope(m_local_scope->popScope());
 }
 
-//**** "module" interface ****/
-void Environment::addAstToModule(ast::Ptr ast) noexcept {
-  m_module.push_back(std::move(ast));
+void Environment::unbindScope(Identifier name) noexcept {
+  m_local_scope->unbindScope(name);
 }
 
-std::vector<ast::Ptr> &Environment::getModule() noexcept { return m_module; }
+auto Environment::declareName(Identifier name, Attributes attributes,
+                              type::Ptr type) noexcept
+    -> mint::Result<mint::Bindings::Binding> {
+  return m_local_scope->declareName(name, attributes, type);
+}
+
+auto Environment::lookupBinding(Identifier name) noexcept
+    -> mint::Result<mint::Bindings::Binding> {
+  return m_local_scope->lookupBinding(name);
+}
+auto Environment::lookupLocalBinding(Identifier name) noexcept
+    -> mint::Result<mint::Bindings::Binding> {
+  return m_local_scope->lookupLocalBinding(name);
+}
+auto Environment::qualifyName(Identifier name) noexcept -> Identifier {
+  return m_local_scope->qualifyName(name);
+}
+
+//**** "module" interface ****/
+void Environment::addMirToModule(ir::Mir mir) noexcept {
+  m_module.push_back(std::move(mir));
+}
+
+std::vector<ir::Mir> &Environment::getModule() noexcept { return m_module; }
 
 //**** DirectorySearcher interface ****/
 void Environment::appendDirectory(fs::path file) noexcept {
@@ -216,6 +219,10 @@ auto Environment::getIdentifier(std::string_view name) noexcept -> Identifier {
 }
 
 auto Environment::getLambdaName() noexcept -> Identifier {
+  // #TODO: this is not the most robust solution
+  // as there is a large possiblity of name collisions,
+  // and it doesn't work well in parallel compilation.
+  // but it's perfectly acceptable right now.
   static std::size_t count = 0U;
   std::string name{"l"};
   name += std::to_string(count++);
@@ -229,37 +236,6 @@ auto Environment::alreadyImported(fs::path const &filename) noexcept -> bool {
 
 void Environment::addImport(fs::path const &filename) noexcept {
   m_import_set.insert(filename);
-}
-
-//**** Scope interface ****//
-void Environment::unbindScope(Identifier name) noexcept {
-  m_local_scope->unbindScope(name);
-}
-
-auto Environment::bindName(Identifier name, Attributes attributes,
-                           type::Ptr type, ast::Ptr comptime_value,
-                           llvm::Value *runtime_value) noexcept
-    -> mint::Result<mint::Bindings::Binding> {
-  return m_local_scope->bindName(name, attributes, type,
-                                 std::move(comptime_value), runtime_value);
-}
-
-auto Environment::declareName(Identifier name, Attributes attributes,
-                              type::Ptr type) noexcept
-    -> mint::Result<mint::Bindings::Binding> {
-  return m_local_scope->declareName(name, attributes, type);
-}
-
-auto Environment::lookupBinding(Identifier name) noexcept
-    -> mint::Result<mint::Bindings::Binding> {
-  return m_local_scope->lookupBinding(name);
-}
-auto Environment::lookupLocalBinding(Identifier name) noexcept
-    -> mint::Result<mint::Bindings::Binding> {
-  return m_local_scope->lookupLocalBinding(name);
-}
-auto Environment::qualifyName(Identifier name) noexcept -> Identifier {
-  return m_local_scope->qualifyName(name);
 }
 
 //**** Use Before Def Interface ****//

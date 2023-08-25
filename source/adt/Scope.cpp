@@ -31,7 +31,7 @@ namespace mint {
 }
 [[nodiscard]] auto Bindings::Binding::attributes() const noexcept
     -> Attributes const & {
-  return std::get<Attributes>(value());
+  return (*this)->second.attributes;
 }
 [[nodiscard]] auto Bindings::Binding::isPublic() const noexcept -> bool {
   return attributes().isPublic();
@@ -40,37 +40,37 @@ namespace mint {
   return attributes().isPrivate();
 }
 [[nodiscard]] auto Bindings::Binding::type() const noexcept -> type::Ptr {
-  return std::get<type::Ptr>(value());
+  return (*this)->second.type;
 }
 
 [[nodiscard]] auto Bindings::Binding::comptimeValue() const noexcept
-    -> std::optional<ast::Ptr> const & {
-  return std::get<std::optional<ast::Ptr>>(value());
+    -> std::optional<ir::Value> const & {
+  return (*this)->second.comptime_value;
 }
 [[nodiscard]] auto Bindings::Binding::comptimeValue() noexcept
-    -> std::optional<ast::Ptr> & {
-  return std::get<std::optional<ast::Ptr>>(value());
+    -> std::optional<ir::Value> & {
+  return (*this)->second.comptime_value;
 }
 [[nodiscard]] auto Bindings::Binding::hasComptimeValue() const noexcept
     -> bool {
   return comptimeValue().has_value();
 }
 [[nodiscard]] auto Bindings::Binding::comptimeValueOrAssert() const noexcept
-    -> ast::Ptr const & {
+    -> ir::Value const & {
   MINT_ASSERT(hasComptimeValue());
   return comptimeValue().value();
 }
-void Bindings::Binding::setComptimeValue(ast::Ptr ast) noexcept {
-  comptimeValue() = std::move(ast);
+void Bindings::Binding::setComptimeValue(ir::Value value) noexcept {
+  comptimeValue() = std::move(value);
 }
 
 [[nodiscard]] auto Bindings::Binding::runtimeValue() noexcept
     -> std::optional<llvm::Value *> & {
-  return std::get<std::optional<llvm::Value *>>(value());
+  return (*this)->second.runtime_value;
 }
 [[nodiscard]] auto Bindings::Binding::runtimeValue() const noexcept
     -> std::optional<llvm::Value *> const & {
-  return std::get<std::optional<llvm::Value *>>(value());
+  return (*this)->second.runtime_value;
 }
 [[nodiscard]] auto Bindings::Binding::hasRuntimeValue() const noexcept -> bool {
   return runtimeValue().has_value();
@@ -89,18 +89,6 @@ void Bindings::Binding::setRuntimeValue(llvm::Value *value) noexcept {
 }
 
 void Bindings::unbind(Key name) noexcept { table.erase(name); }
-
-auto Bindings::bind(Key key, Attributes attributes, type::Ptr type,
-                    ast::Ptr comptime_value,
-                    llvm::Value *runtime_value) noexcept -> Result<Binding> {
-  auto found = lookup(key);
-  if (found) {
-    return {Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
-  }
-  auto pair = table.try_emplace(key, attributes, type,
-                                std::move(comptime_value), runtime_value);
-  return {Binding{pair.first}};
-}
 
 auto Bindings::declare(Key key, Attributes attributes, type::Ptr type) noexcept
     -> Result<Binding> {
@@ -131,14 +119,6 @@ auto Bindings::declare(Key key, Attributes attributes, type::Ptr type) noexcept
 
 [[nodiscard]] auto ScopeTable::Entry::scopesEmpty() const noexcept -> bool {
   return iter->second->scopesEmpty();
-}
-
-auto ScopeTable::Entry::bind(Identifier name, Attributes attributes,
-                             type::Ptr type, ast::Ptr comptime_value,
-                             llvm::Value *runtime_value) noexcept
-    -> Result<Bindings::Binding> {
-  return iter->second->bindName(name, attributes, type,
-                                std::move(comptime_value), runtime_value);
 }
 
 auto ScopeTable::Entry::declare(Identifier name, Attributes attributes,
@@ -321,14 +301,6 @@ std::shared_ptr<Scope> Scope::popScope() noexcept {
 
   // qualify the name with the previous scope
   return m_prev_scope->qualifyName(base);
-}
-
-auto Scope::bindName(Identifier name, Attributes attributes, type::Ptr type,
-                     ast::Ptr comptime_value,
-                     llvm::Value *runtime_value) noexcept
-    -> Result<Bindings::Binding> {
-  return m_bindings->bind(name, attributes, type, std::move(comptime_value),
-                          runtime_value);
 }
 
 auto Scope::declareName(Identifier name, Attributes attributes,

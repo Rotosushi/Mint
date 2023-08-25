@@ -41,6 +41,8 @@ public:
         std::optional<type::Ptr> annotation, Mir body) noexcept
       : m_variant(std::in_place_type<Lambda>, sl, std::move(arguments),
                   annotation, std::move(body)) {}
+  Value(Lambda lambda) noexcept
+      : m_variant(std::in_place_type<Lambda>, std::move(lambda)) {}
   Value(Value const &other) noexcept = default;
   Value(Value &&other) noexcept = default;
   auto operator=(Value const &other) noexcept -> Value & = default;

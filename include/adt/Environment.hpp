@@ -58,7 +58,7 @@ class Environment {
   fs::path m_file;
   std::shared_ptr<Scope> m_global_scope;
   std::shared_ptr<Scope> m_local_scope;
-  std::vector<ast::Ptr> m_module;
+  std::vector<ir::Mir> m_module;
 
   DirectorySearcher m_directory_searcher;
   ImportSet m_import_set;
@@ -103,15 +103,6 @@ public:
   fs::path &sourceFile() noexcept;
   void sourceFile(fs::path const &file) noexcept;
 
-  // //**** Parser interface ****//
-  // void setIStream(std::istream *in) noexcept;
-  // [[nodiscard]] auto extractSourceLine(Location const &location) const
-  // noexcept
-  //     -> std::string_view;
-  // void printErrorWithSource(Error const &error) const noexcept;
-  // auto endOfInput() const noexcept -> bool;
-  // auto parse() -> Result<ast::Ptr>;
-
   //**** MirParser interface ****//
   auto endOfMirInput() const noexcept -> bool;
   Result<ir::Mir> parseMir();
@@ -120,8 +111,8 @@ public:
   void popActiveSourceFile();
 
   //**** global "module" interface ****//
-  void addAstToModule(ast::Ptr ast) noexcept;
-  std::vector<ast::Ptr> &getModule() noexcept;
+  void addMirToModule(ir::Mir mir) noexcept;
+  std::vector<ir::Mir> &getModule() noexcept;
 
   //**** DirectorySearcher interface ****//
   void appendDirectory(fs::path file) noexcept;
@@ -151,10 +142,6 @@ public:
   void popScope() noexcept;
 
   void unbindScope(Identifier name) noexcept;
-
-  auto bindName(Identifier name, Attributes attributes, type::Ptr type,
-                ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
-      -> mint::Result<mint::Bindings::Binding>;
 
   auto declareName(Identifier name, Attributes attributes,
                    type::Ptr type) noexcept

@@ -193,10 +193,6 @@ struct TypecheckInstruction {
     return result;
   }
 
-  Result<type::Ptr> operator()(ir::detail::Immediate &immediate) noexcept {
-    return typecheck(immediate, *env);
-  }
-
   Result<type::Ptr> operator()(ir::Affix &affix) noexcept {
     return typecheck(affix.parameter(), *ir, *env);
   }
@@ -315,7 +311,7 @@ struct TypecheckInstruction {
     return instance->result_type;
   }
 
-  Result<type::Ptr> operator()([[maybe_unused]] ir::Import &import) noexcept {
+  Result<type::Ptr> operator()(ir::Import &import) noexcept {
     if (env->alreadyImported(import.file()))
       return env->getNilType();
 

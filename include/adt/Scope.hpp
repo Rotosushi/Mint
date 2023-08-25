@@ -18,19 +18,24 @@
 #include <map>
 #include <optional>
 #include <set>
-#include <tuple>
 
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
 #include "adt/Result.hpp"
-#include "ast/Ast.hpp"
+#include "ir/value/Value.hpp"
+
+#include "llvm/IR/Value.h"
 
 namespace mint {
 class Bindings {
 public:
   using Key = Identifier;
-  using Value = std::tuple<Attributes, type::Ptr, std::optional<ast::Ptr>,
-                           std::optional<llvm::Value *>>;
+  struct Value {
+    Attributes attributes;
+    type::Ptr type;
+    std::optional<ir::Value> comptime_value;
+    std::optional<llvm::Value *> runtime_value;
+  };
   using Table = std::map<Key, Value>;
   using iterator = typename Table::iterator;
 
@@ -49,12 +54,12 @@ public:
     [[nodiscard]] auto type() const noexcept -> type::Ptr;
 
     [[nodiscard]] auto comptimeValue() const noexcept
-        -> std::optional<ast::Ptr> const &;
-    [[nodiscard]] auto comptimeValue() noexcept -> std::optional<ast::Ptr> &;
+        -> std::optional<ir::Value> const &;
+    [[nodiscard]] auto comptimeValue() noexcept -> std::optional<ir::Value> &;
     [[nodiscard]] auto hasComptimeValue() const noexcept -> bool;
     [[nodiscard]] auto comptimeValueOrAssert() const noexcept
-        -> ast::Ptr const &;
-    void setComptimeValue(ast::Ptr ast) noexcept;
+        -> ir::Value const &;
+    void setComptimeValue(ir::Value value) noexcept;
 
     [[nodiscard]] auto runtimeValue() noexcept
         -> std::optional<llvm::Value *> &;
@@ -72,9 +77,6 @@ public:
   [[nodiscard]] auto empty() const noexcept -> bool;
 
   void unbind(Key name) noexcept;
-  auto bind(Key key, Attributes attributes, type::Ptr type,
-            ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
-      -> Result<Binding>;
   auto declare(Key key, Attributes attributes, type::Ptr type) noexcept
       -> Result<Binding>;
 
@@ -100,9 +102,6 @@ public:
     [[nodiscard]] auto namesEmpty() const noexcept -> bool;
     [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
 
-    auto bind(Identifier name, Attributes attributes, type::Ptr type,
-              ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
-        -> Result<Bindings::Binding>;
     auto declare(Identifier name, Attributes attributes,
                  type::Ptr type) noexcept -> Result<Bindings::Binding>;
 
@@ -186,9 +185,6 @@ public:
 
   [[nodiscard]] auto qualifyName(Identifier name) noexcept -> Identifier;
 
-  auto bindName(Identifier name, Attributes attributes, type::Ptr type,
-                ast::Ptr comptime_value, llvm::Value *runtime_value) noexcept
-      -> Result<Bindings::Binding>;
   auto declareName(Identifier name, Attributes attributes,
                    type::Ptr type) noexcept -> Result<Bindings::Binding>;
 
