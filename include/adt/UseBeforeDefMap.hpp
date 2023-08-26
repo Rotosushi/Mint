@@ -90,10 +90,6 @@ public:
                                         std::shared_ptr<Scope> const &scope,
                                         ir::Mir ir) noexcept;
 
-private:
-  std::optional<Error> bindUseBeforeDef(Elements &elements, Error const &error,
-                                        ir::Mir mir) noexcept;
-
 public:
   std::optional<Error> resolveTypeOfUseBeforeDef(Environment &env,
                                                  Identifier def_name) noexcept;

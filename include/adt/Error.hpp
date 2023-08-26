@@ -37,49 +37,6 @@
 // #TODO: add a ErrorList (or similar) data structure to the
 // environment. to hold errors as they are generated.
 
-// #NOTE: this brings up the idea of the success path and
-// failure path of the compiler. currently, each major pass
-// of the compiler; (If i am using 'pass' correctly as understood
-// by other languages) parse, typecheck, evaluate, codegen,
-// are defined by their success path and failure path. and this
-// behavior is encapsulated within the Result<T, E> class.
-// which holds the success or failure of the function call,
-// and returns the data relevant to either path.
-// What I am coming up to is noticing the structure
-// as it relates to UseBeforeDef errors. as of now, UseBeforeDef
-// is an Error, and it is handled on the failure path of the compiler.
-// however UBD is not handled the same way as other errors, and as such
-// it adds a layer of complexity to the failure path.
-// This is tolerable only in so far as there is only one kind of
-// non-error error. if there is more than one, Then an abstraction
-// is needed to encapsulate this non-error, non-success path and
-// it's set of values. Then these things can be handled more
-// systematically. An initial guess would simply be to modify
-// Result<T, E> to Result<T, E, U> where T is the success path
-// E is the error path, and U is the recoverable path.
-// (though maybe T, F, U is clearer? it's E for Error btw.
-// T = true, F = false, U = unknown)
-// the U path encapsulates the idea that while computation cannot
-// continue down the path it took, the success or failure of the
-// expression has not been decided.
-// variable use before definition is an example of the U path.
-// The compiler cannot decide if the variables use is incorrect
-// or correct until at a point later in the process.
-// another example of a U path is runtime only expressions within
-// the comptime context. Runtime only expressions are both possible
-// and necessary, and yet sometimes there are contexts where their
-// use must be disallowed. this is allowed in the general sense,
-// as it does not hamper codegeneration, however in a strict compile time
-// context this is raised to an error.
-// #NOTE: the way that I want to describe this third path is a
-// recoverable error. so maybe that should be a 'kind' or 'category' of error.
-// and not handled within the result class.
-// though in the result class it is much easier the not nest the
-// code handling the recoverable error within the scope of the
-// code handling unrecoverable errors. especially when using
-// conditional continues within loops. (which we do in the repl,
-// and import mechanism)
-
 namespace mint {
 class Scope;
 // #TODO: refactor, as we no longer track UBD here.
@@ -100,12 +57,7 @@ public:
     std::string message;
   };
 
-  struct UseBeforeDef {
-    UseBeforeDefNames names;
-    std::shared_ptr<Scope> scope;
-  };
-
-  using Data = std::variant<std::monostate, Default, SLocation, UseBeforeDef>;
+  using Data = std::variant<std::monostate, Default, SLocation>;
 
   enum class Kind {
     Default,
@@ -177,16 +129,11 @@ public:
   Error(Kind kind) noexcept;
   Error(Kind kind, Location location, std::string_view message) noexcept;
   Error(Kind kind, SourceLocation *location, std::string_view message) noexcept;
-  Error(Kind kind, UseBeforeDefNames names,
-        std::shared_ptr<Scope> scope) noexcept;
-  Error(UseBeforeDef const &usedef) noexcept;
 
   [[nodiscard]] auto isMonostate() const noexcept -> bool;
   [[nodiscard]] auto isDefault() const noexcept -> bool;
-  [[nodiscard]] auto isUseBeforeDef() const noexcept -> bool;
 
   [[nodiscard]] auto getDefault() const noexcept -> const Default &;
-  [[nodiscard]] auto getUseBeforeDef() const noexcept -> const UseBeforeDef &;
 
   static void underline(std::ostream &out, Location location,
                         std::string_view bad_source) noexcept;

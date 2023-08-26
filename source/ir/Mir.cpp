@@ -23,7 +23,7 @@ namespace ir {
 // #NOTE: all of these functions -must- be out of line
 // because Instruction cannot be a full type at the time
 // that Mir is defined, because any IR Instruction which
-// is composed of a series of Instructions itself, (Module, Block)
+// is composed of a series of Instructions itself, (Module, Lambda)
 // is composed of a Mir.
 Mir::Mir() noexcept : m_index(), m_ir() {}
 Mir::Mir(Mir const &other) noexcept
@@ -63,13 +63,13 @@ auto Mir::ir() noexcept -> Ir & { return m_ir; }
 auto Mir::ir() const noexcept -> Ir const & { return m_ir; }
 
 [[nodiscard]] auto Mir::operator[](detail::Index index) noexcept -> reference {
-  MINT_ASSERT(index < size());
+  MINT_ASSERT((index >= 0) && (index < size()));
   return m_ir[index.index()];
 }
 
 [[nodiscard]] auto Mir::operator[](detail::Index index) const noexcept
     -> const_reference {
-  MINT_ASSERT(index < size());
+  MINT_ASSERT((index >= 0) && (index < size()));
   return m_ir[index.index()];
 }
 

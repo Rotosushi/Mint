@@ -114,11 +114,6 @@ Error::Error(Kind kind, SourceLocation *location,
              std::string_view message) noexcept
     : m_kind(kind),
       m_data(std::in_place_type<SLocation>, location, std::string(message)) {}
-Error::Error(Kind kind, UseBeforeDefNames names,
-             std::shared_ptr<Scope> scope) noexcept
-    : m_kind(kind), m_data(std::in_place_type<UseBeforeDef>, names, scope) {}
-Error::Error(UseBeforeDef const &usedef) noexcept
-    : m_kind(Kind::UseBeforeDef), m_data(usedef) {}
 
 [[nodiscard]] auto Error::isMonostate() const noexcept -> bool {
   return std::holds_alternative<std::monostate>(m_data);
@@ -126,18 +121,10 @@ Error::Error(UseBeforeDef const &usedef) noexcept
 [[nodiscard]] auto Error::isDefault() const noexcept -> bool {
   return std::holds_alternative<Default>(m_data);
 }
-[[nodiscard]] auto Error::isUseBeforeDef() const noexcept -> bool {
-  return std::holds_alternative<UseBeforeDef>(m_data);
-}
 
 [[nodiscard]] auto Error::getDefault() const noexcept -> const Default & {
   MINT_ASSERT(isDefault());
   return std::get<Default>(m_data);
-}
-[[nodiscard]] auto Error::getUseBeforeDef() const noexcept
-    -> const UseBeforeDef & {
-  MINT_ASSERT(isUseBeforeDef());
-  return std::get<UseBeforeDef>(m_data);
 }
 
 void Error::underline(std::ostream &out, Location location,

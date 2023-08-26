@@ -14,8 +14,10 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "core/Typecheck.hpp"
+#include <sstream>
+
 #include "adt/Environment.hpp"
+#include "core/Typecheck.hpp"
 #include "ir/Instruction.hpp"
 #include "ir/action/Clone.hpp"
 #include "utility/Abort.hpp"
@@ -217,7 +219,17 @@ struct TypecheckInstruction {
     }
     auto type = result.value();
 
-    // #TODO: handle optional type annotation
+    if (let.annotation()) {
+      auto annotated_type = let.annotation().value();
+      if (!equals(annotated_type, type)) {
+        std::stringstream msg;
+        msg << "Expected Type [" << annotated_type << "]"
+            << " Actual Type [" << type << "]";
+        return Error{Error::Kind::LetTypeMismatch, let.sourceLocation(),
+                     msg.view()};
+      }
+    }
+
     // #TODO: add bound variable attributes
     if (auto bound = env->declareName(let.name(), {}, type); !bound) {
       return bound.error();
@@ -357,7 +369,16 @@ struct TypecheckInstruction {
       return result;
     }
 
-    // #TODO: handle optional lambda result_type
+    if (lambda.annotation()) {
+      auto annotated_type = lambda.annotation().value();
+      if (!equals(annotated_type, result.value())) {
+        std::stringstream msg;
+        msg << "Expected Type [" << annotated_type << "]"
+            << " Actual Type [" << result.value() << "]";
+        return Error{Error::Kind::ResultTypeMismatch, lambda.sourceLocation(),
+                     msg.view()};
+      }
+    }
 
     auto function_type =
         env->getFunctionType(result.value(), std::move(argument_types));

@@ -165,7 +165,7 @@ void testExpressionInREPL(TestCode &expression) {
   auto success = result == expression.expected_result;
   BOOST_CHECK(success);
   if (!success) {
-    std::cerr << "TestCase{\n";
+    std::cerr << "TestCase {\n";
 
     if (expression.setup.size() > 0)
       std::cerr << "Setup: " << expression.setup << "\n";

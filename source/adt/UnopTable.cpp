@@ -16,8 +16,6 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/UnopTable.hpp"
 #include "adt/Environment.hpp"
-#include "ast/value/Boolean.hpp"
-#include "ast/value/Integer.hpp"
 
 namespace mint {
 [[nodiscard]] auto UnopOverload::evaluate(ir::Scalar right) -> ir::Scalar {

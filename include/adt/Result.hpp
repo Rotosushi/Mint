@@ -33,12 +33,11 @@ template <class T> class Result {
       // "is this result recovered"
       // however its also simple to ask "is the error recovered"
       // it just might not make sense to have a recovered error.
-      std::variant<std::monostate, T, Recoverable, Recovered, Error>;
+      std::variant<T, Recoverable, Recovered, Error>;
 
   Variant data;
 
 public:
-  Result() noexcept = default;
   template <class... Args>
   Result(Args &&...args) noexcept
       : data(std::in_place_type<T>, std::forward<Args>(args)...) {}

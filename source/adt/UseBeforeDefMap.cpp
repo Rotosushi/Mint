@@ -16,7 +16,6 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/UseBeforeDefMap.hpp"
 #include "adt/Environment.hpp"
-#include "ast/definition/Definition.hpp"
 #include "core/Codegen.hpp"
 #include "core/Evaluate.hpp"
 #include "core/Typecheck.hpp"
@@ -221,23 +220,6 @@ UseBeforeDefMap::bindUseBeforeDef(Identifier undef, Identifier def,
   }
 
   insert(undef, def, scope_name, std::move(ir), scope);
-  return std::nullopt;
-}
-
-std::optional<Error> UseBeforeDefMap::bindUseBeforeDef(Elements &elements,
-                                                       Error const &error,
-                                                       ir::Mir mir) noexcept {
-  MINT_ASSERT(error.isUseBeforeDef());
-  auto ubd = error.getUseBeforeDef();
-  auto undef = ubd.names.undef;
-  auto def = ubd.names.def;
-  auto scope_name = ubd.scope->qualifiedName();
-
-  if (undef == def) {
-    return {Error::Kind::TypeCannotBeResolved};
-  }
-
-  elements.emplace_back(undef, def, scope_name, std::move(mir), ubd.scope);
   return std::nullopt;
 }
 

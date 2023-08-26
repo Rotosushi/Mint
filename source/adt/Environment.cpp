@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/Environment.hpp"
-#include "ast/definition/Definition.hpp"
 #include "codegen/LLVMUtility.hpp"
 
 #include "llvm/Analysis/AliasAnalysis.h"
