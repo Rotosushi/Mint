@@ -60,30 +60,9 @@ static Result<ir::Value> evaluate(ir::detail::Immediate &immediate,
 static Result<ir::Value> evaluate(ir::detail::Index index, ir::Mir &mir,
                                   Environment &env) noexcept;
 
-struct EvaluateParameter {
-  ir::Mir *mir;
-  Environment *env;
-
-  EvaluateParameter(ir::Mir &mir, Environment &env) noexcept
-      : mir(&mir), env(&env) {}
-
-  Result<ir::Value> operator()(ir::detail::Parameter &parameter) noexcept {
-    return std::visit(*this, parameter.variant());
-  }
-
-  Result<ir::Value> operator()(ir::detail::Immediate &immediate) noexcept {
-    return evaluate(immediate, *env);
-  }
-
-  Result<ir::Value> operator()(ir::detail::Index &index) noexcept {
-    return evaluate(index, *mir, *env);
-  }
-};
-
 static Result<ir::Value> evaluate(ir::detail::Parameter &parameter,
                                   ir::Mir &mir, Environment &env) noexcept {
-  EvaluateParameter visitor(mir, env);
-  return visitor(parameter);
+  return evaluate(parameter.index(), mir, env);
 }
 
 struct EvaluateInstruction {
@@ -99,8 +78,8 @@ struct EvaluateInstruction {
     return std::visit(*this, (*mir)[index].variant());
   }
 
-  Result<ir::Value> operator()(ir::Affix &affix) noexcept {
-    return evaluate(affix.parameter(), *mir, *env);
+  Result<ir::Value> operator()(ir::detail::Immediate &immediate) noexcept {
+    return evaluate(immediate, *env);
   }
 
   Result<ir::Value> operator()(ir::Parens &parens) noexcept {

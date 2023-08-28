@@ -81,9 +81,24 @@ detail::Index Mir::emplace_back(Args &&...args) {
   return m_index++;
 }
 
-detail::Index Mir::emplaceAffix(SourceLocation *sl,
-                                detail::Parameter parameter) {
-  return emplace_back<Affix>(sl, parameter);
+detail::Index Mir::emplaceImmediate(SourceLocation *sl) {
+  return emplace_back<detail::Immediate>(sl);
+}
+
+detail::Index Mir::emplaceImmediate(SourceLocation *sl, bool boolean) {
+  return emplace_back<detail::Immediate>(sl, boolean);
+}
+
+detail::Index Mir::emplaceImmediate(SourceLocation *sl, int integer) {
+  return emplace_back<detail::Immediate>(sl, integer);
+}
+
+detail::Index Mir::emplaceImmediate(SourceLocation *sl, Identifier name) {
+  return emplace_back<detail::Immediate>(sl, name);
+}
+
+detail::Index Mir::emplaceImmediate(detail::Immediate immediate) {
+  return emplace_back<detail::Immediate>(immediate);
 }
 
 detail::Index Mir::emplaceParens(SourceLocation *sl,

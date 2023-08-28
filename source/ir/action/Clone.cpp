@@ -22,30 +22,9 @@ namespace ir {
 [[nodiscard]] static detail::Parameter clone(Mir &source, Mir &target,
                                              detail::Index index) noexcept;
 
-struct CloneParameterVisitor {
-  Mir &m_source;
-  Mir &m_target;
-
-  CloneParameterVisitor(Mir &source, Mir &target) noexcept
-      : m_source(source), m_target(target) {}
-
-  detail::Parameter operator()(detail::Parameter &parameter) noexcept {
-    return std::visit(*this, parameter.variant());
-  }
-
-  detail::Parameter operator()(detail::Immediate &immediate) noexcept {
-    return immediate;
-  }
-
-  detail::Parameter operator()(detail::Index &index) noexcept {
-    return clone(m_source, m_target, index);
-  }
-};
-
 [[nodiscard]] static detail::Parameter
 clone(Mir &source, Mir &target, detail::Parameter &parameter) noexcept {
-  CloneParameterVisitor visitor(source, target);
-  return visitor(parameter);
+  return clone(source, target, parameter.index());
 }
 
 struct CloneInstructionVisitor {
@@ -59,9 +38,8 @@ struct CloneInstructionVisitor {
     return std::visit(*this, m_source[index].variant());
   }
 
-  detail::Parameter operator()(Affix &affix) noexcept {
-    return m_target.emplaceAffix(affix.sourceLocation(),
-                                 clone(m_source, m_target, affix.parameter()));
+  detail::Parameter operator()(detail::Immediate &immediate) noexcept {
+    return m_target.emplaceImmediate(immediate);
   }
 
   detail::Parameter operator()(Parens &parens) noexcept {

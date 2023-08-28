@@ -20,6 +20,7 @@
 #include "adt/Argument.hpp"
 #include "adt/Identifier.hpp"
 #include "adt/SourceLocation.hpp"
+#include "ir/detail/Immediate.hpp"
 #include "ir/detail/Parameter.hpp"
 #include "scan/Token.hpp"
 
@@ -74,7 +75,12 @@ public:
   [[nodiscard]] auto operator[](detail::Index index) const noexcept
       -> const_reference;
 
-  detail::Index emplaceAffix(SourceLocation *sl, detail::Parameter parameter);
+  detail::Index emplaceImmediate(SourceLocation *sl);
+  detail::Index emplaceImmediate(SourceLocation *sl, bool boolean);
+  detail::Index emplaceImmediate(SourceLocation *sl, int integer);
+  detail::Index emplaceImmediate(SourceLocation *sl, Identifier name);
+  detail::Index emplaceImmediate(detail::Immediate immediate);
+
   detail::Index emplaceParens(SourceLocation *sl, detail::Parameter parameter);
   detail::Index emplaceLet(SourceLocation *sl, Identifier name,
                            std::optional<type::Ptr> annotation,

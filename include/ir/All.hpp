@@ -22,6 +22,5 @@
 #include "ir/expression/Unop.hpp"
 #include "ir/statement/Import.hpp"
 #include "ir/statement/Module.hpp"
-#include "ir/syntax/Affix.hpp"
 #include "ir/syntax/Parens.hpp"
 #include "ir/value/Lambda.hpp"

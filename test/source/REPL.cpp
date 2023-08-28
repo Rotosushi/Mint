@@ -147,7 +147,10 @@ std::string_view extractFinalLine(std::string_view view) noexcept {
 
 void testExpressionInREPL(TestCode &expression) {
   std::stringstream input;
-  input << expression.setup << "\n" << expression.test_code;
+  if (!expression.setup.empty())
+    input << expression.setup << "\n";
+  input << expression.test_code << "\n";
+  input.put('\0');
   // debug variable
   [[maybe_unused]] auto inview = input.view();
   std::stringstream output;

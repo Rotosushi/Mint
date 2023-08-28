@@ -15,47 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "ir/detail/Immediate.hpp"
 #include "ir/detail/Index.hpp"
 #include "type/Type.hpp"
 
 namespace mint {
 namespace ir {
 namespace detail {
-// #TODO: maybe "Parameter" isn't the best name for this?
-// the intention is that "Instructions use this to refer
-// to their parameters. such that they receive the benefiet
-// of holding onto scalar parameters directly without having
-// to worry about the mechanics of that."
-
 // represents an argument to a given MIR instruction.
 // This class is meant to be trivially-copyable
 // and as small as possible.
 class Parameter {
-public:
-  using Variant = std::variant<Immediate, Index>;
-
 private:
   type::Ptr m_cached_type;
-  Variant m_variant;
+  detail::Index m_index;
 
 public:
-  Parameter() noexcept
-      : m_cached_type(nullptr), m_variant(std::in_place_type<Immediate>) {}
-  Parameter(bool boolean) noexcept
-      : m_cached_type(nullptr),
-        m_variant(std::in_place_type<Immediate>, boolean) {}
-  Parameter(int integer) noexcept
-      : m_cached_type(nullptr),
-        m_variant(std::in_place_type<Immediate>, integer) {}
-  Parameter(Identifier name) noexcept
-      : m_cached_type(nullptr), m_variant(std::in_place_type<Immediate>, name) {
-  }
-  Parameter(Immediate immediate) noexcept
-      : m_cached_type(nullptr),
-        m_variant(std::in_place_type<Immediate>, immediate) {}
-  Parameter(Index index) noexcept
-      : m_cached_type(nullptr), m_variant(std::in_place_type<Index>, index) {}
+  Parameter(Index index) noexcept : m_cached_type(nullptr), m_index(index) {}
   Parameter(Parameter const &other) noexcept = default;
   Parameter(Parameter &&other) noexcept = default;
   auto operator=(Parameter const &other) noexcept -> Parameter & = default;
@@ -65,15 +40,7 @@ public:
   [[nodiscard]] type::Ptr cachedType() const noexcept { return m_cached_type; }
   type::Ptr cachedType(type::Ptr type) noexcept { return m_cached_type = type; }
 
-  [[nodiscard]] auto variant() noexcept -> Variant & { return m_variant; }
-
-  template <class T> [[nodiscard]] bool holds() const noexcept {
-    return std::holds_alternative<T>(m_variant);
-  }
-
-  template <class T> [[nodiscard]] T &get() noexcept {
-    return std::get<T>(m_variant);
-  }
+  detail::Index index() const noexcept { return m_index; }
 };
 } // namespace detail
 } // namespace ir

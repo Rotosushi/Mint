@@ -31,10 +31,6 @@ Result<ir::detail::Parameter> MirParser::parseTop(ir::Mir &mir) {
     return {Error::Kind::EndOfInput};
   }
 
-  if (peek(Token::Public) || peek(Token::Private) || peek(Token::Let)) {
-    return parseLet(mir);
-  }
-
   if (peek(Token::Module)) {
     return parseModule(mir);
   }
@@ -104,6 +100,14 @@ Result<ir::detail::Parameter> MirParser::parseImport(ir::Mir &mir) {
   return mir.emplaceImport(source(import_loc), filename);
 }
 
+Result<ir::detail::Parameter> MirParser::parseTerm(ir::Mir &mir) {
+  if (peek(Token::Public) || peek(Token::Private) || peek(Token::Let)) {
+    return parseLet(mir);
+  }
+
+  return parseAffix(mir);
+}
+
 Result<ir::detail::Parameter> MirParser::parseLet(ir::Mir &mir) {
   auto lhs_loc = location();
   // Attributes attributes;
@@ -139,18 +143,6 @@ Result<ir::detail::Parameter> MirParser::parseLet(ir::Mir &mir) {
     return recover(Error::Kind::ExpectedEquals);
   }
 
-  auto term = parseTerm(mir);
-  if (!term) {
-    return term;
-  }
-
-  auto rhs_loc = location();
-  Location let_loc{lhs_loc, rhs_loc};
-  return mir.emplaceLet(source(let_loc), id, annotation, term.value());
-}
-
-Result<ir::detail::Parameter> MirParser::parseTerm(ir::Mir &mir) {
-  auto lhs_loc = location();
   auto affix = parseAffix(mir);
   if (!affix) {
     return affix;
@@ -161,11 +153,8 @@ Result<ir::detail::Parameter> MirParser::parseTerm(ir::Mir &mir) {
   }
 
   auto rhs_loc = location();
-  Location affix_loc{lhs_loc, rhs_loc};
-  // #TODO: Technically speaking, Term is an affix with a
-  // following semicolon, so why is the Instruction representing
-  // such called Affix and not Term?
-  return mir.emplaceAffix(source(affix_loc), affix.value());
+  Location let_loc{lhs_loc, rhs_loc};
+  return mir.emplaceLet(source(let_loc), id, annotation, affix.value());
 }
 
 Result<ir::detail::Parameter> MirParser::parseAffix(ir::Mir &mir) {
@@ -312,36 +301,36 @@ Result<ir::detail::Parameter> MirParser::parseBasic(ir::Mir &mir) {
   }
 }
 
-Result<ir::detail::Parameter>
-MirParser::parseNil([[maybe_unused]] ir::Mir &mir) {
+Result<ir::detail::Parameter> MirParser::parseNil(ir::Mir &mir) {
+  auto sl = source();
   next();
-  return {};
+  return mir.emplaceImmediate(sl);
 }
 
-Result<ir::detail::Parameter>
-MirParser::parseTrue([[maybe_unused]] ir::Mir &mir) {
+Result<ir::detail::Parameter> MirParser::parseTrue(ir::Mir &mir) {
+  auto sl = source();
   next();
-  return {true};
+  return mir.emplaceImmediate(sl, true);
 }
 
-Result<ir::detail::Parameter>
-MirParser::parseFalse([[maybe_unused]] ir::Mir &mir) {
+Result<ir::detail::Parameter> MirParser::parseFalse(ir::Mir &mir) {
+  auto sl = source();
   next();
-  return {false};
+  return mir.emplaceImmediate(sl, false);
 }
 
-Result<ir::detail::Parameter>
-MirParser::parseInteger([[maybe_unused]] ir::Mir &mir) {
+Result<ir::detail::Parameter> MirParser::parseInteger(ir::Mir &mir) {
+  auto sl = source();
   auto value = fromString<int>(text());
   next();
-  return {value};
+  return mir.emplaceImmediate(sl, value);
 }
 
-Result<ir::detail::Parameter>
-MirParser::parseVariable([[maybe_unused]] ir::Mir &mir) {
+Result<ir::detail::Parameter> MirParser::parseVariable(ir::Mir &mir) {
+  auto sl = source();
   auto name = m_env->getIdentifier(text());
   next();
-  return {name};
+  return mir.emplaceImmediate(sl, name);
 }
 
 Result<ir::detail::Parameter> MirParser::parseUnop(ir::Mir &mir) {
@@ -409,7 +398,7 @@ Result<ir::detail::Parameter> MirParser::parseLambda(ir::Mir &mir) {
     do {
       auto result = parseArgument();
       if (!result) {
-        return result;
+        return result.error();
       }
 
       arguments.emplace_back(result.value());
@@ -420,7 +409,7 @@ Result<ir::detail::Parameter> MirParser::parseLambda(ir::Mir &mir) {
   if (expect(Token::RArrow)) {
     auto result = parseType();
     if (!result) {
-      return result;
+      return result.error();
     }
 
     annotation = result.value();

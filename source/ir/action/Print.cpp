@@ -62,26 +62,8 @@ void print(std::ostream &out, detail::Immediate &immediate) noexcept {
 
 void print(std::ostream &out, Mir &mir, detail::Index index) noexcept;
 
-struct PrintParameterVisitor {
-  std::ostream &out;
-  Mir &mir;
-  PrintParameterVisitor(std::ostream &out, Mir &mir) noexcept
-      : out(out), mir(mir) {}
-
-  void operator()(detail::Parameter &parameter) noexcept {
-    std::visit(*this, parameter.variant());
-  }
-
-  void operator()(detail::Immediate &immediate) noexcept {
-    print(out, immediate);
-  }
-
-  void operator()(detail::Index &index) noexcept { print(out, mir, index); }
-};
-
 void print(std::ostream &out, Mir &mir, detail::Parameter &parameter) noexcept {
-  PrintParameterVisitor visitor(out, mir);
-  visitor(parameter);
+  print(out, mir, parameter.index());
 }
 
 struct PrintInstructionVisitor {
@@ -96,11 +78,6 @@ struct PrintInstructionVisitor {
 
   void operator()(detail::Immediate &immediate) noexcept {
     print(out, immediate);
-  }
-
-  void operator()(Affix &affix) noexcept {
-    print(out, mir, affix.parameter());
-    out << ";";
   }
 
   void operator()(Parens &parens) noexcept {
@@ -118,6 +95,7 @@ struct PrintInstructionVisitor {
 
     out << " = ";
     print(out, mir, let.parameter());
+    out << ";";
   }
 
   void operator()(Binop &binop) noexcept {

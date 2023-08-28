@@ -26,6 +26,68 @@
 namespace mint {
 class Environment;
 
+/*
+top = module
+    | import
+    | term
+
+module = "module" identifier module-block
+
+module-block = "{" top* "}"
+
+import = "import" string-literal ";"
+
+
+term = let
+     | affix 
+
+let = visibility? "let" identifier (":" type)? "=" affix ";"
+
+visibility = "public"
+           | "private"
+
+affix = call (binop precedence-parser)?
+
+call = basic (actual-argument-list)?
+
+actual-argument-list = "(" (affix ("," affix)*)? ")"
+
+binop = "+" | "-" | "*" | "/" | "%" | "&" | "|"
+        "<" | "<=" | "==" | "!=" | "=>" | ">"
+
+unop = "-" | "!"
+
+
+basic = literal
+      | identifier
+      | unop basic
+      | "(" affix ")"
+
+literal = "nil"
+        | "true"
+        | "false"
+        | integer
+        | "\" (formal-argument-list)? ("->" type)? "=>" affix
+  #TODO | "\" (formal-argument-list)? ("->" type)? block
+
+formal-argument-list = argument ("," argument)*
+
+argument = identifier ":" type
+
+type = "Nil"
+     | "Boolean"
+     | "Integer"
+     | "\" (type ("," type)*)? "->" type
+
+integer = [0-9]+
+
+start      = "::"?[a-zA-Z_]
+continue   = [a-zA-Z0-9_];
+separator  = "::";
+identifier = start continue* (separator continue+)*
+
+string-literal = "\"" [.]* "\""
+*/
 class MirParser {
 public:
 private:
@@ -108,17 +170,17 @@ private:
   Result<ir::detail::Parameter> parseTop(ir::Mir &mir);
   Result<ir::detail::Parameter> parseModule(ir::Mir &mir);
   Result<ir::detail::Parameter> parseImport(ir::Mir &mir);
-  Result<ir::detail::Parameter> parseLet(ir::Mir &mir);
   Result<ir::detail::Parameter> parseTerm(ir::Mir &mir);
 
+  Result<ir::detail::Parameter> parseLet(ir::Mir &mir);
   Result<ir::detail::Parameter> parseAffix(ir::Mir &mir);
+
   Result<ir::detail::Parameter> parseCall(ir::Mir &mir);
   Result<ir::detail::Parameter> parseBinop(ir::Mir &mir,
                                            ir::detail::Parameter left,
                                            BinopPrecedence precedence);
+
   Result<ir::detail::Parameter> parseBasic(ir::Mir &mir);
-  // #TODO: remember that immediates have to choose
-  // to insert a new instruction or not somehow!
   Result<ir::detail::Parameter> parseNil(ir::Mir &mir);
   Result<ir::detail::Parameter> parseTrue(ir::Mir &mir);
   Result<ir::detail::Parameter> parseFalse(ir::Mir &mir);

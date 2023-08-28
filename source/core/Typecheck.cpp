@@ -89,41 +89,9 @@ static Result<type::Ptr> typecheck(ir::detail::Immediate &immediate,
 static Result<type::Ptr> typecheck(ir::detail::Index index, ir::Mir &ir,
                                    Environment &env) noexcept;
 
-struct TypecheckParameter {
-  ir::Mir *ir;
-  Environment *env;
-
-  TypecheckParameter(ir::Mir &ir, Environment &env) noexcept
-      : ir(&ir), env(&env) {}
-
-  Result<type::Ptr> operator()(ir::detail::Parameter &parameter) noexcept {
-    auto cached_type = parameter.cachedType();
-    if (cached_type != nullptr) {
-      return cached_type;
-    }
-
-    auto result = std::visit(*this, parameter.variant());
-    if (!result) {
-      return result;
-    }
-
-    parameter.cachedType(result.value());
-    return result;
-  }
-
-  Result<type::Ptr> operator()(ir::detail::Immediate &immediate) noexcept {
-    return typecheck(immediate, *env);
-  }
-
-  Result<type::Ptr> operator()(ir::detail::Index &index) noexcept {
-    return typecheck(index, *ir, *env);
-  }
-};
-
 static Result<type::Ptr> typecheck(ir::detail::Parameter &parameter,
                                    ir::Mir &ir, Environment &env) noexcept {
-  TypecheckParameter visitor(ir, env);
-  return visitor(parameter);
+  return typecheck(parameter.index(), ir, env);
 }
 
 struct RecoverableErrorVisitor {
@@ -195,8 +163,8 @@ struct TypecheckInstruction {
     return result;
   }
 
-  Result<type::Ptr> operator()(ir::Affix &affix) noexcept {
-    return typecheck(affix.parameter(), *ir, *env);
+  Result<type::Ptr> operator()(ir::detail::Immediate &immediate) noexcept {
+    return typecheck(immediate, *env);
   }
 
   Result<type::Ptr> operator()(ir::Parens &parens) noexcept {

@@ -18,12 +18,13 @@
 #include <variant>
 
 #include "adt/Identifier.hpp"
+#include "ir/detail/IrBase.hpp"
 #include "ir/value/Scalar.hpp"
 
 namespace mint {
 namespace ir {
 namespace detail {
-class Immediate {
+class Immediate : public detail::IrBase {
 public:
   using Variant = std::variant<Scalar, Identifier>;
 
@@ -31,13 +32,13 @@ private:
   Variant m_variant;
 
 public:
-  Immediate() noexcept = default;
-  Immediate(bool boolean) noexcept
-      : m_variant(std::in_place_type<Scalar>, boolean) {}
-  Immediate(int integer) noexcept
-      : m_variant(std::in_place_type<Scalar>, integer) {}
-  Immediate(Identifier name) noexcept
-      : m_variant(std::in_place_type<Identifier>, name) {}
+  Immediate(SourceLocation *sl) noexcept : detail::IrBase(sl) {}
+  Immediate(SourceLocation *sl, bool boolean) noexcept
+      : detail::IrBase(sl), m_variant(std::in_place_type<Scalar>, boolean) {}
+  Immediate(SourceLocation *sl, int integer) noexcept
+      : detail::IrBase(sl), m_variant(std::in_place_type<Scalar>, integer) {}
+  Immediate(SourceLocation *sl, Identifier name) noexcept
+      : detail::IrBase(sl), m_variant(std::in_place_type<Identifier>, name) {}
   Immediate(Immediate const &other) noexcept = default;
   Immediate(Immediate &&other) noexcept = default;
   auto operator=(Immediate const &other) noexcept -> Immediate & = default;
