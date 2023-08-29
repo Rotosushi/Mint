@@ -127,11 +127,11 @@ auto tokenToView(Token token) noexcept -> std::string_view {
     return ":";
   case Token::Comma:
     return ",";
-  case Token::BSlash:
+  case Token::BackSlash:
     return "\\";
-  case Token::RArrow:
+  case Token::RightArrow:
     return "->";
-  case Token::EqRArrow:
+  case Token::EqualsRightArrow:
     return "=>";
   case Token::BeginParen:
     return "(";

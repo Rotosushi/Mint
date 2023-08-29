@@ -21,13 +21,16 @@ namespace mint {
 namespace ir {
 Module::Module(SourceLocation *sl, Identifier name,
                Expressions expressions) noexcept
-    : detail::IrBase(sl), m_name(name), m_expressions(std::move(expressions)) {}
+    : detail::IrBase(sl), m_name(name), m_expressions(std::move(expressions)),
+      m_recovered_expressions(m_expressions.size()) {}
 Module::Module(Module const &other) noexcept
     : detail::IrBase(other.sourceLocation()), m_name(other.m_name),
-      m_expressions(other.m_expressions) {}
+      m_expressions(other.m_expressions),
+      m_recovered_expressions(other.m_recovered_expressions) {}
 Module::Module(Module &&other) noexcept
     : detail::IrBase(other.sourceLocation()), m_name(other.m_name),
-      m_expressions(std::move(other.m_expressions)) {}
+      m_expressions(std::move(other.m_expressions)),
+      m_recovered_expressions(std::move(other.m_recovered_expressions)) {}
 auto Module::operator=(Module const &other) noexcept -> Module & {
   if (this == &other)
     return *this;
@@ -35,6 +38,7 @@ auto Module::operator=(Module const &other) noexcept -> Module & {
   setSL(other.sourceLocation());
   m_name = other.m_name;
   m_expressions = other.m_expressions;
+  m_recovered_expressions = other.m_recovered_expressions;
   return *this;
 }
 auto Module::operator=(Module &&other) noexcept -> Module & {
@@ -44,6 +48,7 @@ auto Module::operator=(Module &&other) noexcept -> Module & {
   setSL(other.sourceLocation());
   m_name = other.m_name;
   m_expressions = std::move(other.m_expressions);
+  m_recovered_expressions = std::move(other.m_recovered_expressions);
   return *this;
 }
 Module::~Module() noexcept {}
@@ -53,6 +58,10 @@ Module::~Module() noexcept {}
 }
 [[nodiscard]] auto Module::expressions() noexcept -> Expressions & {
   return m_expressions;
+}
+[[nodiscard]] auto Module::recovered_expressions() noexcept
+    -> Module::Bitset & {
+  return m_recovered_expressions;
 }
 } // namespace ir
 } // namespace mint

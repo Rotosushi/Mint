@@ -105,17 +105,26 @@ Result<ir::detail::Parameter> MirParser::parseTerm(ir::Mir &mir) {
     return parseLet(mir);
   }
 
-  return parseAffix(mir);
+  auto affix = parseAffix(mir);
+  if (!affix) {
+    return affix;
+  }
+
+  if (!expect(Token::Semicolon)) {
+    return recover(Error::Kind::ExpectedSemicolon);
+  }
+
+  return affix;
 }
 
 Result<ir::detail::Parameter> MirParser::parseLet(ir::Mir &mir) {
   auto lhs_loc = location();
-  // Attributes attributes;
+  Attributes attributes;
 
   if (expect(Token::Public)) {
-    // attributes.isPublic(true);
+    attributes.isPublic(true);
   } else if (expect(Token::Private)) {
-    // attributes.isPublic(false);
+    attributes.isPublic(false);
   }
 
   if (!expect(Token::Let)) {
@@ -154,7 +163,8 @@ Result<ir::detail::Parameter> MirParser::parseLet(ir::Mir &mir) {
 
   auto rhs_loc = location();
   Location let_loc{lhs_loc, rhs_loc};
-  return mir.emplaceLet(source(let_loc), id, annotation, affix.value());
+  return mir.emplaceLet(source(let_loc), attributes, id, annotation,
+                        affix.value());
 }
 
 Result<ir::detail::Parameter> MirParser::parseAffix(ir::Mir &mir) {
@@ -293,7 +303,7 @@ Result<ir::detail::Parameter> MirParser::parseBasic(ir::Mir &mir) {
   case Token::BeginParen:
     return parseParens(mir);
 
-  case Token::BSlash:
+  case Token::BackSlash:
     return parseLambda(mir);
 
   default:
@@ -370,7 +380,7 @@ Result<ir::detail::Parameter> MirParser::parseParens(ir::Mir &mir) {
 
 Result<ir::detail::Parameter> MirParser::parseLambda(ir::Mir &mir) {
   auto lhs_loc = location();
-  if (!expect(Token::BSlash)) {
+  if (!expect(Token::BackSlash)) {
     return recover(Error::Kind::ExpectedBackSlash);
   }
 
@@ -406,7 +416,7 @@ Result<ir::detail::Parameter> MirParser::parseLambda(ir::Mir &mir) {
   }
 
   std::optional<type::Ptr> annotation;
-  if (expect(Token::RArrow)) {
+  if (expect(Token::RightArrow)) {
     auto result = parseType();
     if (!result) {
       return result.error();
@@ -415,7 +425,7 @@ Result<ir::detail::Parameter> MirParser::parseLambda(ir::Mir &mir) {
     annotation = result.value();
   }
 
-  if (!expect(Token::EqRArrow)) {
+  if (!expect(Token::EqualsRightArrow)) {
     return recover(Error::Kind::ExpectedEqualsRightArrow);
   }
 
@@ -444,7 +454,7 @@ Result<type::Ptr> MirParser::parseType() {
   case Token::IntegerType:
     return parseIntegerType();
 
-  case Token::BSlash:
+  case Token::BackSlash:
     return parseFunctionType();
 
   default:
@@ -470,7 +480,7 @@ Result<type::Ptr> MirParser::parseFunctionType() {
   next();
   type::Function::Arguments arguments;
 
-  if (!peek(Token::RArrow)) {
+  if (!peek(Token::RightArrow)) {
     do {
       auto result = parseType();
       if (!result) {
@@ -481,7 +491,7 @@ Result<type::Ptr> MirParser::parseFunctionType() {
     } while (expect(Token::Comma));
   }
 
-  if (!expect(Token::RArrow)) {
+  if (!expect(Token::RightArrow)) {
     return recover(Error::Kind::ExpectedRightArrow);
   }
 

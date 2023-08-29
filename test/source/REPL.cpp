@@ -150,8 +150,7 @@ void testExpressionInREPL(TestCode &expression) {
   if (!expression.setup.empty())
     input << expression.setup << "\n";
   input << expression.test_code << "\n";
-  input.put('\0');
-  // debug variable
+  // input.put('\0');
   [[maybe_unused]] auto inview = input.view();
   std::stringstream output;
   std::stringstream error_output;

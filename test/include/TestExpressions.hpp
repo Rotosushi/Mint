@@ -61,70 +61,54 @@ constexpr inline auto getAllTestCode() noexcept {
       {"false | true;", "true"},
       {"true == false;", "false"},
       {"false != false;", "false"},
-      // {"public let a = 1;", "a;", "1"},
-      // {"public let a = 1;\n public let b = a;", "b;", "1"},
-      // {"public let b = a;\n public let a = 1;", "b;", "1"},
-      //{"public let b = a;\n public let a = c;\n public let c = 1;", "b;",
-      //"1"},
-      //{"let f = \\ => 1;", "f();", "1"},
-      // {"let f = \\a:Integer => a;", "f(1);", "1"},
-      // {"let f = \\a:Integer, b:Integer => a + b;", "f(1,2);", "3"},
-      // {"let a = 2; let b = 3; \nlet f = \\a: Integer, b:Integer => a + b;",
-      //  "f(a,b);", "5"},
-      // {"let f = \\a:Integer => g(a);\nlet g = \\a: Integer => a + 2;",
-      // "f(2);",
-      //  "4"},
-      // {"let f = \\a:Integer => B::g(a);\n module B { public let g = \\a: "
-      //  "Integer => a + 2; }",
-      //  "f(3);", "5"},
-      // {"module A {\n public let a = 1; \n}", "A::a;", "1"},
-      // {"module A {\n public let a = 1; \n public let b = a; \n}", "A::b;",
-      // "1"},
-      // {"module A {\n public let b = 1; \n public let a = 1; \n}", "A::b;",
-      // "1"},
-      // {"module A {\n public let b = a; \n public let a = c; \n public let c
-      // =
-      // "
-      //  "1; \n}",
-      //  "A::b;", "1"},
-      // {"public let a = 1; \n module A {\n public let a = ::a; \n}",
-      // "A::a;",
-      //  "1"},
-      // {"module A {\n public let a = ::a; \n}\n public let a = 1;", "A::a;",
-      //  "1"},
-      // {"module A {\n public let b = 1; \n}\n module A {\n public let a = b;
-      // "
-      //  "\n}",
-      //  "A::a;", "1"},
-      // {"module A {\n public let a = b; \n}\n module A {\n public let b = 1;
-      // "
-      //  "\n}",
-      //  "A::a;", "1"},
-      // {"module A {\n public let a = B::a; \n}\n module B {\n public let a =
-      // "
-      //  "1; \n}",
-      //  "A::a;", "1"},
-      // {"module B {\n public let a = 1; \n} module A {\n public let a =
-      // B::a;
-      // "
-      //  "\n}",
-      //  "A::a;", "1"},
-      // {"module A {\n module B {\n public let a = 1; }\n public let a =
-      // B::a;
-      // }",
-      //  "A::a;", "1"},
-      // {"module A {\n module B {\n public let a = 1; }\n } module A{ public
-      // let "
-      //  "a = B::a; }",
-      //  "A::a;", "1"},
-      // {"module A {\n public let a = B::a; \n module B {\n public let a = 1;
-      // "
-      //  "}\n}",
-      //  "A::a;", "1"},
-      // {"module A {\n public let a = B::a; \n} module A { module B { public
-      // let "
-      //  "a = 1; }}",
-      //  "A::a;", "1"},
+      {"public let a = 1;", "a;", "1"},
+      {"public let a = 1;\n public let b = a;", "b;", "1"},
+      {"public let b = a;\n public let a = 1;", "b;", "1"},
+      {"public let b = a;\n public let a = c;\n public let c = 1;", "b;", "1"},
+      {"let f = \\ => 1;", "f();", "1"},
+      {"let f = \\a:Integer => a;", "f(1);", "1"},
+      {"let f = \\a:Integer, b:Integer => a + b;", "f(1,2);", "3"},
+      {"let a = 2; let b = 3; \nlet f = \\a: Integer, b:Integer => a + b;",
+       "f(a,b);", "5"},
+      {"let f = \\a:Integer => g(a);\nlet g = \\a: Integer => a + 2;", "f(2);",
+       "4"},
+      {"let f = \\a:Integer => B::g(a);\n module B { public let g = \\a: "
+       "Integer => a + 2; }",
+       "f(3);", "5"},
+      {"module A {\n public let a = 1; \n}", "A::a;", "1"},
+      {"module A {\n public let a = 1; \n public let b = a; \n}", "A::b;", "1"},
+      {"module A {\n public let b = 1; \n public let a = 1; \n}", "A::b;", "1"},
+      {"module A {\n public let b = a; \n public let a = c; \n public let c "
+       "= 1; \n}",
+       "A::b;", "1"},
+      {"public let a = 1; \n module A {\n public let a = ::a; \n}", "A::a;",
+       "1"},
+      {"module A {\n public let a = ::a; \n}\n public let a = 1;", "A::a;",
+       "1"},
+      {"module A {\n public let b = 1; \n}\n module A {\n public let a = b;"
+       "\n}",
+       "A::a;", "1"},
+      {"module A {\n public let a = b; \n}\n module A {\n public let b = 1;"
+       "\n}",
+       "A::a;", "1"},
+      {"module A {\n public let a = B::a; \n}\n module B {\n public let a ="
+       "1; \n}",
+       "A::a;", "1"},
+      {"module B {\n public let a = 1; \n} module A {\n public let a = B::a;"
+       "\n}",
+       "A::a;", "1"},
+      {"module A {\n module B {\n public let a = 1; }\n public let a = B::a;"
+       "} ",
+       "A::a;", "1"},
+      {"module A {\n module B {\n public let a = 1; }\n } module A{ public let "
+       "a = B::a; }",
+       "A::a;", "1"},
+      {"module A {\n public let a = B::a; \n module B {\n public let a = 1; "
+       "}\n}",
+       "A::a;", "1"},
+      {"module A {\n public let a = B::a; \n} module A { module B { public let "
+       "a = 1; }}",
+       "A::a;", "1"},
       // {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "A::b;", "1"},
       // {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "a;", "1"},
       // {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "A::c;", "2"},

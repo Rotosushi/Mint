@@ -91,7 +91,18 @@ static Result<type::Ptr> typecheck(ir::detail::Index index, ir::Mir &ir,
 
 static Result<type::Ptr> typecheck(ir::detail::Parameter &parameter,
                                    ir::Mir &ir, Environment &env) noexcept {
-  return typecheck(parameter.index(), ir, env);
+  auto cached_type = parameter.cachedType();
+  if (cached_type != nullptr) {
+    return cached_type;
+  }
+
+  auto result = typecheck(parameter.index(), ir, env);
+  if (!result) {
+    return result;
+  }
+
+  parameter.cachedType(result.value());
+  return result;
 }
 
 struct RecoverableErrorVisitor {
@@ -198,8 +209,8 @@ struct TypecheckInstruction {
       }
     }
 
-    // #TODO: add bound variable attributes
-    if (auto bound = env->declareName(let.name(), {}, type); !bound) {
+    if (auto bound = env->declareName(let.name(), let.attributes(), type);
+        !bound) {
       return bound.error();
     }
 
@@ -301,13 +312,20 @@ struct TypecheckInstruction {
     return env->getNilType();
   }
 
-  Result<type::Ptr> operator()(ir::Module &module_) noexcept {
-    env->pushScope(module_.name());
+  Result<type::Ptr> operator()(ir::Module &m) noexcept {
+    env->pushScope(m.name());
 
-    for (auto &expression : module_.expressions()) {
+    std::size_t index = 0U;
+    auto &recovered_expressions = m.recovered_expressions();
+    for (auto &expression : m.expressions()) {
       auto result = typecheck(expression, *env);
+      if (result.recovered()) {
+        recovered_expressions[index++] = true;
+        continue;
+      }
+
       if (!result) {
-        env->unbindScope(module_.name());
+        env->unbindScope(m.name());
         env->popScope();
         return result;
       }

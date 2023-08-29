@@ -48,6 +48,10 @@ Token Lexer::lex() noexcept {
   while (true) {
     prime();
     /*!re2c
+      [ \t\n]+ { updateCurrentLocation(); continue; }
+      *        { updateCurrentLocation(); return Token::Error; }
+      $        { updateCurrentLocation(); return Token::End; }
+
       "nil"     { updateCurrentLocation(); return Token::Nil; }
       "Nil"     { updateCurrentLocation(); return Token::NilType; }
       "Integer" { updateCurrentLocation(); return Token::IntegerType; }
@@ -70,9 +74,9 @@ Token Lexer::lex() noexcept {
       ")" { updateCurrentLocation(); return Token::EndParen; }
       "{" { updateCurrentLocation(); return Token::BeginBrace; }
       "}" { updateCurrentLocation(); return Token::EndBrace; }
-      "\\" { updateCurrentLocation(); return Token::BSlash; }
-      "->" { updateCurrentLocation(); return Token::RArrow; }
-      "=>" { updateCurrentLocation(); return Token::EqRArrow; }
+      "\\" { updateCurrentLocation(); return Token::BackSlash; }
+      "->" { updateCurrentLocation(); return Token::RightArrow; }
+      "=>" { updateCurrentLocation(); return Token::EqualsRightArrow; }
 
       "+" { updateCurrentLocation(); return Token::Plus; }
       "-" { updateCurrentLocation(); return Token::Minus; }
@@ -92,10 +96,6 @@ Token Lexer::lex() noexcept {
       id     { updateCurrentLocation(); return Token::Identifier; }
       int    { updateCurrentLocation(); return Token::Integer; }
       string { updateCurrentLocation(); return Token::Text; }
-
-      [ \t\n]+ { updateCurrentLocation(); continue; }
-      *        { updateCurrentLocation(); return Token::Error; }
-      $        { updateCurrentLocation(); return Token::End; }
     */
   }
 }

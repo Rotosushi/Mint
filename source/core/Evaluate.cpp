@@ -227,8 +227,21 @@ struct EvaluateInstruction {
   Result<ir::Value> operator()(ir::Module &m) noexcept {
     env->pushScope(m.name());
 
+    std::size_t index = 0U;
+    auto &recovered_expressions = m.recovered_expressions();
     for (auto &expression : m.expressions()) {
+      // #NOTE:
+      // the current expression was recovered during typechecking
+      // so we skip evaluating it here.
+      if (recovered_expressions[index++]) {
+        continue;
+      }
+
       auto result = evaluate(expression, *env);
+      if (result.recovered()) {
+        continue;
+      }
+
       if (!result) {
         env->unbindScope(m.name());
         env->popScope();

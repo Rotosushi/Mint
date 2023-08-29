@@ -106,10 +106,11 @@ detail::Index Mir::emplaceParens(SourceLocation *sl,
   return emplace_back<Parens>(sl, parameter);
 }
 
-detail::Index Mir::emplaceLet(SourceLocation *sl, Identifier name,
+detail::Index Mir::emplaceLet(SourceLocation *sl, Attributes attributes,
+                              Identifier name,
                               std::optional<type::Ptr> annotation,
                               detail::Parameter parameter) {
-  return emplace_back<Let>(sl, name, annotation, parameter);
+  return emplace_back<Let>(sl, attributes, name, annotation, parameter);
 }
 
 detail::Index Mir::emplaceBinop(SourceLocation *sl, Token op,

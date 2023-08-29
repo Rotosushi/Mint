@@ -40,13 +40,15 @@ public:
                                Import, Module, Call, Lambda>;
 
 private:
+  // caches the computed type for fast retrieval
   type::Ptr m_cached_type;
+  // the actual data of this instruction
   Variant m_variant;
 
 public:
   template <class T, class... Args>
   Instruction(std::in_place_type_t<T> type, Args &&...args) noexcept
-      : m_cached_type(nullptr), m_variant(type, std::forward<Args>(args)...) {}
+      :  m_cached_type(nullptr), m_variant(type, std::forward<Args>(args)...) {}
   Instruction(Instruction const &other) noexcept = default;
   Instruction(Instruction &&other) noexcept = default;
   auto operator=(Instruction const &other) noexcept -> Instruction & = default;

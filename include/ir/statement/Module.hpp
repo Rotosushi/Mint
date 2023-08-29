@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include "boost/container/vector.hpp"
+#include "boost/dynamic_bitset.hpp"
 
 #include "adt/Identifier.hpp"
 #include "ir/detail/IrBase.hpp"
@@ -27,10 +28,12 @@ class Mir;
 class Module : public detail::IrBase {
 public:
   using Expressions = boost::container::vector<Mir>;
+  using Bitset = boost::dynamic_bitset<>;
 
 private:
   Identifier m_name;
   Expressions m_expressions;
+  Bitset m_recovered_expressions;
 
 public:
   Module(SourceLocation *sl, Identifier name, Expressions expressions) noexcept;
@@ -42,6 +45,7 @@ public:
 
   [[nodiscard]] auto name() const noexcept -> Identifier;
   [[nodiscard]] auto expressions() noexcept -> Expressions &;
+  [[nodiscard]] auto recovered_expressions() noexcept -> Bitset &;
 };
 } // namespace ir
 } // namespace mint

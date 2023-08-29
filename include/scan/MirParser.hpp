@@ -39,7 +39,7 @@ import = "import" string-literal ";"
 
 
 term = let
-     | affix 
+     | affix ";"
 
 let = visibility? "let" identifier (":" type)? "=" affix ";"
 

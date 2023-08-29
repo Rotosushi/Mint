@@ -17,6 +17,7 @@
 #pragma once
 #include <optional>
 
+#include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
 #include "ir/detail/IrBase.hpp"
 #include "ir/detail/Parameter.hpp"
@@ -25,21 +26,25 @@
 namespace mint {
 namespace ir {
 class Let : public detail::IrBase {
+  Attributes m_attributes;
   Identifier m_name;
   std::optional<type::Ptr> m_annotation;
   detail::Parameter m_parameter;
 
 public:
-  Let(SourceLocation *sl, Identifier name, std::optional<type::Ptr> annotation,
-      detail::Parameter parameter) noexcept
-      : detail::IrBase(sl), m_name(name), m_annotation(annotation),
-        m_parameter(parameter) {}
+  Let(SourceLocation *sl, Attributes attributes, Identifier name,
+      std::optional<type::Ptr> annotation, detail::Parameter parameter) noexcept
+      : detail::IrBase(sl), m_attributes(attributes), m_name(name),
+        m_annotation(annotation), m_parameter(parameter) {}
   Let(Let const &other) noexcept = default;
   Let(Let &&other) noexcept = default;
   auto operator=(Let const &other) noexcept -> Let & = default;
   auto operator=(Let &&other) noexcept -> Let & = default;
   ~Let() noexcept = default;
 
+  [[nodiscard]] auto attributes() const noexcept -> Attributes {
+    return m_attributes;
+  }
   [[nodiscard]] auto name() const noexcept -> Identifier { return m_name; }
   [[nodiscard]] auto annotation() const noexcept -> std::optional<type::Ptr> {
     return m_annotation;

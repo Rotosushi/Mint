@@ -87,6 +87,12 @@ struct PrintInstructionVisitor {
   }
 
   void operator()(Let &let) noexcept {
+    if (let.attributes().isPublic()) {
+      out << "public ";
+    } else {
+      out << "private ";
+    }
+
     out << "let " << let.name();
 
     if (auto annotation = let.annotation()) {

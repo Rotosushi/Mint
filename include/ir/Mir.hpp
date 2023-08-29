@@ -18,6 +18,7 @@
 #include "boost/container/vector.hpp"
 
 #include "adt/Argument.hpp"
+#include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
 #include "adt/SourceLocation.hpp"
 #include "ir/detail/Immediate.hpp"
@@ -82,7 +83,7 @@ public:
   detail::Index emplaceImmediate(detail::Immediate immediate);
 
   detail::Index emplaceParens(SourceLocation *sl, detail::Parameter parameter);
-  detail::Index emplaceLet(SourceLocation *sl, Identifier name,
+  detail::Index emplaceLet(SourceLocation *sl, Attributes attributes, Identifier name,
                            std::optional<type::Ptr> annotation,
                            detail::Parameter parameter);
   detail::Index emplaceBinop(SourceLocation *sl, Token op,
