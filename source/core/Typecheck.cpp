@@ -320,15 +320,13 @@ struct TypecheckInstruction {
     for (auto &expression : m.expressions()) {
       auto result = typecheck(expression, *env);
       if (result.recovered()) {
-        recovered_expressions[index++] = true;
-        continue;
-      }
-
-      if (!result) {
+        recovered_expressions[index] = true;
+      } else if (!result) {
         env->unbindScope(m.name());
         env->popScope();
         return result;
       }
+      ++index;
     }
 
     env->popScope();

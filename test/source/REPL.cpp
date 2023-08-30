@@ -161,7 +161,8 @@ void testExpressionInREPL(TestCode &expression) {
   auto failed = repl(env, true);
   BOOST_REQUIRE(failed == EXIT_SUCCESS);
 
-  auto line = extractFinalLine(output.view());
+  auto outview = output.view();
+  auto line = extractFinalLine(outview);
   auto result = extractResult(line);
 
   auto success = result == expression.expected_result;
@@ -174,6 +175,7 @@ void testExpressionInREPL(TestCode &expression) {
 
     std::cerr << "Test Expression: " << expression.test_code
               << "\n Expected Result: " << expression.expected_result
+              << "\n Actual Result: " << result
               << "\n}\nError: " << error_output.view() << "\n";
   }
 }

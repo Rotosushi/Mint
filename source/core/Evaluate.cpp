@@ -220,6 +220,7 @@ struct EvaluateInstruction {
                    import.file()};
     }
 
+    env->popActiveSourceFile();
     env->addImport(import.file());
     return ir::Value{};
   }
@@ -231,22 +232,21 @@ struct EvaluateInstruction {
     auto &recovered_expressions = m.recovered_expressions();
     for (auto &expression : m.expressions()) {
       // #NOTE:
-      // the current expression was recovered during typechecking
-      // so we skip evaluating it here.
-      if (recovered_expressions[index++]) {
-        continue;
-      }
+      // if the current expression was recovered during
+      // typechecking we skip evaluating it here.
+      if (!recovered_expressions[index]) {
+        auto result = evaluate(expression, *env);
+        if (result.recovered()) {
+          continue;
+        }
 
-      auto result = evaluate(expression, *env);
-      if (result.recovered()) {
-        continue;
+        if (!result) {
+          env->unbindScope(m.name());
+          env->popScope();
+          return result;
+        }
       }
-
-      if (!result) {
-        env->unbindScope(m.name());
-        env->popScope();
-        return result;
-      }
+      ++index;
     }
 
     env->popScope();
