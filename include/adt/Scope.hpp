@@ -57,14 +57,12 @@ public:
         -> std::optional<ir::Value> const &;
     [[nodiscard]] auto comptimeValue() noexcept -> std::optional<ir::Value> &;
     [[nodiscard]] auto hasComptimeValue() const noexcept -> bool;
-    [[nodiscard]] auto comptimeValueOrAssert() const noexcept
-        -> ir::Value const &;
+    [[nodiscard]] auto comptimeValueOrAssert() noexcept -> ir::Value &;
     void setComptimeValue(ir::Value value) noexcept;
 
-    [[nodiscard]] auto runtimeValue() noexcept
-        -> std::optional<llvm::Value *> &;
+    [[nodiscard]] auto runtimeValue() noexcept -> std::optional<llvm::Value *>;
     [[nodiscard]] auto runtimeValue() const noexcept
-        -> std::optional<llvm::Value *> const &;
+        -> std::optional<llvm::Value *>;
     [[nodiscard]] auto hasRuntimeValue() const noexcept -> bool;
     [[nodiscard]] auto runtimeValueOrAssert() const noexcept -> llvm::Value *;
     void setRuntimeValue(llvm::Value *value) noexcept;

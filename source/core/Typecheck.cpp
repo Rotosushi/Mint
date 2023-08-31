@@ -57,7 +57,17 @@ struct TypecheckImmediate {
   TypecheckImmediate(Environment &env) noexcept : env(&env) {}
 
   Result<type::Ptr> operator()(ir::detail::Immediate &immediate) noexcept {
-    return std::visit(*this, immediate.variant());
+    if (immediate.cachedType() != nullptr) {
+      return immediate.cachedType();
+    }
+
+    auto result = std::visit(*this, immediate.variant());
+    if (!result) {
+      return result;
+    }
+
+    immediate.cachedType(result.value());
+    return result;
   }
 
   Result<type::Ptr> operator()(ir::Scalar &scalar) noexcept {
@@ -69,13 +79,12 @@ struct TypecheckImmediate {
     if (!result) {
       auto error = result.error();
       if (error.kind() != Error::Kind::NameUnboundInScope)
-        return {error.kind()};
+        return Error{error.kind()};
 
       return Recoverable{name, env->nearestNamedScope()};
     }
 
     auto type = result.value().type();
-    // #TODO: create a type cache
     return type;
   }
 };
@@ -91,9 +100,8 @@ static Result<type::Ptr> typecheck(ir::detail::Index index, ir::Mir &ir,
 
 static Result<type::Ptr> typecheck(ir::detail::Parameter &parameter,
                                    ir::Mir &ir, Environment &env) noexcept {
-  auto cached_type = parameter.cachedType();
-  if (cached_type != nullptr) {
-    return cached_type;
+  if (parameter.cachedType() != nullptr) {
+    return parameter.cachedType();
   }
 
   auto result = typecheck(parameter.index(), ir, env);
@@ -124,7 +132,7 @@ struct RecoverableErrorVisitor {
 
   Result<type::Ptr>
   operator()([[maybe_unused]] std::monostate const &nil) noexcept {
-    return {Error::Kind::Default};
+    return Error{Error::Kind::Default};
   }
 
   Result<type::Ptr> operator()(Recoverable::UBD const &ubd) noexcept {
@@ -158,34 +166,40 @@ struct TypecheckInstruction {
       : ir(&ir), index(index), env(&env) {}
 
   Result<type::Ptr> operator()() noexcept {
-    auto &instruction = (*ir)[index];
-
-    auto cached_type = instruction.cachedType();
-    if (cached_type != nullptr) {
-      return cached_type;
-    }
-
-    auto result = std::visit(*this, instruction.variant());
-    if (!result) {
-      return result;
-    }
-
-    instruction.cachedType(result.value());
-    return result;
+    return std::visit(*this, (*ir)[index].variant());
   }
 
   Result<type::Ptr> operator()(ir::detail::Immediate &immediate) noexcept {
+    if (immediate.cachedType() != nullptr) {
+      return immediate.cachedType();
+    }
+
     return typecheck(immediate, *env);
   }
 
   Result<type::Ptr> operator()(ir::Parens &parens) noexcept {
-    return typecheck(parens.parameter(), *ir, *env);
+    if (parens.cachedType() != nullptr) {
+      return parens.cachedType();
+    }
+
+    auto result = typecheck(parens.parameter(), *ir, *env);
+    if (!result) {
+      return result;
+    }
+
+    parens.cachedType(result.value());
+    return result;
   }
 
   Result<type::Ptr> operator()(ir::Let &let) noexcept {
+    if (let.cachedType() != nullptr) {
+      return let.cachedType();
+    }
+
     auto found = env->lookupLocalBinding(let.name());
-    if (found) // #TODO: better error messages
-      return {Error::Kind::NameAlreadyBoundInScope};
+    if (found)
+      return Error{Error::Kind::NameAlreadyBoundInScope, let.sourceLocation(),
+                   let.name()};
 
     auto result = typecheck(let.parameter(), *ir, *env);
     if (!result) {
@@ -218,13 +232,19 @@ struct TypecheckInstruction {
     if (auto failed = env->resolveTypeOfUseBeforeDef(qualifiedName))
       return failed.value();
 
-    return env->getNilType();
+    return let.cachedType(env->getNilType());
   }
 
   Result<type::Ptr> operator()(ir::Binop &binop) noexcept {
+    if (binop.cachedType() != nullptr) {
+      return binop.cachedType();
+    }
+
     auto overloads = env->lookupBinop(binop.op());
-    if (!overloads)
-      return {Error::Kind::UnknownBinop};
+    if (!overloads) {
+      return Error{Error::Kind::UnknownBinop, binop.sourceLocation(),
+                   tokenToView(binop.op())};
+    }
 
     auto left = typecheck(binop.left(), *ir, *env);
     if (!left)
@@ -235,31 +255,66 @@ struct TypecheckInstruction {
       return right;
 
     auto instance = overloads->lookup(left.value(), right.value());
-    if (!instance)
-      return {Error::Kind::BinopTypeMismatch};
+    if (!instance) {
+      std::stringstream msg;
+      msg << "Actual Types: [" << left.value() << ", " << right.value() << "]";
+      return Error{Error::Kind::BinopTypeMismatch, binop.sourceLocation(),
+                   msg.view()};
+    }
 
-    return instance->result_type;
+    return binop.cachedType(instance->result_type);
+  }
+
+  Result<type::Ptr> operator()(ir::Unop &unop) noexcept {
+    if (unop.cachedType() != nullptr) {
+      return unop.cachedType();
+    }
+
+    auto overloads = env->lookupUnop(unop.op());
+    if (!overloads) {
+      return Error{Error::Kind::UnknownUnop, unop.sourceLocation(),
+                   tokenToView(unop.op())};
+    }
+
+    auto right = typecheck(unop.right(), *ir, *env);
+    if (!right)
+      return right;
+
+    auto instance = overloads->lookup(right.value());
+    if (!instance) {
+      std::stringstream msg;
+      msg << "Actual Type: [" << right.value() << "]";
+      return Error{Error::Kind::UnopTypeMismatch, unop.sourceLocation(),
+                   msg.view()};
+    }
+
+    return unop.cachedType(instance->result_type);
   }
 
   Result<type::Ptr> operator()(ir::Call &call) noexcept {
+    if (call.cachedType() != nullptr) {
+      return call.cachedType();
+    }
+
     auto callee = typecheck(call.callee(), *ir, *env);
     if (!callee)
       return callee;
 
     auto callee_type = callee.value();
-    if (!type::callable(callee_type))
-      return {Error::Kind::CannotCallType};
+    if (!type::callable(callee_type)) {
+      std::stringstream msg;
+      msg << "Callee Type: [" << callee_type << "]";
+      return Error{Error::Kind::CannotCallType, call.sourceLocation(),
+                   msg.view()};
+    }
 
     type::Function *function_type = nullptr;
-    auto &variant = callee_type->variant;
-    if (std::holds_alternative<type::Lambda>(variant)) {
-      auto lambda_type = std::get_if<type::Lambda>(&variant);
-      auto ptr = lambda_type->function_type;
-      function_type = std::get_if<type::Function>(&ptr->variant);
-
-    } else if (std::holds_alternative<type::Function>(variant)) {
-      function_type = std::get_if<type::Function>(&variant);
-
+    if (callee_type->holds<type::Lambda>()) {
+      auto &lambda_type = callee_type->get<type::Lambda>();
+      auto ptr = lambda_type.function_type;
+      function_type = &ptr->get<type::Function>();
+    } else if (callee_type->holds<type::Function>()) {
+      function_type = &callee_type->get<type::Function>();
     } else {
       abort("bad callable type!");
     }
@@ -267,8 +322,13 @@ struct TypecheckInstruction {
 
     auto &actual_arguments = call.arguments();
     auto &formal_arguments = function_type->arguments;
-    if (formal_arguments.size() != actual_arguments.size())
-      return {Error::Kind::ArgumentNumberMismatch};
+    if (formal_arguments.size() != actual_arguments.size()) {
+      std::stringstream msg;
+      msg << "Expected [" << formal_arguments.size() << "] arguments, ";
+      msg << "Recieved [" << actual_arguments.size() << "] arguments.";
+      return Error{Error::Kind::ArgumentNumberMismatch, call.sourceLocation(),
+                   msg.view()};
+    }
 
     auto cursor = formal_arguments.begin();
     for (auto &actual_argument : actual_arguments) {
@@ -277,63 +337,25 @@ struct TypecheckInstruction {
         return result;
 
       auto formal_argument_type = *cursor;
-      if (!type::equals(formal_argument_type, result.value()))
-        return {Error::Kind::ArgumentTypeMismatch};
+      if (!type::equals(formal_argument_type, result.value())) {
+        std::stringstream msg;
+        msg << "Expected Type: [" << formal_argument_type << "] ";
+        msg << "Recieved Type: [" << result.value() << "]";
+        return Error{Error::Kind::ArgumentTypeMismatch, call.sourceLocation(),
+                     msg.view()};
+      }
 
       ++cursor;
     }
 
-    return function_type->result_type;
-  }
-
-  Result<type::Ptr> operator()(ir::Unop &unop) noexcept {
-    auto overloads = env->lookupUnop(unop.op());
-    if (!overloads)
-      return {Error::Kind::UnknownUnop};
-
-    auto right = typecheck(unop.right(), *ir, *env);
-    if (!right)
-      return right;
-
-    auto instance = overloads->lookup(right.value());
-    if (!instance)
-      return {Error::Kind::UnopTypeMismatch};
-
-    return instance->result_type;
-  }
-
-  Result<type::Ptr> operator()(ir::Import &import) noexcept {
-    if (env->alreadyImported(import.file()))
-      return env->getNilType();
-
-    if (!env->fileExists(import.file()))
-      return {Error::Kind::FileNotFound};
-
-    return env->getNilType();
-  }
-
-  Result<type::Ptr> operator()(ir::Module &m) noexcept {
-    env->pushScope(m.name());
-
-    std::size_t index = 0U;
-    auto &recovered_expressions = m.recovered_expressions();
-    for (auto &expression : m.expressions()) {
-      auto result = typecheck(expression, *env);
-      if (result.recovered()) {
-        recovered_expressions[index] = true;
-      } else if (!result) {
-        env->unbindScope(m.name());
-        env->popScope();
-        return result;
-      }
-      ++index;
-    }
-
-    env->popScope();
-    return env->getNilType();
+    return call.cachedType(function_type->result_type);
   }
 
   Result<type::Ptr> operator()(ir::Lambda &lambda) noexcept {
+    if (lambda.cachedType() != nullptr) {
+      return lambda.cachedType();
+    }
+
     env->pushScope();
 
     auto &formal_arguments = lambda.arguments();
@@ -369,7 +391,48 @@ struct TypecheckInstruction {
     auto lambda_type = env->getLambdaType(function_type);
 
     env->popScope();
-    return lambda_type;
+    return lambda.cachedType(lambda_type);
+  }
+
+  Result<type::Ptr> operator()(ir::Import &i) noexcept {
+    if (i.cachedType() != nullptr) {
+      return i.cachedType();
+    }
+
+    if (env->alreadyImported(i.file())) {
+      return env->getNilType();
+    }
+
+    if (!env->fileExists(i.file())) {
+      return Error{Error::Kind::FileNotFound, i.sourceLocation(), i.file()};
+    }
+
+    return i.cachedType(env->getNilType());
+  }
+
+  Result<type::Ptr> operator()(ir::Module &m) noexcept {
+    if (m.cachedType() != nullptr) {
+      return m.cachedType();
+    }
+
+    env->pushScope(m.name());
+
+    std::size_t index = 0U;
+    auto &recovered_expressions = m.recovered_expressions();
+    for (auto &expression : m.expressions()) {
+      auto result = typecheck(expression, *env);
+      if (result.recovered()) {
+        recovered_expressions[index] = true;
+      } else if (!result) {
+        env->unbindScope(m.name());
+        env->popScope();
+        return result;
+      }
+      ++index;
+    }
+
+    env->popScope();
+    return m.cachedType(env->getNilType());
   }
 };
 

@@ -20,12 +20,22 @@
 namespace mint {
 auto createLLVMLoad(Environment &env, llvm::Type *type,
                     llvm::Value *source) noexcept -> llvm::Value * {
+  // #NOTE: llvm immediate value's cannot be loaded.
+  // as load expects a pointer type, as far as I can tell,
+  // llvm::Argument, and llvm::Constant are the only
+  // immediate values.
+  if ((llvm::dyn_cast<llvm::Argument>(source) != nullptr) ||
+      (llvm::dyn_cast<llvm::Constant>(source) != nullptr)) {
+    return source;
+  }
+
   // #NOTE: we cannot create a load instruction for a type which
   // does not fit within a single register.
   // https://llvm.org/docs/LangRef.html#load-instruction
   // https://llvm.org/docs/LangRef.html#single-value-types
-  // #NOTE: none of the available types (Integer, Boolean, Nil)
+  // #NOTE: none of the available types (Integer, Boolean, Nil, Lambda)
   // are larger than a single register.
+  // #NOTE: Lambda is the size of a function pointer
   return env.createLLVMLoad(type, source);
 }
 } // namespace mint

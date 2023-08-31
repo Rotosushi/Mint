@@ -214,7 +214,6 @@ Result<llvm::Value *> Call::codegen(Environment &env) noexcept {
   for (auto &argument : m_arguments) {
     auto result = argument->codegen(env);
     if (!result) {
-      env.popScope();
       return result;
     }
 

@@ -16,11 +16,25 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "codegen/Allocate.hpp"
 #include "adt/Environment.hpp"
+#include "codegen/Store.hpp"
 
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/Type.h"
 
 namespace mint {
+auto createLLVMLocalVariable(Environment &env, std::string_view name,
+                             llvm::Type *type, llvm::Value *init) noexcept
+    -> llvm::AllocaInst * {
+  MINT_ASSERT(env.hasInsertionPoint());
+  auto alloca = env.createLLVMAlloca(type, nullptr, name);
+
+  if (init != nullptr) {
+    createLLVMStore(env, init, alloca);
+  }
+
+  return alloca;
+}
+
 auto createLLVMGlobalVariable(Environment &env, std::string_view name,
                               llvm::Type *type, llvm::Constant *init) noexcept
     -> llvm::GlobalVariable * {
@@ -30,5 +44,20 @@ auto createLLVMGlobalVariable(Environment &env, std::string_view name,
     variable->setInitializer(init);
 
   return variable;
+}
+
+auto createLLVMVariable(Environment &env, std::string_view name,
+                        llvm::Type *type, llvm::Value *init) noexcept
+    -> llvm::Value * {
+  if (env.hasInsertionPoint()) {
+    return createLLVMLocalVariable(env, name, type, init);
+  }
+
+  if (init != nullptr) {
+    auto constant = llvm::cast<llvm::Constant>(init);
+    return createLLVMGlobalVariable(env, name, type, constant);
+  }
+
+  return createLLVMGlobalVariable(env, name, type);
 }
 } // namespace mint

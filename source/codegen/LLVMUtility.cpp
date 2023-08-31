@@ -16,10 +16,6 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "codegen/LLVMUtility.hpp"
 
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Value.h"
-#include "llvm/Support/Error.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace mint {

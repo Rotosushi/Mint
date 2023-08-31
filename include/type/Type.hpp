@@ -35,6 +35,14 @@ struct Type {
 
   template <class... Args>
   Type(Args &&...args) noexcept : variant(std::forward<Args>(args)...) {}
+
+  template <class T> [[nodiscard]] bool holds() const noexcept {
+    return std::holds_alternative<T>(variant);
+  }
+
+  template <class T> [[nodiscard]] T &get() noexcept {
+    return std::get<T>(variant);
+  }
 };
 
 bool equals(Ptr left, Ptr right) noexcept;

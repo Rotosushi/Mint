@@ -37,22 +37,16 @@ struct EvalauteImmediate {
     MINT_ASSERT(result.success());
     auto binding = result.value();
 
-    // #NOTE: can we just return "Recovered" here?
-    // we are planning on only inserting mir
-    // into the UBDMap during typechecking,
-    // and the only reason we have for returning
-    // this information is to bind mir into the
-    // UBDMap...
     if (!binding.hasComptimeValue()) {
       return Recovered{};
     }
 
-    return binding.comptimeValue().value();
+    return binding.comptimeValueOrAssert();
   }
 };
 
 static Result<ir::Value> evaluate(ir::detail::Immediate &immediate,
-                                  Environment &env) {
+                                  Environment &env) noexcept {
   EvalauteImmediate visitor(env);
   return visitor(immediate);
 }
@@ -206,6 +200,10 @@ struct EvaluateInstruction {
     return result;
   }
 
+  Result<ir::Value> operator()(ir::Lambda &lambda) noexcept {
+    return ir::Value{lambda};
+  }
+
   Result<ir::Value> operator()(ir::Import &import) noexcept {
     if (env->alreadyImported(import.file())) {
       return ir::Value{};
@@ -251,10 +249,6 @@ struct EvaluateInstruction {
 
     env->popScope();
     return ir::Value{};
-  }
-
-  Result<ir::Value> operator()(ir::Lambda &lambda) noexcept {
-    return ir::Value{lambda};
   }
 };
 

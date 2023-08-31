@@ -124,7 +124,9 @@ std::ostream &Environment::getErrorStream() noexcept { return *m_error_output; }
 
 std::ostream &Environment::getLogStream() noexcept { return *m_log_output; }
 
-fs::path &Environment::sourceFile() noexcept { return m_file; }
+std::optional<fs::path> const &Environment::sourceFile() noexcept {
+  return m_file;
+}
 
 void Environment::sourceFile(fs::path const &file) noexcept { m_file = file; }
 
@@ -171,6 +173,11 @@ void Environment::popScope() noexcept {
 
 void Environment::unbindScope(Identifier name) noexcept {
   m_local_scope->unbindScope(name);
+}
+
+auto Environment::declareName(FormalArgument const &argument) noexcept
+    -> Result<Bindings::Binding> {
+  return declareName(argument.name, argument.attributes, argument.type);
 }
 
 auto Environment::declareName(Identifier name, Attributes attributes,
@@ -504,9 +511,21 @@ auto Environment::createLLVMOr(llvm::Value *left, llvm::Value *right,
 }
 
 // memory accessors
+auto Environment::createLLVMAlloca(llvm::Type *type, llvm::Value *array_length,
+                                   const llvm::Twine &name) noexcept
+    -> llvm::AllocaInst * {
+  return m_llvm_ir_builder->CreateAlloca(type, array_length, name);
+}
+
 auto Environment::createLLVMLoad(llvm::Type *type, llvm::Value *source) noexcept
-    -> llvm::Value * {
+    -> llvm::LoadInst * {
   return m_llvm_ir_builder->CreateLoad(type, source);
+}
+
+auto Environment::createLLVMStore(llvm::Value *source, llvm::Value *target,
+                                  bool is_volatile) noexcept
+    -> llvm::StoreInst * {
+  return m_llvm_ir_builder->CreateStore(source, target, is_volatile);
 }
 
 // function instructions

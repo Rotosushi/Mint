@@ -55,7 +55,7 @@ class Environment {
   std::ostream *m_error_output;
   std::ostream *m_log_output;
 
-  fs::path m_file;
+  std::optional<fs::path> m_file;
   std::shared_ptr<Scope> m_global_scope;
   std::shared_ptr<Scope> m_local_scope;
   std::vector<ir::Mir> m_module;
@@ -100,7 +100,7 @@ public:
   std::ostream &getErrorStream() noexcept;
   std::ostream &getLogStream() noexcept;
 
-  fs::path &sourceFile() noexcept;
+  std::optional<fs::path> const &sourceFile() noexcept;
   void sourceFile(fs::path const &file) noexcept;
 
   //**** MirParser interface ****//
@@ -143,14 +143,14 @@ public:
 
   void unbindScope(Identifier name) noexcept;
 
+  auto declareName(FormalArgument const &argument) noexcept
+      -> Result<Bindings::Binding>;
   auto declareName(Identifier name, Attributes attributes,
-                   type::Ptr type) noexcept
-      -> mint::Result<mint::Bindings::Binding>;
+                   type::Ptr type) noexcept -> Result<Bindings::Binding>;
 
-  auto lookupBinding(Identifier name) noexcept
-      -> mint::Result<mint::Bindings::Binding>;
+  auto lookupBinding(Identifier name) noexcept -> Result<Bindings::Binding>;
   auto lookupLocalBinding(Identifier name) noexcept
-      -> mint::Result<mint::Bindings::Binding>;
+      -> Result<Bindings::Binding>;
   auto qualifyName(Identifier name) noexcept -> Identifier;
 
   //**** Use Before Def Interface ****//
@@ -293,8 +293,15 @@ public:
                     const llvm::Twine &name = "or") noexcept -> llvm::Value *;
 
   // memory related instructions
+  auto createLLVMAlloca(llvm::Type *type, llvm::Value *array_length = nullptr,
+                        const llvm::Twine &name = "alloca") noexcept
+      -> llvm::AllocaInst *;
+
   auto createLLVMLoad(llvm::Type *type, llvm::Value *source) noexcept
-      -> llvm::Value *;
+      -> llvm::LoadInst *;
+
+  auto createLLVMStore(llvm::Value *source, llvm::Value *target,
+                       bool is_volatile = false) noexcept -> llvm::StoreInst *;
 
   // function related instructions
   auto createLLVMCall(llvm::Function *callee,

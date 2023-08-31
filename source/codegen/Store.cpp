@@ -14,17 +14,18 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/raw_ostream.h"
+#include "codegen/Store.hpp"
+#include "adt/Environment.hpp"
 
-namespace cl = llvm::cl;
-
-//  https://llvm.org/docs/CommandLine.html#quick-start-guide
 namespace mint {
-// #TODO: handle mutltiple input files.
-inline cl::opt<std::string> input_filename(cl::Positional,
-                                           cl::desc("<input file>"));
-
-void printVersion(llvm::raw_ostream &out) noexcept;
+// https://llvm.org/docs/LangRef.html#store-instruction
+auto createLLVMStore(Environment &env, llvm::Value *source,
+                     llvm::Value *target) noexcept -> llvm::Value * {
+  // #NOTE: we cannot store types which are larger than
+  // a single word on the target machine.
+  // #NOTE: none of the currently available types in the 
+  // language have a representation larger than a single 
+  // word.
+  return env.createLLVMStore(source, target);
+}
 } // namespace mint

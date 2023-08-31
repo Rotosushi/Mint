@@ -54,8 +54,8 @@ namespace mint {
     -> bool {
   return comptimeValue().has_value();
 }
-[[nodiscard]] auto Bindings::Binding::comptimeValueOrAssert() const noexcept
-    -> ir::Value const & {
+[[nodiscard]] auto Bindings::Binding::comptimeValueOrAssert() noexcept
+    -> ir::Value & {
   MINT_ASSERT(hasComptimeValue());
   return comptimeValue().value();
 }
@@ -64,11 +64,11 @@ void Bindings::Binding::setComptimeValue(ir::Value value) noexcept {
 }
 
 [[nodiscard]] auto Bindings::Binding::runtimeValue() noexcept
-    -> std::optional<llvm::Value *> & {
+    -> std::optional<llvm::Value *> {
   return (*this)->second.runtime_value;
 }
 [[nodiscard]] auto Bindings::Binding::runtimeValue() const noexcept
-    -> std::optional<llvm::Value *> const & {
+    -> std::optional<llvm::Value *> {
   return (*this)->second.runtime_value;
 }
 [[nodiscard]] auto Bindings::Binding::hasRuntimeValue() const noexcept -> bool {

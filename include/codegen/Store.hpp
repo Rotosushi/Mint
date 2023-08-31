@@ -15,16 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/Value.h"
 
-namespace cl = llvm::cl;
-
-//  https://llvm.org/docs/CommandLine.html#quick-start-guide
 namespace mint {
-// #TODO: handle mutltiple input files.
-inline cl::opt<std::string> input_filename(cl::Positional,
-                                           cl::desc("<input file>"));
+class Environment;
 
-void printVersion(llvm::raw_ostream &out) noexcept;
+auto createLLVMStore(Environment &env, llvm::Value *source,
+                     llvm::Value *target) noexcept -> llvm::Value *;
 } // namespace mint

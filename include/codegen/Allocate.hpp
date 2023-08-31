@@ -17,17 +17,26 @@
 #pragma once
 #include <string_view>
 
-namespace llvm {
-class Type;
-class Constant;
-class GlobalVariable;
-} // namespace llvm
+#include "llvm/IR/Constant.h"
+#include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Value.h"
 
 namespace mint {
 class Environment;
+
+auto createLLVMLocalVariable(Environment &env, std::string_view name,
+                             llvm::Type *type,
+                             llvm::Value *init = nullptr) noexcept
+    -> llvm::AllocaInst *;
 
 auto createLLVMGlobalVariable(Environment &env, std::string_view name,
                               llvm::Type *type,
                               llvm::Constant *init = nullptr) noexcept
     -> llvm::GlobalVariable *;
+
+auto createLLVMVariable(Environment &env, std::string_view name,
+                        llvm::Type *type, llvm::Value *init = nullptr) noexcept
+    -> llvm::Value *;
 } // namespace mint

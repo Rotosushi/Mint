@@ -16,11 +16,13 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include "adt/SourceLocation.hpp"
+#include "type/Type.hpp"
 
 #include "utility/Assert.hpp"
 
 namespace mint::ir::detail {
 class IrBase {
+  type::Ptr m_cached_type;
   SourceLocation *m_source_location;
 
 protected:
@@ -31,11 +33,18 @@ protected:
 
 public:
   IrBase(SourceLocation *source_location) noexcept
-      : m_source_location(source_location) {
+      : m_cached_type(nullptr), m_source_location(source_location) {
     MINT_ASSERT(source_location != nullptr);
   }
 
-  SourceLocation *sourceLocation() noexcept { return m_source_location; }
-  SourceLocation *sourceLocation() const noexcept { return m_source_location; }
+  [[nodiscard]] SourceLocation *sourceLocation() noexcept {
+    return m_source_location;
+  }
+  [[nodiscard]] SourceLocation *sourceLocation() const noexcept {
+    return m_source_location;
+  }
+
+  [[nodiscard]] type::Ptr cachedType() const noexcept { return m_cached_type; }
+  type::Ptr cachedType(type::Ptr type) noexcept { return m_cached_type = type; }
 };
 } // namespace mint::ir::detail

@@ -4,6 +4,7 @@ add_library(mint_codegen STATIC
   ${MINT_SOURCE_DIR}/codegen/LLVMUtility.cpp 
   ${MINT_SOURCE_DIR}/codegen/Allocate.cpp 
   ${MINT_SOURCE_DIR}/codegen/Load.cpp
+  ${MINT_SOURCE_DIR}/codegen/Store.cpp
 )
 target_include_directories(mint_codegen PUBLIC ${MINT_INCLUDE_DIR} ${LLVM_INCLUDE_DIRS})
 target_compile_options(mint_codegen PUBLIC ${CXX_OPTIONS} ${llvm_cxxflags})

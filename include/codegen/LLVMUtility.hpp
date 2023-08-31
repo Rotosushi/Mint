@@ -21,12 +21,10 @@
 
 namespace fs = std::filesystem;
 
-namespace llvm {
-class Module;
-class Type;
-class Value;
-class Error;
-} // namespace llvm
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Value.h"
+#include "llvm/Support/Error.h"
 
 namespace mint {
 auto emitLLVMIR(llvm::Module &module, fs::path const &filename,

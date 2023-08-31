@@ -18,10 +18,10 @@
 #include <iostream>
 
 #include "adt/Environment.hpp"
+#include "core/Compile.hpp"
 #include "core/Repl.hpp"
 #include "utility/CommandLineOptions.hpp"
 
-#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/TargetSelect.h"
 
@@ -37,11 +37,9 @@ auto main(int argc, char **argv) -> int {
 
   mint::Environment env = mint::Environment::create();
 
-  return repl(env, true);
-  // if (mint::input_filename.empty())
-  //   return repl(env, true);
-  // else {
-  //   env.sourceFile(mint::input_filename.c_str());
-  //   return compile(env);
-  // }
+  if (mint::input_filename.empty())
+    return repl(env, true);
+
+  env.sourceFile(mint::input_filename.c_str());
+  return compile(env);
 }

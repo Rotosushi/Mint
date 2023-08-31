@@ -4,7 +4,7 @@ The immediate to do list (in no particular order)
   detail namespace, as they are used more extensively 
   and outside of the ir itself.
 
-#TODO: move Typecheck.hpp into the core directory
+
 
 #TODO: rename the 'codegen' directory to something more meaningfull.
   It's the directory for all of the runtime facilities as expressed 
@@ -14,4 +14,7 @@ The immediate to do list (in no particular order)
 
 #TODO: add a proper function class, allow them
 to be coerced into lambda's for the purposes of
-passing as arguments.
+passing as arguments. and allow the user to specify 
+a main subroutine, in order to gen executables.
+
+#TODO: 
