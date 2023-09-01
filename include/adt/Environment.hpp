@@ -101,7 +101,7 @@ public:
   std::ostream &getLogStream() noexcept;
 
   std::optional<fs::path> const &sourceFile() noexcept;
-  void sourceFile(fs::path const &file) noexcept;
+  void sourceFile(fs::path file) noexcept;
 
   //**** MirParser interface ****//
   auto endOfMirInput() const noexcept -> bool;

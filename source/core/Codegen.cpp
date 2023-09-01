@@ -214,16 +214,16 @@ struct CodegenInstruction {
     }
     MINT_ASSERT(value != nullptr);
 
-    auto type = let.cachedType();
+    auto type = let.parameter().cachedType();
     MINT_ASSERT(type != nullptr);
     auto llvm_type = type::toLLVM(type, *env);
-    auto llvm_name = let.name().convertForLLVM();
+    auto qualified_name = env->qualifyName(let.name());
+    auto llvm_name = qualified_name.convertForLLVM();
 
     auto variable = createLLVMVariable(*env, llvm_name, llvm_type, value);
 
     binding.setRuntimeValue(variable);
 
-    auto qualified_name = env->qualifyName(let.name());
     if (auto failed = env->resolveRuntimeValueOfUseBeforeDef(qualified_name)) {
       return failed.value();
     }

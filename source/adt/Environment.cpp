@@ -128,7 +128,9 @@ std::optional<fs::path> const &Environment::sourceFile() noexcept {
   return m_file;
 }
 
-void Environment::sourceFile(fs::path const &file) noexcept { m_file = file; }
+void Environment::sourceFile(fs::path file) noexcept {
+  m_file = std::move(file);
+}
 
 //**** MirParser interface ****//
 auto Environment::endOfMirInput() const noexcept -> bool {

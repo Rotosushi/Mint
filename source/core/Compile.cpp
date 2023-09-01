@@ -30,13 +30,11 @@ namespace mint {
   }
 
   env.pushActiveSourceFile(source_file.value());
-  auto exit_status = repl(env, false);
-  if (exit_status == EXIT_FAILURE) {
+  if (repl(env, false) == EXIT_FAILURE) {
     return EXIT_FAILURE;
   }
 
-  auto &m = env.getModule();
-  for (auto &mir : m) {
+  for (auto &mir : env.getModule()) {
     auto result = codegen(mir, env);
     if (!result) {
       if (result.recovered()) {

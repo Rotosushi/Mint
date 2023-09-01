@@ -27,15 +27,21 @@
 
 auto main(int argc, char **argv) -> int {
   llvm::InitLLVM llvm{argc, argv};
-  llvm::cl::SetVersionPrinter(mint::printVersion);
-  llvm::cl::ParseCommandLineOptions(argc, argv);
-
   llvm::InitializeNativeTarget();
   llvm::InitializeNativeTargetAsmParser();
   llvm::InitializeNativeTargetAsmPrinter();
   llvm::InitializeNativeTargetDisassembler();
 
+  llvm::cl::SetVersionPrinter(mint::printVersion);
+  llvm::cl::ParseCommandLineOptions(argc, argv);
+
   mint::Environment env = mint::Environment::create();
+
+  // #TODO handle command line options somewhere else.
+
+  for (auto &path : mint::include_paths) {
+    env.appendDirectory(path);
+  }
 
   if (mint::input_filename.empty())
     return repl(env, true);

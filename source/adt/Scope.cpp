@@ -64,11 +64,11 @@ void Bindings::Binding::setComptimeValue(ir::Value value) noexcept {
 }
 
 [[nodiscard]] auto Bindings::Binding::runtimeValue() noexcept
-    -> std::optional<llvm::Value *> {
+    -> std::optional<llvm::Value *> & {
   return (*this)->second.runtime_value;
 }
 [[nodiscard]] auto Bindings::Binding::runtimeValue() const noexcept
-    -> std::optional<llvm::Value *> {
+    -> std::optional<llvm::Value *> const & {
   return (*this)->second.runtime_value;
 }
 [[nodiscard]] auto Bindings::Binding::hasRuntimeValue() const noexcept -> bool {

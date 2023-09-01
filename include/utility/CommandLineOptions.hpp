@@ -26,5 +26,9 @@ namespace mint {
 inline cl::opt<std::string> input_filename(cl::Positional,
                                            cl::desc("<input file>"));
 
+inline cl::list<std::string>
+    include_paths("I", cl::desc("add an include path to the search space"),
+                  cl::value_desc("path"));
+
 void printVersion(llvm::raw_ostream &out) noexcept;
 } // namespace mint

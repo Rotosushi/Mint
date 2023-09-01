@@ -1,3 +1,4 @@
+import "module.mi";
 
 public let f = \a:Integer, b:Integer => a + b;
 public let g = \a:Integer => f(a,a);
