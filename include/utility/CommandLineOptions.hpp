@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include "utility/Config.hpp"
+
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -30,5 +32,9 @@ inline cl::list<std::string>
     include_paths("I", cl::desc("add an include path to the search space"),
                   cl::value_desc("path"));
 
-void printVersion(llvm::raw_ostream &out) noexcept;
+inline void printVersion(llvm::raw_ostream &out) noexcept {
+  out << "mint version: " << MINT_VERSION_MAJOR << "." << MINT_VERSION_MINOR
+      << "." << MINT_VERSION_PATCH << "\n git revision [" << MINT_GIT_REVISION
+      << "]\n Compiled on " << __DATE__ << " at " << __TIME__ << "\n";
+}
 } // namespace mint

@@ -17,9 +17,8 @@ target_link_libraries(mint_test
   mint_type
   mint_adt
   mint_ir
-  mint_codegen
+  mint_runtime
   mint_core
-  mint_utility
   mint_scan
   ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
 )

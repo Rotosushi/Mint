@@ -22,9 +22,13 @@
 #include "utility/Debug.hpp"
 
 namespace mint {
-void log(
-    std::ostream &out, std::string_view message,
-    std::source_location location = std::source_location::current()) noexcept;
+inline void
+log(std::ostream &out, std::string_view message,
+    std::source_location location = std::source_location::current()) noexcept {
+  out << "file: " << location.file_name() << "(" << location.line() << ":"
+      << location.column() << ")\n"
+      << "function: " << location.function_name() << "\n [" << message << "]\n";
+}
 } // namespace mint
 
 #define DEBUG_LOG(stream, message) DO_IF_DEBUG(mint::log((stream), (message)))

@@ -16,7 +16,6 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "core/Repl.hpp"
 #include "adt/Environment.hpp"
-#include "codegen/LLVMUtility.hpp"
 #include "core/Evaluate.hpp"
 #include "core/Typecheck.hpp"
 #include "ir/action/Print.hpp"

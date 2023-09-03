@@ -16,9 +16,10 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "core/Codegen.hpp"
 #include "adt/Environment.hpp"
-#include "codegen/Allocate.hpp"
-#include "codegen/Load.hpp"
 #include "ir/Instruction.hpp"
+#include "runtime/Allocate.hpp"
+#include "runtime/Load.hpp"
+#include "utility/VerifyLLVM.hpp"
 
 namespace mint {
 struct CodegenScalar {
@@ -108,6 +109,11 @@ struct CodegenValue {
 
     env->exchangeInsertionPoint(temp_insertion_point);
     env->popScope();
+
+    // #NOTE: verify returns true on failure.
+    // it is intended for use within an early return if statement.
+    MINT_ASSERT(!verify(*llvm_function, env->getErrorStream()));
+
     return llvm_function;
   }
 };
@@ -366,6 +372,10 @@ struct CodegenInstruction {
 
     env->exchangeInsertionPoint(temp_insertion_point);
     env->popScope();
+
+    // #NOTE: verify returns true on failure
+    MINT_ASSERT(!verify(*llvm_function, env->getErrorStream()));
+
     return llvm_function;
   }
 

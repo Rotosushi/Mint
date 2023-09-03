@@ -21,15 +21,25 @@
 #include "utility/Log.hpp"
 
 namespace mint {
-[[noreturn]] void
-abort(std::string_view message,
-      std::source_location location = std::source_location::current()) noexcept;
+[[noreturn]] inline void abort(
+    std::string_view message,
+    std::source_location location = std::source_location::current()) noexcept {
+  log(std::cerr, message, location);
 
-[[noreturn]] void
-abort(std::error_code error_code,
-      std::source_location location = std::source_location::current()) noexcept;
+  MINT_ASSERT(false && "abort");
 
-[[noreturn]] void
-abort(std::errc ec,
-      std::source_location location = std::source_location::current()) noexcept;
+  std::abort();
+}
+
+[[noreturn]] inline void abort(
+    std::error_code error_code,
+    std::source_location location = std::source_location::current()) noexcept {
+  abort(error_code.message(), location);
+}
+
+[[noreturn]] inline void abort(
+    std::errc ec,
+    std::source_location location = std::source_location::current()) noexcept {
+  abort(std::make_error_code(ec), location);
+}
 } // namespace mint

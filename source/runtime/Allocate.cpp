@@ -14,9 +14,9 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "codegen/Allocate.hpp"
+#include "runtime/Allocate.hpp"
 #include "adt/Environment.hpp"
-#include "codegen/Store.hpp"
+#include "runtime/Store.hpp"
 
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/Type.h"

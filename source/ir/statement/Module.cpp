@@ -35,7 +35,7 @@ auto Module::operator=(Module const &other) noexcept -> Module & {
   if (this == &other)
     return *this;
 
-  setSL(other.sourceLocation());
+  sourceLocation(other.sourceLocation());
   m_name = other.m_name;
   m_expressions = other.m_expressions;
   m_recovered_expressions = other.m_recovered_expressions;
@@ -45,7 +45,7 @@ auto Module::operator=(Module &&other) noexcept -> Module & {
   if (this == &other)
     return *this;
 
-  setSL(other.sourceLocation());
+  sourceLocation(other.sourceLocation());
   m_name = other.m_name;
   m_expressions = std::move(other.m_expressions);
   m_recovered_expressions = std::move(other.m_recovered_expressions);

@@ -14,23 +14,18 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-#include <filesystem>
-#include <ostream>
-#include <string>
-
-namespace fs = std::filesystem;
-
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Value.h"
-#include "llvm/Support/Error.h"
+#include "runtime/Store.hpp"
+#include "adt/Environment.hpp"
 
 namespace mint {
-auto emitLLVMIR(llvm::Module &module, fs::path const &filename,
-                std::ostream &error_output) noexcept -> int;
-
-auto toString(llvm::Error const &error) noexcept -> std::string;
-auto toString(llvm::Type const *type) noexcept -> std::string;
-auto toString(llvm::Value const *value) noexcept -> std::string;
+// https://llvm.org/docs/LangRef.html#store-instruction
+auto createLLVMStore(Environment &env, llvm::Value *source,
+                     llvm::Value *target) noexcept -> llvm::Value * {
+  // #NOTE: we cannot store types which are larger than
+  // a single word on the target machine.
+  // #NOTE: none of the currently available types in the
+  // language have a representation larger than a single
+  // word.
+  return env.createLLVMStore(source, target);
+}
 } // namespace mint

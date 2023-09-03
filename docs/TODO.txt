@@ -17,4 +17,8 @@ to be coerced into lambda's for the purposes of
 passing as arguments. and allow the user to specify 
 a main subroutine, in order to gen executables.
 
-#TODO: 
+#TODO: add a compound body syntax to lambdas,
+  and properly handle lookup and ubd between 
+  lambda's and functions. 
+  (namely, enforce the non-capturing aspect of 
+   lambdas.)

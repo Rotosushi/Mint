@@ -4,17 +4,15 @@ set(MINT_COMMON_LIBS
   mint_type
   mint_adt
   mint_core
-  mint_utility
   mint_ir
-  mint_codegen
+  mint_runtime
   mint_scan
 )
 
 add_subdirectory(${MINT_SOURCE_DIR}/adt)
 add_subdirectory(${MINT_SOURCE_DIR}/scan)
 add_subdirectory(${MINT_SOURCE_DIR}/type)
-add_subdirectory(${MINT_SOURCE_DIR}/utility)
-add_subdirectory(${MINT_SOURCE_DIR}/codegen)
+add_subdirectory(${MINT_SOURCE_DIR}/runtime)
 add_subdirectory(${MINT_SOURCE_DIR}/ir)
 add_subdirectory(${MINT_SOURCE_DIR}/core)
 

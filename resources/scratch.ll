@@ -3,7 +3,6 @@ target triple = "x86_64-suse-linux-gnu"
 
 @A.b = global i32 1
 @a = global i32 1
-@B.C.y = global i32 14
 @d = global i32 2
 @A.c = global i32 2
 @A.e = global i32 3
@@ -29,9 +28,16 @@ target triple = "x86_64-suse-linux-gnu"
 @B.z = global i32 13
 @B.C.x = global i32 13
 @B.C.a = global i32 14
+@B.C.y = global i32 14
 @f = global ptr @l0
+@g = global ptr @l1
 
 define i32 @l0(i32 %0, i32 %1) {
   %add = add i32 %0, %1
   ret i32 %add
+}
+
+define i32 @l1(i32 %0) {
+  %call = call i32 @f(i32 %0, i32 %0)
+  ret i32 %call
 }

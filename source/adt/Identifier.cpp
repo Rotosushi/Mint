@@ -191,6 +191,7 @@ auto Identifier::globalQualification() const noexcept -> Identifier {
 // (where A is-in [0...N])
 // is reachable by unqualified lookup from any scope xB
 // (where B >= A and B <= N)
+// that is, xB is a subscope of xA
 
 // if we consider a set of sets of scopes
 // a0, a1, ..., aM
@@ -213,11 +214,20 @@ auto subscopeOf(Identifier scope, Identifier name) noexcept -> bool {
   // if the qualifications of name is a longer string,
   // than the scope. then we know name is more qualified
   // than the scope, so it cannot be a subscope of left.
-  if (q_name.view().size() > scope.view().size())
+  if (q_name.view().size() > scope.view().size()) {
     return false;
+  }
 
-  // we know right <= left, so we only need to
-  // look for the end of right.
+  // if the qualifications of name are empty.
+  // and the qualifications of scope are not,
+  // then scope is more qualified than name,
+  // so scope could not be a subscope of name's scope.
+  if (q_name.view().empty() && !scope.view().empty()) {
+    return false;
+  }
+
+  // we know scopes qualifications <= names qualifications, so we only need to
+  // look for the end of names qualifications.
   auto s_cursor = scope.view().begin();
   auto n_cursor = q_name.view().begin();
   auto n_end = q_name.view().end();

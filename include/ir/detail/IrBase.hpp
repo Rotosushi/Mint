@@ -26,7 +26,7 @@ class IrBase {
   SourceLocation *m_source_location;
 
 protected:
-  void setSL(SourceLocation *sl) noexcept {
+  void sourceLocation(SourceLocation *sl) noexcept {
     MINT_ASSERT(sl != nullptr);
     m_source_location = sl;
   }

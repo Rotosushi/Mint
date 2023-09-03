@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/Environment.hpp"
-#include "codegen/Allocate.hpp"
+#include "runtime/Allocate.hpp"
 
 namespace mint {
 auto createLLVMLoad(Environment &env, llvm::Type *type,

@@ -103,6 +103,8 @@ public:
   std::optional<fs::path> const &sourceFile() noexcept;
   void sourceFile(fs::path file) noexcept;
 
+  int emitLLVMIR() noexcept;
+
   //**** MirParser interface ****//
   auto endOfMirInput() const noexcept -> bool;
   Result<ir::Mir> parseMir();

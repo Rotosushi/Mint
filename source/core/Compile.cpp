@@ -16,7 +16,6 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "core/Compile.hpp"
 #include "adt/Environment.hpp"
-#include "codegen/LLVMUtility.hpp"
 #include "core/Codegen.hpp"
 #include "core/Repl.hpp"
 
@@ -47,6 +46,6 @@ namespace mint {
     }
   }
 
-  return emitLLVMIR(env.getLLVMModule(), source_file.value(), err);
+  return env.emitLLVMIR();
 }
 } // namespace mint

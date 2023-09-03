@@ -14,13 +14,18 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "utility/Log.hpp"
+#pragma once
+#include "llvm/IR/Verifier.h"
+#include "llvm/Support/raw_os_ostream.h"
 
 namespace mint {
-void log(std::ostream &out, std::string_view message,
-         std::source_location location) noexcept {
-  out << "file: " << location.file_name() << "(" << location.line() << ":"
-      << location.column() << ")\n"
-      << "function: " << location.function_name() << "\n [" << message << "]\n";
+inline bool verify(llvm::Function &f, std::ostream &errout) noexcept {
+  llvm::raw_os_ostream stream(errout);
+  return llvm::verifyFunction(f, &stream);
+}
+
+inline bool verify(llvm::Module &m, std::ostream &errout) noexcept {
+  llvm::raw_os_ostream stream(errout);
+  return llvm::verifyModule(m, &stream);
 }
 } // namespace mint

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/Environment.hpp"
-#include "codegen/LLVMUtility.hpp"
+#include "utility/VerifyLLVM.hpp"
 
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -23,6 +23,7 @@
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Support/Host.h"
 #include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/raw_ostream.h"
 
 namespace mint {
 Environment::Environment(std::istream *in, std::ostream *out,
@@ -130,6 +131,27 @@ std::optional<fs::path> const &Environment::sourceFile() noexcept {
 
 void Environment::sourceFile(fs::path file) noexcept {
   m_file = std::move(file);
+}
+
+int Environment::emitLLVMIR() noexcept {
+  // #NOTE: verify returns true on failure,
+  // intended for use within an early return if statement.
+  MINT_ASSERT(!verify(*m_llvm_module, *m_error_output));
+
+  auto source = sourceFile();
+  MINT_ASSERT(source);
+  auto filename = source.value();
+  filename.replace_extension("ll");
+  std::error_code errc;
+  llvm::raw_fd_ostream outfile(filename.c_str(), errc);
+  if (errc) {
+    *m_error_output << "Could not open file: " << filename << " -- " << errc
+                    << "\n";
+    return EXIT_FAILURE;
+  }
+
+  m_llvm_module->print(outfile, nullptr);
+  return EXIT_SUCCESS;
 }
 
 //**** MirParser interface ****//

@@ -25,7 +25,7 @@ target_link_options(mint_adt PUBLIC
 target_link_libraries(mint_adt
   mint_type
   mint_scan
-  mint_codegen
+  mint_runtime
   ${llvm_libs}
   ${LLVM_LIBRARY_DIRS}/liblldCommon.a
   ${LLVM_LIBRARY_DIRS}/liblldELF.a
