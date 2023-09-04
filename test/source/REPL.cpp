@@ -170,8 +170,9 @@ void testExpressionInREPL(TestCode &expression) {
   if (!success) {
     std::cerr << "TestCase {\n";
 
-    if (expression.setup.size() > 0)
+    if (expression.setup.size() > 0) {
       std::cerr << "Setup: " << expression.setup << "\n";
+    }
 
     std::cerr << "Test Expression: " << expression.test_code
               << "\n Expected Result: " << expression.expected_result

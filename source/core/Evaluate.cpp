@@ -180,9 +180,7 @@ struct EvaluateInstruction {
     auto formal_cursor = callee.arguments().begin();
     for (auto &argument : actual_arguments) {
       auto &formal_argument = *formal_cursor;
-      auto bound =
-          env->declareName(formal_argument.name, formal_argument.attributes,
-                           formal_argument.type);
+      auto bound = env->declareName(formal_argument);
       if (!bound) {
         env->popScope();
         return bound.error();

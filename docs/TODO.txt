@@ -3,22 +3,17 @@ The immediate to do list (in no particular order)
 #TODO: move ir::detail::{Scalar, Parameter} out of the 
   detail namespace, as they are used more extensively 
   and outside of the ir itself.
+  #NOTE:
+  Scalar has been moved to ir/value as this makes sense.
+  however, where does Parameter live? 
 
 
-
-#TODO: rename the 'codegen' directory to something more meaningfull.
-  It's the directory for all of the runtime facilities as expressed 
-  as generators of llvm ir.
-  alt; backend runtime llvmgen
-
-
-#TODO: add a proper function class, allow them
+#TODO: add free function support, allow them
 to be coerced into lambda's for the purposes of
 passing as arguments. and allow the user to specify 
-a main subroutine, in order to gen executables.
+a main subroutine, in order to generate executables.
 
 #TODO: add a compound body syntax to lambdas,
   and properly handle lookup and ubd between 
   lambda's and functions. 
-  (namely, enforce the non-capturing aspect of 
-   lambdas.)
+  (namely, enforce the non-capturing aspect of lambdas.)

@@ -29,18 +29,13 @@ namespace mint {
 namespace ir {
 class Instruction;
 
-// #TODO: rewrite the parser to produce ir, as well as print
-// #TODO: IR is kinda a misnomer if we are using it to represent
+// #NOTE: IR is kinda a misnomer if we are using it to represent
 // enough of the syntax such that it can be used to recreate the
 // source code which created it. it's more of a mix between an
 // Intermediate Representation and an Abstract Syntax Tree.
 
 class Mir {
 public:
-  // #TODO: replace boost::container::vector
-  // with a handrolled vector like type which
-  // can handle forward declared types.
-  // (#NOTE: maybe using std::unique_ptr<T[]>)
   using Ir = boost::container::vector<Instruction>;
   using iterator = Ir::iterator;
   using const_iterator = Ir::const_iterator;
@@ -83,8 +78,8 @@ public:
   detail::Index emplaceImmediate(detail::Immediate immediate);
 
   detail::Index emplaceParens(SourceLocation *sl, detail::Parameter parameter);
-  detail::Index emplaceLet(SourceLocation *sl, Attributes attributes, Identifier name,
-                           std::optional<type::Ptr> annotation,
+  detail::Index emplaceLet(SourceLocation *sl, Attributes attributes,
+                           Identifier name, std::optional<type::Ptr> annotation,
                            detail::Parameter parameter);
   detail::Index emplaceBinop(SourceLocation *sl, Token op,
                              detail::Parameter left, detail::Parameter right);

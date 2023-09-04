@@ -23,6 +23,7 @@
 namespace mint {
 [[nodiscard]] int repl(Environment &env, bool do_print) {
   auto &out = env.getOutputStream();
+  auto &err = env.getErrorStream();
 
   bool good = false;
   ir::Mir mir;
@@ -43,7 +44,7 @@ namespace mint {
       if (error.kind() == Error::Kind::EndOfInput)
         break;
 
-      out << error;
+      err << error;
       continue;
     }
     mir = parse_result.value();
@@ -56,7 +57,7 @@ namespace mint {
       }
 
       auto error = typecheck_result.error();
-      out << error;
+      err << error;
       continue;
     }
     auto type = typecheck_result.value();
@@ -69,7 +70,7 @@ namespace mint {
       }
 
       auto error = evaluate_result.error();
-      out << error;
+      err << error;
       continue;
     }
     auto &value = evaluate_result.value();

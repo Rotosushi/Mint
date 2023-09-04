@@ -211,7 +211,7 @@ auto Identifier::globalQualification() const noexcept -> Identifier {
 // of scope are a subset of the qualifications of name.
 auto subscopeOf(Identifier scope, Identifier name) noexcept -> bool {
   auto q_name = name.qualifications();
-  // if the qualifications of name is a longer string,
+  // if the qualifications of name is a longer string
   // than the scope. then we know name is more qualified
   // than the scope, so it cannot be a subscope of left.
   if (q_name.view().size() > scope.view().size()) {
@@ -220,7 +220,7 @@ auto subscopeOf(Identifier scope, Identifier name) noexcept -> bool {
 
   // if the qualifications of name are empty.
   // and the qualifications of scope are not,
-  // then scope is more qualified than name,
+  // then scope is more qualified than name
   // so scope could not be a subscope of name's scope.
   if (q_name.view().empty() && !scope.view().empty()) {
     return false;

@@ -115,6 +115,7 @@ constexpr inline auto getAllTestCode() noexcept {
       {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "d;", "2"},
       {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "A::e;", "3"},
       {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "A::a;", "3"},
+      {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "g;", "3"},
       {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "A::f;", "4"},
       {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "B::g;", "4"},
       {"import \"" MINT_RESOURCES_DIR "/module.mi\";", "A::h;", "5"},

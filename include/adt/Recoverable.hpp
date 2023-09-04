@@ -34,10 +34,6 @@ class Recovered {};
 // yet may be recoverable.
 class Recoverable {
 public:
-  // #TODO: hold the data from the use before definition. and
-  // return this in the result when the use before def happens.
-  // and catch this error wile typechecking the definition and add
-  // it too the use before def in the map.
   struct UBD {
     Identifier undef_name;
     std::shared_ptr<Scope> local_scope;

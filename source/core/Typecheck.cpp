@@ -365,8 +365,7 @@ struct TypecheckInstruction {
 
     for (auto &formal_argument : formal_arguments) {
       argument_types.emplace_back(formal_argument.type);
-      env->declareName(formal_argument.name, formal_argument.attributes,
-                       formal_argument.type);
+      env->declareName(formal_argument);
     }
 
     auto result = typecheck(lambda.body(), *env);

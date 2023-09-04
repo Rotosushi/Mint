@@ -39,7 +39,6 @@
 
 namespace mint {
 class Scope;
-// #TODO: refactor, as we no longer track UBD here.
 // #TODO: make errors cheap to pass around, by
 // storing their actual contents in a list somewhere else.
 
