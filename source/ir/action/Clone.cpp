@@ -59,18 +59,18 @@ struct CloneInstructionVisitor {
                                  clone(m_source, m_target, binop.right()));
   }
 
-  detail::Parameter operator()(Call &call) noexcept {
-    auto callee = clone(m_source, m_target, call.callee());
+  // detail::Parameter operator()(Call &call) noexcept {
+  //   auto callee = clone(m_source, m_target, call.callee());
 
-    Call::Arguments arguments;
-    arguments.reserve(call.arguments().size());
-    for (auto &argument : call.arguments()) {
-      arguments.emplace_back(clone(m_source, m_target, argument));
-    }
+  //   Call::Arguments arguments;
+  //   arguments.reserve(call.arguments().size());
+  //   for (auto &argument : call.arguments()) {
+  //     arguments.emplace_back(clone(m_source, m_target, argument));
+  //   }
 
-    return m_target.emplaceCall(call.sourceLocation(), callee,
-                                std::move(arguments));
-  }
+  //   return m_target.emplaceCall(call.sourceLocation(), callee,
+  //                               std::move(arguments));
+  // }
 
   detail::Parameter operator()(Unop &unop) noexcept {
     return m_target.emplaceUnop(unop.sourceLocation(), unop.op(),
@@ -92,10 +92,11 @@ struct CloneInstructionVisitor {
                                   std::move(expressions));
   }
 
-  detail::Parameter operator()(Lambda &lambda) noexcept {
-    return m_target.emplaceLambda(lambda.sourceLocation(), lambda.arguments(),
-                                  lambda.annotation(), clone(lambda.body()));
-  }
+  // detail::Parameter operator()(Lambda &lambda) noexcept {
+  //   return m_target.emplaceLambda(lambda.sourceLocation(),
+  //   lambda.arguments(),
+  //                                 lambda.annotation(), clone(lambda.body()));
+  // }
 };
 
 [[nodiscard]] static detail::Parameter clone(Mir &source, Mir &target,

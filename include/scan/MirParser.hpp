@@ -29,6 +29,7 @@ class Environment;
 /*
 top = module
     | import
+    | function
     | term
 
 module = "module" identifier module-block
@@ -37,6 +38,13 @@ module-block = "{" top* "}"
 
 import = "import" string-literal ";"
 
+function = visibility? "fn" identifier formal-arguments (-> type) local-block
+
+formal-arguments = "(" (formal-argument ("," formal-argument)*)? ")"
+
+formal-argument = identifier ":" type
+
+local-block "{" term* "}"
 
 term = let
      | affix ";"
@@ -67,8 +75,6 @@ literal = "nil"
         | "true"
         | "false"
         | integer
-        | "\" (formal-argument-list)? ("->" type)? "=>" affix
-  #TODO | "\" (formal-argument-list)? ("->" type)? block
 
 formal-argument-list = argument ("," argument)*
 
@@ -175,7 +181,7 @@ private:
   Result<ir::detail::Parameter> parseLet(ir::Mir &mir);
   Result<ir::detail::Parameter> parseAffix(ir::Mir &mir);
 
-  Result<ir::detail::Parameter> parseCall(ir::Mir &mir);
+  // Result<ir::detail::Parameter> parseCall(ir::Mir &mir);
   Result<ir::detail::Parameter> parseBinop(ir::Mir &mir,
                                            ir::detail::Parameter left,
                                            BinopPrecedence precedence);
@@ -188,7 +194,7 @@ private:
   Result<ir::detail::Parameter> parseVariable(ir::Mir &mir);
   Result<ir::detail::Parameter> parseUnop(ir::Mir &mir);
   Result<ir::detail::Parameter> parseParens(ir::Mir &mir);
-  Result<ir::detail::Parameter> parseLambda(ir::Mir &mir);
+  // Result<ir::detail::Parameter> parseLambda(ir::Mir &mir);
 
   Result<type::Ptr> parseType();
   Result<type::Ptr> parseNilType();

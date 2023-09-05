@@ -168,7 +168,7 @@ Result<ir::detail::Parameter> MirParser::parseLet(ir::Mir &mir) {
 }
 
 Result<ir::detail::Parameter> MirParser::parseAffix(ir::Mir &mir) {
-  auto call = parseCall(mir);
+  auto call = parseBasic(mir);
   if (!call) {
     return call;
   }
@@ -180,38 +180,39 @@ Result<ir::detail::Parameter> MirParser::parseAffix(ir::Mir &mir) {
   return call;
 }
 
-Result<ir::detail::Parameter> MirParser::parseCall(ir::Mir &mir) {
-  auto lhs_loc = location();
-  auto basic = parseBasic(mir);
-  if (!basic) {
-    return basic;
-  }
+// Result<ir::detail::Parameter> MirParser::parseCall(ir::Mir &mir) {
+//  auto lhs_loc = location();
+// return parseBasic(mir);
+// if (!basic) {
+//   return basic;
+// }
 
-  if (!expect(Token::BeginParen)) {
-    return basic;
-  }
+// if (!expect(Token::BeginParen)) {
+//   return basic;
+// }
 
-  ir::Call::Arguments arguments;
+// ir::Call::Arguments arguments;
 
-  if (!peek(Token::EndParen)) {
-    do {
-      auto result = parseAffix(mir);
-      if (!result) {
-        return result;
-      }
+// if (!peek(Token::EndParen)) {
+//   do {
+//     auto result = parseAffix(mir);
+//     if (!result) {
+//       return result;
+//     }
 
-      arguments.emplace_back(result.value());
-    } while (expect(Token::Comma));
-  }
+//     arguments.emplace_back(result.value());
+//   } while (expect(Token::Comma));
+// }
 
-  if (!expect(Token::EndParen)) {
-    return recover(Error::Kind::ExpectedEndParen);
-  }
+// if (!expect(Token::EndParen)) {
+//   return recover(Error::Kind::ExpectedEndParen);
+// }
 
-  auto rhs_loc = location();
-  Location call_loc{lhs_loc, rhs_loc};
-  return mir.emplaceCall(source(call_loc), basic.value(), std::move(arguments));
-}
+// auto rhs_loc = location();
+// Location call_loc{lhs_loc, rhs_loc};
+// return mir.emplaceCall(source(call_loc), basic.value(),
+// std::move(arguments));
+// }
 
 Result<ir::detail::Parameter> MirParser::parseBinop(ir::Mir &mir,
                                                     ir::detail::Parameter left,
@@ -254,7 +255,7 @@ Result<ir::detail::Parameter> MirParser::parseBinop(ir::Mir &mir,
 
     next();
 
-    auto right = parseCall(mir);
+    auto right = parseBasic(mir);
     if (!right) {
       return right;
     }
@@ -303,8 +304,8 @@ Result<ir::detail::Parameter> MirParser::parseBasic(ir::Mir &mir) {
   case Token::BeginParen:
     return parseParens(mir);
 
-  case Token::BackSlash:
-    return parseLambda(mir);
+    // case Token::BackSlash:
+    //   return parseLambda(mir);
 
   default:
     return recover(Error::Kind::ExpectedBasic);
@@ -378,68 +379,69 @@ Result<ir::detail::Parameter> MirParser::parseParens(ir::Mir &mir) {
   return mir.emplaceParens(source(parens_loc), affix.value());
 }
 
-Result<ir::detail::Parameter> MirParser::parseLambda(ir::Mir &mir) {
-  auto lhs_loc = location();
-  if (!expect(Token::BackSlash)) {
-    return recover(Error::Kind::ExpectedBackSlash);
-  }
+// Result<ir::detail::Parameter> MirParser::parseLambda(ir::Mir &mir) {
+//   auto lhs_loc = location();
+//   if (!expect(Token::BackSlash)) {
+//     return recover(Error::Kind::ExpectedBackSlash);
+//   }
 
-  auto parseArgument = [&]() -> Result<FormalArgument> {
-    if (!peek(Token::Identifier)) {
-      return recover(Error::Kind::ExpectedIdentifier);
-    }
+//   auto parseArgument = [&]() -> Result<FormalArgument> {
+//     if (!peek(Token::Identifier)) {
+//       return recover(Error::Kind::ExpectedIdentifier);
+//     }
 
-    auto name = m_env->getIdentifier(text());
-    next();
+//     auto name = m_env->getIdentifier(text());
+//     next();
 
-    if (!expect(Token::Colon)) {
-      return recover(Error::Kind::ExpectedColon);
-    }
+//     if (!expect(Token::Colon)) {
+//       return recover(Error::Kind::ExpectedColon);
+//     }
 
-    auto annotation = parseType();
-    if (!annotation) {
-      return annotation.error();
-    }
-    return {name, Attributes{}, annotation.value()};
-  };
+//     auto annotation = parseType();
+//     if (!annotation) {
+//       return annotation.error();
+//     }
+//     return {name, Attributes{}, annotation.value()};
+//   };
 
-  FormalArguments arguments;
-  if (peek(Token::Identifier)) {
-    do {
-      auto result = parseArgument();
-      if (!result) {
-        return result.error();
-      }
+//   FormalArguments arguments;
+//   if (peek(Token::Identifier)) {
+//     do {
+//       auto result = parseArgument();
+//       if (!result) {
+//         return result.error();
+//       }
 
-      arguments.emplace_back(result.value());
-    } while (expect(Token::Comma));
-  }
+//       arguments.emplace_back(result.value());
+//     } while (expect(Token::Comma));
+//   }
 
-  std::optional<type::Ptr> annotation;
-  if (expect(Token::RightArrow)) {
-    auto result = parseType();
-    if (!result) {
-      return result.error();
-    }
+//   std::optional<type::Ptr> annotation;
+//   if (expect(Token::RightArrow)) {
+//     auto result = parseType();
+//     if (!result) {
+//       return result.error();
+//     }
 
-    annotation = result.value();
-  }
+//     annotation = result.value();
+//   }
 
-  if (!expect(Token::EqualsRightArrow)) {
-    return recover(Error::Kind::ExpectedEqualsRightArrow);
-  }
+//   if (!expect(Token::EqualsRightArrow)) {
+//     return recover(Error::Kind::ExpectedEqualsRightArrow);
+//   }
 
-  ir::Mir body;
-  auto result = parseAffix(body);
-  if (!result) {
-    return result;
-  }
+//   ir::Mir body;
+//   auto result = parseAffix(body);
+//   if (!result) {
+//     return result;
+//   }
 
-  auto rhs_loc = location();
-  Location lambda_loc{lhs_loc, rhs_loc};
-  return mir.emplaceLambda(source(lambda_loc), std::move(arguments), annotation,
-                           std::move(body));
-}
+//   auto rhs_loc = location();
+//   Location lambda_loc{lhs_loc, rhs_loc};
+//   return mir.emplaceLambda(source(lambda_loc), std::move(arguments),
+//   annotation,
+//                            std::move(body));
+// }
 
 Result<type::Ptr> MirParser::parseType() {
   fill();

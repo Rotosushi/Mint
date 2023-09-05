@@ -17,3 +17,5 @@ a main subroutine, in order to generate executables.
   and properly handle lookup and ubd between 
   lambda's and functions. 
   (namely, enforce the non-capturing aspect of lambdas.)
+
+#TODO: add algebraic data types. Sum and Product.

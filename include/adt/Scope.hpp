@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <bitset>
 #include <map>
 #include <optional>
 #include <set>
@@ -22,7 +23,8 @@
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
 #include "adt/Result.hpp"
-#include "ir/value/Value.hpp"
+#include "ir/value/Scalar.hpp"
+#include "type/Type.hpp"
 
 #include "llvm/IR/Value.h"
 
@@ -33,7 +35,7 @@ public:
   struct Value {
     Attributes attributes;
     type::Ptr type;
-    std::optional<ir::Value> comptime_value;
+    std::optional<ir::Scalar> comptime_value;
     std::optional<llvm::Value *> runtime_value;
   };
   using Table = std::map<Key, Value>;
@@ -54,11 +56,11 @@ public:
     [[nodiscard]] auto type() const noexcept -> type::Ptr;
 
     [[nodiscard]] auto comptimeValue() const noexcept
-        -> std::optional<ir::Value> const &;
-    [[nodiscard]] auto comptimeValue() noexcept -> std::optional<ir::Value> &;
+        -> std::optional<ir::Scalar> const &;
+    [[nodiscard]] auto comptimeValue() noexcept -> std::optional<ir::Scalar> &;
     [[nodiscard]] auto hasComptimeValue() const noexcept -> bool;
-    [[nodiscard]] auto comptimeValueOrAssert() noexcept -> ir::Value &;
-    void setComptimeValue(ir::Value value) noexcept;
+    [[nodiscard]] auto comptimeValueOrAssert() noexcept -> ir::Scalar &;
+    void setComptimeValue(ir::Scalar value) noexcept;
 
     [[nodiscard]] auto runtimeValue() noexcept
         -> std::optional<llvm::Value *> &;
@@ -127,13 +129,20 @@ public:
 
 class Scope : public std::enable_shared_from_this<Scope> {
 private:
+  // #TODO: handle non-capturing vs. capturing lookup from
+  // within a lambda.
+  enum struct Kind {
+    Module,
+    Local,
+  };
+
+  Kind m_kind;
   std::optional<Identifier> m_name;
   Scope *m_prev_scope;
   Scope *m_global;
   std::shared_ptr<Scope> m_next_scope;
   std::unique_ptr<Bindings> m_bindings;
   std::unique_ptr<ScopeTable> m_scopes;
-  // UseBeforeDefMap m_use_before_def_map;
 
 public:
   Scope(Identifier name) noexcept;
@@ -156,6 +165,11 @@ public:
   // provided to this method because Identifiers are interned,
   // so there is no way of statically constructing one.
   [[nodiscard]] static auto createGlobalScope(Identifier name)
+      -> std::shared_ptr<Scope>;
+  [[nodiscard]] static auto createModuleScope(Identifier name,
+                                              Scope *prev_scope)
+      -> std::shared_ptr<Scope>;
+  [[nodiscard]] static auto createLocalScope(Scope *prev_scope)
       -> std::shared_ptr<Scope>;
   [[nodiscard]] static auto createScope(std::optional<Identifier> name,
                                         Scope *prev_scope)

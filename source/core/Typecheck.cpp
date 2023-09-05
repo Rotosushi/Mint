@@ -291,107 +291,110 @@ struct TypecheckInstruction {
     return unop.cachedType(instance->result_type);
   }
 
-  Result<type::Ptr> operator()(ir::Call &call) noexcept {
-    if (call.cachedType() != nullptr) {
-      return call.cachedType();
-    }
+  // Result<type::Ptr> operator()(ir::Call &call) noexcept {
+  //   if (call.cachedType() != nullptr) {
+  //     return call.cachedType();
+  //   }
 
-    auto callee = typecheck(call.callee(), *ir, *env);
-    if (!callee)
-      return callee;
+  //   auto callee = typecheck(call.callee(), *ir, *env);
+  //   if (!callee)
+  //     return callee;
 
-    auto callee_type = callee.value();
-    if (!type::callable(callee_type)) {
-      std::stringstream msg;
-      msg << "Callee Type: [" << callee_type << "]";
-      return Error{Error::Kind::CannotCallType, call.sourceLocation(),
-                   msg.view()};
-    }
+  //   auto callee_type = callee.value();
+  //   if (!type::callable(callee_type)) {
+  //     std::stringstream msg;
+  //     msg << "Callee Type: [" << callee_type << "]";
+  //     return Error{Error::Kind::CannotCallType, call.sourceLocation(),
+  //                  msg.view()};
+  //   }
 
-    type::Function *function_type = nullptr;
-    if (callee_type->holds<type::Lambda>()) {
-      auto &lambda_type = callee_type->get<type::Lambda>();
-      auto ptr = lambda_type.function_type;
-      function_type = &ptr->get<type::Function>();
-    } else if (callee_type->holds<type::Function>()) {
-      function_type = &callee_type->get<type::Function>();
-    } else {
-      abort("bad callable type!");
-    }
-    MINT_ASSERT(function_type != nullptr);
+  //   type::Function *function_type = nullptr;
+  //   if (callee_type->holds<type::Lambda>()) {
+  //     auto &lambda_type = callee_type->get<type::Lambda>();
+  //     auto ptr = lambda_type.function_type;
+  //     function_type = &ptr->get<type::Function>();
+  //   } else if (callee_type->holds<type::Function>()) {
+  //     function_type = &callee_type->get<type::Function>();
+  //   } else {
+  //     abort("bad callable type!");
+  //   }
+  //   MINT_ASSERT(function_type != nullptr);
 
-    auto &actual_arguments = call.arguments();
-    auto &formal_arguments = function_type->arguments;
-    if (formal_arguments.size() != actual_arguments.size()) {
-      std::stringstream msg;
-      msg << "Expected [" << formal_arguments.size() << "] arguments, ";
-      msg << "Recieved [" << actual_arguments.size() << "] arguments.";
-      return Error{Error::Kind::ArgumentNumberMismatch, call.sourceLocation(),
-                   msg.view()};
-    }
+  //   auto &actual_arguments = call.arguments();
+  //   auto &formal_arguments = function_type->arguments;
+  //   if (formal_arguments.size() != actual_arguments.size()) {
+  //     std::stringstream msg;
+  //     msg << "Expected [" << formal_arguments.size() << "] arguments, ";
+  //     msg << "Recieved [" << actual_arguments.size() << "] arguments.";
+  //     return Error{Error::Kind::ArgumentNumberMismatch,
+  //     call.sourceLocation(),
+  //                  msg.view()};
+  //   }
 
-    auto cursor = formal_arguments.begin();
-    for (auto &actual_argument : actual_arguments) {
-      auto result = typecheck(actual_argument, *ir, *env);
-      if (!result)
-        return result;
+  //   auto cursor = formal_arguments.begin();
+  //   for (auto &actual_argument : actual_arguments) {
+  //     auto result = typecheck(actual_argument, *ir, *env);
+  //     if (!result)
+  //       return result;
 
-      auto formal_argument_type = *cursor;
-      if (!type::equals(formal_argument_type, result.value())) {
-        std::stringstream msg;
-        msg << "Expected Type: [" << formal_argument_type << "] ";
-        msg << "Recieved Type: [" << result.value() << "]";
-        return Error{Error::Kind::ArgumentTypeMismatch, call.sourceLocation(),
-                     msg.view()};
-      }
+  //     auto formal_argument_type = *cursor;
+  //     if (!type::equals(formal_argument_type, result.value())) {
+  //       std::stringstream msg;
+  //       msg << "Expected Type: [" << formal_argument_type << "] ";
+  //       msg << "Recieved Type: [" << result.value() << "]";
+  //       return Error{Error::Kind::ArgumentTypeMismatch,
+  //       call.sourceLocation(),
+  //                    msg.view()};
+  //     }
 
-      ++cursor;
-    }
+  //     ++cursor;
+  //   }
 
-    return call.cachedType(function_type->result_type);
-  }
+  //   return call.cachedType(function_type->result_type);
+  // }
 
-  Result<type::Ptr> operator()(ir::Lambda &lambda) noexcept {
-    if (lambda.cachedType() != nullptr) {
-      return lambda.cachedType();
-    }
+  // Result<type::Ptr> operator()(ir::Lambda &lambda) noexcept {
+  //   if (lambda.cachedType() != nullptr) {
+  //     return lambda.cachedType();
+  //   }
 
-    env->pushScope();
+  //   env->pushScope();
 
-    auto &formal_arguments = lambda.arguments();
+  //   auto &formal_arguments = lambda.arguments();
 
-    type::Function::Arguments argument_types;
-    argument_types.reserve(formal_arguments.size());
+  //   type::Function::Arguments argument_types;
+  //   argument_types.reserve(formal_arguments.size());
 
-    for (auto &formal_argument : formal_arguments) {
-      argument_types.emplace_back(formal_argument.type);
-      env->declareName(formal_argument);
-    }
+  //   for (auto &formal_argument : formal_arguments) {
+  //     argument_types.emplace_back(formal_argument.type);
+  //     env->declareName(formal_argument);
+  //   }
 
-    auto result = typecheck(lambda.body(), *env);
-    if (!result) {
-      env->popScope();
-      return result;
-    }
+  //   auto result = typecheck(lambda.body(), *env);
+  //   if (!result) {
+  //     env->popScope();
+  //     return result;
+  //   }
 
-    if (lambda.annotation()) {
-      auto annotated_type = lambda.annotation().value();
-      if (!equals(annotated_type, result.value())) {
-        std::stringstream msg;
-        msg << "Expected Type [" << annotated_type << "]"
-            << " Actual Type [" << result.value() << "]";
-        return Error{Error::Kind::ResultTypeMismatch, lambda.sourceLocation(),
-                     msg.view()};
-      }
-    }
+  //   if (lambda.annotation()) {
+  //     auto annotated_type = lambda.annotation().value();
+  //     if (!equals(annotated_type, result.value())) {
+  //       std::stringstream msg;
+  //       msg << "Expected Type [" << annotated_type << "]"
+  //           << " Actual Type [" << result.value() << "]";
+  //       return Error{Error::Kind::ResultTypeMismatch,
+  //       lambda.sourceLocation(),
+  //                    msg.view()};
+  //     }
+  //   }
 
-    auto function_type =
-        env->getFunctionType(result.value(), std::move(argument_types));
-    auto lambda_type = env->getLambdaType(function_type);
+  //   auto function_type =
+  //       env->getFunctionType(result.value(), std::move(argument_types));
+  //   auto lambda_type = env->getLambdaType(function_type);
 
-    env->popScope();
-    return lambda.cachedType(lambda_type);
-  }
+  //   env->popScope();
+  //   return lambda.cachedType(lambda_type);
+  // }
 
   Result<type::Ptr> operator()(ir::Import &i) noexcept {
     if (i.cachedType() != nullptr) {

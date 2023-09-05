@@ -1,0 +1,14 @@
+
+mint is an interpreted and compiled language.
+
+feautures:
+  Modules, which are namespaces which control visibility
+
+  Order independent module level definitions 
+
+  Builtin types: Integer, Boolean
+
+  Lambdas, Functions
+
+  Algebraic Data Types
+

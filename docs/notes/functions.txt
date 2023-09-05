@@ -58,7 +58,7 @@ such as
 
 let f = \=> 1; 
 
-the body of the lambda is terminated by the ';' yes, but that terminator is 
+the body of the lambda is terminated by the ';', but that terminator is 
 consumed by the let expression, this means that only a single expression can 
 comprise the body of a lambda, per the rules of the grammar. we need a composite 
 statement in order to parse mutliple expressions as part of the body.
@@ -78,3 +78,4 @@ or be able to write
 let f = \{let a = ...; g(a); ...}
 
 this can be done if we allow for an optional ';'
+

@@ -18,19 +18,20 @@
 #include <ostream>
 
 #include "ir/Mir.hpp"
-#include "ir/value/Value.hpp"
+#include "ir/value/Scalar.hpp"
 
 namespace mint::ir {
 void print(std::ostream &out, Mir &mir) noexcept;
-void print(std::ostream &out, ir::Value &value) noexcept;
+void print(std::ostream &out, ir::Scalar &scalar) noexcept;
 
 inline std::ostream &operator<<(std::ostream &out, Mir &mir) noexcept {
   print(out, mir);
   return out;
 }
 
-inline std::ostream &operator<<(std::ostream &out, ir::Value &value) noexcept {
-  print(out, value);
+inline std::ostream &operator<<(std::ostream &out,
+                                ir::Scalar &scalar) noexcept {
+  print(out, scalar);
   return out;
 }
 } // namespace mint::ir

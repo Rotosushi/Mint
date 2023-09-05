@@ -37,7 +37,7 @@ struct PrintScalarVisitor {
   void operator()(int integer) noexcept { out << integer; }
 };
 
-void print(std::ostream &out, Scalar &scalar) {
+void print(std::ostream &out, Scalar &scalar) noexcept {
   PrintScalarVisitor visitor(out);
   visitor(scalar);
 }
@@ -128,44 +128,44 @@ struct PrintInstructionVisitor {
     out << "}";
   }
 
-  void operator()(Call &call) noexcept {
-    print(out, mir, call.callee());
-    out << "(";
+  // void operator()(Call &call) noexcept {
+  //   print(out, mir, call.callee());
+  //   out << "(";
 
-    auto index = 0U;
-    auto size = call.arguments().size();
-    for (auto &argument : call.arguments()) {
-      print(out, mir, argument);
+  //   auto index = 0U;
+  //   auto size = call.arguments().size();
+  //   for (auto &argument : call.arguments()) {
+  //     print(out, mir, argument);
 
-      if (index++ < (size - 1)) {
-        out << ", ";
-      }
-    }
+  //     if (index++ < (size - 1)) {
+  //       out << ", ";
+  //     }
+  //   }
 
-    out << ")";
-  }
+  //   out << ")";
+  // }
 
-  void operator()(Lambda &lambda) noexcept {
-    out << "\\";
+  // void operator()(Lambda &lambda) noexcept {
+  //   out << "\\";
 
-    auto index = 0U;
-    auto size = lambda.arguments().size();
-    for (auto argument : lambda.arguments()) {
-      out << argument.name << ": " << argument.type;
+  //   auto index = 0U;
+  //   auto size = lambda.arguments().size();
+  //   for (auto argument : lambda.arguments()) {
+  //     out << argument.name << ": " << argument.type;
 
-      if (index++ < (size - 1)) {
-        out << ", ";
-      }
-    }
+  //     if (index++ < (size - 1)) {
+  //       out << ", ";
+  //     }
+  //   }
 
-    auto annotation = lambda.annotation();
-    if (annotation) {
-      out << " -> " << annotation.value();
-    }
+  //   auto annotation = lambda.annotation();
+  //   if (annotation) {
+  //     out << " -> " << annotation.value();
+  //   }
 
-    out << " => ";
-    print(out, lambda.body());
-  }
+  //   out << " => ";
+  //   print(out, lambda.body());
+  // }
 };
 
 void print(std::ostream &out, Mir &mir, detail::Index index) noexcept {
@@ -173,43 +173,38 @@ void print(std::ostream &out, Mir &mir, detail::Index index) noexcept {
   visitor(index);
 }
 
-struct PrintValueVisitor {
-  std::ostream &out;
-  PrintValueVisitor(std::ostream &out) noexcept : out(out) {}
+// struct PrintValueVisitor {
+//   std::ostream &out;
+//   PrintValueVisitor(std::ostream &out) noexcept : out(out) {}
 
-  void operator()(ir::Value &value) noexcept {
-    std::visit(*this, value.variant());
-  }
+//   void operator()(ir::Value &value) noexcept {
+//     std::visit(*this, value.variant());
+//   }
 
-  void operator()(ir::Scalar &scalar) noexcept { print(out, scalar); }
+//   void operator()(ir::Scalar &scalar) noexcept { print(out, scalar); }
 
-  void operator()(ir::Lambda &lambda) noexcept {
-    out << "\\";
+// void operator()(ir::Lambda &lambda) noexcept {
+//   out << "\\";
 
-    auto index = 0U;
-    auto size = lambda.arguments().size();
-    for (auto argument : lambda.arguments()) {
-      out << argument.name << ": " << argument.type;
+//   auto index = 0U;
+//   auto size = lambda.arguments().size();
+//   for (auto argument : lambda.arguments()) {
+//     out << argument.name << ": " << argument.type;
 
-      if (index++ < (size - 1)) {
-        out << ", ";
-      }
-    }
+//     if (index++ < (size - 1)) {
+//       out << ", ";
+//     }
+//   }
 
-    auto annotation = lambda.annotation();
-    if (annotation) {
-      out << " -> " << annotation.value();
-    }
+//   auto annotation = lambda.annotation();
+//   if (annotation) {
+//     out << " -> " << annotation.value();
+//   }
 
-    out << " => ";
-    print(out, lambda.body());
-  }
-};
-
-void print(std::ostream &out, ir::Value &value) noexcept {
-  PrintValueVisitor visitor(out);
-  visitor(value);
-}
+//   out << " => ";
+//   print(out, lambda.body());
+// }
+// };
 
 void print(std::ostream &out, Mir &mir) noexcept {
   print(out, mir, mir.root());

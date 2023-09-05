@@ -88,10 +88,10 @@ public:
   detail::Index emplaceImport(SourceLocation *sl, std::string_view file);
   detail::Index emplaceModule(SourceLocation *sl, Identifier name,
                               boost::container::vector<Mir> expressions);
-  detail::Index emplaceCall(SourceLocation *sl, detail::Parameter callee,
-                            std::vector<detail::Parameter> arguments);
-  detail::Index emplaceLambda(SourceLocation *sl, FormalArguments arguments,
-                              std::optional<type::Ptr> annotation, Mir body);
+  // detail::Index emplaceCall(SourceLocation *sl, detail::Parameter callee,
+  //                           std::vector<detail::Parameter> arguments);
+  // detail::Index emplaceLambda(SourceLocation *sl, FormalArguments arguments,
+  //                             std::optional<type::Ptr> annotation, Mir body);
 };
 } // namespace ir
 } // namespace mint

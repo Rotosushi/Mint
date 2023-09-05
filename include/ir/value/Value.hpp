@@ -18,13 +18,13 @@
 #include <variant>
 
 #include "ir/detail/IrBase.hpp"
-#include "ir/value/Lambda.hpp"
+// #include "ir/value/Lambda.hpp"
 #include "ir/value/Scalar.hpp"
 
 namespace mint::ir {
 class Value {
 public:
-  using Variant = std::variant<Scalar, Lambda>;
+  using Variant = std::variant<Scalar>;
 
 private:
   Variant m_variant;
@@ -37,12 +37,12 @@ public:
       : m_variant(std::in_place_type<Scalar>, integer) {}
   Value(Scalar scalar) noexcept
       : m_variant(std::in_place_type<Scalar>, scalar) {}
-  Value(SourceLocation *sl, FormalArguments arguments,
-        std::optional<type::Ptr> annotation, Mir body) noexcept
-      : m_variant(std::in_place_type<Lambda>, sl, std::move(arguments),
-                  annotation, std::move(body)) {}
-  Value(Lambda lambda) noexcept
-      : m_variant(std::in_place_type<Lambda>, std::move(lambda)) {}
+  // Value(SourceLocation *sl, FormalArguments arguments,
+  //       std::optional<type::Ptr> annotation, Mir body) noexcept
+  //     : m_variant(std::in_place_type<Lambda>, sl, std::move(arguments),
+  //                 annotation, std::move(body)) {}
+  // Value(Lambda lambda) noexcept
+  //     : m_variant(std::in_place_type<Lambda>, std::move(lambda)) {}
   Value(Value const &other) noexcept = default;
   Value(Value &&other) noexcept = default;
   auto operator=(Value const &other) noexcept -> Value & = default;

@@ -51,78 +51,78 @@ static Result<llvm::Value *> codegen(ir::Scalar &scalar,
   return visitor(scalar);
 }
 
-struct CodegenValue {
-  Environment *env;
+// struct CodegenValue {
+//   Environment *env;
 
-  CodegenValue(Environment &env) noexcept : env(&env) {}
+//   CodegenValue(Environment &env) noexcept : env(&env) {}
 
-  Result<llvm::Value *> operator()(ir::Value &value) noexcept {
-    return std::visit(*this, value.variant());
-  }
+//   Result<llvm::Value *> operator()(ir::Value &value) noexcept {
+//     return std::visit(*this, value.variant());
+//   }
 
-  Result<llvm::Value *> operator()(ir::Scalar &scalar) noexcept {
-    return codegen(scalar, *env);
-  }
+//   Result<llvm::Value *> operator()(ir::Scalar &scalar) noexcept {
+//     return codegen(scalar, *env);
+//   }
 
-  Result<llvm::Value *> operator()(ir::Lambda &lambda) noexcept {
-    env->pushScope();
+// Result<llvm::Value *> operator()(ir::Lambda &lambda) noexcept {
+//   env->pushScope();
 
-    auto type = lambda.cachedType();
-    MINT_ASSERT(type != nullptr);
-    MINT_ASSERT(type->holds<type::Lambda>());
-    auto &lambda_type = type->get<type::Lambda>();
+//   auto type = lambda.cachedType();
+//   MINT_ASSERT(type != nullptr);
+//   MINT_ASSERT(type->holds<type::Lambda>());
+//   auto &lambda_type = type->get<type::Lambda>();
 
-    auto lambda_name = env->getLambdaName();
-    auto llvm_function_type = llvm::cast<llvm::FunctionType>(
-        type::toLLVM(lambda_type.function_type, *env));
-    auto llvm_callee =
-        env->getOrInsertFunction(lambda_name, llvm_function_type);
-    auto llvm_function = llvm::cast<llvm::Function>(llvm_callee.getCallee());
+//   auto lambda_name = env->getLambdaName();
+//   auto llvm_function_type = llvm::cast<llvm::FunctionType>(
+//       type::toLLVM(lambda_type.function_type, *env));
+//   auto llvm_callee =
+//       env->getOrInsertFunction(lambda_name, llvm_function_type);
+//   auto llvm_function = llvm::cast<llvm::Function>(llvm_callee.getCallee());
 
-    auto entry_block = env->createBasicBlock(llvm_function);
-    auto temp_insertion_point =
-        env->exchangeInsertionPoint({entry_block, entry_block->begin()});
+//   auto entry_block = env->createBasicBlock(llvm_function);
+//   auto temp_insertion_point =
+//       env->exchangeInsertionPoint({entry_block, entry_block->begin()});
 
-    auto llvm_arguments_cursor = llvm_function->arg_begin();
-    for (auto &argument : lambda.arguments()) {
-      auto &llvm_argument = *llvm_arguments_cursor;
-      auto result = env->declareName(argument);
-      if (!result) {
-        env->exchangeInsertionPoint(temp_insertion_point);
-        env->popScope();
-        return result.error();
-      }
+//   auto llvm_arguments_cursor = llvm_function->arg_begin();
+//   for (auto &argument : lambda.arguments()) {
+//     auto &llvm_argument = *llvm_arguments_cursor;
+//     auto result = env->declareName(argument);
+//     if (!result) {
+//       env->exchangeInsertionPoint(temp_insertion_point);
+//       env->popScope();
+//       return result.error();
+//     }
 
-      auto binding = result.value();
-      binding.setRuntimeValue(&llvm_argument);
-      ++llvm_arguments_cursor;
-    }
+//     auto binding = result.value();
+//     binding.setRuntimeValue(&llvm_argument);
+//     ++llvm_arguments_cursor;
+//   }
 
-    auto result = codegen(lambda.body(), *env);
-    if (!result) {
-      env->exchangeInsertionPoint(temp_insertion_point);
-      env->popScope();
-      return result;
-    }
+//   auto result = codegen(lambda.body(), *env);
+//   if (!result) {
+//     env->exchangeInsertionPoint(temp_insertion_point);
+//     env->popScope();
+//     return result;
+//   }
 
-    env->createLLVMReturn(result.value());
+//   env->createLLVMReturn(result.value());
 
-    env->exchangeInsertionPoint(temp_insertion_point);
-    env->popScope();
+//   env->exchangeInsertionPoint(temp_insertion_point);
+//   env->popScope();
 
-    // #NOTE: verify returns true on failure.
-    // it is intended for use within an early return if statement.
-    MINT_ASSERT(!verify(*llvm_function, env->getErrorStream()));
+//   // #NOTE: verify returns true on failure.
+//   // it is intended for use within an early return if statement.
+//   MINT_ASSERT(!verify(*llvm_function, env->getErrorStream()));
 
-    return llvm_function;
-  }
-};
+//   return llvm_function;
+// }
+// };
 
-static Result<llvm::Value *> codegen(ir::Value &value,
-                                     Environment &env) noexcept {
-  CodegenValue visitor(env);
-  return visitor(value);
-}
+// static Result<llvm::Value *> codegen(ir::Value &value,
+//                                      Environment &env) noexcept {
+//   CodegenValue visitor(env);
+//   return visitor(value);
+// }
 
 struct CodegenImmediate {
   Environment *env;
@@ -287,97 +287,98 @@ struct CodegenInstruction {
     return instance->codegen(right, *env);
   }
 
-  Result<llvm::Value *> operator()(ir::Call &call) noexcept {
-    MINT_ASSERT(call.cachedType() != nullptr);
-    MINT_ASSERT(env->hasInsertionPoint());
+  // Result<llvm::Value *> operator()(ir::Call &call) noexcept {
+  //   MINT_ASSERT(call.cachedType() != nullptr);
+  //   MINT_ASSERT(env->hasInsertionPoint());
 
-    auto callee_result = codegen(call.callee(), *mir, *env);
-    if (!callee_result) {
-      return callee_result;
-    }
+  //   auto callee_result = codegen(call.callee(), *mir, *env);
+  //   if (!callee_result) {
+  //     return callee_result;
+  //   }
 
-    std::vector<llvm::Value *> actual_arguments;
-    actual_arguments.reserve(call.arguments().size());
-    for (auto &argument : call.arguments()) {
-      auto result = codegen(argument, *mir, *env);
-      if (!result) {
-        return result;
-      }
-      actual_arguments.emplace_back(result.value());
-    }
+  //   std::vector<llvm::Value *> actual_arguments;
+  //   actual_arguments.reserve(call.arguments().size());
+  //   for (auto &argument : call.arguments()) {
+  //     auto result = codegen(argument, *mir, *env);
+  //     if (!result) {
+  //       return result;
+  //     }
+  //     actual_arguments.emplace_back(result.value());
+  //   }
 
-    // the callee was bound directly to a function,
-    if (auto function = llvm::dyn_cast<llvm::Function>(callee_result.value());
-        function != nullptr) {
-      return env->createLLVMCall(function, actual_arguments);
-    }
+  //   // the callee was bound directly to a function,
+  //   if (auto function =
+  //   llvm::dyn_cast<llvm::Function>(callee_result.value());
+  //       function != nullptr) {
+  //     return env->createLLVMCall(function, actual_arguments);
+  //   }
 
-    // else the callee was bound to a function pointer
-    auto type = call.callee().cachedType();
-    MINT_ASSERT(type != nullptr);
-    MINT_ASSERT(type->holds<type::Lambda>());
-    auto &lambda_type = type->get<type::Lambda>();
-    auto function_type = lambda_type.function_type;
-    MINT_ASSERT(function_type->holds<type::Function>());
+  //   // else the callee was bound to a function pointer
+  //   auto type = call.callee().cachedType();
+  //   MINT_ASSERT(type != nullptr);
+  //   MINT_ASSERT(type->holds<type::Lambda>());
+  //   auto &lambda_type = type->get<type::Lambda>();
+  //   auto function_type = lambda_type.function_type;
+  //   MINT_ASSERT(function_type->holds<type::Function>());
 
-    auto llvm_function_type =
-        llvm::cast<llvm::FunctionType>(type::toLLVM(function_type, *env));
-    auto llvm_function_ptr = callee_result.value();
-    return env->createLLVMCall(llvm_function_type, llvm_function_ptr,
-                               actual_arguments);
-  }
+  //   auto llvm_function_type =
+  //       llvm::cast<llvm::FunctionType>(type::toLLVM(function_type, *env));
+  //   auto llvm_function_ptr = callee_result.value();
+  //   return env->createLLVMCall(llvm_function_type, llvm_function_ptr,
+  //                              actual_arguments);
+  // }
 
-  Result<llvm::Value *> operator()(ir::Lambda &lambda) noexcept {
-    env->pushScope();
+  // Result<llvm::Value *> operator()(ir::Lambda &lambda) noexcept {
+  //   env->pushScope();
 
-    auto type = lambda.cachedType();
-    MINT_ASSERT(type != nullptr);
-    MINT_ASSERT(type->holds<type::Lambda>());
-    auto &lambda_type = type->get<type::Lambda>();
+  //   auto type = lambda.cachedType();
+  //   MINT_ASSERT(type != nullptr);
+  //   MINT_ASSERT(type->holds<type::Lambda>());
+  //   auto &lambda_type = type->get<type::Lambda>();
 
-    auto lambda_name = env->getLambdaName();
-    auto llvm_function_type = llvm::cast<llvm::FunctionType>(
-        type::toLLVM(lambda_type.function_type, *env));
-    auto llvm_callee =
-        env->getOrInsertFunction(lambda_name, llvm_function_type);
-    auto llvm_function = llvm::cast<llvm::Function>(llvm_callee.getCallee());
+  //   auto lambda_name = env->getLambdaName();
+  //   auto llvm_function_type = llvm::cast<llvm::FunctionType>(
+  //       type::toLLVM(lambda_type.function_type, *env));
+  //   auto llvm_callee =
+  //       env->getOrInsertFunction(lambda_name, llvm_function_type);
+  //   auto llvm_function = llvm::cast<llvm::Function>(llvm_callee.getCallee());
 
-    auto entry_block = env->createBasicBlock(llvm_function);
-    auto temp_insertion_point =
-        env->exchangeInsertionPoint({entry_block, entry_block->begin()});
+  //   auto entry_block = env->createBasicBlock(llvm_function);
+  //   auto temp_insertion_point =
+  //       env->exchangeInsertionPoint({entry_block, entry_block->begin()});
 
-    auto llvm_arguments_cursor = llvm_function->arg_begin();
-    for (auto &argument : lambda.arguments()) {
-      auto &llvm_argument = *llvm_arguments_cursor;
-      auto result = env->declareName(argument);
-      if (!result) {
-        env->exchangeInsertionPoint(temp_insertion_point);
-        env->popScope();
-        return result.error();
-      }
+  //   auto llvm_arguments_cursor = llvm_function->arg_begin();
+  //   for (auto &argument : lambda.arguments()) {
+  //     auto &llvm_argument = *llvm_arguments_cursor;
+  //     auto result = env->declareName(argument);
+  //     if (!result) {
+  //       env->exchangeInsertionPoint(temp_insertion_point);
+  //       env->popScope();
+  //       return result.error();
+  //     }
 
-      auto binding = result.value();
-      binding.setRuntimeValue(&llvm_argument);
-      ++llvm_arguments_cursor;
-    }
+  //     auto binding = result.value();
+  //     binding.setRuntimeValue(&llvm_argument);
+  //     ++llvm_arguments_cursor;
+  //   }
 
-    auto result = codegen(lambda.body(), *env);
-    if (!result) {
-      env->exchangeInsertionPoint(temp_insertion_point);
-      env->popScope();
-      return result;
-    }
+  //   auto result = codegen(lambda.body(), *env);
+  //   if (!result) {
+  //     env->exchangeInsertionPoint(temp_insertion_point);
+  //     env->popScope();
+  //     return result;
+  //   }
 
-    env->createLLVMReturn(result.value());
+  //   env->createLLVMReturn(result.value());
 
-    env->exchangeInsertionPoint(temp_insertion_point);
-    env->popScope();
+  //   env->exchangeInsertionPoint(temp_insertion_point);
+  //   env->popScope();
 
-    // #NOTE: verify returns true on failure
-    MINT_ASSERT(!verify(*llvm_function, env->getErrorStream()));
+  //   // #NOTE: verify returns true on failure
+  //   MINT_ASSERT(!verify(*llvm_function, env->getErrorStream()));
 
-    return llvm_function;
-  }
+  //   return llvm_function;
+  // }
 
   Result<llvm::Value *> operator()(ir::Import &i) noexcept {
     MINT_ASSERT(i.cachedType() != nullptr);

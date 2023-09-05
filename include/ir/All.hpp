@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
+#include "ir/definition/Function.hpp"
 #include "ir/definition/Let.hpp"
 #include "ir/expression/Binop.hpp"
 #include "ir/expression/Call.hpp"
@@ -23,4 +24,4 @@
 #include "ir/statement/Import.hpp"
 #include "ir/statement/Module.hpp"
 #include "ir/syntax/Parens.hpp"
-#include "ir/value/Lambda.hpp"
+// #include "ir/value/Lambda.hpp"

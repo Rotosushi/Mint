@@ -18,11 +18,12 @@
 
 #include "adt/Result.hpp"
 #include "ir/Mir.hpp"
+#include "ir/value/Scalar.hpp"
 #include "ir/value/Value.hpp"
 #include "type/Type.hpp"
 
 namespace mint {
 class Environment;
 
-Result<ir::Value> evaluate(ir::Mir &mir, Environment &env);
+Result<ir::Scalar> evaluate(ir::Mir &mir, Environment &env);
 } // namespace mint

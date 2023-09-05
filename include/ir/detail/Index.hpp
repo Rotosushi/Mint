@@ -20,16 +20,6 @@
 namespace mint {
 namespace ir {
 namespace detail {
-// #NOTE: since we are flattening an Ast into
-// an array, we need some way of pushing elements
-// onto an array without destroying the references
-// element's have to eachother in the process.
-// since actual references are not preserved,
-// and we know we are within an array, we can store
-// the offset into said array as the 'reference'
-// to said element. The type itself is a struct
-// for type-safety, and convience.
-
 // an index into an array of Instructions.
 // #NOTE: this index is only valid for the array
 // in which the instruction resides.

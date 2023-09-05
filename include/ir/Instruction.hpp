@@ -36,8 +36,8 @@ namespace ir {
 // represents a flattened node within the AST
 class Instruction {
 public:
-  using Variant = std::variant<detail::Immediate, Parens, Let, Binop, Unop,
-                               Import, Module, Call, Lambda>;
+  using Variant =
+      std::variant<detail::Immediate, Parens, Let, Binop, Unop, Import, Module>;
 
 private:
   // the actual data of this instruction

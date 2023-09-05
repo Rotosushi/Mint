@@ -1,0 +1,22 @@
+features necessary for self hosting the compiler:
+
+booleans 
+integers 
+floats 
+
+functions 
+conditionals 
+loops 
+
+algebraic data types 
+generic types
+
+
+
+implementation details needed for self hosting the compiler:
+vectors
+strings 
+linked lists 
+hash tables 
+trees 
+

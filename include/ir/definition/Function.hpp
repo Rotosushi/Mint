@@ -16,7 +16,9 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <optional>
+#include <vector>
 
+#include "adt/Argument.hpp"
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
 #include "ir/detail/IrBase.hpp"
@@ -24,22 +26,20 @@
 #include "type/Type.hpp"
 
 namespace mint::ir {
-class Let : public detail::IrBase {
+class Function : public detail::IrBase {
   Attributes m_attributes;
   Identifier m_name;
+  FormalArguments m_arguments;
   std::optional<type::Ptr> m_annotation;
-  detail::Parameter m_parameter;
+  detail::Parameter m_body;
 
 public:
-  Let(SourceLocation *sl, Attributes attributes, Identifier name,
-      std::optional<type::Ptr> annotation, detail::Parameter parameter) noexcept
+  Function(SourceLocation *sl, Attributes attributes, Identifier name,
+           FormalArguments arguments, std::optional<type::Ptr> annotation,
+           detail::Parameter body) noexcept
       : detail::IrBase(sl), m_attributes(attributes), m_name(name),
-        m_annotation(annotation), m_parameter(parameter) {}
-  Let(Let const &other) noexcept = default;
-  Let(Let &&other) noexcept = default;
-  auto operator=(Let const &other) noexcept -> Let & = default;
-  auto operator=(Let &&other) noexcept -> Let & = default;
-  ~Let() noexcept = default;
+        m_arguments(std::move(arguments)), m_annotation(annotation),
+        m_body(body) {}
 
   [[nodiscard]] auto attributes() const noexcept -> Attributes {
     return m_attributes;
@@ -48,8 +48,6 @@ public:
   [[nodiscard]] auto annotation() const noexcept -> std::optional<type::Ptr> {
     return m_annotation;
   }
-  [[nodiscard]] auto parameter() noexcept -> detail::Parameter & {
-    return m_parameter;
-  }
+  [[nodiscard]] auto body() noexcept -> detail::Parameter & { return m_body; }
 };
 } // namespace mint::ir

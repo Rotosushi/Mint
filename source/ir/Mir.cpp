@@ -133,15 +133,16 @@ detail::Index Mir::emplaceModule(SourceLocation *sl, Identifier name,
   return emplace_back<Module>(sl, name, std::move(expressions));
 }
 
-detail::Index Mir::emplaceCall(SourceLocation *sl, detail::Parameter callee,
-                               std::vector<detail::Parameter> arguments) {
-  return emplace_back<Call>(sl, callee, std::move(arguments));
-}
+// detail::Index Mir::emplaceCall(SourceLocation *sl, detail::Parameter callee,
+//                                std::vector<detail::Parameter> arguments) {
+//   return emplace_back<Call>(sl, callee, std::move(arguments));
+// }
 
-detail::Index Mir::emplaceLambda(SourceLocation *sl, FormalArguments arguments,
-                                 std::optional<type::Ptr> annotation,
-                                 Mir body) {
-  return emplace_back<Lambda>(sl, std::move(arguments), annotation, body);
-}
+// detail::Index Mir::emplaceLambda(SourceLocation *sl, FormalArguments
+// arguments,
+//                                  std::optional<type::Ptr> annotation,
+//                                  Mir body) {
+//   return emplace_back<Lambda>(sl, std::move(arguments), annotation, body);
+// }
 } // namespace ir
 } // namespace mint
