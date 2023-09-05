@@ -15,9 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <iostream>
 
 namespace mint {
-class Environment;
-
-[[nodiscard]] int repl(Environment &env, bool do_print);
+[[nodiscard]] int repl(std::istream *in = &std::cin,
+                       std::ostream *out = &std::cout,
+                       std::ostream *errout = &std::cerr,
+                       std::ostream *log = &std::clog);
 } // namespace mint

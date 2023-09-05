@@ -144,7 +144,8 @@ public:
   auto kind() const noexcept -> Kind;
 };
 
-inline auto operator<<(std::ostream &out, Error &error) -> std::ostream & {
+inline auto operator<<(std::ostream &out, Error const &error)
+    -> std::ostream & {
   error.print(out);
   return out;
 }

@@ -22,7 +22,7 @@
 
 namespace mint {
 MirParser::MirParser(Environment &env) noexcept
-    : m_env(&env), m_sources(InputStream{env.getInputStream()}),
+    : m_env(&env), m_sources(InputStream{env.inputStream()}),
       m_lexer(m_sources.peek()), m_current_token(Token::End) {}
 
 Result<ir::detail::Parameter> MirParser::parseTop(ir::Mir &mir) {

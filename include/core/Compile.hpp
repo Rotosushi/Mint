@@ -14,11 +14,11 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once 
+#pragma once
+#include <filesystem>
 
-namespace mint 
-{
-class Environment;
+namespace fs = std::filesystem;
 
-[[nodiscard]] int compile(Environment &env);
-} // namespace mint 
+namespace mint {
+[[nodiscard]] int compile(fs::path path);
+} // namespace mint

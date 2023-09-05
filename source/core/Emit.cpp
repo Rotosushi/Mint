@@ -14,16 +14,10 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
+#include "core/Emit.hpp"
 
-#include "adt/Result.hpp"
-#include "ir/Mir.hpp"
-#include "type/Type.hpp"
+#include "adt/Environment.hpp"
 
 namespace mint {
-class Environment;
-
-Result<type::Ptr> typecheck(ir::Mir &ir, Environment &env) noexcept;
-
-int typecheck(Environment &env) noexcept;
+int emit(Environment &env) noexcept { return env.emitLLVMIR(); }
 } // namespace mint

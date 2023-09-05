@@ -15,15 +15,32 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <vector>
 
-#include "adt/Result.hpp"
 #include "ir/Mir.hpp"
-#include "type/Type.hpp"
 
 namespace mint {
-class Environment;
+class TranslationUnit {
+public:
+  using Expression = ir::Mir;
+  using Expressions = std::vector<ir::Mir>;
 
-Result<type::Ptr> typecheck(ir::Mir &ir, Environment &env) noexcept;
+private:
+  Expressions m_local;
+  Expressions m_imported;
 
-int typecheck(Environment &env) noexcept;
+public:
+  void addLocalExpression(TranslationUnit::Expression &&expression) noexcept {
+    m_local.emplace_back(std::move(expression));
+  }
+
+  void
+  addImportedExpression(TranslationUnit::Expression &&expression) noexcept {
+    m_imported.emplace_back(std::move(expression));
+  }
+  TranslationUnit::Expressions &localExpressions() noexcept { return m_local; }
+  TranslationUnit::Expressions &importedExpressions() noexcept {
+    return m_imported;
+  }
+};
 } // namespace mint

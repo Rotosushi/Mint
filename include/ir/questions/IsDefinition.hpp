@@ -15,15 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-
-#include "adt/Result.hpp"
 #include "ir/Mir.hpp"
-#include "type/Type.hpp"
 
-namespace mint {
-class Environment;
+namespace mint::ir {
+// #TODO: maybe not the best name
 
-Result<type::Ptr> typecheck(ir::Mir &ir, Environment &env) noexcept;
-
-int typecheck(Environment &env) noexcept;
-} // namespace mint
+// true if this mir needs to be added to the translation unit
+// (either to import or local)
+[[nodiscard]] bool isDefinition(ir::Mir &mir) noexcept;
+} // namespace mint::ir

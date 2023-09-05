@@ -17,35 +17,40 @@
 #include "core/Compile.hpp"
 #include "adt/Environment.hpp"
 #include "core/Codegen.hpp"
-#include "core/Repl.hpp"
+#include "core/Emit.hpp"
+#include "core/Evaluate.hpp"
+#include "core/Import.hpp"
+#include "core/Parse.hpp"
+#include "core/Typecheck.hpp"
 
 namespace mint {
-[[nodiscard]] int compile(Environment &env) {
-  auto &err = env.getErrorStream();
-  auto &source_file = env.sourceFile();
-  if (!source_file) {
-    err << "No source to compile.\n";
-    return EXIT_SUCCESS;
-  }
+[[nodiscard]] int compile(fs::path file) {
+  auto env = Environment::create();
 
-  env.pushActiveSourceFile(source_file.value());
-  if (repl(env, false) == EXIT_FAILURE) {
+  if (parse(file, env) == EXIT_FAILURE) {
     return EXIT_FAILURE;
   }
 
-  for (auto &mir : env.getModule()) {
-    auto result = codegen(mir, env);
-    if (!result) {
-      if (result.recovered()) {
-        continue;
-      }
-
-      auto error = result.error();
-      err << error;
-      return EXIT_FAILURE;
-    }
+  if (typecheck(env) == EXIT_FAILURE) {
+    return EXIT_FAILURE;
   }
 
-  return env.emitLLVMIR();
+  if (evaluate(env) == EXIT_FAILURE) {
+    return EXIT_FAILURE;
+  }
+
+  if (forwardDeclareImports(env) == EXIT_FAILURE) {
+    return EXIT_FAILURE;
+  }
+
+  if (codegen(env) == EXIT_FAILURE) {
+    return EXIT_FAILURE;
+  }
+
+  if (emit(env) == EXIT_FAILURE) {
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
 }
 } // namespace mint

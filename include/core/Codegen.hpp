@@ -24,4 +24,6 @@ namespace mint {
 class Environment;
 
 Result<llvm::Value *> codegen(ir::Mir &mir, Environment &env);
+
+int codegen(Environment &env) noexcept;
 } // namespace mint

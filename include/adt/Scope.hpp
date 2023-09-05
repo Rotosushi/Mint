@@ -23,7 +23,7 @@
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
 #include "adt/Result.hpp"
-#include "ir/value/Scalar.hpp"
+#include "ir/value/Value.hpp"
 #include "type/Type.hpp"
 
 #include "llvm/IR/Value.h"
@@ -35,7 +35,7 @@ public:
   struct Value {
     Attributes attributes;
     type::Ptr type;
-    std::optional<ir::Scalar> comptime_value;
+    std::optional<ir::Value> comptime_value;
     std::optional<llvm::Value *> runtime_value;
   };
   using Table = std::map<Key, Value>;
@@ -56,11 +56,11 @@ public:
     [[nodiscard]] auto type() const noexcept -> type::Ptr;
 
     [[nodiscard]] auto comptimeValue() const noexcept
-        -> std::optional<ir::Scalar> const &;
-    [[nodiscard]] auto comptimeValue() noexcept -> std::optional<ir::Scalar> &;
+        -> std::optional<ir::Value> const &;
+    [[nodiscard]] auto comptimeValue() noexcept -> std::optional<ir::Value> &;
     [[nodiscard]] auto hasComptimeValue() const noexcept -> bool;
-    [[nodiscard]] auto comptimeValueOrAssert() noexcept -> ir::Scalar &;
-    void setComptimeValue(ir::Scalar value) noexcept;
+    [[nodiscard]] auto comptimeValueOrAssert() noexcept -> ir::Value &;
+    void setComptimeValue(ir::Value value) noexcept;
 
     [[nodiscard]] auto runtimeValue() noexcept
         -> std::optional<llvm::Value *> &;
@@ -129,8 +129,6 @@ public:
 
 class Scope : public std::enable_shared_from_this<Scope> {
 private:
-  // #TODO: handle non-capturing vs. capturing lookup from
-  // within a lambda.
   enum struct Kind {
     Module,
     Local,

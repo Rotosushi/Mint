@@ -16,7 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "core/Evaluate.hpp"
 #include "adt/Environment.hpp"
-#include "core/Repl.hpp"
+#include "core/Import.hpp"
 #include "core/Typecheck.hpp"
 #include "ir/Instruction.hpp"
 
@@ -26,15 +26,13 @@ struct EvalauteImmediate {
 
   EvalauteImmediate(Environment &env) noexcept : env(&env) {}
 
-  Result<ir::Scalar> operator()(ir::detail::Immediate &immediate) noexcept {
+  Result<ir::Value> operator()(ir::detail::Immediate &immediate) noexcept {
     return std::visit(*this, immediate.variant());
   }
 
-  Result<ir::Scalar> operator()(ir::Scalar &scalar) noexcept {
-    return {scalar};
-  }
+  Result<ir::Value> operator()(ir::Scalar &scalar) noexcept { return {scalar}; }
 
-  Result<ir::Scalar> operator()(Identifier &name) noexcept {
+  Result<ir::Value> operator()(Identifier &name) noexcept {
     auto result = env->lookupBinding(name);
     MINT_ASSERT(result.success());
     auto binding = result.value();
@@ -47,17 +45,17 @@ struct EvalauteImmediate {
   }
 };
 
-static Result<ir::Scalar> evaluate(ir::detail::Immediate &immediate,
-                                   Environment &env) noexcept {
+static Result<ir::Value> evaluate(ir::detail::Immediate &immediate,
+                                  Environment &env) noexcept {
   EvalauteImmediate visitor(env);
   return visitor(immediate);
 }
 
-static Result<ir::Scalar> evaluate(ir::detail::Index index, ir::Mir &mir,
-                                   Environment &env) noexcept;
+static Result<ir::Value> evaluate(ir::detail::Index index, ir::Mir &mir,
+                                  Environment &env) noexcept;
 
-static Result<ir::Scalar> evaluate(ir::detail::Parameter &parameter,
-                                   ir::Mir &mir, Environment &env) noexcept {
+static Result<ir::Value> evaluate(ir::detail::Parameter &parameter,
+                                  ir::Mir &mir, Environment &env) noexcept {
   return evaluate(parameter.index(), mir, env);
 }
 
@@ -70,19 +68,19 @@ struct EvaluateInstruction {
                       Environment &env) noexcept
       : mir(&mir), index(index), env(&env) {}
 
-  Result<ir::Scalar> operator()() noexcept {
+  Result<ir::Value> operator()() noexcept {
     return std::visit(*this, (*mir)[index].variant());
   }
 
-  Result<ir::Scalar> operator()(ir::detail::Immediate &immediate) noexcept {
+  Result<ir::Value> operator()(ir::detail::Immediate &immediate) noexcept {
     return evaluate(immediate, *env);
   }
 
-  Result<ir::Scalar> operator()(ir::Parens &parens) noexcept {
+  Result<ir::Value> operator()(ir::Parens &parens) noexcept {
     return evaluate(parens.parameter(), *mir, *env);
   }
 
-  Result<ir::Scalar> operator()(ir::Let &let) noexcept {
+  Result<ir::Value> operator()(ir::Let &let) noexcept {
     auto found = env->lookupLocalBinding(let.name());
     MINT_ASSERT(found);
     auto binding = found.value();
@@ -104,36 +102,40 @@ struct EvaluateInstruction {
       return failed.value();
     }
 
-    return ir::Scalar{};
+    return ir::Value{};
   }
 
-  Result<ir::Scalar> operator()(ir::Binop &binop) noexcept {
+  Result<ir::Value> operator()(ir::Binop &binop) noexcept {
     auto overloads = env->lookupBinop(binop.op());
     MINT_ASSERT(overloads);
 
-    auto left = evaluate(binop.left(), *mir, *env);
-    if (!left) {
-      return left;
+    auto left_result = evaluate(binop.left(), *mir, *env);
+    if (!left_result) {
+      return left_result;
     }
-    auto left_value = left.value();
+    auto &left_value = left_result.value();
+    MINT_ASSERT(left_value.holds<ir::Scalar>());
+    auto &left = left_value.get<ir::Scalar>();
     auto left_type = binop.left().cachedType();
     MINT_ASSERT(left_type != nullptr);
 
-    auto right = evaluate(binop.right(), *mir, *env);
-    if (!right) {
-      return right;
+    auto right_result = evaluate(binop.right(), *mir, *env);
+    if (!right_result) {
+      return right_result;
     }
-    auto right_value = right.value();
+    auto &right_value = right_result.value();
+    MINT_ASSERT(right_value.holds<ir::Scalar>());
+    auto &right = right_value.get<ir::Scalar>();
     auto right_type = binop.right().cachedType();
     MINT_ASSERT(right_type != nullptr);
 
     auto instance = overloads->lookup(left_type, right_type);
     MINT_ASSERT(instance);
 
-    return instance->evaluate(left_value, right_value);
+    return instance->evaluate(left, right);
   }
 
-  Result<ir::Scalar> operator()(ir::Unop &unop) noexcept {
+  Result<ir::Value> operator()(ir::Unop &unop) noexcept {
     auto overloads = env->lookupUnop(unop.op());
     MINT_ASSERT(overloads);
 
@@ -143,7 +145,9 @@ struct EvaluateInstruction {
     if (!right_result) {
       return right_result;
     }
-    auto right = right_result.value();
+    auto &right_value = right_result.value();
+    MINT_ASSERT(right_value.holds<ir::Scalar>());
+    auto &right = right_value.get<ir::Scalar>();
 
     auto instance = overloads->lookup(right_type);
     MINT_ASSERT(instance);
@@ -151,7 +155,7 @@ struct EvaluateInstruction {
     return instance->evaluate(right);
   }
 
-  // Result<ir::Scalar> operator()(ir::Call &call) noexcept {
+  // Result<ir::Value> operator()(ir::Call &call) noexcept {
   //   auto callee_type = call.callee().cachedType();
   //   MINT_ASSERT(callee_type != nullptr);
   //   MINT_ASSERT(type::callable(callee_type));
@@ -163,7 +167,7 @@ struct EvaluateInstruction {
   //   MINT_ASSERT(callee_result.value().holds<ir::Lambda>());
   //   auto &callee = callee_result.value().get<ir::Lambda>();
 
-  //   std::vector<ir::Scalar> actual_arguments;
+  //   std::vector<ir::Value> actual_arguments;
   //   actual_arguments.reserve(call.arguments().size());
   //   for (auto &argument : call.arguments()) {
   //     auto result = evaluate(argument, *mir, *env);
@@ -196,30 +200,20 @@ struct EvaluateInstruction {
   //   return result;
   // }
 
-  // Result<ir::Scalar> operator()(ir::Lambda &lambda) noexcept {
-  //   return ir::Scalar{lambda};
+  // Result<ir::Value> operator()(ir::Lambda &lambda) noexcept {
+  //   return ir::Value{lambda};
   // }
 
-  Result<ir::Scalar> operator()(ir::Import &import) noexcept {
-    if (env->alreadyImported(import.file())) {
-      return ir::Scalar{};
-    }
-
-    auto found = env->fileSearch(import.file());
-    MINT_ASSERT(found);
-    env->pushActiveSourceFile(std::move(found.value()));
-
-    if (repl(*env, false) == EXIT_FAILURE) {
+  Result<ir::Value> operator()(ir::Import &import) noexcept {
+    if (importSourceFile(import.file(), *env) == EXIT_FAILURE) {
       return Error{Error::Kind::ImportFailed, import.sourceLocation(),
                    import.file()};
     }
 
-    env->popActiveSourceFile();
-    env->addImport(import.file());
-    return ir::Scalar{};
+    return ir::Value{};
   }
 
-  Result<ir::Scalar> operator()(ir::Module &m) noexcept {
+  Result<ir::Value> operator()(ir::Module &m) noexcept {
     env->pushScope(m.name());
 
     std::size_t index = 0U;
@@ -244,17 +238,46 @@ struct EvaluateInstruction {
     }
 
     env->popScope();
-    return ir::Scalar{};
+    return ir::Value{};
   }
 };
 
-static Result<ir::Scalar> evaluate(ir::detail::Index index, ir::Mir &mir,
-                                   Environment &env) noexcept {
+static Result<ir::Value> evaluate(ir::detail::Index index, ir::Mir &mir,
+                                  Environment &env) noexcept {
   EvaluateInstruction visitor(mir, index, env);
   return visitor();
 }
 
-Result<ir::Scalar> evaluate(ir::Mir &mir, Environment &env) {
+Result<ir::Value> evaluate(ir::Mir &mir, Environment &env) {
   return evaluate(mir.root(), mir, env);
 }
+
+int evaluate(Environment &env) noexcept {
+  for (auto &expression : env.importedExpressions()) {
+    auto result = evaluate(expression, env);
+    if (!result) {
+      if (result.recovered()) {
+        continue;
+      }
+
+      env.errorStream() << result.error() << "\n";
+      return EXIT_FAILURE;
+    }
+  }
+
+  for (auto &expression : env.localExpressions()) {
+    auto result = evaluate(expression, env);
+    if (!result) {
+      if (result.recovered()) {
+        continue;
+      }
+
+      env.errorStream() << result.error() << "\n";
+      return EXIT_FAILURE;
+    }
+  }
+
+  return EXIT_SUCCESS;
+}
+
 } // namespace mint

@@ -14,10 +14,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include <cstdlib>
-#include <iostream>
 
-#include "adt/Environment.hpp"
 #include "core/Compile.hpp"
 #include "core/Repl.hpp"
 #include "utility/CommandLineOptions.hpp"
@@ -35,17 +32,8 @@ auto main(int argc, char **argv) -> int {
   llvm::cl::SetVersionPrinter(mint::printVersion);
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
-  mint::Environment env = mint::Environment::create();
-
-  // #TODO handle command line options somewhere else.
-
-  for (auto &path : mint::include_paths) {
-    env.appendDirectory(path);
-  }
-
   if (mint::input_filename.empty())
-    return repl(env, true);
+    return mint::repl();
 
-  env.sourceFile(mint::input_filename.c_str());
-  return compile(env);
+  return mint::compile(mint::input_filename.c_str());
 }

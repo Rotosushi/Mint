@@ -30,6 +30,7 @@
 #include "adt/ImportSet.hpp"
 #include "adt/InsertionPoint.hpp"
 #include "adt/Scope.hpp"
+#include "adt/TranslationUnit.hpp"
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
@@ -47,10 +48,10 @@ class Environment {
   std::optional<fs::path> m_file;
   std::shared_ptr<Scope> m_global_scope;
   std::shared_ptr<Scope> m_local_scope;
-  std::vector<ir::Mir> m_module;
 
+  TranslationUnit m_translation_unit;
   DirectorySearcher m_directory_searcher;
-  ImportSet m_import_set;
+  ImportSet m_imported_files;
   TypeInterner m_type_interner;
   StringSet m_string_set;
   BinopTable m_binop_table;
@@ -64,7 +65,6 @@ class Environment {
   std::unique_ptr<llvm::Module> m_llvm_module;
   std::unique_ptr<llvm::IRBuilder<>> m_llvm_ir_builder;
   llvm::TargetMachine *m_llvm_target_machine;
-  // llvm::Function *current_llvm_function;
 
   Environment(std::istream *in, std::ostream *out, std::ostream *errout,
               std::ostream *log,
@@ -84,10 +84,10 @@ public:
       -> Environment;
 
   //**** Environment member interfaces ****//
-  std::istream &getInputStream() noexcept;
-  std::ostream &getOutputStream() noexcept;
-  std::ostream &getErrorStream() noexcept;
-  std::ostream &getLogStream() noexcept;
+  std::istream &inputStream() noexcept;
+  std::ostream &outputStream() noexcept;
+  std::ostream &errorStream() noexcept;
+  std::ostream &logStream() noexcept;
 
   std::optional<fs::path> const &sourceFile() noexcept;
   void sourceFile(fs::path file) noexcept;
@@ -98,28 +98,36 @@ public:
   auto endOfMirInput() const noexcept -> bool;
   Result<ir::Mir> parseMir();
 
+  int importSourceFile(std::fstream &&fin);
   void pushActiveSourceFile(std::fstream &&fin);
   void popActiveSourceFile();
 
-  //**** global "module" interface ****//
-  void addMirToModule(ir::Mir mir) noexcept;
-  std::vector<ir::Mir> &getModule() noexcept;
+  //**** TranslationUnit interface ****//
+  void addLocalExpression(TranslationUnit::Expression &&expression) noexcept {
+    m_translation_unit.addLocalExpression(std::move(expression));
+  }
+  void
+  addImportedExpression(TranslationUnit::Expression &&expression) noexcept {
+    m_translation_unit.addImportedExpression(std::move(expression));
+  }
+  auto localExpressions() noexcept {
+    return m_translation_unit.localExpressions();
+  }
+  auto importedExpressions() noexcept {
+    return m_translation_unit.importedExpressions();
+  }
 
   //**** DirectorySearcher interface ****//
   void appendDirectory(fs::path file) noexcept;
-
   auto fileExists(fs::path file) noexcept -> bool;
-
   auto fileSearch(fs::path file) noexcept -> std::optional<std::fstream>;
 
   //**** Identifier Set Interface ****//
   auto getIdentifier(std::string_view name) noexcept -> Identifier;
-
   auto getLambdaName() noexcept -> Identifier;
 
   //**** ImportSet interface ****//
   auto alreadyImported(fs::path const &filename) noexcept -> bool;
-
   void addImport(fs::path const &filename) noexcept;
 
   //**** Scope interface ****//

@@ -117,13 +117,13 @@ Environment::Environment(std::istream *in, std::ostream *out,
                      target_machine};
 }
 
-std::istream &Environment::getInputStream() noexcept { return *m_input; }
+std::istream &Environment::inputStream() noexcept { return *m_input; }
 
-std::ostream &Environment::getOutputStream() noexcept { return *m_output; }
+std::ostream &Environment::outputStream() noexcept { return *m_output; }
 
-std::ostream &Environment::getErrorStream() noexcept { return *m_error_output; }
+std::ostream &Environment::errorStream() noexcept { return *m_error_output; }
 
-std::ostream &Environment::getLogStream() noexcept { return *m_log_output; }
+std::ostream &Environment::logStream() noexcept { return *m_log_output; }
 
 std::optional<fs::path> const &Environment::sourceFile() noexcept {
   return m_file;
@@ -222,13 +222,6 @@ auto Environment::qualifyName(Identifier name) noexcept -> Identifier {
   return m_local_scope->qualifyName(name);
 }
 
-//**** "module" interface ****/
-void Environment::addMirToModule(ir::Mir mir) noexcept {
-  m_module.push_back(std::move(mir));
-}
-
-std::vector<ir::Mir> &Environment::getModule() noexcept { return m_module; }
-
 //**** DirectorySearcher interface ****/
 void Environment::appendDirectory(fs::path file) noexcept {
   return m_directory_searcher.append(std::move(file));
@@ -261,11 +254,11 @@ auto Environment::getLambdaName() noexcept -> Identifier {
 
 //**** ImportSet interface ****//
 auto Environment::alreadyImported(fs::path const &filename) noexcept -> bool {
-  return m_import_set.contains(filename);
+  return m_imported_files.contains(filename);
 }
 
 void Environment::addImport(fs::path const &filename) noexcept {
-  m_import_set.insert(filename);
+  m_imported_files.insert(filename);
 }
 
 //**** Use Before Def Interface ****//

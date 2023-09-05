@@ -15,15 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <ostream>
 
-#include "adt/Result.hpp"
 #include "ir/Mir.hpp"
-#include "type/Type.hpp"
+#include "ir/value/Value.hpp"
 
-namespace mint {
-class Environment;
+namespace mint::ir {
+void print(std::ostream &out, Mir &mir) noexcept;
+void print(std::ostream &out, ir::Value &value) noexcept;
 
-Result<type::Ptr> typecheck(ir::Mir &ir, Environment &env) noexcept;
+inline std::ostream &operator<<(std::ostream &out, Mir &mir) noexcept {
+  print(out, mir);
+  return out;
+}
 
-int typecheck(Environment &env) noexcept;
-} // namespace mint
+inline std::ostream &operator<<(std::ostream &out, ir::Value &value) noexcept {
+  print(out, value);
+  return out;
+}
+} // namespace mint::ir

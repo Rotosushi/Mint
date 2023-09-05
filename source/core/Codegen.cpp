@@ -51,78 +51,78 @@ static Result<llvm::Value *> codegen(ir::Scalar &scalar,
   return visitor(scalar);
 }
 
-// struct CodegenValue {
-//   Environment *env;
+struct CodegenValue {
+  Environment *env;
 
-//   CodegenValue(Environment &env) noexcept : env(&env) {}
+  CodegenValue(Environment &env) noexcept : env(&env) {}
 
-//   Result<llvm::Value *> operator()(ir::Value &value) noexcept {
-//     return std::visit(*this, value.variant());
-//   }
+  Result<llvm::Value *> operator()(ir::Value &value) noexcept {
+    return std::visit(*this, value.variant());
+  }
 
-//   Result<llvm::Value *> operator()(ir::Scalar &scalar) noexcept {
-//     return codegen(scalar, *env);
-//   }
+  Result<llvm::Value *> operator()(ir::Scalar &scalar) noexcept {
+    return codegen(scalar, *env);
+  }
 
-// Result<llvm::Value *> operator()(ir::Lambda &lambda) noexcept {
-//   env->pushScope();
+  Result<llvm::Value *> operator()(ir::Lambda &lambda) noexcept {
+    env->pushScope();
 
-//   auto type = lambda.cachedType();
-//   MINT_ASSERT(type != nullptr);
-//   MINT_ASSERT(type->holds<type::Lambda>());
-//   auto &lambda_type = type->get<type::Lambda>();
+    auto type = lambda.cachedType();
+    MINT_ASSERT(type != nullptr);
+    MINT_ASSERT(type->holds<type::Lambda>());
+    auto &lambda_type = type->get<type::Lambda>();
 
-//   auto lambda_name = env->getLambdaName();
-//   auto llvm_function_type = llvm::cast<llvm::FunctionType>(
-//       type::toLLVM(lambda_type.function_type, *env));
-//   auto llvm_callee =
-//       env->getOrInsertFunction(lambda_name, llvm_function_type);
-//   auto llvm_function = llvm::cast<llvm::Function>(llvm_callee.getCallee());
+    auto lambda_name = env->getLambdaName();
+    auto llvm_function_type = llvm::cast<llvm::FunctionType>(
+        type::toLLVM(lambda_type.function_type, *env));
+    auto llvm_callee =
+        env->getOrInsertFunction(lambda_name, llvm_function_type);
+    auto llvm_function = llvm::cast<llvm::Function>(llvm_callee.getCallee());
 
-//   auto entry_block = env->createBasicBlock(llvm_function);
-//   auto temp_insertion_point =
-//       env->exchangeInsertionPoint({entry_block, entry_block->begin()});
+    auto entry_block = env->createBasicBlock(llvm_function);
+    auto temp_insertion_point =
+        env->exchangeInsertionPoint({entry_block, entry_block->begin()});
 
-//   auto llvm_arguments_cursor = llvm_function->arg_begin();
-//   for (auto &argument : lambda.arguments()) {
-//     auto &llvm_argument = *llvm_arguments_cursor;
-//     auto result = env->declareName(argument);
-//     if (!result) {
-//       env->exchangeInsertionPoint(temp_insertion_point);
-//       env->popScope();
-//       return result.error();
-//     }
+    auto llvm_arguments_cursor = llvm_function->arg_begin();
+    for (auto &argument : lambda.arguments()) {
+      auto &llvm_argument = *llvm_arguments_cursor;
+      auto result = env->declareName(argument);
+      if (!result) {
+        env->exchangeInsertionPoint(temp_insertion_point);
+        env->popScope();
+        return result.error();
+      }
 
-//     auto binding = result.value();
-//     binding.setRuntimeValue(&llvm_argument);
-//     ++llvm_arguments_cursor;
-//   }
+      auto binding = result.value();
+      binding.setRuntimeValue(&llvm_argument);
+      ++llvm_arguments_cursor;
+    }
 
-//   auto result = codegen(lambda.body(), *env);
-//   if (!result) {
-//     env->exchangeInsertionPoint(temp_insertion_point);
-//     env->popScope();
-//     return result;
-//   }
+    auto result = codegen(lambda.body(), *env);
+    if (!result) {
+      env->exchangeInsertionPoint(temp_insertion_point);
+      env->popScope();
+      return result;
+    }
 
-//   env->createLLVMReturn(result.value());
+    env->createLLVMReturn(result.value());
 
-//   env->exchangeInsertionPoint(temp_insertion_point);
-//   env->popScope();
+    env->exchangeInsertionPoint(temp_insertion_point);
+    env->popScope();
 
-//   // #NOTE: verify returns true on failure.
-//   // it is intended for use within an early return if statement.
-//   MINT_ASSERT(!verify(*llvm_function, env->getErrorStream()));
+    // #NOTE: verify returns true on failure.
+    // it is intended for use within an early return if statement.
+    MINT_ASSERT(!verify(*llvm_function, env->errorStream()));
 
-//   return llvm_function;
-// }
-// };
+    return llvm_function;
+  }
+};
 
-// static Result<llvm::Value *> codegen(ir::Value &value,
-//                                      Environment &env) noexcept {
-//   CodegenValue visitor(env);
-//   return visitor(value);
-// }
+static Result<llvm::Value *> codegen(ir::Value &value,
+                                     Environment &env) noexcept {
+  CodegenValue visitor(env);
+  return visitor(value);
+}
 
 struct CodegenImmediate {
   Environment *env;
@@ -375,7 +375,7 @@ struct CodegenInstruction {
   //   env->popScope();
 
   //   // #NOTE: verify returns true on failure
-  //   MINT_ASSERT(!verify(*llvm_function, env->getErrorStream()));
+  //   MINT_ASSERT(!verify(*llvm_function, env->errorStream()));
 
   //   return llvm_function;
   // }
@@ -420,5 +420,21 @@ static Result<llvm::Value *> codegen(ir::detail::Index index, ir::Mir &mir,
 
 Result<llvm::Value *> codegen(ir::Mir &mir, Environment &env) {
   return codegen(mir.root(), mir, env);
+}
+
+int codegen(Environment &env) noexcept {
+  for (auto &expression : env.localExpressions()) {
+    auto result = codegen(expression, env);
+    if (!result) {
+      if (result.recovered()) {
+        continue;
+      }
+
+      env.errorStream() << result.error() << "\n";
+      return EXIT_FAILURE;
+    }
+  }
+
+  return EXIT_SUCCESS;
 }
 } // namespace mint

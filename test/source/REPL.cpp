@@ -155,10 +155,8 @@ void testExpressionInREPL(TestCode &expression) {
   std::stringstream output;
   std::stringstream error_output;
   std::stringstream log_output;
-  auto env =
-      mint::Environment::create(&input, &output, &error_output, &log_output);
 
-  auto failed = repl(env, true);
+  auto failed = repl(&input, &output, &error_output, &log_output);
   BOOST_REQUIRE(failed == EXIT_SUCCESS);
 
   auto outview = output.view();

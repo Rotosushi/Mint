@@ -15,15 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <filesystem>
 
-#include "adt/Result.hpp"
-#include "ir/Mir.hpp"
-#include "type/Type.hpp"
+namespace fs = std::filesystem;
 
 namespace mint {
 class Environment;
 
-Result<type::Ptr> typecheck(ir::Mir &ir, Environment &env) noexcept;
+int forwardDeclareImports(Environment &env) noexcept;
 
-int typecheck(Environment &env) noexcept;
+int importSourceFile(fs::path path, Environment &env) noexcept;
 } // namespace mint

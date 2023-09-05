@@ -22,6 +22,9 @@
 #include "ir/Mir.hpp"
 #include "ir/detail/IrBase.hpp"
 
+// #TODO: handle non-capturing vs. capturing lookup from
+// within a lambda.
+
 namespace mint {
 namespace ir {
 

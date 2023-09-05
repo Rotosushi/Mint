@@ -67,7 +67,7 @@ Result<ast::Ptr> Import::evaluate(Environment &env) noexcept {
   if (env.alreadyImported(m_filename)) {
     return ast::Nil::create({}, {});
   }
-  auto &error_out = env.getErrorStream();
+  auto &error_out = env.errorStream();
   auto found = env.fileSearch(m_filename);
   MINT_ASSERT(found.has_value());
   auto &file = found.value();

@@ -14,7 +14,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "ir/action/Clone.hpp"
+#include "ir/actions/Clone.hpp"
 #include "ir/Instruction.hpp"
 
 namespace mint {

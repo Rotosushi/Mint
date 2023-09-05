@@ -19,7 +19,7 @@
 #include "adt/Environment.hpp"
 #include "core/Typecheck.hpp"
 #include "ir/Instruction.hpp"
-#include "ir/action/Clone.hpp"
+#include "ir/actions/Clone.hpp"
 #include "utility/Abort.hpp"
 
 namespace mint {
@@ -447,4 +447,33 @@ static Result<type::Ptr> typecheck(ir::detail::Index index, ir::Mir &ir,
 Result<type::Ptr> typecheck(ir::Mir &ir, Environment &env) noexcept {
   return typecheck(ir.root(), ir, env);
 }
+
+int typecheck(Environment &env) noexcept {
+  for (auto &expression : env.importedExpressions()) {
+    auto result = typecheck(expression, env);
+    if (!result) {
+      if (result.recovered()) {
+        continue;
+      }
+
+      env.errorStream() << result.error() << "\n";
+      return EXIT_FAILURE;
+    }
+  }
+
+  for (auto &expression : env.localExpressions()) {
+    auto result = typecheck(expression, env);
+    if (!result) {
+      if (result.recovered()) {
+        continue;
+      }
+
+      env.errorStream() << result.error() << "\n";
+      return EXIT_FAILURE;
+    }
+  }
+
+  return EXIT_SUCCESS;
+}
+
 } // namespace mint

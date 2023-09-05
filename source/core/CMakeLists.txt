@@ -3,7 +3,9 @@ cmake_minimum_required(VERSION 3.20)
 add_library(mint_core STATIC
   ${MINT_SOURCE_DIR}/core/Repl.cpp 
   ${MINT_SOURCE_DIR}/core/Compile.cpp
-
+  ${MINT_SOURCE_DIR}/core/Emit.cpp 
+  ${MINT_SOURCE_DIR}/core/Import.cpp
+  ${MINT_SOURCE_DIR}/core/Parse.cpp
   ${MINT_SOURCE_DIR}/core/Typecheck.cpp 
   ${MINT_SOURCE_DIR}/core/Evaluate.cpp 
   ${MINT_SOURCE_DIR}/core/Codegen.cpp

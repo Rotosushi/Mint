@@ -14,24 +14,34 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-#include <ostream>
+#include "core/Parse.hpp"
 
-#include "ir/Mir.hpp"
-#include "ir/value/Scalar.hpp"
+#include "adt/Environment.hpp"
 
-namespace mint::ir {
-void print(std::ostream &out, Mir &mir) noexcept;
-void print(std::ostream &out, ir::Scalar &scalar) noexcept;
+#include "ir/questions/IsDefinition.hpp"
 
-inline std::ostream &operator<<(std::ostream &out, Mir &mir) noexcept {
-  print(out, mir);
-  return out;
+namespace mint {
+int parse(fs::path path, Environment &env) noexcept {
+  auto found = env.fileSearch(path);
+  if (!found) {
+    return EXIT_FAILURE;
+  }
+  auto &file = found.value();
+  env.pushActiveSourceFile(std::move(file));
+
+  while (true) {
+    auto result = env.parseMir();
+    if (!result) {
+      env.errorStream() << result.error() << "\n";
+      return EXIT_FAILURE;
+    }
+
+    if (ir::isDefinition(result.value())) {
+      env.addLocalExpression(std::move(result.value()));
+    }
+  }
+
+  env.popActiveSourceFile();
+  return EXIT_SUCCESS;
 }
-
-inline std::ostream &operator<<(std::ostream &out,
-                                ir::Scalar &scalar) noexcept {
-  print(out, scalar);
-  return out;
-}
-} // namespace mint::ir
+} // namespace mint

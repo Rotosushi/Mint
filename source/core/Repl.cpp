@@ -18,158 +18,52 @@
 #include "adt/Environment.hpp"
 #include "core/Evaluate.hpp"
 #include "core/Typecheck.hpp"
-#include "ir/action/Print.hpp"
+#include "ir/actions/Print.hpp"
 
 namespace mint {
-[[nodiscard]] int repl(Environment &env, bool do_print) {
-  auto &out = env.getOutputStream();
-  auto &err = env.getErrorStream();
-
-  bool good = false;
-  ir::Mir mir;
+[[nodiscard]] int repl(std::istream *in, std::ostream *out,
+                       std::ostream *errout, std::ostream *log) {
+  auto env = Environment::create(in, out, errout, log);
 
   while (true) {
-    if (good) {
-      env.addMirToModule(std::move(mir));
-    }
-
-    if (do_print) {
-      out << "# ";
-    }
+    env.outputStream() << "# ";
 
     auto parse_result = env.parseMir();
     if (!parse_result) {
-      good = false;
       auto error = parse_result.error();
       if (error.kind() == Error::Kind::EndOfInput)
         break;
 
-      err << error;
+      env.errorStream() << error;
       continue;
     }
-    mir = parse_result.value();
+    auto &mir = parse_result.value();
 
     auto typecheck_result = typecheck(mir, env);
     if (!typecheck_result) {
-      good = false;
       if (typecheck_result.recovered()) {
         continue;
       }
 
-      auto error = typecheck_result.error();
-      err << error;
+      env.errorStream() << typecheck_result.error();
       continue;
     }
     auto type = typecheck_result.value();
 
     auto evaluate_result = evaluate(mir, env);
     if (!evaluate_result) {
-      good = false;
       if (evaluate_result.recovered()) {
         continue;
       }
 
-      auto error = evaluate_result.error();
-      err << error;
+      env.errorStream() << evaluate_result.error();
       continue;
     }
     auto &value = evaluate_result.value();
 
-    if (do_print) {
-      out << mir << ": " << type << " => " << value << "\n";
-    }
-
-    good = true;
+    env.outputStream() << mir << ": " << type << " => " << value << "\n";
   }
 
   return EXIT_SUCCESS;
 }
-// auto &out = env.getOutputStream();
-// while (true) {
-//   if (do_print)
-//     out << "# ";
-
-//   auto parse_result = env.parse();
-//   if (!parse_result) {
-//     auto &error = parse_result.error();
-//     if (error.kind() == Error::Kind::EndOfInput)
-//       break;
-
-//     env.printErrorWithSource(error);
-//     continue;
-//   }
-//   auto &ast = parse_result.value();
-
-//   auto typecheck_result = ast->typecheck(env);
-//   if (!typecheck_result) {
-//     auto &error = typecheck_result.error();
-//     if (!error.isUseBeforeDef()) {
-//       env.printErrorWithSource(error);
-//       continue;
-//     }
-
-//     if (auto failed = env.bindUseBeforeDef(error, ast)) {
-//       env.printErrorWithSource(failed.value());
-//     }
-//     continue;
-//   }
-//   auto &type = typecheck_result.value();
-
-//   auto evaluate_result = ast->evaluate(env);
-//   if (!evaluate_result) {
-//     env.printErrorWithSource(evaluate_result.error());
-//     continue;
-//   }
-//   auto &value = evaluate_result.value();
-
-//   if (do_print)
-//     out << ast << " : " << type << " => " << value << "\n";
-
-//   env.addAstToModule(ast);
-// }
-
-// return EXIT_SUCCESS;
-
-//  Parse, Typecheck, and Evaluate each ast within the source file
-//  then Codegen all of the terms collected and emit all of that
-//  as LLVM IR.
-//
-//  #TODO: emit the terms into a LLVM bitcode, or object file.
-//
-//  #TODO: add a link step to produce a library, or executable
-//
-//  #TODO: I think we can handle multiple source files by "repl"ing
-//  each subsequent file into the environment created by the first
-//  file given. then generating the code after all files are processed.
-//  this might convert to a multithreaded approach, where a thread is
-//  launched per input file. but we would need some way of
-//  A) bringing all of the results into a single output file and
-//  B) something else I am sure I haven't thought of.
-
-// [[nodiscard]] int compile(Environment &env) {
-//   auto found = env.fileSearch(env.sourceFile());
-//   if (!found) {
-//     out <<
-//         Error{Error::Kind::FileNotFound, Location{},
-//         env.sourceFile().c_str()});
-//     return EXIT_FAILURE;
-//   }
-//   auto &file = found.value();
-//   env.pushActiveSourceFile(std::move(file));
-
-//   auto failed = repl(env, false);
-//   if (failed == EXIT_FAILURE)
-//     return EXIT_FAILURE;
-
-//   for (auto &ast : env.getModule()) {
-//     auto result = ast->codegen(env);
-//     if (!result) {
-//       out << result.error();
-//       return EXIT_FAILURE;
-//     }
-//   }
-
-//   return emitLLVMIR(env.getLLVMModule(), env.sourceFile(),
-//                     env.getErrorStream());
-// }
 } // namespace mint
