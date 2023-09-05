@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.20)
 
 add_library(mint_runtime STATIC 
   ${MINT_SOURCE_DIR}/runtime/Allocate.cpp 
+  ${MINT_SOURCE_DIR}/runtime/ForwardDeclare.cpp
+  
   ${MINT_SOURCE_DIR}/runtime/Load.cpp
   ${MINT_SOURCE_DIR}/runtime/Store.cpp
 )

@@ -15,13 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "8afc1253b370c982f9fa03d5cac7968dbd800235"
-#define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
-#define MINT_DEBUG 1
-// NOLINTEND
-// clang-format on
+#include "adt/Identifier.hpp"
+
+#include "llvm/IR/Value.h"
+
+namespace mint {
+class Environment;
+
+llvm::Value *forwardDeclare(Identifier name, llvm::Type *type,
+                            Environment &env) noexcept;
+
+int forwardDeclareImports(Environment &env) noexcept;
+} // namespace mint

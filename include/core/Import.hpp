@@ -22,7 +22,5 @@ namespace fs = std::filesystem;
 namespace mint {
 class Environment;
 
-int forwardDeclareImports(Environment &env) noexcept;
-
 int importSourceFile(fs::path path, Environment &env) noexcept;
 } // namespace mint

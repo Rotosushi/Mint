@@ -201,6 +201,7 @@ public:
 
   //**** LLVM Module Interface ****//
   auto getLLVMModule() noexcept -> llvm::Module &;
+  
   auto getOrInsertGlobal(std::string_view name, llvm::Type *type) noexcept
       -> llvm::GlobalVariable *;
 

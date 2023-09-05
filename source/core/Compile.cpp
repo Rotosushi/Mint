@@ -19,9 +19,9 @@
 #include "core/Codegen.hpp"
 #include "core/Emit.hpp"
 #include "core/Evaluate.hpp"
-#include "core/Import.hpp"
 #include "core/Parse.hpp"
 #include "core/Typecheck.hpp"
+#include "runtime/ForwardDeclare.hpp"
 
 namespace mint {
 [[nodiscard]] int compile(fs::path file) {

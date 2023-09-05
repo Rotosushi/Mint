@@ -15,27 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "core/Import.hpp"
-
 #include "adt/Environment.hpp"
 #include "ir/questions/IsDefinition.hpp"
 
-#include "llvm/IR/Value.h"
-
 namespace mint {
-Result<llvm::Value *> forwardDeclare(ir::Mir &mir, Environment &env) noexcept;
-
-int forwardDeclareImports(Environment &env) noexcept {
-  for (auto expression : env.importedExpressions()) {
-    auto result = forwardDeclare(expression, env);
-    if (!result) {
-      env.errorStream() << result.error() << "\n";
-      return EXIT_FAILURE;
-    }
-  }
-
-  return EXIT_SUCCESS;
-}
-
+// #TODO: maybe not the best name
 int importSourceFile(fs::path path, Environment &env) noexcept {
   if (env.alreadyImported(path)) {
     return EXIT_SUCCESS;
@@ -66,6 +50,6 @@ int importSourceFile(fs::path path, Environment &env) noexcept {
 
   env.popActiveSourceFile();
 
-  return forwardDeclareImports(env);
+  return EXIT_SUCCESS;
 }
 } // namespace mint
