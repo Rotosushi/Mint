@@ -48,8 +48,8 @@ class Environment {
   std::optional<fs::path> m_file;
   std::shared_ptr<Scope> m_global_scope;
   std::shared_ptr<Scope> m_local_scope;
+  std::vector<ir::Mir> m_local_expressions;
 
-  TranslationUnit m_translation_unit;
   DirectorySearcher m_directory_searcher;
   ImportSet m_imported_files;
   TypeInterner m_type_interner;
@@ -98,23 +98,15 @@ public:
   auto endOfMirInput() const noexcept -> bool;
   Result<ir::Mir> parseMir();
 
-  int importSourceFile(std::fstream &&fin);
   void pushActiveSourceFile(std::fstream &&fin);
   void popActiveSourceFile();
 
   //**** TranslationUnit interface ****//
-  void addLocalExpression(TranslationUnit::Expression &&expression) noexcept {
-    m_translation_unit.addLocalExpression(std::move(expression));
+  void addLocalExpression(ir::Mir &&mir) noexcept {
+    m_local_expressions.emplace_back(std::move(mir));
   }
-  void
-  addImportedExpression(TranslationUnit::Expression &&expression) noexcept {
-    m_translation_unit.addImportedExpression(std::move(expression));
-  }
-  auto localExpressions() noexcept {
-    return m_translation_unit.localExpressions();
-  }
-  auto importedExpressions() noexcept {
-    return m_translation_unit.importedExpressions();
+  auto localExpressions() noexcept -> std::vector<ir::Mir> & {
+    return m_local_expressions;
   }
 
   //**** DirectorySearcher interface ****//
@@ -128,7 +120,11 @@ public:
 
   //**** ImportSet interface ****//
   auto alreadyImported(fs::path const &filename) noexcept -> bool;
-  void addImport(fs::path const &filename) noexcept;
+  auto findImport(fs::path const &filename) noexcept
+      -> ImportedTranslationUnit *;
+  auto addImport(fs::path &&filename,
+                 std::vector<ir::Mir> &&expressions) noexcept
+      -> ImportedTranslationUnit &;
 
   //**** Scope interface ****//
   auto localScope() noexcept -> std::shared_ptr<Scope>;
@@ -201,7 +197,7 @@ public:
 
   //**** LLVM Module Interface ****//
   auto getLLVMModule() noexcept -> llvm::Module &;
-  
+
   auto getOrInsertGlobal(std::string_view name, llvm::Type *type) noexcept
       -> llvm::GlobalVariable *;
 

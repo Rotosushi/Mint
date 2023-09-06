@@ -16,6 +16,9 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "core/Import.hpp"
 #include "adt/Environment.hpp"
+#include "core/Evaluate.hpp"
+#include "core/Parse.hpp"
+#include "core/Typecheck.hpp"
 #include "ir/questions/IsDefinition.hpp"
 
 namespace mint {
@@ -30,6 +33,7 @@ int importSourceFile(fs::path path, Environment &env) noexcept {
   auto &file = found.value();
 
   env.pushActiveSourceFile(std::move(file));
+  std::vector<ir::Mir> expressions;
 
   while (true) {
     auto result = env.parseMir();
@@ -44,11 +48,36 @@ int importSourceFile(fs::path path, Environment &env) noexcept {
     }
 
     if (ir::isDefinition(result.value())) {
-      env.addImportedExpression(std::move(result.value()));
+      expressions.emplace_back(std::move(result.value()));
     }
   }
 
   env.popActiveSourceFile();
+  auto &itu = env.addImport(std::move(path), std::move(expressions));
+
+  for (auto &expression : itu.expressions()) {
+    auto result = typecheck(expression, env);
+    if (!result) {
+      if (result.recovered()) {
+        continue;
+      }
+
+      env.errorStream() << result.error() << "\n";
+      return EXIT_FAILURE;
+    }
+  }
+
+  for (auto &expression : itu.expressions()) {
+    auto result = evaluate(expression, env);
+    if (!result) {
+      if (result.recovered()) {
+        continue;
+      }
+
+      env.errorStream() << result.error() << "\n";
+      return EXIT_FAILURE;
+    }
+  }
 
   return EXIT_SUCCESS;
 }

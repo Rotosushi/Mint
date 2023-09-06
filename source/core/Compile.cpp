@@ -21,7 +21,6 @@
 #include "core/Evaluate.hpp"
 #include "core/Parse.hpp"
 #include "core/Typecheck.hpp"
-#include "runtime/ForwardDeclare.hpp"
 
 namespace mint {
 [[nodiscard]] int compile(fs::path file) {
@@ -36,10 +35,6 @@ namespace mint {
   }
 
   if (evaluate(env) == EXIT_FAILURE) {
-    return EXIT_FAILURE;
-  }
-
-  if (forwardDeclareImports(env) == EXIT_FAILURE) {
     return EXIT_FAILURE;
   }
 

@@ -24,6 +24,4 @@ class Environment;
 
 llvm::Value *forwardDeclare(Identifier name, llvm::Type *type,
                             Environment &env) noexcept;
-
-int forwardDeclareImports(Environment &env) noexcept;
 } // namespace mint

@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "ir/Mir.hpp"
+#include "adt/ImportSet.hpp"
 
 namespace mint {
 class TranslationUnit {

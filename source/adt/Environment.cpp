@@ -257,8 +257,15 @@ auto Environment::alreadyImported(fs::path const &filename) noexcept -> bool {
   return m_imported_files.contains(filename);
 }
 
-void Environment::addImport(fs::path const &filename) noexcept {
-  m_imported_files.insert(filename);
+auto Environment::findImport(fs::path const &filename) noexcept
+    -> ImportedTranslationUnit * {
+  return m_imported_files.find(filename);
+}
+
+auto Environment::addImport(fs::path &&filename,
+                            std::vector<ir::Mir> &&expressions) noexcept
+    -> ImportedTranslationUnit & {
+  return m_imported_files.insert(std::move(filename), std::move(expressions));
 }
 
 //**** Use Before Def Interface ****//

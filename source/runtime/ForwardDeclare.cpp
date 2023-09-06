@@ -62,7 +62,9 @@ struct ForwardDeclareInstruction {
 
   void operator()([[maybe_unused]] ir::Binop &binop) noexcept {}
   void operator()([[maybe_unused]] ir::Unop &unop) noexcept {}
-  void operator()([[maybe_unused]] ir::Import &import) noexcept {}
+  void operator()([[maybe_unused]] ir::Import &import) noexcept {
+    
+  }
 
   void operator()(ir::Module &m) noexcept {
     MINT_ASSERT(m.cachedType() != nullptr);

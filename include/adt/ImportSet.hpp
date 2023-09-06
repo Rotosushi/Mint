@@ -20,12 +20,55 @@
 
 namespace fs = std::filesystem;
 
+#include "ir/Mir.hpp"
+
 namespace mint {
-class ImportSet {
-  std::vector<fs::path> m_set;
+class ImportedTranslationUnit {
+  fs::path m_file;
+  std::vector<ir::Mir> m_expressions;
 
 public:
-  [[nodiscard]] auto contains(fs::path const &filename) noexcept -> bool;
-  void insert(fs::path const &filename) noexcept;
+  ImportedTranslationUnit(fs::path &&file,
+                          std::vector<ir::Mir> &&expressions) noexcept
+      : m_file(std::move(file)), m_expressions(std::move(expressions)) {}
+
+  fs::path const &file() const noexcept { return m_file; }
+
+  void append(ir::Mir &&mir) noexcept {
+    m_expressions.emplace_back(std::move(mir));
+  }
+
+  std::vector<ir::Mir> &expressions() noexcept { return m_expressions; }
+};
+
+class ImportSet {
+  std::vector<ImportedTranslationUnit> m_set;
+
+public:
+  [[nodiscard]] auto contains(fs::path const &filename) noexcept -> bool {
+    for (auto &itu : m_set) {
+      if (itu.file() == filename) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  [[nodiscard]] ImportedTranslationUnit *
+  find(fs::path const &filename) noexcept {
+    for (auto &itu : m_set) {
+      if (itu.file() == filename) {
+        return &itu;
+      }
+    }
+    return nullptr;
+  }
+
+  ImportedTranslationUnit &insert(fs::path &&filename,
+                                  std::vector<ir::Mir> &&expressions) noexcept {
+    if (!contains(filename)) {
+      return m_set.emplace_back(std::move(filename), std::move(expressions));
+    }
+  }
 };
 } // namespace mint
