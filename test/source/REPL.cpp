@@ -61,7 +61,7 @@
 
 #include "TestExpressions.hpp"
 #include "adt/Environment.hpp"
-#include "core/Repl.hpp"
+#include "comptime/Repl.hpp"
 
 /*
   #NOTE: this function is rather inelegant
@@ -156,7 +156,7 @@ void testExpressionInREPL(TestCode &expression) {
   std::stringstream error_output;
   std::stringstream log_output;
 
-  auto failed = repl(&input, &output, &error_output, &log_output);
+  auto failed = mint::repl(&input, &output, &error_output, &log_output);
   BOOST_REQUIRE(failed == EXIT_SUCCESS);
 
   auto outview = output.view();

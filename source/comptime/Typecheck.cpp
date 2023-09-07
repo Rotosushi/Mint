@@ -17,7 +17,8 @@
 #include <sstream>
 
 #include "adt/Environment.hpp"
-#include "core/Typecheck.hpp"
+#include "comptime/Import.hpp"
+#include "comptime/Typecheck.hpp"
 #include "ir/Instruction.hpp"
 #include "ir/actions/Clone.hpp"
 #include "utility/Abort.hpp"
@@ -401,12 +402,40 @@ struct TypecheckInstruction {
       return i.cachedType();
     }
 
+    // #NOTE: this check is necessary, because we must
+    // typecheck each import expression before we ever
+    // evaluate or codegen any expression.
+    // it is not sufficient because while
+    // we only search for existing itu's when we evaluate
+    // or codegen a given import statement.
+    // we are going to attempt to evaluate and codegen every
+    // import statement, meaning we will attempt to evaluate
+    // the itu twice.
     if (env->alreadyImported(i.file())) {
       return env->getNilType();
     }
 
     if (!env->fileExists(i.file())) {
       return Error{Error::Kind::FileNotFound, i.sourceLocation(), i.file()};
+    }
+
+    if (importSourceFile(i.file(), *env) == EXIT_FAILURE) {
+      return Error{Error::Kind::ImportFailed, i.sourceLocation(), i.file()};
+    }
+
+    auto *itu = env->findImport(i.file());
+    MINT_ASSERT(itu != nullptr);
+
+    for (auto &expression : itu->expressions()) {
+      auto result = typecheck(expression, *env);
+      if (!result) {
+        if (result.recovered()) {
+          continue;
+        }
+
+        env->errorStream() << result.error() << "\n";
+        return Error{Error::Kind::ImportFailed, i.sourceLocation(), i.file()};
+      }
     }
 
     return i.cachedType(env->getNilType());
@@ -449,18 +478,6 @@ Result<type::Ptr> typecheck(ir::Mir &ir, Environment &env) noexcept {
 }
 
 int typecheck(Environment &env) noexcept {
-  for (auto &expression : env.importedExpressions()) {
-    auto result = typecheck(expression, env);
-    if (!result) {
-      if (result.recovered()) {
-        continue;
-      }
-
-      env.errorStream() << result.error() << "\n";
-      return EXIT_FAILURE;
-    }
-  }
-
   for (auto &expression : env.localExpressions()) {
     auto result = typecheck(expression, env);
     if (!result) {

@@ -14,10 +14,10 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "core/Repl.hpp"
+#include "comptime/Repl.hpp"
 #include "adt/Environment.hpp"
-#include "core/Evaluate.hpp"
-#include "core/Typecheck.hpp"
+#include "comptime/Evaluate.hpp"
+#include "comptime/Typecheck.hpp"
 #include "ir/actions/Print.hpp"
 
 namespace mint {

@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <bitset>
 #include <filesystem>
 #include <vector>
 
@@ -24,6 +25,22 @@ namespace fs = std::filesystem;
 
 namespace mint {
 class ImportedTranslationUnit {
+  class Context {
+    enum Flags {
+      Evaluated,
+      Generated,
+      SIZE,
+    };
+    std::bitset<SIZE> m_set;
+
+  public:
+    [[nodiscard]] bool evaluated() const noexcept { return m_set[Evaluated]; }
+    bool evaluated(bool state) noexcept { return m_set[Evaluated] = state; }
+    [[nodiscard]] bool generated() const noexcept { return m_set[Generated]; }
+    bool generated(bool state) noexcept { return m_set[Generated] = state; }
+  };
+
+  Context m_context;
   fs::path m_file;
   std::vector<ir::Mir> m_expressions;
 
@@ -31,6 +48,8 @@ public:
   ImportedTranslationUnit(fs::path &&file,
                           std::vector<ir::Mir> &&expressions) noexcept
       : m_file(std::move(file)), m_expressions(std::move(expressions)) {}
+
+  Context &context() { return m_context; }
 
   fs::path const &file() const noexcept { return m_file; }
 
@@ -66,9 +85,10 @@ public:
 
   ImportedTranslationUnit &insert(fs::path &&filename,
                                   std::vector<ir::Mir> &&expressions) noexcept {
-    if (!contains(filename)) {
-      return m_set.emplace_back(std::move(filename), std::move(expressions));
+    if (auto itu = find(filename); itu != nullptr) {
+      return *itu;
     }
+    return m_set.emplace_back(std::move(filename), std::move(expressions));
   }
 };
 } // namespace mint

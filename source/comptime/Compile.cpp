@@ -14,13 +14,13 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "core/Compile.hpp"
+#include "comptime/Compile.hpp"
 #include "adt/Environment.hpp"
-#include "core/Codegen.hpp"
-#include "core/Emit.hpp"
-#include "core/Evaluate.hpp"
-#include "core/Parse.hpp"
-#include "core/Typecheck.hpp"
+#include "comptime/Codegen.hpp"
+#include "comptime/Emit.hpp"
+#include "comptime/Evaluate.hpp"
+#include "comptime/Parse.hpp"
+#include "comptime/Typecheck.hpp"
 
 namespace mint {
 [[nodiscard]] int compile(fs::path file) {

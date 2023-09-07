@@ -14,10 +14,11 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "core/Codegen.hpp"
+#include "comptime/Codegen.hpp"
 #include "adt/Environment.hpp"
 #include "ir/Instruction.hpp"
 #include "runtime/Allocate.hpp"
+#include "runtime/ForwardDeclare.hpp"
 #include "runtime/Load.hpp"
 #include "utility/VerifyLLVM.hpp"
 
@@ -382,6 +383,20 @@ struct CodegenInstruction {
 
   Result<llvm::Value *> operator()(ir::Import &i) noexcept {
     MINT_ASSERT(i.cachedType() != nullptr);
+
+    auto *itu = env->findImport(i.file());
+    MINT_ASSERT(itu != nullptr);
+
+    auto &context = itu->context();
+    if (context.generated()) {
+      return env->getLLVMNil();
+    }
+
+    for (auto &expression : itu->expressions()) {
+      forwardDeclare(expression, *env);
+    }
+
+    context.generated(true);
     return env->getLLVMNil();
   }
 

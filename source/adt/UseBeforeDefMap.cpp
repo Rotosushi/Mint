@@ -16,9 +16,9 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/UseBeforeDefMap.hpp"
 #include "adt/Environment.hpp"
-#include "core/Codegen.hpp"
-#include "core/Evaluate.hpp"
-#include "core/Typecheck.hpp"
+#include "comptime/Codegen.hpp"
+#include "comptime/Evaluate.hpp"
+#include "comptime/Typecheck.hpp"
 
 namespace mint {
 UseBeforeDefMap::iterator::iterator(Elements::iterator iter) noexcept

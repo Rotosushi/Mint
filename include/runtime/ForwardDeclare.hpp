@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include "adt/Identifier.hpp"
+#include "ir/Mir.hpp"
 
 #include "llvm/IR/Value.h"
 
@@ -24,4 +25,6 @@ class Environment;
 
 llvm::Value *forwardDeclare(Identifier name, llvm::Type *type,
                             Environment &env) noexcept;
+
+void forwardDeclare(ir::Mir &mir, Environment &env) noexcept;
 } // namespace mint

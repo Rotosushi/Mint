@@ -14,10 +14,10 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "core/Evaluate.hpp"
+#include "comptime/Evaluate.hpp"
 #include "adt/Environment.hpp"
-#include "core/Import.hpp"
-#include "core/Typecheck.hpp"
+#include "comptime/Import.hpp"
+#include "comptime/Typecheck.hpp"
 #include "ir/Instruction.hpp"
 
 namespace mint {
@@ -204,12 +204,28 @@ struct EvaluateInstruction {
   //   return ir::Value{lambda};
   // }
 
-  Result<ir::Value> operator()(ir::Import &import) noexcept {
-    if (importSourceFile(import.file(), *env) == EXIT_FAILURE) {
-      return Error{Error::Kind::ImportFailed, import.sourceLocation(),
-                   import.file()};
+  Result<ir::Value> operator()(ir::Import &i) noexcept {
+    auto *itu = env->findImport(i.file());
+    MINT_ASSERT(itu != nullptr);
+
+    auto &context = itu->context();
+    if (context.evaluated()) {
+      return ir::Value{};
     }
 
+    for (auto &expression : itu->expressions()) {
+      auto result = evaluate(expression, *env);
+      if (!result) {
+        if (result.recovered()) {
+          continue;
+        }
+
+        env->errorStream() << result.error() << "\n";
+        return Error{Error::Kind::ImportFailed, i.sourceLocation(), i.file()};
+      }
+    }
+
+    context.evaluated(true);
     return ir::Value{};
   }
 
@@ -253,18 +269,6 @@ Result<ir::Value> evaluate(ir::Mir &mir, Environment &env) {
 }
 
 int evaluate(Environment &env) noexcept {
-  for (auto &expression : env.importedExpressions()) {
-    auto result = evaluate(expression, env);
-    if (!result) {
-      if (result.recovered()) {
-        continue;
-      }
-
-      env.errorStream() << result.error() << "\n";
-      return EXIT_FAILURE;
-    }
-  }
-
   for (auto &expression : env.localExpressions()) {
     auto result = evaluate(expression, env);
     if (!result) {

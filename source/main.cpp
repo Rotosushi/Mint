@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "core/Compile.hpp"
-#include "core/Repl.hpp"
+#include "comptime/Compile.hpp"
+#include "comptime/Repl.hpp"
 #include "utility/CommandLineOptions.hpp"
 
 #include "llvm/Support/InitLLVM.h"

@@ -14,11 +14,11 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "core/Import.hpp"
+#include "comptime/Import.hpp"
 #include "adt/Environment.hpp"
-#include "core/Evaluate.hpp"
-#include "core/Parse.hpp"
-#include "core/Typecheck.hpp"
+#include "comptime/Evaluate.hpp"
+#include "comptime/Parse.hpp"
+#include "comptime/Typecheck.hpp"
 #include "ir/questions/IsDefinition.hpp"
 
 namespace mint {
@@ -53,32 +53,7 @@ int importSourceFile(fs::path path, Environment &env) noexcept {
   }
 
   env.popActiveSourceFile();
-  auto &itu = env.addImport(std::move(path), std::move(expressions));
-
-  for (auto &expression : itu.expressions()) {
-    auto result = typecheck(expression, env);
-    if (!result) {
-      if (result.recovered()) {
-        continue;
-      }
-
-      env.errorStream() << result.error() << "\n";
-      return EXIT_FAILURE;
-    }
-  }
-
-  for (auto &expression : itu.expressions()) {
-    auto result = evaluate(expression, env);
-    if (!result) {
-      if (result.recovered()) {
-        continue;
-      }
-
-      env.errorStream() << result.error() << "\n";
-      return EXIT_FAILURE;
-    }
-  }
-
+  env.addImport(std::move(path), std::move(expressions));
   return EXIT_SUCCESS;
 }
 } // namespace mint

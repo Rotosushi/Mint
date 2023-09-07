@@ -14,10 +14,32 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "core/Emit.hpp"
-
+#include "comptime/Parse.hpp"
 #include "adt/Environment.hpp"
+#include "ir/questions/IsDefinition.hpp"
 
 namespace mint {
-int emit(Environment &env) noexcept { return env.emitLLVMIR(); }
+int parse(fs::path path, Environment &env) noexcept {
+  auto found = env.fileSearch(path);
+  if (!found) {
+    return EXIT_FAILURE;
+  }
+  auto &file = found.value();
+  env.pushActiveSourceFile(std::move(file));
+
+  while (true) {
+    auto result = env.parseMir();
+    if (!result) {
+      env.errorStream() << result.error() << "\n";
+      return EXIT_FAILURE;
+    }
+
+    if (ir::isDefinition(result.value())) {
+      env.addLocalExpression(std::move(result.value()));
+    }
+  }
+
+  env.popActiveSourceFile();
+  return EXIT_SUCCESS;
+}
 } // namespace mint

@@ -41,7 +41,6 @@ struct ForwardDeclareInstruction {
   }
 
   void operator()([[maybe_unused]] ir::detail::Immediate &i) noexcept {}
-
   void operator()([[maybe_unused]] ir::Parens &p) noexcept {}
 
   void operator()(ir::Let &let) noexcept {
@@ -56,15 +55,13 @@ struct ForwardDeclareInstruction {
     auto llvm_type = type::toLLVM(type, *env);
     auto llvm_name = env->qualifyName(let.name()).convertForLLVM();
 
-    auto decl = forwardDeclare(llvm_name, llvm_type, *env);
+    auto decl = env->getOrInsertGlobal(llvm_name, llvm_type);
     binding.setRuntimeValue(decl);
   }
 
   void operator()([[maybe_unused]] ir::Binop &binop) noexcept {}
   void operator()([[maybe_unused]] ir::Unop &unop) noexcept {}
-  void operator()([[maybe_unused]] ir::Import &import) noexcept {
-    
-  }
+  void operator()([[maybe_unused]] ir::Import &import) noexcept {}
 
   void operator()(ir::Module &m) noexcept {
     MINT_ASSERT(m.cachedType() != nullptr);
@@ -81,13 +78,5 @@ struct ForwardDeclareInstruction {
 void forwardDeclare(ir::Mir &mir, Environment &env) noexcept {
   ForwardDeclareInstruction visitor(env);
   return visitor(mir);
-}
-
-int forwardDeclareImports(Environment &env) noexcept {
-  for (auto expression : env.importedExpressions()) {
-    forwardDeclare(expression, env);
-  }
-
-  return EXIT_SUCCESS;
 }
 } // namespace mint

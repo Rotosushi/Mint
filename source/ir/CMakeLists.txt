@@ -21,7 +21,8 @@ target_link_options(mint_ir PUBLIC
   ${llvm_ldflags} 
   ${llvm_system_libs}
 )
-target_link_libraries(mint_scan
+target_link_libraries(mint_ir
+  mint_scan
   #${llvm_libs}
   #${LLVM_LIBRARY_DIRS}/liblldCommon.a
   #${LLVM_LIBRARY_DIRS}/liblldELF.a
