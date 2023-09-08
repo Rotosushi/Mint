@@ -21,6 +21,6 @@ namespace mint::ir {
 // #TODO: maybe not the best name
 
 // true if this mir needs to be added to the translation unit
-// (either to import or local)
+// (either import or local)
 [[nodiscard]] bool isDefinition(ir::Mir &mir) noexcept;
 } // namespace mint::ir

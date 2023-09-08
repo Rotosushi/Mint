@@ -17,7 +17,7 @@
 #include "ir/questions/IsDefinition.hpp"
 #include "ir/Instruction.hpp"
 
-namespace mint {
+namespace mint::ir {
 
 struct IsDefInstructionVisitor {
   [[nodiscard]] bool operator()(ir::Mir &mir) noexcept {
@@ -57,4 +57,4 @@ struct IsDefInstructionVisitor {
 static auto isDef = IsDefInstructionVisitor{};
 
 [[nodiscard]] bool isDefinition(ir::Mir &mir) noexcept { return isDef(mir); }
-} // namespace mint
+} // namespace mint::ir

@@ -23,6 +23,19 @@
 #include "comptime/Typecheck.hpp"
 
 namespace mint {
+[[nodiscard]] int compile(fs::path file);
+
+[[nodiscard]] int compile(std::vector<std::string> const &filenames) {
+  // #TODO: spawn a thread for each file
+  // #TODO: link all intermediate files together based on
+  // given cli flags.
+  for (auto &filename : filenames) {
+    if (compile(filename) == EXIT_FAILURE) {
+      return EXIT_FAILURE;
+    }
+  }
+}
+
 [[nodiscard]] int compile(fs::path file) {
   auto env = Environment::create();
 

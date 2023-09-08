@@ -14,11 +14,6 @@ target_include_directories(mint_test PUBLIC
  ${MINT_INCLUDE_DIR}
 )
 target_link_libraries(mint_test
-  mint_adt
-  mint_runtime
-  mint_comptime
-  mint_ir
-  mint_scan
-  mint_type
+  mint_common
   ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
 )

@@ -15,10 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <filesystem>
-
-namespace fs = std::filesystem;
+#include <string>
+#include <vector>
 
 namespace mint {
-[[nodiscard]] int compile(fs::path path);
+[[nodiscard]] int compile(std::vector<std::string> const &filenames);
 } // namespace mint

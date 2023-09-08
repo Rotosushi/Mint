@@ -24,9 +24,8 @@ namespace cl = llvm::cl;
 
 //  https://llvm.org/docs/CommandLine.html#quick-start-guide
 namespace mint {
-// #TODO: handle mutltiple input files.
-inline cl::opt<std::string> input_filename(cl::Positional,
-                                           cl::desc("<input file>"));
+inline cl::list<std::string> input_files(cl::Positional,
+                                         cl::desc("<input file>"));
 
 inline cl::list<std::string>
     include_paths("I", cl::desc("add an include path to the search space"),
