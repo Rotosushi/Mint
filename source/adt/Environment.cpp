@@ -268,7 +268,7 @@ auto Environment::findImport(fs::path const &filename) noexcept
 }
 
 auto Environment::addImport(fs::path &&filename,
-                            std::vector<ir::Mir> &&expressions) noexcept
+                            TranslationUnit::Expressions &&expressions) noexcept
     -> ImportedTranslationUnit & {
   return m_imported_files.insert(std::move(filename), std::move(expressions));
 }
@@ -297,6 +297,12 @@ std::optional<Error>
 Environment::resolveRuntimeValueOfUseBeforeDef(Identifier def_name) noexcept {
   return m_use_before_def_map.resolveRuntimeValueOfUseBeforeDef(*this,
                                                                 def_name);
+}
+
+std::optional<Error> Environment::resolveForwardDeclarationValueOfUseBeforeDef(
+    Identifier def_name) noexcept {
+  return m_use_before_def_map.resolveForwardDeclaratinOfUseBeforeDef(*this,
+                                                                     def_name);
 }
 
 //**** BinopTable Interface ****//

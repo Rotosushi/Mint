@@ -392,8 +392,12 @@ struct CodegenInstruction {
       return env->getLLVMNil();
     }
 
+    std::size_t index = 0;
+    auto &recovered_expressions = itu->recovered_expressions();
     for (auto &expression : itu->expressions()) {
-      forwardDeclare(expression, *env);
+      if (!recovered_expressions[index]) {
+        forwardDeclare(expression, *env);
+      }
     }
 
     context.generated(true);
@@ -438,16 +442,19 @@ Result<llvm::Value *> codegen(ir::Mir &mir, Environment &env) {
 }
 
 int codegen(Environment &env) noexcept {
+  std::size_t index = 0U;
+  auto &recovered_expressions = env.localRecoveredExpressions();
   for (auto &expression : env.localExpressions()) {
-    auto result = codegen(expression, env);
-    if (!result) {
+    if (!recovered_expressions[index]) {
+      auto result = codegen(expression, env);
       if (result.recovered()) {
         continue;
+      } else if (!result) {
+        env.errorStream() << result.error() << "\n";
+        return EXIT_FAILURE;
       }
-
-      env.errorStream() << result.error() << "\n";
-      return EXIT_FAILURE;
     }
+    ++index;
   }
 
   return EXIT_SUCCESS;

@@ -15,10 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "boost/container/vector.hpp"
-#include "boost/dynamic_bitset.hpp"
-
 #include "adt/Identifier.hpp"
+#include "adt/TranslationUnit.hpp"
 #include "ir/detail/IrBase.hpp"
 
 namespace mint {
@@ -32,8 +30,7 @@ public:
 
 private:
   Identifier m_name;
-  Expressions m_expressions;
-  Bitset m_recovered_expressions;
+  TranslationUnit m_translation_unit;
 
 public:
   Module(SourceLocation *sl, Identifier name, Expressions expressions) noexcept;

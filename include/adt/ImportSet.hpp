@@ -21,7 +21,7 @@
 
 namespace fs = std::filesystem;
 
-#include "ir/Mir.hpp"
+#include "adt/TranslationUnit.hpp"
 
 namespace mint {
 class ImportedTranslationUnit {
@@ -42,22 +42,27 @@ class ImportedTranslationUnit {
 
   Context m_context;
   fs::path m_file;
-  std::vector<ir::Mir> m_expressions;
+  TranslationUnit m_translation_unit;
 
 public:
   ImportedTranslationUnit(fs::path &&file,
-                          std::vector<ir::Mir> &&expressions) noexcept
-      : m_file(std::move(file)), m_expressions(std::move(expressions)) {}
+                          TranslationUnit::Expressions &&expressions) noexcept
+      : m_file(std::move(file)), m_translation_unit(std::move(expressions)) {}
 
   Context &context() { return m_context; }
 
   fs::path const &file() const noexcept { return m_file; }
 
   void append(ir::Mir &&mir) noexcept {
-    m_expressions.emplace_back(std::move(mir));
+    m_translation_unit.append(std::move(mir));
   }
 
-  std::vector<ir::Mir> &expressions() noexcept { return m_expressions; }
+  TranslationUnit::Expressions &expressions() noexcept {
+    return m_translation_unit.m_expressions;
+  }
+  TranslationUnit::Bitset &recovered_expressions() noexcept {
+    return m_translation_unit.m_recovered_expressions;
+  }
 };
 
 class ImportSet {
@@ -83,8 +88,9 @@ public:
     return nullptr;
   }
 
-  ImportedTranslationUnit &insert(fs::path &&filename,
-                                  std::vector<ir::Mir> &&expressions) noexcept {
+  ImportedTranslationUnit &
+  insert(fs::path &&filename,
+         TranslationUnit::Expressions &&expressions) noexcept {
     if (auto itu = find(filename); itu != nullptr) {
       return *itu;
     }

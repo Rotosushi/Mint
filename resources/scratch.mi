@@ -1,4 +1,6 @@
+import "module.mi";
+
 module D {
-  public let a = 1;
-  public let b = a;
+  public let a = B::g;
+  public let b = A::a;
 }

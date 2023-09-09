@@ -48,8 +48,8 @@ class Environment {
   std::optional<fs::path> m_file;
   std::shared_ptr<Scope> m_global_scope;
   std::shared_ptr<Scope> m_local_scope;
-  std::vector<ir::Mir> m_local_expressions;
 
+  TranslationUnit m_translation_unit;
   DirectorySearcher m_directory_searcher;
   ImportSet m_imported_files;
   TypeInterner m_type_interner;
@@ -103,10 +103,13 @@ public:
 
   //**** TranslationUnit interface ****//
   void addLocalExpression(ir::Mir &&mir) noexcept {
-    m_local_expressions.emplace_back(std::move(mir));
+    m_translation_unit.append(std::move(mir));
   }
-  auto localExpressions() noexcept -> std::vector<ir::Mir> & {
-    return m_local_expressions;
+  auto localExpressions() noexcept -> TranslationUnit::Expressions & {
+    return m_translation_unit.m_expressions;
+  }
+  auto localRecoveredExpressions() noexcept -> TranslationUnit::Bitset & {
+    return m_translation_unit.m_recovered_expressions;
   }
 
   //**** DirectorySearcher interface ****//
@@ -124,7 +127,7 @@ public:
   auto findImport(fs::path const &filename) noexcept
       -> ImportedTranslationUnit *;
   auto addImport(fs::path &&filename,
-                 std::vector<ir::Mir> &&expressions) noexcept
+                 TranslationUnit::Expressions &&expressions) noexcept
       -> ImportedTranslationUnit &;
 
   //**** Scope interface ****//
@@ -161,6 +164,9 @@ public:
 
   std::optional<Error>
   resolveRuntimeValueOfUseBeforeDef(Identifier def_name) noexcept;
+
+  std::optional<Error>
+  resolveForwardDeclarationValueOfUseBeforeDef(Identifier def_name) noexcept;
 
   //**** BinopTable Interface ****//
   auto createBinop(Token op) noexcept -> BinopTable::Binop;

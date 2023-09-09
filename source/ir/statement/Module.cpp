@@ -21,24 +21,21 @@ namespace mint {
 namespace ir {
 Module::Module(SourceLocation *sl, Identifier name,
                Expressions expressions) noexcept
-    : detail::IrBase(sl), m_name(name), m_expressions(std::move(expressions)),
-      m_recovered_expressions(m_expressions.size()) {}
+    : detail::IrBase(sl), m_name(name),
+      m_translation_unit(std::move(expressions)) {}
 Module::Module(Module const &other) noexcept
     : detail::IrBase(other.sourceLocation()), m_name(other.m_name),
-      m_expressions(other.m_expressions),
-      m_recovered_expressions(other.m_recovered_expressions) {}
+      m_translation_unit(other.m_translation_unit) {}
 Module::Module(Module &&other) noexcept
     : detail::IrBase(other.sourceLocation()), m_name(other.m_name),
-      m_expressions(std::move(other.m_expressions)),
-      m_recovered_expressions(std::move(other.m_recovered_expressions)) {}
+      m_translation_unit(std::move(other.m_translation_unit)) {}
 auto Module::operator=(Module const &other) noexcept -> Module & {
   if (this == &other)
     return *this;
 
   sourceLocation(other.sourceLocation());
   m_name = other.m_name;
-  m_expressions = other.m_expressions;
-  m_recovered_expressions = other.m_recovered_expressions;
+  m_translation_unit = other.m_translation_unit;
   return *this;
 }
 auto Module::operator=(Module &&other) noexcept -> Module & {
@@ -47,8 +44,7 @@ auto Module::operator=(Module &&other) noexcept -> Module & {
 
   sourceLocation(other.sourceLocation());
   m_name = other.m_name;
-  m_expressions = std::move(other.m_expressions);
-  m_recovered_expressions = std::move(other.m_recovered_expressions);
+  m_translation_unit = std::move(other.m_translation_unit);
   return *this;
 }
 Module::~Module() noexcept {}
@@ -57,11 +53,11 @@ Module::~Module() noexcept {}
   return m_name;
 }
 [[nodiscard]] auto Module::expressions() noexcept -> Expressions & {
-  return m_expressions;
+  return m_translation_unit.m_expressions;
 }
 [[nodiscard]] auto Module::recovered_expressions() noexcept
     -> Module::Bitset & {
-  return m_recovered_expressions;
+  return m_translation_unit.m_recovered_expressions;
 }
 } // namespace ir
 } // namespace mint

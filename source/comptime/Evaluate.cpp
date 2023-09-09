@@ -219,16 +219,19 @@ struct EvaluateInstruction {
       return ir::Value{};
     }
 
+    std::size_t index = 0U;
+    auto &recovered_expressions = itu->recovered_expressions();
     for (auto &expression : itu->expressions()) {
-      auto result = evaluate(expression, *env);
-      if (!result) {
+      if (!recovered_expressions[index]) {
+        auto result = evaluate(expression, *env);
         if (result.recovered()) {
-          continue;
+          recovered_expressions[index] = true;
+        } else if (!result) {
+          env->errorStream() << result.error() << "\n";
+          return Error{Error::Kind::ImportFailed, i.sourceLocation(), i.file()};
         }
-
-        env->errorStream() << result.error() << "\n";
-        return Error{Error::Kind::ImportFailed, i.sourceLocation(), i.file()};
       }
+      ++index;
     }
 
     context.evaluated(true);
@@ -248,10 +251,8 @@ struct EvaluateInstruction {
       if (!recovered_expressions[index]) {
         auto result = evaluate(expression, *env);
         if (result.recovered()) {
-          continue;
-        }
-
-        if (!result) {
+          recovered_expressions[index] = true;
+        } else if (!result) {
           env->unbindScope(m.name());
           env->popScope();
           return result;
@@ -276,16 +277,19 @@ Result<ir::Value> evaluate(ir::Mir &mir, Environment &env) {
 }
 
 int evaluate(Environment &env) noexcept {
+  std::size_t index = 0U;
+  auto &recovered_expressions = env.localRecoveredExpressions();
   for (auto &expression : env.localExpressions()) {
-    auto result = evaluate(expression, env);
-    if (!result) {
+    if (!recovered_expressions[index]) {
+      auto result = evaluate(expression, env);
       if (result.recovered()) {
-        continue;
+        recovered_expressions[index] = true;
+      } else if (!result) {
+        env.errorStream() << result.error() << "\n";
+        return EXIT_FAILURE;
       }
-
-      env.errorStream() << result.error() << "\n";
-      return EXIT_FAILURE;
     }
+    ++index;
   }
 
   return EXIT_SUCCESS;

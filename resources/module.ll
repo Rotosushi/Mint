@@ -7,6 +7,7 @@ target triple = "x86_64-suse-linux-gnu"
 @A.c = global i32 2
 @A.e = global i32 3
 @A.a = global i32 3
+@g = global i32 3
 @B.g = global i32 4
 @A.f = global i32 4
 @A.B.i = global i32 5

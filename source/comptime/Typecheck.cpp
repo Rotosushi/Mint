@@ -419,16 +419,17 @@ struct TypecheckInstruction {
     auto *itu = env->findImport(path);
     MINT_ASSERT(itu != nullptr);
 
+    std::size_t index = 0U;
+    auto &recovered_expressions = itu->recovered_expressions();
     for (auto &expression : itu->expressions()) {
       auto result = typecheck(expression, *env);
-      if (!result) {
-        if (result.recovered()) {
-          continue;
-        }
-
+      if (result.recovered()) {
+        recovered_expressions[index] = true;
+      } else if (!result) {
         env->errorStream() << result.error() << "\n";
         return Error{Error::Kind::ImportFailed, i.sourceLocation(), i.file()};
       }
+      ++index;
     }
 
     return i.cachedType(env->getNilType());
@@ -471,16 +472,22 @@ Result<type::Ptr> typecheck(ir::Mir &ir, Environment &env) noexcept {
 }
 
 int typecheck(Environment &env) noexcept {
+  // #TODO
+  // instead of keeping a bitset of all recovered
+  // expressions. we should instead remove the expressions
+  // which get add to the UseBeforeDefMap from the
+  // local expressions.
+  std::size_t index = 0U;
+  auto &recovered_expressions = env.localRecoveredExpressions();
   for (auto &expression : env.localExpressions()) {
     auto result = typecheck(expression, env);
-    if (!result) {
-      if (result.recovered()) {
-        continue;
-      }
-
+    if (result.recovered()) {
+      recovered_expressions[index] = true;
+    } else if (!result) {
       env.errorStream() << result.error() << "\n";
       return EXIT_FAILURE;
     }
+    ++index;
   }
 
   return EXIT_SUCCESS;

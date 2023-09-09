@@ -19,6 +19,7 @@
 #include "comptime/Codegen.hpp"
 #include "comptime/Evaluate.hpp"
 #include "comptime/Typecheck.hpp"
+#include "runtime/ForwardDeclare.hpp"
 
 namespace mint {
 UseBeforeDefMap::iterator::iterator(Elements::iterator iter) noexcept
@@ -324,12 +325,41 @@ std::optional<Error> UseBeforeDefMap::resolveRuntimeValueOfUseBeforeDef(
   }
 
   // #NOTE: codegen is the last step when processing ir.
+  // (or forward declaration)
   // so we can safely remove these entries from the ubd map,
   // as they are no longer needed.
   erase(range);
 
   if (!stage.empty())
     insert(std::move(stage));
+
+  return std::nullopt;
+}
+
+std::optional<Error> UseBeforeDefMap::resolveForwardDeclaratinOfUseBeforeDef(
+    Environment &env, Identifier def_name) noexcept {
+  // #NOTE: we don't have to handle the case where
+  // the forward declaration fails due to a second ubd name.
+  // because the type was already computed, which handled
+  // that case, and all forward declaration relies on is the
+  // type.
+  auto range = lookup(def_name);
+  for (auto it : range) {
+    it.being_resolved(true);
+    auto old_local_scope = env.exchangeLocalScope(it.scope());
+
+    auto ubd_ir = it.ubd_def_ir();
+
+    forwardDeclare(ubd_ir, env);
+
+    env.exchangeLocalScope(old_local_scope);
+    it.being_resolved(false);
+  }
+
+  // #NOTE: forward declaration is the last step when
+  // processing ir that was imported, so it is safe to
+  // remove these ubd bindings.
+  erase(range);
 
   return std::nullopt;
 }

@@ -57,6 +57,9 @@ struct ForwardDeclareInstruction {
 
     auto decl = env->getOrInsertGlobal(llvm_name, llvm_type);
     binding.setRuntimeValue(decl);
+
+    auto failed = env->resolveForwardDeclarationValueOfUseBeforeDef(let.name());
+    MINT_ASSERT(!failed);
   }
 
   void operator()([[maybe_unused]] ir::Binop &binop) noexcept {}

@@ -15,33 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <vector>
+#include "boost/container/vector.hpp"
+#include "boost/dynamic_bitset.hpp"
 
 #include "ir/Mir.hpp"
-#include "adt/ImportSet.hpp"
 
 namespace mint {
-class TranslationUnit {
-public:
-  using Expression = ir::Mir;
-  using Expressions = std::vector<ir::Mir>;
+// #TODO: this might not be the best name
+struct TranslationUnit {
+  using Expressions = boost::container::vector<ir::Mir>;
+  using Bitset = boost::dynamic_bitset<>;
 
-private:
-  Expressions m_local;
-  Expressions m_imported;
+  Expressions m_expressions;
+  Bitset m_recovered_expressions;
 
-public:
-  void addLocalExpression(TranslationUnit::Expression &&expression) noexcept {
-    m_local.emplace_back(std::move(expression));
-  }
+  TranslationUnit() noexcept = default;
+  TranslationUnit(Expressions &&expressions) noexcept
+      : m_expressions(std::move(expressions)),
+        m_recovered_expressions(m_expressions.size()) {}
 
-  void
-  addImportedExpression(TranslationUnit::Expression &&expression) noexcept {
-    m_imported.emplace_back(std::move(expression));
-  }
-  TranslationUnit::Expressions &localExpressions() noexcept { return m_local; }
-  TranslationUnit::Expressions &importedExpressions() noexcept {
-    return m_imported;
+  void append(ir::Mir &&mir) {
+    m_expressions.emplace_back(std::move(mir));
+    m_recovered_expressions.push_back(false);
   }
 };
 } // namespace mint

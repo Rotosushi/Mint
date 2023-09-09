@@ -16,7 +16,6 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/Scope.hpp"
 #include "adt/Environment.hpp"
-#include "utility/VectorHelpers.hpp"
 
 namespace mint {
 [[nodiscard]] auto Bindings::Binding::key() const noexcept -> Key const & {

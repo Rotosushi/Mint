@@ -101,5 +101,9 @@ public:
   std::optional<Error>
   resolveRuntimeValueOfUseBeforeDef(Environment &env,
                                     Identifier def_name) noexcept;
+
+  std::optional<Error>
+  resolveForwardDeclaratinOfUseBeforeDef(Environment &env,
+                                         Identifier def_name) noexcept;
 };
 } // namespace mint

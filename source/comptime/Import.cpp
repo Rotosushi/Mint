@@ -33,7 +33,7 @@ int importSourceFile(fs::path path, Environment &env) noexcept {
   auto &file = found.value();
 
   env.pushActiveSourceFile(std::move(file));
-  std::vector<ir::Mir> expressions;
+  TranslationUnit::Expressions expressions;
 
   while (true) {
     auto result = env.parseMir();
