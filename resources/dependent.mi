@@ -1,0 +1,6 @@
+import "module.mi";
+
+module C {
+  public let a = A::a;
+  public let b = B::g;
+}

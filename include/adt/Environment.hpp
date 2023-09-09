@@ -92,7 +92,7 @@ public:
   std::optional<fs::path> const &sourceFile() noexcept;
   void sourceFile(fs::path file) noexcept;
 
-  int emitLLVMIR() noexcept;
+  int emitLLVMIR(fs::path const &path) noexcept;
 
   //**** MirParser interface ****//
   auto endOfMirInput() const noexcept -> bool;
@@ -110,9 +110,10 @@ public:
   }
 
   //**** DirectorySearcher interface ****//
-  void appendDirectory(fs::path file) noexcept;
-  auto fileExists(fs::path file) noexcept -> bool;
-  auto fileSearch(fs::path file) noexcept -> std::optional<std::fstream>;
+  void appendDirectories(std::vector<std::string> const &paths) noexcept;
+  void appendDirectory(fs::path const &file) noexcept;
+  auto fileExists(fs::path const &file) noexcept -> bool;
+  auto fileSearch(fs::path const &file) noexcept -> std::optional<std::fstream>;
 
   //**** Identifier Set Interface ****//
   auto getIdentifier(std::string_view name) noexcept -> Identifier;

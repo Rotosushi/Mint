@@ -88,7 +88,7 @@ Result<ir::detail::Parameter> MirParser::parseImport(ir::Mir &mir) {
     return recover(Error::Kind::ExpectedText);
   }
 
-  auto filename = stringify(text());
+  auto filename = m_env->internString(stringify(text()));
   next();
 
   if (!expect(Token::Semicolon)) {

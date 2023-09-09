@@ -21,6 +21,7 @@
 #include "comptime/Evaluate.hpp"
 #include "comptime/Parse.hpp"
 #include "comptime/Typecheck.hpp"
+#include "utility/CommandLineOptions.hpp"
 
 namespace mint {
 [[nodiscard]] int compile(fs::path file);
@@ -34,10 +35,13 @@ namespace mint {
       return EXIT_FAILURE;
     }
   }
+  return EXIT_SUCCESS;
 }
 
 [[nodiscard]] int compile(fs::path file) {
   auto env = Environment::create();
+  // #TODO: move this into Environment::create()
+  env.appendDirectories(include_paths);
 
   if (parse(file, env) == EXIT_FAILURE) {
     return EXIT_FAILURE;
@@ -55,7 +59,7 @@ namespace mint {
     return EXIT_FAILURE;
   }
 
-  if (emit(env) == EXIT_FAILURE) {
+  if (emit(file, env) == EXIT_FAILURE) {
     return EXIT_FAILURE;
   }
 

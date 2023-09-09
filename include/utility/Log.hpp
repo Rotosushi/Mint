@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <ostream>         // std::ostream
-#include <source_location> // std::source_location
-#include <string_view>     // std::string_view
+#include <ostream>
+#include <source_location>
+#include <string_view>
 
 #include "utility/Debug.hpp"
 

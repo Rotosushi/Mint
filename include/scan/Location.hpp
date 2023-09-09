@@ -25,7 +25,7 @@ struct Location {
   std::size_t lcolumn;
 
   ~Location() noexcept = default;
-  Location() noexcept : fline(0), fcolumn(0), lline(0), lcolumn(0) {}
+  Location() noexcept : fline(1), fcolumn(0), lline(1), lcolumn(0) {}
   Location(const Location &other) noexcept = default;
   Location(Location &&other) noexcept = default;
   Location(std::size_t fl, std::size_t fc, std::size_t ll,

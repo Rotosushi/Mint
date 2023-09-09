@@ -15,9 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace mint {
 class Environment;
 
-int emit(Environment &env) noexcept;
+int emit(fs::path const &path, Environment &env) noexcept;
 } // namespace mint

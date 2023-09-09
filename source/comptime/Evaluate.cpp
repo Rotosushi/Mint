@@ -73,14 +73,17 @@ struct EvaluateInstruction {
   }
 
   Result<ir::Value> operator()(ir::detail::Immediate &immediate) noexcept {
+    MINT_ASSERT(immediate.cachedType() != nullptr);
     return evaluate(immediate, *env);
   }
 
   Result<ir::Value> operator()(ir::Parens &parens) noexcept {
+    MINT_ASSERT(parens.cachedType() != nullptr);
     return evaluate(parens.parameter(), *mir, *env);
   }
 
   Result<ir::Value> operator()(ir::Let &let) noexcept {
+    MINT_ASSERT(let.cachedType() != nullptr);
     auto found = env->lookupLocalBinding(let.name());
     MINT_ASSERT(found);
     auto binding = found.value();
@@ -106,6 +109,7 @@ struct EvaluateInstruction {
   }
 
   Result<ir::Value> operator()(ir::Binop &binop) noexcept {
+    MINT_ASSERT(binop.cachedType() != nullptr);
     auto overloads = env->lookupBinop(binop.op());
     MINT_ASSERT(overloads);
 
@@ -136,6 +140,7 @@ struct EvaluateInstruction {
   }
 
   Result<ir::Value> operator()(ir::Unop &unop) noexcept {
+    MINT_ASSERT(unop.cachedType() != nullptr);
     auto overloads = env->lookupUnop(unop.op());
     MINT_ASSERT(overloads);
 
@@ -205,6 +210,7 @@ struct EvaluateInstruction {
   // }
 
   Result<ir::Value> operator()(ir::Import &i) noexcept {
+    MINT_ASSERT(i.cachedType() != nullptr);
     auto *itu = env->findImport(i.file());
     MINT_ASSERT(itu != nullptr);
 
@@ -230,6 +236,7 @@ struct EvaluateInstruction {
   }
 
   Result<ir::Value> operator()(ir::Module &m) noexcept {
+    MINT_ASSERT(m.cachedType() != nullptr);
     env->pushScope(m.name());
 
     std::size_t index = 0U;

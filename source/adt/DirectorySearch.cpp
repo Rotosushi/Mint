@@ -17,8 +17,9 @@
 #include "adt/DirectorySearch.hpp"
 
 namespace mint {
-auto DirectorySearcher::existsWithinDirectory(fs::path &directory,
-                                              fs::path &file) noexcept -> bool {
+auto DirectorySearcher::existsWithinDirectory(fs::path const &directory,
+                                              fs::path const &file) noexcept
+    -> bool {
   auto path = directory;
   path /= file;
 
@@ -30,8 +31,8 @@ auto DirectorySearcher::existsWithinDirectory(fs::path &directory,
   return result;
 };
 
-auto DirectorySearcher::searchWithinDirectory(fs::path &directory,
-                                              fs::path &file) noexcept
+auto DirectorySearcher::searchWithinDirectory(fs::path const &directory,
+                                              fs::path const &file) noexcept
     -> std::optional<std::fstream> {
   auto path = directory;
   path /= file;
@@ -44,11 +45,11 @@ auto DirectorySearcher::searchWithinDirectory(fs::path &directory,
   return std::nullopt;
 }
 
-void DirectorySearcher::append(fs::path directory) noexcept {
+void DirectorySearcher::append(fs::path const &directory) noexcept {
   m_known_paths.emplace_back(std::move(directory));
 }
 
-auto DirectorySearcher::exists(fs::path file) noexcept -> bool {
+auto DirectorySearcher::exists(fs::path const &file) noexcept -> bool {
   for (auto &directory : m_known_paths) {
     if (existsWithinDirectory(directory, file))
       return true;
@@ -56,7 +57,7 @@ auto DirectorySearcher::exists(fs::path file) noexcept -> bool {
   return false;
 }
 
-auto DirectorySearcher::search(fs::path file) noexcept
+auto DirectorySearcher::search(fs::path const &file) noexcept
     -> std::optional<std::fstream> {
   for (auto &directory : m_known_paths) {
     auto found = searchWithinDirectory(directory, file);

@@ -402,28 +402,21 @@ struct TypecheckInstruction {
       return i.cachedType();
     }
 
-    // #NOTE: this check is necessary, because we must
-    // typecheck each import expression before we ever
-    // evaluate or codegen any expression.
-    // it is not sufficient because while
-    // we only search for existing itu's when we evaluate
-    // or codegen a given import statement.
-    // we are going to attempt to evaluate and codegen every
-    // import statement, meaning we will attempt to evaluate
-    // the itu twice.
-    if (env->alreadyImported(i.file())) {
+    fs::path path = i.file();
+
+    if (env->alreadyImported(path)) {
       return env->getNilType();
     }
 
-    if (!env->fileExists(i.file())) {
+    if (!env->fileExists(path)) {
       return Error{Error::Kind::FileNotFound, i.sourceLocation(), i.file()};
     }
 
-    if (importSourceFile(i.file(), *env) == EXIT_FAILURE) {
+    if (importSourceFile(path, *env) == EXIT_FAILURE) {
       return Error{Error::Kind::ImportFailed, i.sourceLocation(), i.file()};
     }
 
-    auto *itu = env->findImport(i.file());
+    auto *itu = env->findImport(path);
     MINT_ASSERT(itu != nullptr);
 
     for (auto &expression : itu->expressions()) {

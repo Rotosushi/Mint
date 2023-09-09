@@ -30,7 +30,12 @@ int parse(fs::path path, Environment &env) noexcept {
   while (true) {
     auto result = env.parseMir();
     if (!result) {
-      env.errorStream() << result.error() << "\n";
+      auto error = result.error();
+      if (error.kind() == Error::Kind::EndOfInput) {
+        break;
+      }
+
+      env.errorStream() << error << "\n";
       return EXIT_FAILURE;
     }
 

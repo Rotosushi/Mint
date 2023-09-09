@@ -24,6 +24,6 @@ inline auto stringify(std::string_view string) noexcept -> std::string_view {
 
   // #TODO: replace escape sequences with character literals here
 
-  return {cursor, static_cast<std::size_t>(std::distance(cursor, end))};
+  return {cursor, end};
 }
 } // namespace mint

@@ -19,5 +19,7 @@
 #include "adt/Environment.hpp"
 
 namespace mint {
-int emit(Environment &env) noexcept { return env.emitLLVMIR(); }
+int emit(fs::path const &path, Environment &env) noexcept {
+  return env.emitLLVMIR(path);
+}
 } // namespace mint

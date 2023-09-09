@@ -28,10 +28,10 @@ namespace mint {
 class DirectorySearcher {
   std::vector<fs::path> m_known_paths;
 
-  auto existsWithinDirectory(fs::path &directory, fs::path &file) noexcept
+  auto existsWithinDirectory(fs::path const &directory, fs::path const &file) noexcept
       -> bool;
 
-  auto searchWithinDirectory(fs::path &directory, fs::path &file) noexcept
+  auto searchWithinDirectory(fs::path const &directory, fs::path const &file) noexcept
       -> std::optional<std::fstream>;
 
 public:
@@ -40,10 +40,10 @@ public:
     // #TODO: add the mint standard library path to the space.
   }
 
-  void append(fs::path directory) noexcept;
+  void append(fs::path const &directory) noexcept;
 
-  auto exists(fs::path file) noexcept -> bool;
+  auto exists(fs::path const &file) noexcept -> bool;
 
-  auto search(fs::path file) noexcept -> std::optional<std::fstream>;
+  auto search(fs::path const &file) noexcept -> std::optional<std::fstream>;
 };
 } // namespace mint

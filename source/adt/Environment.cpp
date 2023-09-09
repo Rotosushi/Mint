@@ -133,14 +133,12 @@ void Environment::sourceFile(fs::path file) noexcept {
   m_file = std::move(file);
 }
 
-int Environment::emitLLVMIR() noexcept {
+int Environment::emitLLVMIR(fs::path const &path) noexcept {
   // #NOTE: verify returns true on failure,
   // intended for use within an early return if statement.
   MINT_ASSERT(!verify(*m_llvm_module, *m_error_output));
 
-  auto source = sourceFile();
-  MINT_ASSERT(source);
-  auto filename = source.value();
+  auto filename = path;
   filename.replace_extension("ll");
   std::error_code errc;
   llvm::raw_fd_ostream outfile(filename.c_str(), errc);
@@ -223,17 +221,24 @@ auto Environment::qualifyName(Identifier name) noexcept -> Identifier {
 }
 
 //**** DirectorySearcher interface ****/
-void Environment::appendDirectory(fs::path file) noexcept {
-  return m_directory_searcher.append(std::move(file));
+void Environment::appendDirectories(
+    std::vector<std::string> const &paths) noexcept {
+  for (auto &path : paths) {
+    appendDirectory(path);
+  }
 }
 
-auto Environment::fileExists(fs::path file) noexcept -> bool {
-  return m_directory_searcher.exists(std::move(file));
+void Environment::appendDirectory(fs::path const &file) noexcept {
+  return m_directory_searcher.append(file);
 }
 
-auto Environment::fileSearch(fs::path file) noexcept
+auto Environment::fileExists(fs::path const &file) noexcept -> bool {
+  return m_directory_searcher.exists(file);
+}
+
+auto Environment::fileSearch(fs::path const &file) noexcept
     -> std::optional<std::fstream> {
-  return m_directory_searcher.search(std::move(file));
+  return m_directory_searcher.search(file);
 }
 
 //**** Identifier Set Interface ****//

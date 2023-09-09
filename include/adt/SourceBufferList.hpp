@@ -25,10 +25,13 @@
 namespace mint {
 class SourceBufferList {
 public:
+  // #NOTE:
   // we need access to the SourceBuffers in a stack like manner
   // and we want SourceBuffers to be alive after they are not
   // active, such that SourceLocation can maintain a string_view
-  // into it's corresponding SourceBuffer.
+  // into it's corresponding SourceBuffer. so we maintain a linked
+  // list to manage the lifetimes, and we simply keep a stack of
+  // pointers into the list.
 
   using List = std::list<SourceBuffer>;
   using Stack = std::stack<SourceBuffer *, std::vector<SourceBuffer *>>;
