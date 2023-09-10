@@ -20,7 +20,7 @@
 #define MINT_VERSION_MAJOR 0
 #define MINT_VERSION_MINOR 0
 #define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "7a3422973c264cd741f39b24b7755a48bebf22cb"
+#define MINT_GIT_REVISION "c346253d3b1c49063b24f01c629992aa2f64eee1"
 #define MINT_RESOURCES_DIR "/home/cadence/projects/Mint/resources"
 #define MINT_DEBUG 1
 // NOLINTEND

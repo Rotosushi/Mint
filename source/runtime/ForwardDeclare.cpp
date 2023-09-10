@@ -62,6 +62,8 @@ struct ForwardDeclareInstruction {
     MINT_ASSERT(!failed);
   }
 
+  void operator()(ir::Function &function) noexcept {}
+
   void operator()([[maybe_unused]] ir::Binop &binop) noexcept {}
   void operator()([[maybe_unused]] ir::Unop &unop) noexcept {}
   void operator()([[maybe_unused]] ir::Import &import) noexcept {}

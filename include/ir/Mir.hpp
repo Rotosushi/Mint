@@ -81,6 +81,10 @@ public:
   detail::Index emplaceLet(SourceLocation *sl, Attributes attributes,
                            Identifier name, std::optional<type::Ptr> annotation,
                            detail::Parameter parameter);
+  detail::Index emplaceFunction(SourceLocation *sl, Attributes attributes,
+                                Identifier name, FormalArguments arguments,
+                                std::optional<type::Ptr> annotation,
+                                boost::container::vector<Mir> body);
   detail::Index emplaceBinop(SourceLocation *sl, Token op,
                              detail::Parameter left, detail::Parameter right);
   detail::Index emplaceUnop(SourceLocation *sl, Token op,

@@ -104,6 +104,38 @@ struct PrintInstructionVisitor {
     out << ";";
   }
 
+  void operator()(Function &function) noexcept {
+    if (function.attributes().isPublic()) {
+      out << "public ";
+    } else {
+      out << "private ";
+    }
+
+    out << "fn " << function.name();
+
+    out << "(";
+    std::size_t index = 0U, size = function.arguments().size();
+    for (auto &argument : function.arguments()) {
+      out << argument.name << ": " << argument.type;
+
+      if (index++ < (size - 1)) {
+        out << ", ";
+      }
+    }
+    out << ")";
+
+    if (auto annotation = function.annotation()) {
+      out << " -> " << annotation.value();
+    }
+
+    out << "{";
+    for (auto &expression : function.body()) {
+      print(out, expression);
+      out << "\n";
+    }
+    out << "}";
+  }
+
   void operator()(Binop &binop) noexcept {
     print(out, mir, binop.left());
     out << " " << binop.op() << " ";

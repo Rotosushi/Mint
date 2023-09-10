@@ -101,8 +101,13 @@ Result<ir::detail::Parameter> MirParser::parseImport(ir::Mir &mir) {
 }
 
 Result<ir::detail::Parameter> MirParser::parseTerm(ir::Mir &mir) {
-  if (peek(Token::Public) || peek(Token::Private) || peek(Token::Let)) {
-    return parseLet(mir);
+  if (peek(Token::Public) || peek(Token::Private)) {
+    return parseVisibility(mir);
+  }
+
+  if (peek(Token::Let) || peek(Token::Fn)) {
+    // #TODO: allow the default visibility to be set by the source code.
+    return parseDefinition(mir, false);
   }
 
   auto affix = parseAffix(mir);
@@ -117,15 +122,36 @@ Result<ir::detail::Parameter> MirParser::parseTerm(ir::Mir &mir) {
   return affix;
 }
 
-Result<ir::detail::Parameter> MirParser::parseLet(ir::Mir &mir) {
+Result<ir::detail::Parameter> MirParser::parseVisibility(ir::Mir &mir) {
+  if (expect(Token::Public)) {
+    return parseDefinition(mir, true);
+  }
+
+  if (expect(Token::Private)) {
+    return parseDefinition(mir, false);
+  }
+
+  return recover(Error::Kind::ExpectedVisibility);
+}
+
+Result<ir::detail::Parameter> MirParser::parseDefinition(ir::Mir &mir,
+                                                         bool visibility) {
+  if (peek(Token::Let)) {
+    return parseLet(mir, visibility);
+  }
+
+  if (peek(Token::Fn)) {
+    return parseFunction(mir, visibility);
+  }
+
+  return recover(Error::Kind::ExpectedDefinition);
+}
+
+Result<ir::detail::Parameter> MirParser::parseLet(ir::Mir &mir,
+                                                  bool visibility) {
   auto lhs_loc = location();
   Attributes attributes;
-
-  if (expect(Token::Public)) {
-    attributes.isPublic(true);
-  } else if (expect(Token::Private)) {
-    attributes.isPublic(false);
-  }
+  attributes.isPublic(visibility);
 
   if (!expect(Token::Let)) {
     return recover(Error::Kind::ExpectedKeywordLet);
@@ -165,6 +191,109 @@ Result<ir::detail::Parameter> MirParser::parseLet(ir::Mir &mir) {
   Location let_loc{lhs_loc, rhs_loc};
   return mir.emplaceLet(source(let_loc), attributes, id, annotation,
                         affix.value());
+}
+
+Result<ir::detail::Parameter> MirParser::parseFunction(ir::Mir &mir,
+                                                       bool visibility) {
+  auto lhs_loc = location();
+  Attributes attributes;
+  attributes.isPublic(visibility);
+
+  if (!expect(Token::Fn)) {
+    return recover(Error::Kind::ExpectedKeywordFn);
+  }
+
+  if (!peek(Token::Identifier)) {
+    return recover(Error::Kind::ExpectedIdentifier);
+  }
+
+  auto name = m_env->getIdentifier(text());
+  next();
+
+  auto parseArgument = [&]() -> Result<FormalArgument> {
+    if (!peek(Token::Identifier)) {
+      return Error{Error::Kind::ExpectedIdentifier, location(), text()};
+    }
+
+    auto arg_name = m_env->getIdentifier(text());
+    next();
+
+    if (!expect(Token::Colon)) {
+      return Error{Error::Kind::ExpectedColon, location(), text()};
+    }
+
+    auto result = parseType();
+    if (!result) {
+      return result;
+    }
+    auto type = result.value();
+
+    return {arg_name, Attributes{}, type};
+  };
+
+  auto parseArgumentList = [&]() -> Result<FormalArguments> {
+    FormalArguments formal_arguments;
+
+    if (!expect(Token::BeginParen)) {
+      return Error{Error::Kind::ExpectedBeginParen, location(), text()};
+    }
+
+    if (!peek(Token::EndParen)) {
+      do {
+        auto result = parseArgument();
+        if (!result) {
+          return result.error();
+        }
+        formal_arguments.emplace_back(result.value());
+      } while (expect(Token::Comma));
+    }
+
+    if (!expect(Token::EndParen)) {
+      return Error{Error::Kind::ExpectedEndParen, location(), text()};
+    }
+
+    return formal_arguments;
+  };
+
+  auto arguments_result = parseArgumentList();
+  if (!arguments_result) {
+    return recover(std::move(arguments_result.error()));
+  }
+  auto &arguments = arguments_result.value();
+
+  std::optional<type::Ptr> annotation;
+  if (expect(Token::RightArrow)) {
+    auto result = parseType();
+    if (!result) {
+      return result.error();
+    }
+    annotation = result.value();
+  }
+
+  // #TODO: add support for a single expression function
+  // without braces.
+  ir::Function::Body body;
+  if (!expect(Token::BeginBrace)) {
+    return recover(Error::Kind::ExpectedBeginBrace);
+  }
+
+  while (!peek(Token::EndBrace)) {
+    ir::Mir expression;
+    auto result = parseTerm(expression);
+    if (!result) {
+      return result;
+    }
+    body.emplace_back(std::move(expression));
+  }
+
+  if (!expect(Token::EndBrace)) {
+    return recover(Error::Kind::ExpectedEndBrace);
+  }
+
+  auto rhs_loc = location();
+  Location fn_loc{lhs_loc, rhs_loc};
+  return mir.emplaceFunction(source(fn_loc), attributes, name,
+                             std::move(arguments), annotation, std::move(body));
 }
 
 Result<ir::detail::Parameter> MirParser::parseAffix(ir::Mir &mir) {

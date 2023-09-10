@@ -56,8 +56,14 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
     return "Expected '=>'";
   case Error::Kind::ExpectedText:
     return "Expected text [\"...\"]";
+  case Error::Kind::ExpectedDefinition:
+    return "Expected keyword 'let' or 'fn'";
+  case Error::Kind::ExpectedVisibility:
+    return "Expected keyword 'public' or 'private'";
   case Error::Kind::ExpectedKeywordLet:
     return "Expected keyword 'let'";
+  case Error::Kind::ExpectedKeywordFn:
+    return "Expected keyword 'fn'";
   case Error::Kind::ExpectedKeywordModule:
     return "Expected keyword 'module'";
   case Error::Kind::ExpectedKeywordImport:
@@ -68,8 +74,8 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
   case Error::Kind::ImportFailed:
     return "Import failed";
 
-  case Error::Kind::LetTypeMismatch:
-    return "Bound type does not equal type annotation";
+  case Error::Kind::AnnotatedTypeMismatch:
+    return "Actual type does not match type annotation";
 
   case Error::Kind::UseBeforeDef:
     return "Name use before Definition";

@@ -238,6 +238,10 @@ struct CodegenInstruction {
     return env->getLLVMNil();
   }
 
+  Result<llvm::Value *> operator()(ir::Function &function) noexcept {
+    
+  }
+
   Result<llvm::Value *> operator()(ir::Binop &binop) noexcept {
     MINT_ASSERT(env->hasInsertionPoint());
     MINT_ASSERT(binop.cachedType() != nullptr);

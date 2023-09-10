@@ -53,6 +53,7 @@ add_library(mint_common STATIC
 
   ${MINT_SOURCE_DIR}/ir/action/Print.cpp 
   ${MINT_SOURCE_DIR}/ir/action/Clone.cpp 
+  ${MINT_SOURCE_DIR}/ir/definition/Function.cpp
   ${MINT_SOURCE_DIR}/ir/questions/IsDefinition.cpp 
   ${MINT_SOURCE_DIR}/ir/statement/Module.cpp 
   ${MINT_SOURCE_DIR}/ir/Mir.cpp 

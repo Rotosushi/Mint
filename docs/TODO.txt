@@ -12,6 +12,8 @@ The immediate to do list (in no particular order)
 to be coerced into lambda's for the purposes of
 passing as arguments. and allow the user to specify 
 a main subroutine, in order to generate executables.
+  #TODO: typecheck, evaluate, codegen, forwardDeclare, print, clone ir:Function
+
 
 #TODO: add a compound body syntax to lambdas,
   and properly handle lookup and ubd between 

@@ -29,6 +29,7 @@ enum struct Token : int {
 
   // keywords
   Let,
+  Fn,
   Module,
   Public,
   Private,

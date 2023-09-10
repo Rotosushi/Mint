@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/Environment.hpp"
+#include "utility/CommandLineOptions.hpp"
 #include "utility/VerifyLLVM.hpp"
 
 #include "llvm/Analysis/AliasAnalysis.h"
@@ -48,6 +49,8 @@ Environment::Environment(std::istream *in, std::ostream *out,
 
   InitializeBuiltinBinops(this);
   InitializeBuiltinUnops(this);
+
+  appendDirectories(include_paths);
 }
 
 //**** Environment Methods ****//

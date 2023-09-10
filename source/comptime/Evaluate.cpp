@@ -108,6 +108,22 @@ struct EvaluateInstruction {
     return ir::Value{};
   }
 
+  Result<ir::Value> operator()(ir::Function &function) noexcept {
+    // what do we bind in the symbol table such that call expressions
+    // can apply this function? I think the choice is a lambda.
+    // for a few reasons:
+    // -) lambdas are already values
+    // -) lambdas are callables
+    // -) we can construct a lambda out of any function by cloning
+    // -) when we codegen or forward declare, we don't use the definition
+    //    within the symbol table, so we don't codegen/forward declare
+    //    a lambda, we process the function.
+    // -) we already store lambdas within the symbl table.
+    // -) we want to coerce functions into lambda's to treat them
+    //    as values.
+    
+  }
+
   Result<ir::Value> operator()(ir::Binop &binop) noexcept {
     MINT_ASSERT(binop.cachedType() != nullptr);
     auto overloads = env->lookupBinop(binop.op());

@@ -113,6 +113,14 @@ detail::Index Mir::emplaceLet(SourceLocation *sl, Attributes attributes,
   return emplace_back<Let>(sl, attributes, name, annotation, parameter);
 }
 
+detail::Index Mir::emplaceFunction(SourceLocation *sl, Attributes attributes,
+                                   Identifier name, FormalArguments arguments,
+                                   std::optional<type::Ptr> annotation,
+                                   boost::container::vector<Mir> body) {
+  return emplace_back<Function>(sl, attributes, name, std::move(arguments),
+                                annotation, std::move(body));
+}
+
 detail::Index Mir::emplaceBinop(SourceLocation *sl, Token op,
                                 detail::Parameter left,
                                 detail::Parameter right) {

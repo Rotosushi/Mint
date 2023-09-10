@@ -82,7 +82,10 @@ public:
     ExpectedRightArrow,
     ExpectedEqualsRightArrow,
     ExpectedText,
+    ExpectedDefinition,
+    ExpectedVisibility,
     ExpectedKeywordLet,
+    ExpectedKeywordFn,
     ExpectedKeywordModule,
     ExpectedKeywordImport,
 
@@ -92,7 +95,7 @@ public:
     ImportFailed,
 
     // definition errors
-    LetTypeMismatch,
+    AnnotatedTypeMismatch,
 
     UseBeforeDef,
     TypeCannotBeResolved,

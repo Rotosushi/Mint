@@ -29,27 +29,27 @@ class Environment;
 /*
 top = module
     | import
-    | function
     | term
 
 module = "module" identifier module-block
 
-module-block = "{" top* "}"
+module-block = "{" term* "}"
 
 import = "import" string-literal ";"
 
-function = visibility? "fn" identifier formal-arguments (-> type) local-block
+term = let
+     | function
+     | affix ";"
+
+let = visibility? "let" identifier (":" type)? "=" affix ";"
+
+function = visibility? "fn" identifier formal-arguments (-> type)? local-block
 
 formal-arguments = "(" (formal-argument ("," formal-argument)*)? ")"
 
 formal-argument = identifier ":" type
 
 local-block "{" term* "}"
-
-term = let
-     | affix ";"
-
-let = visibility? "let" identifier (":" type)? "=" affix ";"
 
 visibility = "public"
            | "private"
@@ -173,12 +173,22 @@ private:
     return recover(kind, source(), "");
   }
 
+  Error recover(Error &&error) {
+    while (!expect(Token::Semicolon) && !peek(Token::End))
+      next;
+
+    return error;
+  }
+
   Result<ir::detail::Parameter> parseTop(ir::Mir &mir);
   Result<ir::detail::Parameter> parseModule(ir::Mir &mir);
   Result<ir::detail::Parameter> parseImport(ir::Mir &mir);
   Result<ir::detail::Parameter> parseTerm(ir::Mir &mir);
 
-  Result<ir::detail::Parameter> parseLet(ir::Mir &mir);
+  Result<ir::detail::Parameter> parseVisibility(ir::Mir &mir);
+  Result<ir::detail::Parameter> parseDefinition(ir::Mir &mir, bool visibility);
+  Result<ir::detail::Parameter> parseLet(ir::Mir &mir, bool visibility);
+  Result<ir::detail::Parameter> parseFunction(ir::Mir &mir, bool visibility);
   Result<ir::detail::Parameter> parseAffix(ir::Mir &mir);
 
   // Result<ir::detail::Parameter> parseCall(ir::Mir &mir);

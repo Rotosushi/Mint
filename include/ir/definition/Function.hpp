@@ -16,7 +16,8 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <optional>
-#include <vector>
+
+#include "boost/container/vector.hpp"
 
 #include "adt/Argument.hpp"
 #include "adt/Attributes.hpp"
@@ -26,28 +27,28 @@
 #include "type/Type.hpp"
 
 namespace mint::ir {
+class Mir;
+
 class Function : public detail::IrBase {
+public:
+  using Body = boost::container::vector<Mir>;
+
+private:
   Attributes m_attributes;
   Identifier m_name;
   FormalArguments m_arguments;
   std::optional<type::Ptr> m_annotation;
-  detail::Parameter m_body;
+  Body m_body;
 
 public:
   Function(SourceLocation *sl, Attributes attributes, Identifier name,
            FormalArguments arguments, std::optional<type::Ptr> annotation,
-           detail::Parameter body) noexcept
-      : detail::IrBase(sl), m_attributes(attributes), m_name(name),
-        m_arguments(std::move(arguments)), m_annotation(annotation),
-        m_body(body) {}
+           Body body) noexcept;
 
-  [[nodiscard]] auto attributes() const noexcept -> Attributes {
-    return m_attributes;
-  }
-  [[nodiscard]] auto name() const noexcept -> Identifier { return m_name; }
-  [[nodiscard]] auto annotation() const noexcept -> std::optional<type::Ptr> {
-    return m_annotation;
-  }
-  [[nodiscard]] auto body() noexcept -> detail::Parameter & { return m_body; }
+  [[nodiscard]] auto attributes() noexcept -> Attributes &;
+  [[nodiscard]] auto name() const noexcept -> Identifier;
+  [[nodiscard]] auto arguments() noexcept -> FormalArguments &;
+  [[nodiscard]] auto annotation() const noexcept -> std::optional<type::Ptr>;
+  [[nodiscard]] auto body() noexcept -> Body &;
 };
 } // namespace mint::ir

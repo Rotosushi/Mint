@@ -53,6 +53,18 @@ struct CloneInstructionVisitor {
                                clone(m_source, m_target, let.parameter()));
   }
 
+  detail::Parameter operator()(Function &function) noexcept {
+    Function::Body body;
+    body.reserve(function.body().size());
+    for (auto &expression : function.body()) {
+      body.emplace_back(clone(expression));
+    }
+
+    return m_target.emplaceFunction(
+        function.sourceLocation(), function.attributes(), function.name(),
+        function.arguments(), function.annotation(), std::move(body));
+  }
+
   detail::Parameter operator()(Binop &binop) noexcept {
     return m_target.emplaceBinop(binop.sourceLocation(), binop.op(),
                                  clone(m_source, m_target, binop.left()),

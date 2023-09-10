@@ -217,9 +217,9 @@ struct TypecheckInstruction {
       auto annotated_type = let.annotation().value();
       if (!equals(annotated_type, type)) {
         std::stringstream msg;
-        msg << "Expected Type [" << annotated_type << "]"
+        msg << "Annotated Type [" << annotated_type << "]"
             << " Actual Type [" << type << "]";
-        return Error{Error::Kind::LetTypeMismatch, let.sourceLocation(),
+        return Error{Error::Kind::AnnotatedTypeMismatch, let.sourceLocation(),
                      msg.view()};
       }
     }
@@ -230,10 +230,81 @@ struct TypecheckInstruction {
     }
 
     auto qualifiedName = env->qualifyName(let.name());
-    if (auto failed = env->resolveTypeOfUseBeforeDef(qualifiedName))
+    if (auto failed = env->resolveTypeOfUseBeforeDef(qualifiedName)) {
       return failed.value();
+    }
 
     return let.cachedType(env->getNilType());
+  }
+
+  Result<type::Ptr> operator()(ir::Function &function) noexcept {
+    if (function.cachedType() != nullptr) {
+      return function.cachedType();
+    }
+
+    auto found = env->lookupLocalBinding(function.name());
+    if (found) {
+      return Error{Error::Kind::NameAlreadyBoundInScope,
+                   function.sourceLocation(), function.name()};
+    }
+
+    env->pushScope();
+    type::Function::Arguments argument_types;
+    argument_types.reserve(function.arguments().size());
+    for (auto &argument : function.arguments()) {
+      argument_types.emplace_back(argument.type);
+      env->declareName(argument);
+    }
+
+    // #NOTE: the final term in the body is assumed
+    // to be the result type.
+    // #TODO: add an explicit return statement
+    // #NOTE: if there are zero expressions in the body,
+    // it is as if the body only contains nil.
+    type::Ptr result_type = env->getNilType();
+    for (auto &expression : function.body()) {
+      auto result = typecheck(expression, *env);
+      if (!result) {
+        if (result.recoverable()) {
+          return handleRecoverableError(result.unknown(), *ir, index,
+                                        env->qualifyName(function.name()),
+                                        *env);
+        }
+
+        env->popScope();
+        return result;
+      }
+      result_type = result.value();
+    }
+
+    env->popScope();
+
+    if (function.annotation()) {
+      auto annotated_type = function.annotation().value();
+      if (!type::equals(annotated_type, result_type)) {
+        std::stringstream msg;
+        msg << "Actual Type [" << result_type << "], Annotated Type ["
+            << annotated_type << "]";
+        return Error{Error::Kind::AnnotatedTypeMismatch,
+                     function.sourceLocation(), msg.view()};
+      }
+    }
+
+    auto function_type =
+        env->getFunctionType(result_type, std::move(argument_types));
+
+    if (auto bound = env->declareName(function.name(), function.attributes(),
+                                      function_type);
+        !bound) {
+      return bound.error();
+    }
+
+    auto qualifiedName = env->qualifyName(function.name());
+    if (auto failed = env->resolveTypeOfUseBeforeDef(qualifiedName)) {
+      return failed.value();
+    }
+
+    return function.cachedType(function_type);
   }
 
   Result<type::Ptr> operator()(ir::Binop &binop) noexcept {
