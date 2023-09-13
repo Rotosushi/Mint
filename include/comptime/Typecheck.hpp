@@ -17,13 +17,13 @@
 #pragma once
 
 #include "adt/Result.hpp"
-#include "ir/Mir.hpp"
+#include "ast/Ast.hpp"
 #include "type/Type.hpp"
 
 namespace mint {
 class Environment;
 
-Result<type::Ptr> typecheck(ir::Mir &ir, Environment &env) noexcept;
+Result<type::Ptr> typecheck(ast::Ptr &p, Environment &env) noexcept;
 
 int typecheck(Environment &env) noexcept;
 } // namespace mint

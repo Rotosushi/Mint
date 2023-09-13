@@ -15,37 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-
-#include "ast/expression/Expression.hpp"
-#include "ir/expression/Unop.hpp"
+#include "ast/AstFwd.hpp"
 #include "scan/Token.hpp"
 
-namespace mint {
-namespace ast {
-class Unop : public Expression {
-  Token m_op;
-  Ptr m_right;
+namespace mint::ast {
+struct Unop {
+  Token op;
+  Ptr right;
 
-protected:
-  Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
-
-  // static ir::Unop::Op convert(Token op) noexcept;
-
-public:
-  Unop(Attributes attributes, Location location, Token op, Ptr right) noexcept;
-  ~Unop() noexcept override = default;
-
-  [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   Token op, Ptr right) noexcept -> ast::Ptr;
-
-  static auto classof(Ast const *ast) noexcept -> bool;
-
-  void print(std::ostream &out) const noexcept override;
-
-  Result<type::Ptr> typecheck(Environment &env) const noexcept override;
-  Result<ast::Ptr> evaluate(Environment &env) noexcept override;
-  Result<llvm::Value *> codegen(Environment &env) noexcept override;
+  Unop(Token op, Ptr right) noexcept : op(op), right(std::move(right)) {}
 };
-} // namespace ast
-} // namespace mint
+} // namespace mint::ast

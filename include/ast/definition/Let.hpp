@@ -17,73 +17,21 @@
 #pragma once
 #include <optional>
 
-#include "ast/definition/Definition.hpp"
+#include "adt/Attributes.hpp"
+#include "adt/Identifier.hpp"
+#include "ast/AstFwd.hpp"
+#include "type/Type.hpp"
 
-namespace mint {
-namespace ast {
-/*
-  #TODO: do we want to allow expressions like
+namespace mint::ast {
+struct Let {
+  Identifier name;
+  Attributes attributes;
+  std::optional<type::Ptr> annotation;
+  Ptr affix;
 
-  if (let x = ...) { ...
-
-  where the let expression defines a new variable
-  within the scope of the if expression?
-  nearly identical to:
-  let x = ...;
-  if (... x ...) { ...
-
-  except limiting the scope of the variable to the
-  if condition. (expressing a subtle intent implicitly)
-  and reducing the line count by one.
-
-  this kind of construct relies upon changing let expressions
-  to return the defined variable as their result instead of nil
-  as it is currently.
-  and implementing one step of automatic conversion to bool.
-  introducing implicit conversions to the language.
-
-  we could skirt implicit conversions if we instead required the
-  conditional to convert to bool explicitly:
-
-  if (let x = ...; ... x ...) { ...
-
-  though the idea behind this is to turn the ';' into something
-  akin to the comma operator in c++. which simply evaluates it's left
-  hand side and then it's right, and returns it's right as the result
-  type and value.
-  in that case we can allow for if expressions like:
-
-  if (let x = ...; ... x ...
-    & let y = ...; ... y ...) { ...
-
-  which combine multiple definitions into a single if statement.
-*/
-class Let : public Definition {
-  Ptr m_ast;
-
-protected:
-  Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
-
-public:
-  Let(Attributes attributes, Location location,
-      std::optional<type::Ptr> annotation, Identifier name, Ptr ast) noexcept;
-  ~Let() noexcept override = default;
-
-  [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   std::optional<type::Ptr> annotation,
-                                   Identifier name, Ptr ast) noexcept
-      -> ast::Ptr;
-  static auto classof(Ast const *ast) noexcept -> bool;
-
-  std::optional<Error>
-  checkUseBeforeDef(Error::UseBeforeDef &ubd) const noexcept override;
-
-  void print(std::ostream &out) const noexcept override;
-
-  Result<type::Ptr> typecheck(Environment &env) const noexcept override;
-  Result<ast::Ptr> evaluate(Environment &env) noexcept override;
-  Result<llvm::Value *> codegen(Environment &env) noexcept override;
+  Let(Identifier name, Attributes attributes,
+      std::optional<type::Ptr> annotation, Ptr affix) noexcept
+      : name(name), attributes(attributes), annotation(annotation),
+        affix(std::move(affix)) {}
 };
-} // namespace ast
-} // namespace mint
+} // namespace mint::ast

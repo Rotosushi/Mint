@@ -15,51 +15,68 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <istream>
+#include <bitset>
 
+#include "adt/Attributes.hpp"
 #include "adt/Result.hpp"
+#include "adt/SourceBufferList.hpp"
 #include "ast/Ast.hpp"
-#include "scan/Scanner.hpp"
+#include "scan/Lexer.hpp"
+
+namespace mint {
+class Environment;
 
 /*
-top = visibility? let
-    | module
+top = module
     | import
     | term
+
+module = "module" identifier module-block
+
+module-block = "{" term* "}"
+
+import = "import" string-literal ";"
+
+term = let
+     | function
+     | affix ";"
+
+let = visibility? "let" identifier (":" type)? "=" affix ";"
+
+function = visibility? "fn" identifier "(" formal-arguments? ")" ("->" type)?
+local-block
+
+formal-arguments =  (formal-argument ("," formal-argument)*)?
+
+formal-argument = identifier ":" type
+
+local-block "{" term* "}"
 
 visibility = "public"
            | "private"
 
-import = "import" string-literal ";"
-
-term = affix ";"
-
-let = "let" identifier (":" type)? "=" term
-
-module = "module" identifier "{" top* "}"
-
 affix = call (binop precedence-parser)?
 
-call = basic ("(" (affix ("," affix)*)? ")")?
+call = basic (actual-argument-list)?
 
-binop = "+" | "-" | "*" | "/" | "%" | "!" | "&" | "|"
+actual-argument-list = "(" (affix ("," affix)*)? ")"
+
+binop = "+" | "-" | "*" | "/" | "%" | "&" | "|"
         "<" | "<=" | "==" | "!=" | "=>" | ">"
 
+unop = "-" | "!"
+
+
 basic = literal
-      | integer
       | identifier
       | unop basic
       | "(" affix ")"
+      | "\" formal-arguments? ("->" type)? "=>" affix
 
 literal = "nil"
         | "true"
         | "false"
-        | "\" (argument-list)? ("->" type)? "=>" affix
-  #TODO | "\" (argument-list)? ("->" type)? block
-
-argument-list = argument ("," argument)*
-
-argument = identifier ":" type
+        | integer
 
 type = "Nil"
      | "Boolean"
@@ -74,89 +91,112 @@ separator  = "::";
 identifier = start continue* (separator continue+)*
 
 string-literal = "\"" [.]* "\""
-// text is a string literal.
 */
-
-namespace mint {
-class Environment;
-
 class Parser {
+public:
 private:
-  Environment *env;
-  std::istream *in;
-  Scanner scanner;
-  Token current;
-  Attributes default_attributes;
+  Environment *m_env;
+  SourceBufferList m_sources;
+  Lexer m_lexer;
+  Token m_current_token;
+  Attributes m_attributes;
 
 public:
-  Parser(Environment *env, std::istream *in) noexcept;
+  Parser(Environment &env) noexcept;
 
-  void setIstream(std::istream *in) noexcept;
+  void pushSourceFile(std::fstream &&fin) {
+    m_lexer.exchangeSource(m_sources.push(std::move(fin)));
+  }
 
-  [[nodiscard]] auto extractSourceLine(Location const &location) const noexcept
-      -> std::string_view;
+  void popSourceFile() { m_lexer.exchangeSource(m_sources.pop()); }
 
-  void printErrorWithSource(std::ostream &out,
-                            Error const &error) const noexcept;
+  bool endOfInput() const noexcept {
+    return m_lexer.eof() && m_lexer.endOfInput();
+  }
 
-  auto endOfInput() const noexcept -> bool;
-  auto parse() -> Result<ast::Ptr> { return parseTop(); }
+  Result<ast::Ptr> parse() { return parseTop(); }
 
 private:
-  auto text() const noexcept -> std::string_view;
-  auto location() const noexcept -> Location;
+  std::string_view text() const noexcept { return m_lexer.viewToken(); }
+  Location location() const noexcept { return m_lexer.currentLocation(); }
+  SourceLocation *source() const noexcept {
+    return m_lexer.source(m_lexer.currentLocation());
+  }
+  SourceLocation *source(Location const &location) const noexcept {
+    return m_lexer.source(location);
+  }
 
-  void next() noexcept;
-  void append(std::string_view text) noexcept;
-  void fill() noexcept;
+  void next() noexcept { m_current_token = m_lexer.lex(); }
+  bool peek(Token token) noexcept {
+    fill();
+    return m_current_token == token;
+  }
+  bool expect(Token token) noexcept {
+    fill();
+    if (peek(token)) {
+      next();
+      return true;
+    }
+    return false;
+  }
 
-  // NOTE: we call fill before we
-  // check the state of the current token.
-  // to ensure that we have all of the available
-  // source before we check the state.
-  // otherwise the end of the buffer could
-  // be reached and parsing stopped when the
-  // term itself is merely separated accross lines.
-  auto peek(Token token) noexcept -> bool;
-  auto expect(Token token) noexcept -> bool;
-  auto predictsDeclaration(Token token) noexcept -> bool;
+  void fill() noexcept {
+    auto at_end = m_current_token == Token::End;
+    auto more_source = !m_lexer.eof();
+    auto good = m_lexer.good();
+    if (at_end && more_source && good) {
+      m_lexer.fill();
+      next();
+    }
+  }
 
-  // we just encountered a syntax error,
-  // so we want to walk the parser past the
-  // line of source text which produced the
-  // error.
-  // so advance the scanner until we see ';'
-  // or the End of the buffer.
-  void recover() noexcept;
-  auto handle_error(Error::Kind kind) noexcept -> Error;
-  auto handle_error(Error::Kind kind, Location location,
-                    std::string_view message) noexcept -> Error;
+  Error recover(Error::Kind kind, SourceLocation *source,
+                std::string_view message) noexcept {
+    while (!expect(Token::Semicolon) && !peek(Token::End))
+      next();
 
-  auto parseTop() noexcept -> Result<ast::Ptr>;
-  auto parseModule() noexcept -> Result<ast::Ptr>;
-  auto parseLet() noexcept -> Result<ast::Ptr>;
-  auto parseImport() noexcept -> Result<ast::Ptr>;
-  auto parseTerm() noexcept -> Result<ast::Ptr>;
-  auto parseAffix() noexcept -> Result<ast::Ptr>;
-  auto parseCall() noexcept -> Result<ast::Ptr>;
-  auto precedenceParser(ast::Ptr left, BinopPrecedence prec) noexcept
-      -> Result<ast::Ptr>;
-  auto parseBasic() noexcept -> Result<ast::Ptr>;
-  auto parseNil() noexcept -> Result<ast::Ptr>;
-  auto parseTrue() noexcept -> Result<ast::Ptr>;
-  auto parseFalse() noexcept -> Result<ast::Ptr>;
-  auto parseInteger() noexcept -> Result<ast::Ptr>;
-  auto parseVariable() noexcept -> Result<ast::Ptr>;
-  auto parseUnop() noexcept -> Result<ast::Ptr>;
-  auto parseParens() noexcept -> Result<ast::Ptr>;
-  auto parseLambda() noexcept -> Result<ast::Ptr>;
+    return {kind, source, message};
+  }
 
-  auto parseType() noexcept -> Result<type::Ptr>;
-  auto parseNilType() noexcept -> Result<type::Ptr>;
-  auto parseBooleanType() noexcept -> Result<type::Ptr>;
-  auto parseIntegerType() noexcept -> Result<type::Ptr>;
-  auto parseFunctionType() noexcept -> Result<type::Ptr>;
+  Error recover(Error::Kind kind) noexcept {
+    return recover(kind, source(), "");
+  }
 
-public:
+  Error recover(Error &&error) {
+    while (!expect(Token::Semicolon) && !peek(Token::End))
+      next();
+
+    return error;
+  }
+
+  Result<ast::Ptr> parseTop();
+  Result<ast::Ptr> parseModule();
+  Result<ast::Ptr> parseImport();
+  Result<ast::Ptr> parseTerm();
+
+  Result<ast::Ptr> parseVisibility();
+  Result<ast::Ptr> parseDefinition(bool visibility);
+  Result<ast::Ptr> parseLet(bool visibility);
+  Result<ast::Ptr> parseFunction(bool visibility);
+  Result<ast::Ptr> parseAffix();
+
+  Result<ast::Ptr> parseCall();
+  Result<ast::Ptr> parseBinop(ast::Ptr left, BinopPrecedence precedence);
+
+  Result<ast::Ptr> parseBasic();
+  Result<ast::Ptr> parseNil();
+  Result<ast::Ptr> parseTrue();
+  Result<ast::Ptr> parseFalse();
+  Result<ast::Ptr> parseInteger();
+  Result<ast::Ptr> parseVariable();
+  Result<ast::Ptr> parseUnop();
+  Result<ast::Ptr> parseParens();
+  Result<ast::Ptr> parseLambda();
+
+  Result<type::Ptr> parseType();
+  Result<type::Ptr> parseNilType();
+  Result<type::Ptr> parseBooleanType();
+  Result<type::Ptr> parseIntegerType();
+  Result<type::Ptr> parseFunctionType();
 };
 } // namespace mint

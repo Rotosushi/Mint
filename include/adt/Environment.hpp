@@ -34,7 +34,7 @@
 #include "adt/TypeInterner.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
-#include "scan/MirParser.hpp"
+#include "scan/Parser.hpp"
 
 namespace mint {
 // Allocates the data-structures necessary for the
@@ -59,7 +59,7 @@ class Environment {
   UseBeforeDefMap m_use_before_def_map;
 
   // Parser m_parser;
-  MirParser m_mir_parser;
+  Parser m_parser;
 
   std::unique_ptr<llvm::LLVMContext> m_llvm_context;
   std::unique_ptr<llvm::Module> m_llvm_module;
@@ -94,22 +94,19 @@ public:
 
   int emitLLVMIR(fs::path const &path) noexcept;
 
-  //**** MirParser interface ****//
+  //**** Parser interface ****//
   auto endOfMirInput() const noexcept -> bool;
-  Result<ir::Mir> parseMir();
+  Result<ast::Ptr> parse();
 
   void pushActiveSourceFile(std::fstream &&fin);
   void popActiveSourceFile();
 
   //**** TranslationUnit interface ****//
-  void addLocalExpression(ir::Mir &&mir) noexcept {
-    m_translation_unit.append(std::move(mir));
+  void addLocalExpression(ast::Ptr p) noexcept {
+    m_translation_unit.append(std::move(p));
   }
   auto localExpressions() noexcept -> TranslationUnit::Expressions & {
-    return m_translation_unit.m_expressions;
-  }
-  auto localRecoveredExpressions() noexcept -> TranslationUnit::Bitset & {
-    return m_translation_unit.m_recovered_expressions;
+    return m_translation_unit.expressions;
   }
 
   //**** DirectorySearcher interface ****//
@@ -155,7 +152,7 @@ public:
   //**** Use Before Def Interface ****//
   std::optional<Error> bindUseBeforeDef(Identifier undef, Identifier def,
                                         std::shared_ptr<Scope> const &scope,
-                                        ir::Mir ir) noexcept;
+                                        ast::Ptr p) noexcept;
 
   std::optional<Error> resolveTypeOfUseBeforeDef(Identifier def_name) noexcept;
 

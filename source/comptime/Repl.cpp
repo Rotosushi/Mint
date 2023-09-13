@@ -16,9 +16,9 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "comptime/Repl.hpp"
 #include "adt/Environment.hpp"
+#include "ast/visitors/Print.hpp"
 #include "comptime/Evaluate.hpp"
 #include "comptime/Typecheck.hpp"
-#include "ir/actions/Print.hpp"
 
 namespace mint {
 [[nodiscard]] int repl(std::istream *in, std::ostream *out,
@@ -28,7 +28,7 @@ namespace mint {
   while (true) {
     env.outputStream() << "# ";
 
-    auto parse_result = env.parseMir();
+    auto parse_result = env.parse();
     if (!parse_result) {
       auto error = parse_result.error();
       if (error.kind() == Error::Kind::EndOfInput)
@@ -37,9 +37,9 @@ namespace mint {
       env.errorStream() << error;
       continue;
     }
-    auto &mir = parse_result.value();
+    auto &ptr = parse_result.value();
 
-    auto typecheck_result = typecheck(mir, env);
+    auto typecheck_result = typecheck(ptr, env);
     if (!typecheck_result) {
       if (typecheck_result.recovered()) {
         continue;
@@ -50,7 +50,7 @@ namespace mint {
     }
     auto type = typecheck_result.value();
 
-    auto evaluate_result = evaluate(mir, env);
+    auto evaluate_result = evaluate(ptr, env);
     if (!evaluate_result) {
       if (evaluate_result.recovered()) {
         continue;
@@ -61,7 +61,7 @@ namespace mint {
     }
     auto &value = evaluate_result.value();
 
-    env.outputStream() << mir << ": " << type << " => " << value << "\n";
+    env.outputStream() << ptr << ": " << type << " => " << value << "\n";
   }
 
   return EXIT_SUCCESS;

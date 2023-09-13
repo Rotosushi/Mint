@@ -42,11 +42,11 @@ namespace mint {
 }
 
 [[nodiscard]] auto Bindings::Binding::comptimeValue() const noexcept
-    -> std::optional<ir::Value> const & {
+    -> std::optional<ast::Ptr> const & {
   return (*this)->second.comptime_value;
 }
 [[nodiscard]] auto Bindings::Binding::comptimeValue() noexcept
-    -> std::optional<ir::Value> & {
+    -> std::optional<ast::Ptr> & {
   return (*this)->second.comptime_value;
 }
 [[nodiscard]] auto Bindings::Binding::hasComptimeValue() const noexcept
@@ -54,11 +54,11 @@ namespace mint {
   return comptimeValue().has_value();
 }
 [[nodiscard]] auto Bindings::Binding::comptimeValueOrAssert() noexcept
-    -> ir::Value & {
+    -> ast::Ptr & {
   MINT_ASSERT(hasComptimeValue());
   return comptimeValue().value();
 }
-void Bindings::Binding::setComptimeValue(ir::Value value) noexcept {
+void Bindings::Binding::setComptimeValue(ast::Ptr value) noexcept {
   comptimeValue() = std::move(value);
 }
 

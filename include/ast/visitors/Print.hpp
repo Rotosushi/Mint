@@ -15,17 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <ostream>
 
-#include "ast/definition/Let.hpp"
-#include "ast/expression/Binop.hpp"
-#include "ast/expression/Call.hpp"
-#include "ast/expression/Unop.hpp"
-#include "ast/expression/Variable.hpp"
-#include "ast/statement/Import.hpp"
-#include "ast/statement/Module.hpp"
-#include "ast/syntax/Affix.hpp"
-#include "ast/syntax/Parens.hpp"
-#include "ast/value/Boolean.hpp"
-#include "ast/value/Integer.hpp"
-#include "ast/value/Lambda.hpp"
-#include "ast/value/Nil.hpp"
+#include "ast/Ast.hpp"
+
+namespace mint::ast {
+void print(std::ostream &out, ast::Ptr &ptr) noexcept;
+
+inline std::ostream &operator<<(std::ostream &out, ast::Ptr &ptr) noexcept {
+  print(out, ptr);
+  return out;
+}
+} // namespace mint::ast

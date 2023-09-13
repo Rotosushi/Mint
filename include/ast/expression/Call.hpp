@@ -17,36 +17,15 @@
 #pragma once
 #include <vector>
 
-#include "ast/expression/Expression.hpp"
+#include "ast/AstFwd.hpp"
 
-namespace mint {
-namespace ast {
-class Call : public Expression {
-public:
-  using Arguments = std::vector<ast::Ptr>;
+namespace mint::ast {
+struct Call {
+  using Arguments = std::vector<Ptr>;
+  Ptr callee;
+  Arguments arguments;
 
-private:
-  ast::Ptr m_callee;
-  Arguments m_arguments;
-
-protected:
-  Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
-
-public:
-  Call(Attributes attributes, Location location, ast::Ptr callee,
-       Arguments arguments) noexcept;
-  ~Call() noexcept override = default;
-
-  static auto create(Attributes attributes, Location location, ast::Ptr callee,
-                     Arguments arguments) noexcept -> ast::Ptr;
-  static auto classof(Ast const *ast) noexcept -> bool;
-
-  void print(std::ostream &out) const noexcept override;
-
-  Result<type::Ptr> typecheck(Environment &env) const noexcept override;
-  Result<ast::Ptr> evaluate(Environment &env) noexcept override;
-  Result<llvm::Value *> codegen(Environment &env) noexcept override;
+  Call(Ptr callee, Arguments arguments) noexcept
+      : callee(std::move(callee)), arguments(std::move(arguments)) {}
 };
-} // namespace ast
-} // namespace mint
+} // namespace mint::ast

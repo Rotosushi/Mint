@@ -15,42 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <optional>
 #include <vector>
 
 #include "adt/Argument.hpp"
-#include "ast/value/Value.hpp"
+#include "adt/Attributes.hpp"
+#include "ast/AstFwd.hpp"
+#include "type/Type.hpp"
 
-namespace mint {
-namespace ast {
-class Lambda : public Value {
-private:
-  FormalArguments m_arguments;
-  type::Ptr m_result_type;
-  ast::Ptr m_body;
+namespace mint::ast {
+struct Lambda {
+  using Body = std::vector<Ptr>;
+  Attributes attributes;
+  FormalArguments arguments;
+  std::optional<type::Ptr> annotation;
+  Body body;
 
-protected:
-  Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
-
-public:
-  Lambda(Attributes attributes, Location location, FormalArguments arguments,
-         type::Ptr result_type, ast::Ptr body) noexcept;
-  ~Lambda() noexcept override = default;
-
-  static auto create(Attributes attributes, Location location,
-                     FormalArguments arguments, type::Ptr result_type,
-                     ast::Ptr body) noexcept -> ast::Ptr;
-  static auto classof(Ast const *ast) noexcept -> bool;
-
-  [[nodiscard]] auto arguments() const noexcept -> FormalArguments const &;
-  [[nodiscard]] auto result_type() const noexcept -> type::Ptr;
-  [[nodiscard]] auto body() const noexcept -> ast::Ptr const &;
-
-  void print(std::ostream &out) const noexcept override;
-
-  Result<type::Ptr> typecheck(Environment &env) const noexcept override;
-  Result<ast::Ptr> evaluate(Environment &env) noexcept override;
-  Result<llvm::Value *> codegen(Environment &env) noexcept override;
+  Lambda(Attributes attributes, FormalArguments arguments,
+         std::optional<type::Ptr> annotation, Body body) noexcept
+      : attributes(attributes), arguments(std::move(arguments)),
+        annotation(annotation), body(std::move(body)) {}
 };
-} // namespace ast
-} // namespace mint
+} // namespace mint::ast

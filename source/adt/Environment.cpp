@@ -34,7 +34,7 @@ Environment::Environment(std::istream *in, std::ostream *out,
                          std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder,
                          llvm::TargetMachine *llvm_target_machine) noexcept
     : m_input(in), m_output(out), m_error_output(errout), m_log_output(log),
-      m_mir_parser(*this), m_llvm_context(std::move(llvm_context)),
+      m_parser(*this), m_llvm_context(std::move(llvm_context)),
       m_llvm_module(std::move(llvm_module)),
       m_llvm_ir_builder(std::move(llvm_ir_builder)),
       m_llvm_target_machine(llvm_target_machine) {
@@ -155,18 +155,18 @@ int Environment::emitLLVMIR(fs::path const &path) noexcept {
   return EXIT_SUCCESS;
 }
 
-//**** MirParser interface ****//
+//**** Parser interface ****//
 auto Environment::endOfMirInput() const noexcept -> bool {
-  return m_mir_parser.endOfInput();
+  return m_parser.endOfInput();
 }
 
 void Environment::pushActiveSourceFile(std::fstream &&fin) {
-  m_mir_parser.pushSourceFile(std::move(fin));
+  m_parser.pushSourceFile(std::move(fin));
 }
 
-void Environment::popActiveSourceFile() { m_mir_parser.popSourceFile(); }
+void Environment::popActiveSourceFile() { m_parser.popSourceFile(); }
 
-Result<ir::Mir> Environment::parseMir() { return m_mir_parser.parse(); }
+Result<ast::Ptr> Environment::parse() { return m_parser.parse(); }
 
 //**** Scope Interface ****//
 auto Environment::localScope() noexcept -> std::shared_ptr<Scope> {
@@ -280,9 +280,8 @@ auto Environment::addImport(fs::path &&filename,
 std::optional<Error>
 Environment::bindUseBeforeDef(Identifier undef, Identifier def,
                               std::shared_ptr<Scope> const &scope,
-                              ir::Mir ir) noexcept {
-  return m_use_before_def_map.bindUseBeforeDef(undef, def, scope,
-                                               std::move(ir));
+                              ast::Ptr p) noexcept {
+  return m_use_before_def_map.bindUseBeforeDef(undef, def, scope, std::move(p));
 }
 
 std::optional<Error>

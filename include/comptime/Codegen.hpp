@@ -17,13 +17,13 @@
 #pragma once
 
 #include "adt/Result.hpp"
-#include "ir/Mir.hpp"
+#include "ast/Ast.hpp"
 #include "llvm/IR/Value.h"
 
 namespace mint {
 class Environment;
 
-Result<llvm::Value *> codegen(ir::Mir &mir, Environment &env);
+Result<llvm::Value *> codegen(ast::Ptr &p, Environment &env) noexcept;
 
 int codegen(Environment &env) noexcept;
 } // namespace mint

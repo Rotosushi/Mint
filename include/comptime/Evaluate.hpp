@@ -17,14 +17,14 @@
 #pragma once
 
 #include "adt/Result.hpp"
-#include "ir/Mir.hpp"
+#include "ast/Ast.hpp"
 #include "ir/value/Value.hpp"
 #include "type/Type.hpp"
 
 namespace mint {
 class Environment;
 
-Result<ir::Value> evaluate(ir::Mir &mir, Environment &env);
+Result<ast::Ptr> evaluate(ast::Ptr &p, Environment &env) noexcept;
 
 int evaluate(Environment &env) noexcept;
 } // namespace mint

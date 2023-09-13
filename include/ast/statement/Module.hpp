@@ -15,42 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <vector>
+#include <list>
 
 #include "adt/Identifier.hpp"
-#include "ast/statement/Statement.hpp"
+#include "ast/AstFwd.hpp"
 
-namespace mint {
-namespace ast {
-class Module : public Statement {
-public:
-  using Expressions = std::vector<Ptr>;
+namespace mint::ast {
+struct Module {
+  using Expressions = std::list<Ptr>;
+  Identifier name;
+  Expressions expressions;
 
-private:
-  Identifier m_name;
-  Expressions m_expressions;
-
-protected:
-  Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
-
-public:
-  Module(Attributes attributes, Location location, Identifier name,
-         Expressions expressions) noexcept;
-  ~Module() noexcept override = default;
-
-  [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   Identifier name,
-                                   Expressions expressions) noexcept
-      -> ast::Ptr;
-
-  static auto classof(Ast const *ast) noexcept -> bool;
-
-  void print(std::ostream &out) const noexcept override;
-
-  Result<type::Ptr> typecheck(Environment &env) const noexcept override;
-  Result<ast::Ptr> evaluate(Environment &env) noexcept override;
-  Result<llvm::Value *> codegen(Environment &env) noexcept override;
+  Module(Identifier name, Expressions expressions) noexcept
+      : name(name), expressions(std::move(expressions)) {}
 };
-} // namespace ast
-} // namespace mint
+} // namespace mint::ast

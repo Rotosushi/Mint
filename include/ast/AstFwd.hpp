@@ -15,16 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "adt/Identifier.hpp"
-#include "ast/Ast.hpp"
+#include <memory>
 
-#include "llvm/IR/Value.h"
-
-namespace mint {
-class Environment;
-
-llvm::Value *forwardDeclare(Identifier name, llvm::Type *type,
-                            Environment &env) noexcept;
-
-void forwardDeclare(ast::Ptr &ptr, Environment &env) noexcept;
-} // namespace mint
+namespace mint::ast {
+struct Ast;
+using Ptr = std::shared_ptr<Ast>;
+} // namespace mint::ast

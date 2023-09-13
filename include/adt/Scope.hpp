@@ -23,7 +23,7 @@
 #include "adt/Attributes.hpp"
 #include "adt/Identifier.hpp"
 #include "adt/Result.hpp"
-#include "ir/value/Value.hpp"
+#include "ast/Ast.hpp"
 #include "type/Type.hpp"
 
 #include "llvm/IR/Value.h"
@@ -35,7 +35,7 @@ public:
   struct Value {
     Attributes attributes;
     type::Ptr type;
-    std::optional<ir::Value> comptime_value;
+    std::optional<ast::Ptr> comptime_value;
     std::optional<llvm::Value *> runtime_value;
   };
   using Table = std::map<Key, Value>;
@@ -56,11 +56,11 @@ public:
     [[nodiscard]] auto type() const noexcept -> type::Ptr;
 
     [[nodiscard]] auto comptimeValue() const noexcept
-        -> std::optional<ir::Value> const &;
-    [[nodiscard]] auto comptimeValue() noexcept -> std::optional<ir::Value> &;
+        -> std::optional<ast::Ptr> const &;
+    [[nodiscard]] auto comptimeValue() noexcept -> std::optional<ast::Ptr> &;
     [[nodiscard]] auto hasComptimeValue() const noexcept -> bool;
-    [[nodiscard]] auto comptimeValueOrAssert() noexcept -> ir::Value &;
-    void setComptimeValue(ir::Value value) noexcept;
+    [[nodiscard]] auto comptimeValueOrAssert() noexcept -> ast::Ptr &;
+    void setComptimeValue(ast::Ptr value) noexcept;
 
     [[nodiscard]] auto runtimeValue() noexcept
         -> std::optional<llvm::Value *> &;

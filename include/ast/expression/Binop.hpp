@@ -15,40 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-
-#include "ast/expression/Expression.hpp"
-#include "ir/expression/Binop.hpp"
+#include "ast/AstFwd.hpp"
 #include "scan/Token.hpp"
 
-namespace mint {
-namespace ast {
-class Binop : public Expression {
-  Token m_op;
-  Ptr m_left;
-  Ptr m_right;
+namespace mint::ast {
+struct Binop {
+  Token op;
+  Ptr left;
+  Ptr right;
 
-protected:
-  Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
-
-  // static ir::Binop::Op convert(Token op) noexcept;
-
-public:
-  Binop(Attributes attributes, Location location, Token op, Ptr left,
-        Ptr right) noexcept;
-  ~Binop() noexcept override = default;
-
-  [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   Token op, Ptr left, Ptr right) noexcept
-      -> ast::Ptr;
-
-  static auto classof(Ast const *ast) noexcept -> bool;
-
-  void print(std::ostream &out) const noexcept override;
-
-  Result<type::Ptr> typecheck(Environment &env) const noexcept override;
-  Result<ast::Ptr> evaluate(Environment &env) noexcept override;
-  Result<llvm::Value *> codegen(Environment &env) noexcept override;
+  Binop(Token op, Ptr left, Ptr right) noexcept
+      : op(op), left(std::move(left)), right(std::move(right)) {}
 };
-} // namespace ast
-} // namespace mint
+} // namespace mint::ast

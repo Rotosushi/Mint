@@ -33,8 +33,8 @@ UseBeforeDefMap::iterator::iterator(Elements::iterator iter) noexcept
     -> Identifier {
   return (*this)->m_ubd_def_name;
 }
-auto UseBeforeDefMap::iterator::ubd_def_ir() noexcept -> ir::Mir & {
-  return (*this)->m_def_ir;
+auto UseBeforeDefMap::iterator::ubd_def_ast() noexcept -> ast::Ptr & {
+  return (*this)->m_def_ast;
 }
 [[nodiscard]] auto UseBeforeDefMap::iterator::scope_name() noexcept
     -> Identifier {
@@ -183,7 +183,7 @@ void UseBeforeDefMap::erase(Range range) noexcept {
 }
 
 void UseBeforeDefMap::insert(Identifier ubd_name, Identifier ubd_def_name,
-                             Identifier scope_name, ir::Mir ir,
+                             Identifier scope_name, ast::Ptr p,
                              std::shared_ptr<Scope> scope) noexcept {
   // #NOTE: we allow multiple definitions to be bound to
   // the same undef name, however we want to prevent the
@@ -194,7 +194,7 @@ void UseBeforeDefMap::insert(Identifier ubd_name, Identifier ubd_def_name,
     return;
 
   elements.emplace(elements.end(), ubd_name, ubd_def_name, scope_name,
-                   std::move(ir), scope, false);
+                   std::move(p), scope, false);
 }
 
 void UseBeforeDefMap::insert(Element &&element) noexcept {
@@ -213,14 +213,14 @@ void UseBeforeDefMap::insert(Elements &&elements) noexcept {
 std::optional<Error>
 UseBeforeDefMap::bindUseBeforeDef(Identifier undef, Identifier def,
                                   std::shared_ptr<Scope> const &scope,
-                                  ir::Mir ir) noexcept {
+                                  ast::Ptr p) noexcept {
   auto scope_name = scope->qualifiedName();
 
   if (undef == def) {
     return {Error::Kind::TypeCannotBeResolved};
   }
 
-  insert(undef, def, scope_name, std::move(ir), scope);
+  insert(undef, def, scope_name, std::move(p), scope);
   return std::nullopt;
 }
 
@@ -238,7 +238,7 @@ UseBeforeDefMap::resolveTypeOfUseBeforeDef(Environment &env,
     // construct it in the correct scope.
     auto old_local_scope = env.exchangeLocalScope(it.scope());
 
-    auto &ubd_ir = it.ubd_def_ir();
+    auto &ubd_ir = it.ubd_def_ast();
 
     auto result = typecheck(ubd_ir, env);
     if (!result) {
@@ -274,7 +274,7 @@ std::optional<Error> UseBeforeDefMap::resolveComptimeValueOfUseBeforeDef(
     it.being_resolved(true);
     auto old_local_scope = env.exchangeLocalScope(it.scope());
 
-    auto &ubd_ir = it.ubd_def_ir();
+    auto &ubd_ir = it.ubd_def_ast();
 
     auto result = evaluate(ubd_ir, env);
     if (!result) {
@@ -309,7 +309,7 @@ std::optional<Error> UseBeforeDefMap::resolveRuntimeValueOfUseBeforeDef(
     it.being_resolved(true);
     auto old_local_scope = env.exchangeLocalScope(it.scope());
 
-    auto &ubd_ir = it.ubd_def_ir();
+    auto &ubd_ir = it.ubd_def_ast();
 
     auto result = codegen(ubd_ir, env);
     if (!result) {
@@ -348,7 +348,7 @@ std::optional<Error> UseBeforeDefMap::resolveForwardDeclaratinOfUseBeforeDef(
     it.being_resolved(true);
     auto old_local_scope = env.exchangeLocalScope(it.scope());
 
-    auto ubd_ir = it.ubd_def_ir();
+    auto &ubd_ir = it.ubd_def_ast();
 
     forwardDeclare(ubd_ir, env);
 

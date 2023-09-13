@@ -16,10 +16,10 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "comptime/Import.hpp"
 #include "adt/Environment.hpp"
+#include "ast/visitors/HasSideEffect.hpp"
 #include "comptime/Evaluate.hpp"
 #include "comptime/Parse.hpp"
 #include "comptime/Typecheck.hpp"
-#include "ir/questions/IsDefinition.hpp"
 
 namespace mint {
 // #TODO: maybe not the best name
@@ -36,7 +36,7 @@ int importSourceFile(fs::path path, Environment &env) noexcept {
   TranslationUnit::Expressions expressions;
 
   while (true) {
-    auto result = env.parseMir();
+    auto result = env.parse();
     if (!result) {
       auto error = result.error();
       if (error.kind() == Error::Kind::EndOfInput) {
@@ -47,7 +47,7 @@ int importSourceFile(fs::path path, Environment &env) noexcept {
       return EXIT_FAILURE;
     }
 
-    if (ir::isDefinition(result.value())) {
+    if (ast::hasSideEffect(result.value())) {
       expressions.emplace_back(std::move(result.value()));
     }
   }

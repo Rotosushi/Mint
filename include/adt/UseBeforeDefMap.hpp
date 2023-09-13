@@ -23,7 +23,7 @@
 
 #include "adt/Identifier.hpp"
 #include "adt/Scope.hpp"
-#include "ir/Mir.hpp"
+#include "ast/Ast.hpp"
 
 namespace mint {
 class Environment;
@@ -34,7 +34,7 @@ public:
     Identifier m_ubd_name;
     Identifier m_ubd_def_name;
     Identifier m_scope_name;
-    ir::Mir m_def_ir;
+    ast::Ptr m_def_ast;
     std::shared_ptr<Scope> m_scope;
     bool m_being_resolved;
   };
@@ -46,7 +46,7 @@ public:
 
     [[nodiscard]] auto ubd_name() noexcept -> Identifier;
     [[nodiscard]] auto ubd_def_name() noexcept -> Identifier;
-    [[nodiscard]] auto ubd_def_ir() noexcept -> ir::Mir &;
+    [[nodiscard]] auto ubd_def_ast() noexcept -> ast::Ptr &;
     [[nodiscard]] auto scope_name() noexcept -> Identifier;
     [[nodiscard]] auto scope() noexcept -> std::shared_ptr<Scope> &;
     [[nodiscard]] auto being_resolved() noexcept -> bool;
@@ -81,14 +81,14 @@ public:
   void erase(Range range) noexcept;
 
   void insert(Identifier ubd_name, Identifier ubd_def_name,
-              Identifier scope_name, ir::Mir ir,
+              Identifier scope_name, ast::Ptr p,
               std::shared_ptr<Scope> scope) noexcept;
   void insert(Element &&element) noexcept;
   void insert(Elements &&elements) noexcept;
 
   std::optional<Error> bindUseBeforeDef(Identifier undef, Identifier def,
                                         std::shared_ptr<Scope> const &scope,
-                                        ir::Mir ir) noexcept;
+                                        ast::Ptr p) noexcept;
 
 public:
   std::optional<Error> resolveTypeOfUseBeforeDef(Environment &env,

@@ -14,5 +14,13 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "ast/definition/Function.hpp"
-#include "adt/Environment.hpp"
+#pragma once
+#include "ast/AstFwd.hpp"
+
+namespace mint::ast {
+struct Parens {
+  Ptr expression;
+
+  Parens(Ptr expression) noexcept : expression(std::move(expression)) {}
+};
+} // namespace mint::ast

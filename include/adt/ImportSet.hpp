@@ -53,15 +53,10 @@ public:
 
   fs::path const &file() const noexcept { return m_file; }
 
-  void append(ir::Mir &&mir) noexcept {
-    m_translation_unit.append(std::move(mir));
-  }
+  void append(ast::Ptr p) noexcept { m_translation_unit.append(std::move(p)); }
 
   TranslationUnit::Expressions &expressions() noexcept {
-    return m_translation_unit.m_expressions;
-  }
-  TranslationUnit::Bitset &recovered_expressions() noexcept {
-    return m_translation_unit.m_recovered_expressions;
+    return m_translation_unit.expressions;
   }
 };
 

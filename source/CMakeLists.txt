@@ -51,14 +51,17 @@ add_library(mint_common STATIC
   ${MINT_SOURCE_DIR}/runtime/Load.cpp 
   ${MINT_SOURCE_DIR}/runtime/Store.cpp 
 
-  ${MINT_SOURCE_DIR}/ir/action/Print.cpp 
-  ${MINT_SOURCE_DIR}/ir/action/Clone.cpp 
-  ${MINT_SOURCE_DIR}/ir/definition/Function.cpp
-  ${MINT_SOURCE_DIR}/ir/questions/IsDefinition.cpp 
-  ${MINT_SOURCE_DIR}/ir/statement/Module.cpp 
-  ${MINT_SOURCE_DIR}/ir/Mir.cpp 
+  ${MINT_SOURCE_DIR}/ast/visitors/HasSideEffect.cpp 
+  ${MINT_SOURCE_DIR}/ast/visitors/Print.cpp
 
-  ${MINT_SOURCE_DIR}/scan/MirParser.cpp 
+#  ${MINT_SOURCE_DIR}/ir/action/Print.cpp 
+#  ${MINT_SOURCE_DIR}/ir/action/Clone.cpp 
+#  ${MINT_SOURCE_DIR}/ir/definition/Function.cpp
+#  ${MINT_SOURCE_DIR}/ir/questions/IsDefinition.cpp 
+#  ${MINT_SOURCE_DIR}/ir/statement/Module.cpp 
+#  ${MINT_SOURCE_DIR}/ir/Mir.cpp 
+
+  ${MINT_SOURCE_DIR}/scan/Parser.cpp 
   ${MINT_SOURCE_DIR}/scan/Lexer.cpp 
   ${MINT_SOURCE_DIR}/scan/Token.cpp 
 

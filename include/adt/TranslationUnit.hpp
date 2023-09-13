@@ -15,28 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "boost/container/vector.hpp"
-#include "boost/dynamic_bitset.hpp"
+#include <list>
 
-#include "ir/Mir.hpp"
+#include "ast/Ast.hpp"
 
 namespace mint {
 // #TODO: this might not be the best name
 struct TranslationUnit {
-  using Expressions = boost::container::vector<ir::Mir>;
-  using Bitset = boost::dynamic_bitset<>;
+  using Expressions = std::list<ast::Ptr>;
 
-  Expressions m_expressions;
-  Bitset m_recovered_expressions;
+  Expressions expressions;
 
   TranslationUnit() noexcept = default;
   TranslationUnit(Expressions &&expressions) noexcept
-      : m_expressions(std::move(expressions)),
-        m_recovered_expressions(m_expressions.size()) {}
+      : expressions(std::move(expressions)) {}
 
-  void append(ir::Mir &&mir) {
-    m_expressions.emplace_back(std::move(mir));
-    m_recovered_expressions.push_back(false);
-  }
-};
-} // namespace mint
+  void append(ast::Ptr p) { expressions.emplace_back(std::move(p)); };
+}; 
+}// namespace mint

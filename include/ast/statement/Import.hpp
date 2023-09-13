@@ -15,34 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <string_view>
 
-#include "ast/statement/Statement.hpp"
+namespace mint::ast {
+struct Import {
+  std::string_view file;
 
-namespace mint {
-namespace ast {
-class Import : public Statement {
-  std::string_view m_filename;
-
-protected:
-  Ptr clone_impl() const noexcept override;
-  ir::detail::Parameter flatten_impl(ir::Mir &ir) const noexcept override;
-
-public:
-  Import(Attributes attributes, Location location,
-         std::string_view filename) noexcept;
-  ~Import() noexcept override = default;
-
-  [[nodiscard]] static auto create(Attributes attributes, Location location,
-                                   std::string_view filename) noexcept
-      -> ast::Ptr;
-
-  static auto classof(Ast const *ast) noexcept -> bool;
-
-  void print(std::ostream &out) const noexcept override;
-
-  Result<type::Ptr> typecheck(Environment &env) const noexcept override;
-  Result<ast::Ptr> evaluate(Environment &env) noexcept override;
-  Result<llvm::Value *> codegen(Environment &env) noexcept override;
+  Import(std::string_view file) noexcept : file(file) {}
 };
-} // namespace ast
-} // namespace mint
+} // namespace mint::ast
