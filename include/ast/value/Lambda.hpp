@@ -21,18 +21,18 @@
 #include "adt/Argument.hpp"
 #include "adt/Attributes.hpp"
 #include "ast/AstFwd.hpp"
+#include "ast/definition/Function.hpp"
 #include "type/Type.hpp"
 
 namespace mint::ast {
 struct Lambda {
-  using Body = std::vector<Ptr>;
   Attributes attributes;
   FormalArguments arguments;
   std::optional<type::Ptr> annotation;
-  Body body;
+  Function::Body body;
 
   Lambda(Attributes attributes, FormalArguments arguments,
-         std::optional<type::Ptr> annotation, Body body) noexcept
+         std::optional<type::Ptr> annotation, Function::Body body) noexcept
       : attributes(attributes), arguments(std::move(arguments)),
         annotation(annotation), body(std::move(body)) {}
 };

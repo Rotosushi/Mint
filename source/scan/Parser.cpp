@@ -71,8 +71,8 @@ Result<ast::Ptr> Parser::parseModule() {
 
   auto rhs_loc = location();
   Location module_loc{lhs_loc, rhs_loc};
-  return ast::Ast::create<ast::Module>(source(module_loc), id,
-                                       std::move(expressions));
+  return ast::create<ast::Module>(source(module_loc), id,
+                                  std::move(expressions));
 }
 
 Result<ast::Ptr> Parser::parseImport() {
@@ -95,7 +95,7 @@ Result<ast::Ptr> Parser::parseImport() {
 
   auto rhs_loc = location();
   Location import_loc{lhs_loc, rhs_loc};
-  return ast::Ast::create<ast::Import>(source(import_loc), filename);
+  return ast::create<ast::Import>(source(import_loc), filename);
 }
 
 Result<ast::Ptr> Parser::parseTerm() {
@@ -186,8 +186,8 @@ Result<ast::Ptr> Parser::parseLet(bool visibility) {
 
   auto rhs_loc = location();
   Location let_loc{lhs_loc, rhs_loc};
-  return ast::Ast::create<ast::Let>(source(let_loc), id, attributes, annotation,
-                                    std::move(affix));
+  return ast::create<ast::Let>(source(let_loc), id, attributes, annotation,
+                               std::move(affix));
 }
 
 Result<ast::Ptr> Parser::parseFunction(bool visibility) {
@@ -287,9 +287,9 @@ Result<ast::Ptr> Parser::parseFunction(bool visibility) {
 
   auto rhs_loc = location();
   Location fn_loc{lhs_loc, rhs_loc};
-  return ast::Ast::create<ast::Function>(source(fn_loc), name, attributes,
-                                         std::move(arguments), annotation,
-                                         std::move(body));
+  return ast::create<ast::Function>(source(fn_loc), name, attributes,
+                                    std::move(arguments), annotation,
+                                    std::move(body));
 }
 
 Result<ast::Ptr> Parser::parseAffix() {
@@ -334,8 +334,8 @@ Result<ast::Ptr> Parser::parseCall() {
 
   auto rhs_loc = location();
   Location call_loc{lhs_loc, rhs_loc};
-  return ast::Ast::create<ast::Call>(source(call_loc), basic.value(),
-                                     std::move(arguments));
+  return ast::create<ast::Call>(source(call_loc), basic.value(),
+                                std::move(arguments));
 }
 
 Result<ast::Ptr> Parser::parseBinop(ast::Ptr left, BinopPrecedence p) {
@@ -393,8 +393,8 @@ Result<ast::Ptr> Parser::parseBinop(ast::Ptr left, BinopPrecedence p) {
 
     auto rhs_loc = location();
     Location binop_loc{lhs_loc, rhs_loc};
-    result = ast::Ast::create<ast::Binop>(source(binop_loc), op, result.value(),
-                                          right.value());
+    result = ast::create<ast::Binop>(source(binop_loc), op, result.value(),
+                                     right.value());
   }
 
   return result;
@@ -437,33 +437,33 @@ Result<ast::Ptr> Parser::parseBasic() {
 Result<ast::Ptr> Parser::parseNil() {
   auto sl = source();
   next();
-  return ast::Ast::create<std::monostate>(sl);
+  return ast::create<std::monostate>(sl);
 }
 
 Result<ast::Ptr> Parser::parseTrue() {
   auto sl = source();
   next();
-  return ast::Ast::create<bool>(sl, true);
+  return ast::create<bool>(sl, true);
 }
 
 Result<ast::Ptr> Parser::parseFalse() {
   auto sl = source();
   next();
-  return ast::Ast::create<bool>(sl, false);
+  return ast::create<bool>(sl, false);
 }
 
 Result<ast::Ptr> Parser::parseInteger() {
   auto sl = source();
   auto value = fromString<int>(text());
   next();
-  return ast::Ast::create<int>(sl, value);
+  return ast::create<int>(sl, value);
 }
 
 Result<ast::Ptr> Parser::parseVariable() {
   auto sl = source();
   auto name = m_env->getIdentifier(text());
   next();
-  return ast::Ast::create<Identifier>(sl, name);
+  return ast::create<Identifier>(sl, name);
 }
 
 Result<ast::Ptr> Parser::parseUnop() {
@@ -478,8 +478,8 @@ Result<ast::Ptr> Parser::parseUnop() {
 
   auto rhs_loc = location();
   Location unop_loc{lhs_loc, rhs_loc};
-  return ast::Ast::create<ast::Unop>(m_lexer.source(unop_loc), op,
-                                     std::move(right.value()));
+  return ast::create<ast::Unop>(m_lexer.source(unop_loc), op,
+                                std::move(right.value()));
 }
 
 Result<ast::Ptr> Parser::parseParens() {
@@ -500,7 +500,7 @@ Result<ast::Ptr> Parser::parseParens() {
 
   auto rhs_loc = location();
   Location parens_loc{lhs_loc, rhs_loc};
-  return ast::Ast::create<ast::Parens>(source(parens_loc), std::move(affix));
+  return ast::create<ast::Parens>(source(parens_loc), std::move(affix));
 }
 
 Result<ast::Ptr> Parser::parseLambda() {
@@ -555,7 +555,7 @@ Result<ast::Ptr> Parser::parseLambda() {
   }
 
   // #TODO add support for multiple expressions surrounded by {}
-  ast::Lambda::Body body;
+  ast::Function::Body body;
   auto result = parseAffix();
   if (!result) {
     return result;
@@ -564,9 +564,9 @@ Result<ast::Ptr> Parser::parseLambda() {
 
   auto rhs_loc = location();
   Location lambda_loc{lhs_loc, rhs_loc};
-  return ast::Ast::create<ast::Lambda>(
-      source(lambda_loc), Attributes {}, std::move(arguments), annotation,
-      std::move(body));
+  return ast::create<ast::Lambda>(source(lambda_loc), Attributes{},
+                                  std::move(arguments), annotation,
+                                  std::move(body));
 }
 
 Result<type::Ptr> Parser::parseType() {

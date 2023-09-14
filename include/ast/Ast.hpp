@@ -40,20 +40,17 @@ struct Ast {
 
   template <class... Args>
   Ast(SourceLocation *sl, Args &&...args) noexcept
-      : sl(sl), cached_type(nullptr), variant(std::forward<Args>(args)...) {
-    MINT_ASSERT(sl != nullptr);
-  }
+      : sl(sl), cached_type(nullptr), variant(std::forward<Args>(args)...) {}
 
-  template <class T, class... Args>
-  static Ptr create(SourceLocation *sl, Args &&...args) noexcept {
-    return std::make_shared<Ast>(sl, std::in_place_type<T>,
-                                 std::forward<Args>(args)...);
-  }
+  template <class... Args>
+  Ast(Args &&...args) noexcept
+      : sl(nullptr), cached_type(nullptr),
+        variant(std::forward<Args>(args)...) {}
 
   type::Ptr setCachedType(type::Ptr type = nullptr) noexcept {
     if (type == nullptr) {
       return cached_type;
-    } 
+    }
     return cached_type = type;
   }
 
@@ -66,4 +63,20 @@ struct Ast {
     return std::get<T>(variant);
   }
 };
+
+template <class T, class... Args>
+inline Ptr create(SourceLocation *sl, Args &&...args) noexcept {
+  return std::make_shared<Ast>(sl, std::in_place_type<T>,
+                               std::forward<Args>(args)...);
+}
+
+template <class T, class... Args> inline Ptr create(Args &&...args) noexcept {
+  return std::make_shared<Ast>(std::in_place_type<T>,
+                               std::forward<Args>(args)...);
+}
+
+inline Ptr create() noexcept {
+  return std::make_shared<Ast>(std::in_place_type<std::monostate>);
+}
+
 } // namespace mint::ast

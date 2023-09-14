@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "adt/Result.hpp"
-#include "ir/value/Scalar.hpp"
+#include "ast/Ast.hpp"
 #include "scan/Token.hpp"
 #include "type/Type.hpp"
 
@@ -33,7 +33,7 @@ class Environment;
 // However that might not be the case as the language grows,
 // #TODO: if Builtin Operators need access to any given value
 // and not just scalars, change this.
-using UnopEvalFn = ir::Scalar (*)(ir::Scalar right);
+using UnopEvalFn = ast::Ptr (*)(ast::Ptr &right);
 using UnopCodegenFn = llvm::Value *(*)(llvm::Value *right, Environment &env);
 
 struct UnopOverload {
@@ -42,7 +42,7 @@ struct UnopOverload {
   UnopEvalFn eval;
   UnopCodegenFn gen;
 
-  [[nodiscard]] auto evaluate(ir::Scalar right) -> ir::Scalar;
+  [[nodiscard]] auto evaluate(ast::Ptr &right) -> ast::Ptr;
   [[nodiscard]] auto codegen(llvm::Value *right, Environment &env)
       -> llvm::Value *;
 };

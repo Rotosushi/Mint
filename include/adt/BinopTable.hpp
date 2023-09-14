@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "adt/Result.hpp"
-#include "ir/value/Scalar.hpp"
+#include "ast/Ast.hpp"
 #include "scan/Token.hpp"
 #include "type/Type.hpp"
 
@@ -29,8 +29,7 @@
 namespace mint {
 class Environment;
 
-using BinopEvalFn = ir::Scalar (*)(ir::Scalar left,
-                                           ir::Scalar right);
+using BinopEvalFn = ast::Ptr (*)(ast::Ptr &left, ast::Ptr &right);
 using BinopCodegenFn = llvm::Value *(*)(llvm::Value *left, llvm::Value *right,
                                         Environment &env);
 
@@ -41,8 +40,7 @@ struct BinopOverload {
   BinopEvalFn eval;
   BinopCodegenFn gen;
 
-  [[nodiscard]] auto evaluate(ir::Scalar left, ir::Scalar right)
-      -> ir::Scalar;
+  [[nodiscard]] auto evaluate(ast::Ptr &left, ast::Ptr &right) -> ast::Ptr;
 
   [[nodiscard]] auto codegen(llvm::Value *left, llvm::Value *right,
                              Environment &env) -> llvm::Value *;

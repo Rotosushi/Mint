@@ -30,63 +30,84 @@ llvm::Value *forwardDeclare(Identifier name, llvm::Type *type,
   return env.getOrInsertGlobal(name, type);
 }
 
+struct ForwardDeclareAst {
+  ast::Ptr &ptr;
+  Environment &env;
+
+  ForwardDeclareAst(ast::Ptr &ptr, Environment &env) noexcept
+      : ptr(ptr), env(env) {}
+
+  void operator()() noexcept { std::visit(*this, ptr->variant); }
+
+  void operator()([[maybe_unused]] std::monostate &nil) noexcept {}
+  void operator()([[maybe_unused]] bool &b) noexcept {}
+  void operator()([[maybe_unused]] int &i) noexcept {}
+  void operator()([[maybe_unused]] Identifier &i) noexcept {}
+  void operator()([[maybe_unused]] ast::Lambda &l) noexcept {}
+
+  void operator()(ast::Function &f) noexcept {
+    auto found = env.lookupLocalBinding(f.name);
+    MINT_ASSERT(found);
+    auto binding = found.value();
+    MINT_ASSERT(!binding.hasRuntimeValue());
+
+    auto type = binding.type();
+    MINT_ASSERT(type != nullptr);
+    auto llvm_type = type::toLLVM(type, env);
+    auto llvm_name = env.qualifyName(f.name).convertForLLVM();
+
+    auto *fwd_decl = forwardDeclare(llvm_name, llvm_type, env);
+    binding.setRuntimeValue(fwd_decl);
+
+    auto failed = env.resolveForwardDeclarationValueOfUseBeforeDef(f.name);
+    MINT_ASSERT(!failed);
+  }
+
+  void operator()(ast::Let &l) noexcept {
+    auto found = env.lookupLocalBinding(l.name);
+    MINT_ASSERT(found);
+    auto binding = found.value();
+    MINT_ASSERT(!binding.hasRuntimeValue());
+
+    auto type = binding.type();
+    MINT_ASSERT(type != nullptr);
+    auto llvm_type = type::toLLVM(type, env);
+    auto llvm_name = env.qualifyName(l.name).convertForLLVM();
+
+    auto fwd_decl = forwardDeclare(llvm_name, llvm_type, env);
+    binding.setRuntimeValue(fwd_decl);
+
+    auto failed = env.resolveForwardDeclarationValueOfUseBeforeDef(l.name);
+    MINT_ASSERT(!failed);
+  }
+
+  void operator()([[maybe_unused]] ast::Binop &b) noexcept {}
+  void operator()([[maybe_unused]] ast::Unop &u) noexcept {}
+  void operator()([[maybe_unused]] ast::Call &c) noexcept {}
+  void operator()([[maybe_unused]] ast::Parens &p) noexcept {}
+
+  // #NOTE: we don't need to wal each imported definition and
+  // forward declare them, because that is what codegen'ing
+  // this import expression will already do. and the way we reach
+  // this point, is precisely when we are codegen'ing an import
+  // statement.
+  void operator()([[maybe_unused]] ast::Import &i) noexcept {}
+
+  void operator()(ast::Module &m) noexcept {
+    env.pushScope(m.name);
+
+    for (auto &expression : m.expressions) {
+      forwardDeclare(expression, env);
+    }
+
+    env.popScope();
+  }
+};
+
 void forwardDeclare(ast::Ptr &ptr, Environment &env) noexcept {
-  
+  MINT_ASSERT(ptr->cached_type != nullptr);
+  ForwardDeclareAst visitor(ptr, env);
+  visitor();
 }
 
 } // namespace mint
-
-// struct ForwardDeclareInstruction {
-//   Environment *env;
-
-//   ForwardDeclareInstruction(Environment &env) noexcept : env(&env) {}
-
-//   void operator()(ir::Mir &mir) noexcept {
-//     std::visit(*this, mir[mir.root()].variant());
-//   }
-
-//   void operator()([[maybe_unused]] ir::detail::Immediate &i) noexcept {}
-//   void operator()([[maybe_unused]] ir::Parens &p) noexcept {}
-
-//   void operator()(ir::Let &let) noexcept {
-//     MINT_ASSERT(let.cachedType() != nullptr);
-//     auto found = env->lookupLocalBinding(let.name());
-//     MINT_ASSERT(found);
-//     auto binding = found.value();
-//     MINT_ASSERT(!binding.hasRuntimeValue());
-
-//     auto type = binding.type();
-//     MINT_ASSERT(type != nullptr);
-//     auto llvm_type = type::toLLVM(type, *env);
-//     auto llvm_name = env->qualifyName(let.name()).convertForLLVM();
-
-//     auto decl = env->getOrInsertGlobal(llvm_name, llvm_type);
-//     binding.setRuntimeValue(decl);
-
-//     auto failed =
-//     env->resolveForwardDeclarationValueOfUseBeforeDef(let.name());
-//     MINT_ASSERT(!failed);
-//   }
-
-//   void operator()(ir::Function &function) noexcept {}
-
-//   void operator()([[maybe_unused]] ir::Binop &binop) noexcept {}
-//   void operator()([[maybe_unused]] ir::Unop &unop) noexcept {}
-//   void operator()([[maybe_unused]] ir::Import &import) noexcept {}
-
-//   void operator()(ir::Module &m) noexcept {
-//     MINT_ASSERT(m.cachedType() != nullptr);
-//     env->pushScope(m.name());
-
-//     for (auto &expression : m.expressions()) {
-//       forwardDeclare(expression, *env);
-//     }
-
-//     env->popScope();
-//   }
-// };
-
-// void forwardDeclare(ir::Mir &mir, Environment &env) noexcept {
-//   ForwardDeclareInstruction visitor(env);
-//   return visitor(mir);
-// }

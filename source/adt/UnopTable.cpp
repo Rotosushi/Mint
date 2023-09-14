@@ -18,7 +18,7 @@
 #include "adt/Environment.hpp"
 
 namespace mint {
-[[nodiscard]] auto UnopOverload::evaluate(ir::Scalar right) -> ir::Scalar {
+[[nodiscard]] auto UnopOverload::evaluate(ast::Ptr &right) -> ast::Ptr {
   return eval(right);
 }
 [[nodiscard]] auto UnopOverload::codegen(llvm::Value *right, Environment &env)
@@ -77,18 +77,18 @@ auto UnopTable::emplace(Token op) noexcept -> Unop {
   return table.emplace(op, UnopOverloads{}).first;
 }
 
-auto eval_unop_minus(ir::Scalar right) -> ir::Scalar {
-  MINT_ASSERT(right.holds<int>());
-  return {-right.get<int>()};
+auto eval_unop_minus(ast::Ptr &right) -> ast::Ptr {
+  MINT_ASSERT(right->holds<int>());
+  return ast::create<int>(-right->get<int>());
 }
 
 auto codegen_unop_minus(llvm::Value *right, Environment &env) -> llvm::Value * {
   return env.createLLVMNeg(right);
 }
 
-auto eval_unop_not(ir::Scalar right) -> ir::Scalar {
-  MINT_ASSERT(right.holds<bool>());
-  return {!right.get<bool>()};
+auto eval_unop_not(ast::Ptr &right) -> ast::Ptr {
+  MINT_ASSERT(right->holds<bool>());
+  return ast::create<bool>(!right->get<bool>());
 }
 
 auto codegen_unop_not(llvm::Value *right, Environment &env) -> llvm::Value * {

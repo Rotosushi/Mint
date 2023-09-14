@@ -20,9 +20,255 @@
 #include "comptime/Typecheck.hpp"
 
 namespace mint {
-Result<ast::Ptr> evaluate(ast::Ptr &ptr, Environment &env) noexcept {}
+struct EvaluateAst {
+  ast::Ptr &ptr;
+  Environment &env;
 
-int evaluate(Environment &env) noexcept {}
+  EvaluateAst(ast::Ptr &ptr, Environment &env) noexcept : ptr(ptr), env(env) {}
+
+  Result<ast::Ptr> operator()() noexcept {
+    return std::visit(*this, ptr->variant);
+  }
+
+  Result<ast::Ptr> operator()([[maybe_unused]] std::monostate &nil) noexcept {
+    return ptr;
+  }
+
+  Result<ast::Ptr> operator()([[maybe_unused]] bool &b) noexcept { return ptr; }
+
+  Result<ast::Ptr> operator()([[maybe_unused]] int &i) noexcept { return ptr; }
+
+  Result<ast::Ptr> operator()(Identifier &i) noexcept {
+    auto result = env.lookupBinding(i);
+    if (!result) {
+      return Error{Error::Kind::NameUnboundInScope, ptr->sl, i.view()};
+    }
+
+    auto binding = result.value();
+    if (!binding.hasComptimeValue()) {
+      // #NOTE: if the binding does not yet have a comptime value
+      // that means it's definition hasn't been evaluated yet.
+      // which means the definition is sitting in the ubd map.
+      // which means wherever this current variable is sitting
+      // needs to be delayed. this is communicated via Recovered.
+      return Recovered{};
+    }
+
+    return binding.comptimeValueOrAssert();
+  }
+
+  Result<ast::Ptr> operator()([[maybe_unused]] ast::Lambda &l) noexcept {
+    return ptr;
+  }
+
+  Result<ast::Ptr> operator()(ast::Function &f) noexcept {
+    auto found = env.lookupLocalBinding(f.name);
+    if (!found) {
+      return Error{Error::Kind::NameUnboundInScope, ptr->sl, f.name};
+    }
+    auto binding = found.value();
+
+    if (binding.hasComptimeValue()) {
+      return Error{Error::Kind::NameAlreadyBoundInScope, ptr->sl, f.name};
+    }
+
+    binding.setComptimeValue(ptr);
+
+    if (auto failed =
+            env.resolveComptimeValueOfUseBeforeDef(env.qualifyName(f.name))) {
+      return failed.value();
+    }
+
+    return ast::create();
+  }
+
+  Result<ast::Ptr> operator()(ast::Let &l) noexcept {
+    auto found = env.lookupLocalBinding(l.name);
+    if (!found) {
+      return Error{Error::Kind::NameUnboundInScope, ptr->sl, l.name};
+    }
+    auto binding = found.value();
+
+    if (binding.hasComptimeValue()) {
+      return Error{Error::Kind::NameAlreadyBoundInScope, ptr->sl, l.name};
+    }
+
+    auto result = evaluate(l.affix, env);
+    if (!result) {
+      return result;
+    }
+
+    binding.setComptimeValue(result.value());
+
+    if (auto failed =
+            env.resolveComptimeValueOfUseBeforeDef(env.qualifyName(l.name))) {
+      return failed.value();
+    }
+
+    return ast::create();
+  }
+
+  Result<ast::Ptr> operator()(ast::Binop &b) noexcept {
+    auto overloads = env.lookupBinop(b.op);
+    if (!overloads) {
+      return Error{Error::Kind::UnknownBinop, ptr->sl, tokenToView(b.op)};
+    }
+
+    auto left_result = evaluate(b.left, env);
+    if (!left_result) {
+      return left_result;
+    }
+    auto &left = left_result.value();
+    auto left_type = b.left->cached_type;
+    MINT_ASSERT(left_type != nullptr);
+
+    auto right_result = evaluate(b.right, env);
+    if (!right_result) {
+      return right_result;
+    }
+    auto &right = right_result.value();
+    auto right_type = b.right->cached_type;
+    MINT_ASSERT(right_type != nullptr);
+
+    auto instance = overloads->lookup(left_type, right_type);
+    if (!instance) {
+      std::stringstream msg;
+      msg << "Actual Types [" << left_type << ", " << right_type << "]";
+      return Error{Error::Kind::BinopTypeMismatch, ptr->sl, msg.view()};
+    }
+
+    return instance->evaluate(left, right);
+  }
+
+  Result<ast::Ptr> operator()(ast::Unop &u) noexcept {
+    auto overloads = env.lookupUnop(u.op);
+    if (!overloads) {
+      return Error{Error::Kind::UnknownUnop, ptr->sl, tokenToView(u.op)};
+    }
+
+    auto right_result = evaluate(u.right, env);
+    if (!right_result) {
+      return right_result;
+    }
+    auto &right = right_result.value();
+    auto right_type = u.right->cached_type;
+    MINT_ASSERT(right_type != nullptr);
+
+    auto instance = overloads->lookup(right_type);
+    if (!instance) {
+      std::stringstream msg;
+      msg << "Actual Type [" << right_type << "]";
+      return Error{Error::Kind::UnopTypeMismatch, ptr->sl, msg.view()};
+    }
+
+    return instance->evaluate(right);
+  }
+
+  Result<ast::Ptr> operator()(ast::Call &c) noexcept {
+    auto callee_type = c.callee->cached_type;
+    MINT_ASSERT(callee_type != nullptr);
+    MINT_ASSERT(type::callable(callee_type));
+
+    auto callee_result = evaluate(c.callee, env);
+    if (!callee_result) {
+      return callee_result;
+    }
+    auto &callee = callee_result.value();
+
+    auto [args, body] = [&]() {
+      if (callee->holds<ast::Lambda>()) {
+        auto &lambda = callee->get<ast::Lambda>();
+        return std::make_pair(std::ref(lambda.arguments),
+                              std::ref(lambda.body));
+      } else if (callee->holds<ast::Function>()) {
+        auto &function = callee->get<ast::Function>();
+        return std::make_pair(std::ref(function.arguments),
+                              std::ref(function.body));
+      } else {
+        abort("bad callee type.");
+      }
+    }();
+
+    env.pushScope();
+    for (auto &arg : args) {
+      env.declareName(arg);
+    }
+
+    // #NOTE: the return value of a function is the
+    // last expression in it's body
+    ast::Ptr return_value;
+    for (auto &expression : body) {
+      auto result = evaluate(expression, env);
+      if (!result) {
+        env.popScope();
+        return result;
+      }
+
+      return_value = result.value();
+    }
+    env.popScope();
+
+    return return_value;
+  }
+
+  Result<ast::Ptr> operator()(ast::Parens &p) noexcept {
+    return evaluate(p.expression, env);
+  }
+
+  Result<ast::Ptr> operator()(ast::Import &i) noexcept {
+    auto *itu = env.findImport(i.file);
+    MINT_ASSERT(itu != nullptr);
+
+    auto &context = itu->context();
+    if (context.evaluated()) {
+      return ast::create();
+    }
+
+    for (auto &expression : itu->expressions()) {
+      auto result = evaluate(expression, env);
+      if (result.recovered()) {
+        continue;
+      } else if (!result) {
+        env.errorStream() << result.error() << "\n";
+        return Error{Error::Kind::ImportFailed, ptr->sl, i.file};
+      }
+    }
+
+    context.evaluated(true);
+    return ast::create();
+  }
+
+  Result<ast::Ptr> operator()(ast::Module &m) noexcept {
+    env.pushScope(m.name);
+    for (auto &expression : m.expressions) {
+      auto result = evaluate(expression, env);
+      if (!result) {
+        env.unbindScope(m.name);
+        env.popScope();
+        return result;
+      }
+    }
+    env.popScope();
+    return ast::create();
+  }
+};
+
+Result<ast::Ptr> evaluate(ast::Ptr &ptr, Environment &env) noexcept {
+  MINT_ASSERT(ptr->cached_type != nullptr);
+  EvaluateAst visitor(ptr, env);
+  return visitor();
+}
+
+int evaluate(Environment &env) noexcept {
+  for (auto &expression : env.localExpressions()) {
+    auto result = evaluate(expression, env);
+    if (!result) {
+      env.errorStream() << result.error() << "\n";
+      return EXIT_FAILURE;
+    }
+  }
+  return EXIT_SUCCESS;
+}
 } // namespace mint
 // struct EvalauteImmediate {
 //   Environment *env;

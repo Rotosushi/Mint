@@ -1,0 +1,6 @@
+#NOTE: these are ideas for optimizations
+not 'going to be implemented' or 'proven faster' optimizations
+
+
+-) intern scalar values
+  This *should* improve comptime evaluation times for the common operations on scalars.
