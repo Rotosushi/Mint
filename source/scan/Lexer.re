@@ -59,6 +59,7 @@ Token Lexer::lex() noexcept {
       "false"   { updateCurrentLocation(); return Token::False; }
       "Boolean" { updateCurrentLocation(); return Token::BooleanType; }
 
+      "fn"      { updateCurrentLocation(); return Token::Fn; }
       "let"     { updateCurrentLocation(); return Token::Let; }
       "module"  { updateCurrentLocation(); return Token::Module; }
       "public"  { updateCurrentLocation(); return Token::Public; }

@@ -16,461 +16,419 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "comptime/Codegen.hpp"
 #include "adt/Environment.hpp"
+#include "comptime/Typecheck.hpp"
 #include "runtime/Allocate.hpp"
 #include "runtime/ForwardDeclare.hpp"
 #include "runtime/Load.hpp"
 #include "utility/VerifyLLVM.hpp"
 
 namespace mint {
+struct CodegenAst {
+  ast::Ptr &ptr;
+  Environment &env;
 
-Result<llvm::Value *> codegen(ast::Ptr &ptr, Environment &env) noexcept {}
+  CodegenAst(ast::Ptr &ptr, Environment &env) noexcept : ptr(ptr), env(env) {}
 
-int codegen(Environment &env) noexcept;
+  Result<llvm::Value *> operator()() noexcept {
+    return std::visit(*this, ptr->variant);
+  }
+
+  // a literal nil is translated to a literal llvm nil
+  Result<llvm::Value *>
+  operator()([[maybe_unused]] std::monostate &nil) noexcept {
+    return env.getLLVMNil();
+  }
+
+  // a literal boolean is translated to a literal llvm boolean
+  Result<llvm::Value *> operator()(bool &b) noexcept {
+    return env.getLLVMBoolean(b);
+  }
+
+  // a literal integer is translated to a literal llvm integer
+  Result<llvm::Value *> operator()(int &i) noexcept {
+    return env.getLLVMInteger(i);
+  }
+
+  // -) find the binding associated with the name in scope
+  // -) if there is no insertion point for instructions,
+  //    we can only handle 'loading' the initializer of a global
+  //    variable.
+  //    else we can simply emit a load instruction which loads
+  //    from a global or a local variable.
+  Result<llvm::Value *> operator()(Identifier &i) noexcept {
+    auto found = env.lookupBinding(i);
+    if (!found) {
+      return Error{Error::Kind::NameUnboundInScope, ptr->sl, i.view()};
+    }
+    auto binding = found.value();
+    MINT_ASSERT(binding.hasRuntimeValue());
+
+    auto type = type::toLLVM(binding.type(), env);
+    auto value = binding.runtimeValueOrAssert();
+
+    if (!env.hasInsertionPoint()) {
+      auto global = llvm::cast<llvm::GlobalVariable>(value);
+      return global->getInitializer();
+    }
+
+    return createLLVMLoad(env, type, value);
+  }
+
+  // -) create a llvm function with a generated name and type of
+  //    this lambda.
+  // -) create a new basic block for the function, set the basic
+  //    block as the current instruction insertion point, and
+  //    enter a local scope
+  // -) create a binding for each argument in the lambda,
+  //    setting it's runtime value to the llvm::Argument
+  // -) codegen each of the exressions in the body of the
+  //    lambda
+  // -) emit a return instruction returning the value of the
+  //    final expression in the body.
+  Result<llvm::Value *> operator()(ast::Lambda &l) noexcept {
+    auto type = ptr->cached_type;
+    MINT_ASSERT(type != nullptr);
+    MINT_ASSERT(type->holds<type::Lambda>());
+    auto &lambda_type = type->get<type::Lambda>();
+
+    auto lambda_name = env.getLambdaName();
+    auto llvm_function_type = llvm::cast<llvm::FunctionType>(
+        type::toLLVM(lambda_type.function_type, env));
+    auto llvm_callee = env.getOrInsertFunction(lambda_name, llvm_function_type);
+    auto llvm_function = llvm::cast<llvm::Function>(llvm_callee.getCallee());
+
+    auto entry_block = env.createBasicBlock(llvm_function);
+    auto temp_ip =
+        env.exchangeInsertionPoint({entry_block, entry_block->begin()});
+
+    env.pushScope();
+    auto llvm_arguments_cursor = llvm_function->arg_begin();
+    for (auto &arg : l.arguments) {
+      auto &llvm_argument = *llvm_arguments_cursor;
+      auto result = env.declareName(arg);
+      if (!result) {
+        env.exchangeInsertionPoint(temp_ip);
+        env.popScope();
+        return result.error();
+      }
+
+      auto binding = result.value();
+      binding.setRuntimeValue(&llvm_argument);
+      ++llvm_arguments_cursor;
+    }
+
+    // #NOTE: this is the default such that an empty body
+    // returns nil.
+    llvm::Value *result_value = env.getLLVMNil();
+    for (auto &expression : l.body) {
+      auto result = codegen(expression, env);
+      if (!result) {
+        env.exchangeInsertionPoint(temp_ip);
+        env.popScope();
+        return result;
+      }
+      result_value = result.value();
+    }
+
+    env.createLLVMReturn(result_value);
+
+    env.exchangeInsertionPoint(temp_ip);
+    env.popScope();
+
+    // #NOTE verify returns true on failure
+    MINT_ASSERT(!verify(*llvm_function, env.errorStream()));
+    return llvm_function;
+  }
+
+  // -) create a llvm function with the given name and type of
+  //    this function.
+  // -) create a new basic block for the function, set the basic
+  //    block as the current instruction insertion point, and
+  //    enter a local scope
+  // -) create a binding for each argument in the function,
+  //    setting it's runtime value to the llvm::Argument
+  // -) codegen each of the exressions in the body of the
+  //    function
+  // -) emit a return instruction returning the value of the
+  //    final expression in the body.
+  Result<llvm::Value *> operator()(ast::Function &f) noexcept {
+    auto type = ptr->cached_type;
+    MINT_ASSERT(type != nullptr);
+    MINT_ASSERT(type->holds<type::Function>());
+
+    auto found = env.lookupLocalBinding(f.name);
+    MINT_ASSERT(found);
+    auto binding = found.value();
+
+    if (binding.hasRuntimeValue()) {
+      return Error{Error::Kind::NameAlreadyBoundInScope, ptr->sl, f.name};
+    }
+
+    auto qualified_name = env.qualifyName(f.name);
+    auto llvm_name = qualified_name.convertForLLVM();
+    auto llvm_function_type =
+        llvm::cast<llvm::FunctionType>(type::toLLVM(type, env));
+    auto llvm_callee = env.getOrInsertFunction(llvm_name, llvm_function_type);
+    auto llvm_function = llvm::cast<llvm::Function>(llvm_callee.getCallee());
+
+    auto entry_block = env.createBasicBlock(llvm_function);
+    auto temp_ip =
+        env.exchangeInsertionPoint({entry_block, entry_block->begin()});
+    env.pushScope();
+
+    auto llvm_args_cursor = llvm_function->arg_begin();
+    for (auto &arg : f.arguments) {
+      auto &llvm_arg = *llvm_args_cursor;
+      auto result = env.declareName(arg);
+      if (!result) {
+        env.exchangeInsertionPoint(temp_ip);
+        env.popScope();
+        return result.error();
+      }
+
+      auto binding = result.value();
+      binding.setRuntimeValue(&llvm_arg);
+      ++llvm_args_cursor;
+    }
+
+    llvm::Value *result_value = env.getLLVMNil();
+    for (auto &expr : f.body) {
+      auto result = codegen(expr, env);
+      if (!result) {
+        env.exchangeInsertionPoint(temp_ip);
+        env.popScope();
+        return result;
+      }
+
+      result_value = result.value();
+    }
+
+    env.createLLVMReturn(result_value);
+
+    env.exchangeInsertionPoint(temp_ip);
+    env.popScope();
+
+    // #NOTE: verify returns true on failure
+    MINT_ASSERT(!verify(*llvm_function, env.errorStream()));
+
+    binding.setRuntimeValue(llvm_function);
+
+    if (auto failed = env.resolveRuntimeValueOfUseBeforeDef(qualified_name)) {
+      return failed.value();
+    }
+
+    return env.getLLVMNil();
+  }
+
+  // if the let expression is bound to a comptime value
+  // codegen the comptime value to a runtime value
+  // else codegen the bound expression down to a value.
+  // create a llvm variable bound to said value.
+  Result<llvm::Value *> operator()(ast::Let &l) noexcept {
+    auto found = env.lookupLocalBinding(l.name);
+    MINT_ASSERT(found);
+    auto binding = found.value();
+
+    if (binding.hasRuntimeValue()) {
+      return Error{Error::Kind::NameAlreadyBoundInScope, ptr->sl,
+                   l.name.view()};
+    }
+
+    auto result = [&]() {
+      if (binding.hasComptimeValue()) {
+        return codegen(binding.comptimeValueOrAssert(), env);
+      } else {
+        return codegen(l.affix, env);
+      }
+    }();
+    if (!result) {
+      return result;
+    }
+    auto value = result.value();
+
+    auto type = l.affix->cached_type;
+    MINT_ASSERT(type != nullptr);
+    auto llvm_type = type::toLLVM(type, env);
+    auto qualified_name = env.qualifyName(l.name);
+    auto llvm_name = qualified_name.convertForLLVM();
+
+    // #NOTE: this function handles the difference between
+    // global and local variables.
+    auto variable = createLLVMVariable(env, llvm_name, llvm_type, value);
+
+    binding.setRuntimeValue(variable);
+
+    if (auto failed = env.resolveRuntimeValueOfUseBeforeDef(qualified_name)) {
+      return failed.value();
+    }
+
+    return env.getLLVMNil();
+  }
+
+  // codegen the right and left hand sides down to values
+  // call the codegen routine associated with the binop given said values
+  Result<llvm::Value *> operator()(ast::Binop &b) noexcept {
+    MINT_ASSERT(env.hasInsertionPoint());
+
+    auto overloads = env.lookupBinop(b.op);
+    MINT_ASSERT(overloads);
+
+    auto left_type_result = typecheck(b.left, env);
+    if (!left_type_result) {
+      return left_type_result.error();
+    }
+    auto left_type = left_type_result.value();
+
+    auto left_result = codegen(b.left, env);
+    if (!left_result) {
+      return left_result;
+    }
+    auto left_value = left_result.value();
+
+    auto right_type_result = typecheck(b.right, env);
+    if (!right_type_result) {
+      return right_type_result.error();
+    }
+    auto right_type = right_type_result.value();
+
+    auto right_result = codegen(b.right, env);
+    if (!right_result) {
+      return right_result;
+    }
+    auto right_value = right_result.value();
+
+    auto instance = overloads->lookup(left_type, right_type);
+    MINT_ASSERT(instance);
+
+    return instance->codegen(left_value, right_value, env);
+  }
+
+  // codegen the right hand side of the unop expr into a value
+  // call the codegen routine associated with the unop given said value.
+  Result<llvm::Value *> operator()(ast::Unop &u) noexcept {
+    MINT_ASSERT(env.hasInsertionPoint());
+
+    auto overloads = env.lookupUnop(u.op);
+    MINT_ASSERT(overloads);
+
+    auto right_type_result = typecheck(u.right, env);
+    if (!right_type_result) {
+      return right_type_result.error();
+    }
+    auto right_type = right_type_result.value();
+
+    auto right_result = codegen(u.right, env);
+    if (!right_result) {
+      return right_result;
+    }
+    auto right_value = right_result.value();
+
+    auto instance = overloads->lookup(right_type);
+    MINT_ASSERT(instance);
+
+    return instance->codegen(right_value, env);
+  }
+
+  // -) codegen the callee down to a function or a lambda
+  // -) codegen each argument down to a llvm::Value
+  // -) codegen a call instruction of the function or function ptr.
+  Result<llvm::Value *> operator()(ast::Call &c) noexcept {
+    MINT_ASSERT(env.hasInsertionPoint());
+
+    auto callee_result = codegen(c.callee, env);
+    if (!callee_result) {
+      return callee_result;
+    }
+    auto callee = callee_result.value();
+
+    std::vector<llvm::Value *> actual_arguments;
+    actual_arguments.reserve(c.arguments.size());
+    for (auto &argument : c.arguments) {
+      auto result = codegen(argument, env);
+      if (!result) {
+        return result;
+      }
+
+      actual_arguments.emplace_back(result.value());
+    }
+
+    if (auto function = llvm::dyn_cast<llvm::Function>(callee);
+        function != nullptr) {
+      return env.createLLVMCall(function, actual_arguments);
+    }
+
+    // else the callee is a function pointer
+    auto type = c.callee->cached_type;
+    MINT_ASSERT(type != nullptr);
+    MINT_ASSERT(type->holds<type::Lambda>());
+    auto &lambda_type = type->get<type::Lambda>();
+    auto function_type = lambda_type.function_type;
+    MINT_ASSERT(function_type->holds<type::Function>());
+
+    auto llvm_function_type =
+        llvm::cast<llvm::FunctionType>(type::toLLVM(function_type, env));
+    return env.createLLVMCall(llvm_function_type, callee, actual_arguments);
+  }
+
+  // codegen whatever is inside the parens
+  Result<llvm::Value *> operator()(ast::Parens &p) noexcept {
+    return codegen(p.expression, env);
+  }
+
+  // forward declare all imported statements in the current TU
+  Result<llvm::Value *> operator()(ast::Import &i) noexcept {
+    fs::path path = i.file;
+    auto *itu = env.findImport(path);
+    MINT_ASSERT(itu != nullptr);
+
+    auto &context = itu->context();
+    if (context.generated()) {
+      return env.getLLVMNil();
+    }
+
+    for (auto &expression : itu->expressions()) {
+      forwardDeclare(expression, env);
+    }
+
+    context.generated(true);
+    return env.getLLVMNil();
+  }
+
+  // codegen all expressions in the module
+  Result<llvm::Value *> operator()(ast::Module &m) noexcept {
+    env.pushScope(m.name);
+
+    for (auto &expression : m.expressions) {
+      auto result = codegen(expression, env);
+
+      if (result.recovered()) {
+        continue;
+      } else if (!result) {
+        env.unbindScope(m.name);
+        env.popScope();
+        return result;
+      }
+    }
+
+    env.popScope();
+    return env.getLLVMNil();
+  }
+};
+
+Result<llvm::Value *> codegen(ast::Ptr &ptr, Environment &env) noexcept {
+  CodegenAst visitor(ptr, env);
+  return visitor();
+}
+
+int codegen(Environment &env) noexcept {
+  for (auto &expression : env.localExpressions()) {
+    auto result = codegen(expression, env);
+    if (!result) {
+      env.errorStream() << result.error() << "\n";
+      return EXIT_FAILURE;
+    }
+  }
+
+  return EXIT_SUCCESS;
+}
 } // namespace mint
-
-// struct CodegenScalar {
-//   Environment *env;
-
-//   CodegenScalar(Environment &env) noexcept : env(&env) {}
-
-//   Result<llvm::Value *> operator()(ir::Scalar &scalar) noexcept {
-//     return std::visit(*this, scalar.variant());
-//   }
-
-//   Result<llvm::Value *>
-//   operator()([[maybe_unused]] std::monostate &nil) noexcept {
-//     return env->getLLVMNil();
-//   }
-
-//   Result<llvm::Value *> operator()(bool &boolean) noexcept {
-//     return env->getLLVMBoolean(boolean);
-//   }
-
-//   Result<llvm::Value *> operator()(int &integer) noexcept {
-//     return env->getLLVMInteger(integer);
-//   }
-// };
-
-// static Result<llvm::Value *> codegen(ir::Scalar &scalar,
-//                                      Environment &env) noexcept {
-//   CodegenScalar visitor(env);
-//   return visitor(scalar);
-// }
-
-// struct CodegenValue {
-//   Environment *env;
-
-//   CodegenValue(Environment &env) noexcept : env(&env) {}
-
-//   Result<llvm::Value *> operator()(ir::Value &value) noexcept {
-//     return std::visit(*this, value.variant());
-//   }
-
-//   Result<llvm::Value *> operator()(ir::Scalar &scalar) noexcept {
-//     return codegen(scalar, *env);
-//   }
-
-//   Result<llvm::Value *> operator()(ir::Lambda &lambda) noexcept {
-//     env->pushScope();
-
-//     auto type = lambda.cachedType();
-//     MINT_ASSERT(type != nullptr);
-//     MINT_ASSERT(type->holds<type::Lambda>());
-//     auto &lambda_type = type->get<type::Lambda>();
-
-//     auto lambda_name = env->getLambdaName();
-//     auto llvm_function_type = llvm::cast<llvm::FunctionType>(
-//         type::toLLVM(lambda_type.function_type, *env));
-//     auto llvm_callee =
-//         env->getOrInsertFunction(lambda_name, llvm_function_type);
-//     auto llvm_function = llvm::cast<llvm::Function>(llvm_callee.getCallee());
-
-//     auto entry_block = env->createBasicBlock(llvm_function);
-//     auto temp_insertion_point =
-//         env->exchangeInsertionPoint({entry_block, entry_block->begin()});
-
-//     auto llvm_arguments_cursor = llvm_function->arg_begin();
-//     for (auto &argument : lambda.arguments()) {
-//       auto &llvm_argument = *llvm_arguments_cursor;
-//       auto result = env->declareName(argument);
-//       if (!result) {
-//         env->exchangeInsertionPoint(temp_insertion_point);
-//         env->popScope();
-//         return result.error();
-//       }
-
-//       auto binding = result.value();
-//       binding.setRuntimeValue(&llvm_argument);
-//       ++llvm_arguments_cursor;
-//     }
-
-//     auto result = codegen(lambda.body(), *env);
-//     if (!result) {
-//       env->exchangeInsertionPoint(temp_insertion_point);
-//       env->popScope();
-//       return result;
-//     }
-
-//     env->createLLVMReturn(result.value());
-
-//     env->exchangeInsertionPoint(temp_insertion_point);
-//     env->popScope();
-
-//     // #NOTE: verify returns true on failure.
-//     // it is intended for use within an early return if statement.
-//     MINT_ASSERT(!verify(*llvm_function, env->errorStream()));
-
-//     return llvm_function;
-//   }
-// };
-
-// static Result<llvm::Value *> codegen(ir::Value &value,
-//                                      Environment &env) noexcept {
-//   CodegenValue visitor(env);
-//   return visitor(value);
-// }
-
-// struct CodegenImmediate {
-//   Environment *env;
-
-//   CodegenImmediate(Environment &env) noexcept : env(&env) {}
-
-//   Result<llvm::Value *> operator()(ir::detail::Immediate &immediate) noexcept
-//   {
-//     return std::visit(*this, immediate.variant());
-//   }
-
-//   Result<llvm::Value *> operator()(ir::Scalar &scalar) noexcept {
-//     return codegen(scalar, *env);
-//   }
-
-//   Result<llvm::Value *> operator()(Identifier &name) noexcept {
-//     auto result = env->lookupBinding(name);
-//     MINT_ASSERT(result.success());
-//     auto binding = result.value();
-
-//     if (!binding.hasRuntimeValue()) {
-//       return Recovered{};
-//     }
-//     auto type = type::toLLVM(binding.type(), *env);
-//     auto value = binding.runtimeValueOrAssert();
-
-//     if (!env->hasInsertionPoint()) {
-//       auto global = llvm::cast<llvm::GlobalVariable>(value);
-//       return global->getInitializer();
-//     }
-
-//     // #NOTE: runtime variables are stored in memory.
-//     // so they must be loaded to be used in expressions.
-//     return createLLVMLoad(*env, type, value);
-//   }
-// };
-
-// static Result<llvm::Value *> codegen(ir::detail::Immediate &immediate,
-//                                      Environment &env) noexcept {
-//   CodegenImmediate visitor(env);
-//   return visitor(immediate);
-// }
-
-// static Result<llvm::Value *> codegen(ir::detail::Index index, ir::Mir &mir,
-//                                      Environment &env) noexcept;
-
-// static Result<llvm::Value *> codegen(ir::detail::Parameter &parameter,
-//                                      ir::Mir &mir, Environment &env) noexcept
-//                                      {
-//   return codegen(parameter.index(), mir, env);
-// }
-
-// struct CodegenInstruction {
-//   ir::Mir *mir;
-//   ir::detail::Index index;
-//   Environment *env;
-
-//   CodegenInstruction(ir::Mir &mir, ir::detail::Index index,
-//                      Environment &env) noexcept
-//       : mir(&mir), index(index), env(&env) {}
-
-//   Result<llvm::Value *> operator()() noexcept {
-//     return std::visit(*this, (*mir)[index].variant());
-//   }
-
-//   Result<llvm::Value *> operator()(ir::detail::Immediate &immediate) noexcept
-//   {
-//     return codegen(immediate, *env);
-//   }
-
-//   Result<llvm::Value *> operator()(ir::Parens &parens) noexcept {
-//     return codegen(parens.parameter(), *mir, *env);
-//   }
-
-//   Result<llvm::Value *> operator()(ir::Let &let) noexcept {
-//     auto found = env->lookupLocalBinding(let.name());
-//     MINT_ASSERT(found);
-//     auto binding = found.value();
-
-//     if (binding.hasRuntimeValue()) {
-//       return Error{Error::Kind::NameAlreadyBoundInScope,
-//       let.sourceLocation(),
-//                    let.name()};
-//     }
-
-//     llvm::Value *value = nullptr;
-//     if (binding.hasComptimeValue()) {
-//       auto result = codegen(binding.comptimeValueOrAssert(), *env);
-//       if (!result) {
-//         return result;
-//       }
-//       value = result.value();
-//     } else {
-//       auto result = codegen(let.parameter(), *mir, *env);
-//       if (!result) {
-//         return result;
-//       }
-//       value = result.value();
-//     }
-//     MINT_ASSERT(value != nullptr);
-
-//     auto type = let.parameter().cachedType();
-//     MINT_ASSERT(type != nullptr);
-//     auto llvm_type = type::toLLVM(type, *env);
-//     auto qualified_name = env->qualifyName(let.name());
-//     auto llvm_name = qualified_name.convertForLLVM();
-
-//     auto variable = createLLVMVariable(*env, llvm_name, llvm_type, value);
-
-//     binding.setRuntimeValue(variable);
-
-//     if (auto failed = env->resolveRuntimeValueOfUseBeforeDef(qualified_name))
-//     {
-//       return failed.value();
-//     }
-
-//     return env->getLLVMNil();
-//   }
-
-//   Result<llvm::Value *> operator()(ir::Function &function) noexcept {
-
-//   }
-
-//   Result<llvm::Value *> operator()(ir::Binop &binop) noexcept {
-//     MINT_ASSERT(env->hasInsertionPoint());
-//     MINT_ASSERT(binop.cachedType() != nullptr);
-
-//     auto overloads = env->lookupBinop(binop.op());
-//     MINT_ASSERT(overloads);
-
-//     auto left_result = codegen(binop.left(), *mir, *env);
-//     if (!left_result) {
-//       return left_result;
-//     }
-//     auto left_value = left_result.value();
-//     auto left_type = binop.left().cachedType();
-//     MINT_ASSERT(left_type != nullptr);
-
-//     auto right_result = codegen(binop.right(), *mir, *env);
-//     if (!right_result) {
-//       return right_result;
-//     }
-//     auto right_value = right_result.value();
-//     auto right_type = binop.right().cachedType();
-//     MINT_ASSERT(right_type != nullptr);
-
-//     auto instance = overloads->lookup(left_type, right_type);
-//     MINT_ASSERT(instance);
-
-//     return instance->codegen(left_value, right_value, *env);
-//   }
-
-//   Result<llvm::Value *> operator()(ir::Unop &unop) noexcept {
-//     MINT_ASSERT(env->hasInsertionPoint());
-//     MINT_ASSERT(unop.cachedType() != nullptr);
-
-//     auto overloads = env->lookupUnop(unop.op());
-//     MINT_ASSERT(overloads);
-
-//     auto result = codegen(unop.right(), *mir, *env);
-//     if (!result) {
-//       return result;
-//     }
-//     auto right = result.value();
-//     auto right_type = unop.right().cachedType();
-//     MINT_ASSERT(right_type != nullptr);
-
-//     auto instance = overloads->lookup(right_type);
-//     MINT_ASSERT(instance);
-
-//     return instance->codegen(right, *env);
-//   }
-
-//   // Result<llvm::Value *> operator()(ir::Call &call) noexcept {
-//   //   MINT_ASSERT(call.cachedType() != nullptr);
-//   //   MINT_ASSERT(env->hasInsertionPoint());
-
-//   //   auto callee_result = codegen(call.callee(), *mir, *env);
-//   //   if (!callee_result) {
-//   //     return callee_result;
-//   //   }
-
-//   //   std::vector<llvm::Value *> actual_arguments;
-//   //   actual_arguments.reserve(call.arguments().size());
-//   //   for (auto &argument : call.arguments()) {
-//   //     auto result = codegen(argument, *mir, *env);
-//   //     if (!result) {
-//   //       return result;
-//   //     }
-//   //     actual_arguments.emplace_back(result.value());
-//   //   }
-
-//   //   // the callee was bound directly to a function,
-//   //   if (auto function =
-//   //   llvm::dyn_cast<llvm::Function>(callee_result.value());
-//   //       function != nullptr) {
-//   //     return env->createLLVMCall(function, actual_arguments);
-//   //   }
-
-//   //   // else the callee was bound to a function pointer
-//   //   auto type = call.callee().cachedType();
-//   //   MINT_ASSERT(type != nullptr);
-//   //   MINT_ASSERT(type->holds<type::Lambda>());
-//   //   auto &lambda_type = type->get<type::Lambda>();
-//   //   auto function_type = lambda_type.function_type;
-//   //   MINT_ASSERT(function_type->holds<type::Function>());
-
-//   //   auto llvm_function_type =
-//   //       llvm::cast<llvm::FunctionType>(type::toLLVM(function_type, *env));
-//   //   auto llvm_function_ptr = callee_result.value();
-//   //   return env->createLLVMCall(llvm_function_type, llvm_function_ptr,
-//   //                              actual_arguments);
-//   // }
-
-//   // Result<llvm::Value *> operator()(ir::Lambda &lambda) noexcept {
-//   //   env->pushScope();
-
-//   //   auto type = lambda.cachedType();
-//   //   MINT_ASSERT(type != nullptr);
-//   //   MINT_ASSERT(type->holds<type::Lambda>());
-//   //   auto &lambda_type = type->get<type::Lambda>();
-
-//   //   auto lambda_name = env->getLambdaName();
-//   //   auto llvm_function_type = llvm::cast<llvm::FunctionType>(
-//   //       type::toLLVM(lambda_type.function_type, *env));
-//   //   auto llvm_callee =
-//   //       env->getOrInsertFunction(lambda_name, llvm_function_type);
-//   //   auto llvm_function =
-//   llvm::cast<llvm::Function>(llvm_callee.getCallee());
-
-//   //   auto entry_block = env->createBasicBlock(llvm_function);
-//   //   auto temp_insertion_point =
-//   //       env->exchangeInsertionPoint({entry_block, entry_block->begin()});
-
-//   //   auto llvm_arguments_cursor = llvm_function->arg_begin();
-//   //   for (auto &argument : lambda.arguments()) {
-//   //     auto &llvm_argument = *llvm_arguments_cursor;
-//   //     auto result = env->declareName(argument);
-//   //     if (!result) {
-//   //       env->exchangeInsertionPoint(temp_insertion_point);
-//   //       env->popScope();
-//   //       return result.error();
-//   //     }
-
-//   //     auto binding = result.value();
-//   //     binding.setRuntimeValue(&llvm_argument);
-//   //     ++llvm_arguments_cursor;
-//   //   }
-
-//   //   auto result = codegen(lambda.body(), *env);
-//   //   if (!result) {
-//   //     env->exchangeInsertionPoint(temp_insertion_point);
-//   //     env->popScope();
-//   //     return result;
-//   //   }
-
-//   //   env->createLLVMReturn(result.value());
-
-//   //   env->exchangeInsertionPoint(temp_insertion_point);
-//   //   env->popScope();
-
-//   //   // #NOTE: verify returns true on failure
-//   //   MINT_ASSERT(!verify(*llvm_function, env->errorStream()));
-
-//   //   return llvm_function;
-//   // }
-
-//   Result<llvm::Value *> operator()(ir::Import &i) noexcept {
-//     MINT_ASSERT(i.cachedType() != nullptr);
-
-//     auto *itu = env->findImport(i.file());
-//     MINT_ASSERT(itu != nullptr);
-
-//     auto &context = itu->context();
-//     if (context.generated()) {
-//       return env->getLLVMNil();
-//     }
-
-//     std::size_t index = 0;
-//     auto &recovered_expressions = itu->recovered_expressions();
-//     for (auto &expression : itu->expressions()) {
-//       if (!recovered_expressions[index]) {
-//         forwardDeclare(expression, *env);
-//       }
-//     }
-
-//     context.generated(true);
-//     return env->getLLVMNil();
-//   }
-
-//   Result<llvm::Value *> operator()(ir::Module &m) noexcept {
-//     MINT_ASSERT(m.cachedType() != nullptr);
-//     env->pushScope(m.name());
-
-//     std::size_t index = 0U;
-//     auto &recovered_expressions = m.recovered_expressions();
-//     for (auto &expression : m.expressions()) {
-//       if (!recovered_expressions[index]) {
-//         auto result = codegen(expression, *env);
-//         if (result.recovered()) {
-//           continue;
-//         }
-
-//         if (!result) {
-//           env->unbindScope(m.name());
-//           env->popScope();
-//           return result;
-//         }
-//       }
-//       ++index;
-//     }
-
-//     env->popScope();
-//     return env->getLLVMNil();
-//   }
-// };
-
-// static Result<llvm::Value *> codegen(ir::detail::Index index, ir::Mir &mir,
-//                                      Environment &env) noexcept {
-//   CodegenInstruction visitor(mir, index, env);
-//   return visitor();
-// }
-
-// Result<llvm::Value *> codegen(ir::Mir &mir, Environment &env) {
-//   return codegen(mir.root(), mir, env);
-// }
-
-// int codegen(Environment &env) noexcept {
-//   std::size_t index = 0U;
-//   auto &recovered_expressions = env.localRecoveredExpressions();
-//   for (auto &expression : env.localExpressions()) {
-//     if (!recovered_expressions[index]) {
-//       auto result = codegen(expression, env);
-//       if (result.recovered()) {
-//         continue;
-//       } else if (!result) {
-//         env.errorStream() << result.error() << "\n";
-//         return EXIT_FAILURE;
-//       }
-//     }
-//     ++index;
-//   }
-
-//   return EXIT_SUCCESS;
-// }

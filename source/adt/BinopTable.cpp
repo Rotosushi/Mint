@@ -158,7 +158,7 @@ auto gen_binop_or(llvm::Value *left, llvm::Value *right, Environment &env)
 auto eval_binop_integer_equality(ast::Ptr &left, ast::Ptr &right) -> ast::Ptr {
   MINT_ASSERT(left->holds<int>());
   MINT_ASSERT(right->holds<int>());
-  return ast::create<int>(left->get<int>() == right->get<int>());
+  return ast::create<bool>(left->get<int>() == right->get<int>());
 }
 
 auto gen_binop_integer_equality(llvm::Value *left, llvm::Value *right,
@@ -181,7 +181,7 @@ auto eval_binop_integer_inequality(ast::Ptr &left, ast::Ptr &right)
     -> ast::Ptr {
   MINT_ASSERT(left->holds<int>());
   MINT_ASSERT(right->holds<int>());
-  return ast::create<int>(left->get<int>() != right->get<int>());
+  return ast::create<bool>(left->get<int>() != right->get<int>());
 }
 
 auto gen_binop_integer_inequality(llvm::Value *left, llvm::Value *right,
@@ -204,7 +204,7 @@ auto gen_binop_boolean_inequality(llvm::Value *left, llvm::Value *right,
 auto eval_binop_less_than(ast::Ptr &left, ast::Ptr &right) -> ast::Ptr {
   MINT_ASSERT(left->holds<int>());
   MINT_ASSERT(right->holds<int>());
-  return ast::create<int>(left->get<int>() < right->get<int>());
+  return ast::create<bool>(left->get<int>() < right->get<int>());
 }
 
 auto gen_binop_less_than(llvm::Value *left, llvm::Value *right,
@@ -216,7 +216,7 @@ auto eval_binop_less_than_or_equal(ast::Ptr &left, ast::Ptr &right)
     -> ast::Ptr {
   MINT_ASSERT(left->holds<int>());
   MINT_ASSERT(right->holds<int>());
-  return ast::create<int>(left->get<int>() <= right->get<int>());
+  return ast::create<bool>(left->get<int>() <= right->get<int>());
 }
 
 auto gen_binop_less_than_or_equal(llvm::Value *left, llvm::Value *right,
@@ -227,7 +227,7 @@ auto gen_binop_less_than_or_equal(llvm::Value *left, llvm::Value *right,
 auto eval_binop_greater_than(ast::Ptr &left, ast::Ptr &right) -> ast::Ptr {
   MINT_ASSERT(left->holds<int>());
   MINT_ASSERT(right->holds<int>());
-  return ast::create<int>(left->get<int>() > right->get<int>());
+  return ast::create<bool>(left->get<int>() > right->get<int>());
 }
 
 auto gen_binop_greater_than(llvm::Value *left, llvm::Value *right,
@@ -239,7 +239,7 @@ auto eval_binop_greater_than_or_equal(ast::Ptr &left, ast::Ptr &right)
     -> ast::Ptr {
   MINT_ASSERT(left->holds<int>());
   MINT_ASSERT(right->holds<int>());
-  return ast::create<int>(left->get<int>() >= right->get<int>());
+  return ast::create<bool>(left->get<int>() >= right->get<int>());
 }
 
 auto gen_binop_greater_than_or_equal(llvm::Value *left, llvm::Value *right,

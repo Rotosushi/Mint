@@ -1,0 +1,9 @@
+fn f(a :Integer, b: Integer) {
+  a + b;
+}
+
+fn g(a: Integer) {
+  f(a, a);
+}
+
+let a = g(2);
