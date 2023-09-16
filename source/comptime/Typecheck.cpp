@@ -422,8 +422,8 @@ struct TypecheckAst {
 };
 
 Result<type::Ptr> typecheck(ast::Ptr &ptr, Environment &env) noexcept {
-  if (ptr->cached_type != nullptr) {
-    return ptr->cached_type;
+  if (ptr->cached_type) {
+    return ptr->cached_type.value();
   }
 
   TypecheckAst visitor(env, ptr);

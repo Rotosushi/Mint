@@ -91,7 +91,8 @@ void Bindings::unbind(Key name) noexcept { table.erase(name); }
 auto Bindings::declare(Key key, Attributes attributes, type::Ptr type) noexcept
     -> Result<Binding> {
   if (auto found = lookup(key))
-    return {Error::Kind::NameAlreadyBoundInScope, {}, key.view()};
+    return Error{Error::Kind::NameAlreadyBoundInScope, std::nullopt,
+                 key.view()};
 
   auto pair = table.try_emplace(
       key, Value{attributes, type, std::nullopt, std::nullopt});
@@ -101,7 +102,7 @@ auto Bindings::declare(Key key, Attributes attributes, type::Ptr type) noexcept
 [[nodiscard]] auto Bindings::lookup(Key key) noexcept -> Result<Binding> {
   auto found = table.find(key);
   if (found == table.end()) {
-    return {Error::Kind::NameUnboundInScope, {}, key.view()};
+    return Error{Error::Kind::NameUnboundInScope, std::nullopt, key.view()};
   }
   return {found};
 }
@@ -161,7 +162,7 @@ void ScopeTable::unbind(Identifier name) noexcept {
     -> Result<Entry> {
   auto found = table.find(name);
   if (found == table.end()) {
-    return {Error{Error::Kind::NameUnboundInScope, Location{}, name.view()}};
+    return {Error{Error::Kind::NameUnboundInScope, std::nullopt, name.view()}};
   }
   return {Entry{found}};
 }
@@ -354,8 +355,8 @@ void Scope::unbindScope(Identifier name) { return m_scopes->unbind(name); }
     auto found = m_bindings->lookup(name);
     if (found) {
       if (found.value().isPrivate()) {
-        return {
-            Error{Error::Kind::NameIsPrivateInScope, Location{}, name.view()}};
+        return {Error{Error::Kind::NameIsPrivateInScope, std::nullopt,
+                      name.view()}};
       }
 
       return found;

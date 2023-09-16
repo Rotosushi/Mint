@@ -112,26 +112,9 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
   }
 }
 
-Error::Error(Kind kind) noexcept : m_kind(kind) {}
-Error::Error(Kind kind, Location location, std::string_view message) noexcept
-    : m_kind(kind),
-      m_data(std::in_place_type<Default>, location, std::string(message)) {}
-Error::Error(Kind kind, SourceLocation *location,
-             std::string_view message) noexcept
-    : m_kind(kind),
-      m_data(std::in_place_type<SLocation>, location, std::string(message)) {}
-
-[[nodiscard]] auto Error::isMonostate() const noexcept -> bool {
-  return std::holds_alternative<std::monostate>(m_data);
-}
-[[nodiscard]] auto Error::isDefault() const noexcept -> bool {
-  return std::holds_alternative<Default>(m_data);
-}
-
-[[nodiscard]] auto Error::getDefault() const noexcept -> const Default & {
-  MINT_ASSERT(isDefault());
-  return std::get<Default>(m_data);
-}
+Error::Error(Kind kind, std::optional<SourceLocation *> sl,
+             std::optional<std::string_view> message) noexcept
+    : m_kind(kind), m_sl(sl), m_message(message) {}
 
 void Error::underline(std::ostream &out, Location location,
                       std::string_view bad_source) noexcept {
@@ -144,50 +127,19 @@ void Error::underline(std::ostream &out, Location location,
   out << "\n";
 }
 
-void Error::print(std::ostream &out,
-                  std::string_view bad_source) const noexcept {
-  out << "Error: " << KindToView(m_kind);
-
-  // we don't print anything extra for other kinds of error
-  if (std::holds_alternative<Default>(m_data)) {
-    auto &default_data = std::get<Default>(m_data);
-
-    auto &loc = default_data.location;
-    auto &msg = default_data.message;
-
-    out << " -- [" << loc.fline << ":" << loc.fcolumn << "]";
-    out << " -- " << msg << "\n";
-
-    if (!bad_source.empty()) {
-      out << bad_source << "\n";
-      underline(out, loc, bad_source);
-    }
-  }
-  out << "\n";
-}
-
 void Error::print(std::ostream &out) const noexcept {
-  out << "Error: " << KindToView(m_kind);
+  out << "Error: " << KindToView(m_kind) << "\n";
 
-  if (std::holds_alternative<Default>(m_data)) {
-    auto &def = std::get<Default>(m_data);
-
-    auto &loc = def.location;
-    auto &msg = def.message;
-
-    out << " @ [" << loc.fline << ":" << loc.fcolumn << "]";
-    out << " -- [" << msg << "]\n";
+  if (m_message) {
+    out << " -- " << m_message.value() << "\n";
   }
 
-  if (std::holds_alternative<SLocation>(m_data)) {
-    auto &sl = std::get<SLocation>(m_data);
+  if (m_sl) {
+    auto sl = m_sl.value();
+    auto &loc = sl->location();
+    auto &src = sl->view();
 
-    auto &loc = sl.location->location();
-    auto &src = sl.location->view();
-    auto &msg = sl.message;
-
-    out << " @ [" << loc.fline << ":" << loc.fcolumn << "]";
-    out << " -- [" << msg << "]\n";
+    out << " @ [" << loc.fline << ":" << loc.fcolumn << "]\n";
 
     if (!src.empty()) {
       out << src << "\n";

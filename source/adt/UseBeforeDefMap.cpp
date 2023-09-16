@@ -242,7 +242,10 @@ UseBeforeDefMap::resolveTypeOfUseBeforeDef(Environment &env,
 
     auto result = typecheck(ubd_ir, env);
     if (!result) {
-      if (!result.recovered()) {
+      if (result.recovered()) {
+        stage.emplace_back(*it);
+        // [[fallthrough]]
+      } else if (!result) {
         it.being_resolved(false);
         env.exchangeLocalScope(old_local_scope);
         return result.error();
@@ -278,7 +281,9 @@ std::optional<Error> UseBeforeDefMap::resolveComptimeValueOfUseBeforeDef(
 
     auto result = evaluate(ubd_ir, env);
     if (!result) {
-      if (!result.recovered()) {
+      if (result.recovered()) {
+        stage.emplace_back(*it);
+      } else if (!result) {
         it.being_resolved(false);
         env.exchangeLocalScope(old_local_scope);
         return result.error();
@@ -313,7 +318,9 @@ std::optional<Error> UseBeforeDefMap::resolveRuntimeValueOfUseBeforeDef(
 
     auto result = codegen(ubd_ir, env);
     if (!result) {
-      if (!result.recovered()) {
+      if (result.recovered()) {
+        stage.emplace_back(*it);
+      } else if (!result) {
         it.being_resolved(false);
         env.exchangeLocalScope(old_local_scope);
         return result.error();

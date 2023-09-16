@@ -172,8 +172,9 @@ struct EvaluateAst {
   }
 
   Result<ast::Ptr> operator()(ast::Call &c) noexcept {
-    auto callee_type = c.callee->cached_type;
-    MINT_ASSERT(callee_type != nullptr);
+    auto callee_type_result = typecheck(c.callee, env);
+    MINT_ASSERT(callee_type_result);
+    auto callee_type = callee_type_result.value();
     MINT_ASSERT(type::callable(callee_type));
 
     auto callee_result = evaluate(c.callee, env);

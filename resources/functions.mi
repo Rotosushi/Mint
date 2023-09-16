@@ -1,9 +1,9 @@
-fn f(a :Integer, b: Integer) {
-  a + b;
-}
+let a = g(2);
 
 fn g(a: Integer) {
   f(a, a);
 }
 
-let a = g(2);
+fn f(a: Integer, b: Integer) {
+  a + b;
+}

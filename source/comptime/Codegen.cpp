@@ -86,8 +86,9 @@ struct CodegenAst {
   // -) emit a return instruction returning the value of the
   //    final expression in the body.
   Result<llvm::Value *> operator()(ast::Lambda &l) noexcept {
-    auto type = ptr->cached_type;
-    MINT_ASSERT(type != nullptr);
+    auto lambda_type_result = typecheck(ptr, env);
+    MINT_ASSERT(lambda_type_result);
+    auto type = lambda_type_result.value();
     MINT_ASSERT(type->holds<type::Lambda>());
     auto &lambda_type = type->get<type::Lambda>();
 
@@ -152,8 +153,9 @@ struct CodegenAst {
   // -) emit a return instruction returning the value of the
   //    final expression in the body.
   Result<llvm::Value *> operator()(ast::Function &f) noexcept {
-    auto type = ptr->cached_type;
-    MINT_ASSERT(type != nullptr);
+    auto function_type_result = typecheck(ptr, env);
+    MINT_ASSERT(function_type_result);
+    auto type = function_type_result.value();
     MINT_ASSERT(type->holds<type::Function>());
 
     auto found = env.lookupLocalBinding(f.name);
@@ -246,8 +248,9 @@ struct CodegenAst {
     }
     auto value = result.value();
 
-    auto type = l.affix->cached_type;
-    MINT_ASSERT(type != nullptr);
+    auto affix_type_result = typecheck(l.affix, env);
+    MINT_ASSERT(affix_type_result);
+    auto type = affix_type_result.value();
     auto llvm_type = type::toLLVM(type, env);
     auto qualified_name = env.qualifyName(l.name);
     auto llvm_name = qualified_name.convertForLLVM();
@@ -358,8 +361,9 @@ struct CodegenAst {
     }
 
     // else the callee is a function pointer
-    auto type = c.callee->cached_type;
-    MINT_ASSERT(type != nullptr);
+    auto callee_type_result = typecheck(c.callee, env);
+    MINT_ASSERT(callee_type_result);
+    auto type = callee_type_result.value();
     MINT_ASSERT(type->holds<type::Lambda>());
     auto &lambda_type = type->get<type::Lambda>();
     auto function_type = lambda_type.function_type;

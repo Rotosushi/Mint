@@ -46,18 +46,6 @@ class Scope;
 // relevant to the programer
 class Error {
 public:
-  struct Default {
-    Location location;
-    std::string message;
-  };
-
-  struct SLocation {
-    SourceLocation *location;
-    std::string message;
-  };
-
-  using Data = std::variant<std::monostate, Default, SLocation>;
-
   enum class Kind {
     Default,
 
@@ -123,24 +111,17 @@ public:
 
 private:
   Kind m_kind;
-  Data m_data;
+  std::optional<SourceLocation *> m_sl;
+  std::optional<std::string> m_message;
 
   static auto KindToView(Kind kind) noexcept -> std::string_view;
 
 public:
-  Error(Kind kind) noexcept;
-  Error(Kind kind, Location location, std::string_view message) noexcept;
-  Error(Kind kind, SourceLocation *location, std::string_view message) noexcept;
-
-  [[nodiscard]] auto isMonostate() const noexcept -> bool;
-  [[nodiscard]] auto isDefault() const noexcept -> bool;
-
-  [[nodiscard]] auto getDefault() const noexcept -> const Default &;
+  Error(Kind kind, std::optional<SourceLocation *> location = std::nullopt,
+        std::optional<std::string_view> message = std::nullopt) noexcept;
 
   static void underline(std::ostream &out, Location location,
                         std::string_view bad_source) noexcept;
-
-  void print(std::ostream &out, std::string_view bad_source) const noexcept;
 
   void print(std::ostream &out) const noexcept;
 

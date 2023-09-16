@@ -30,7 +30,7 @@ struct ToErrorVisitor {
   }
 
   Error operator()(Recoverable::UBD &ubd) noexcept {
-    return {Error::Kind::NameUnboundInScope, Location{}, ubd.undef_name};
+    return {Error::Kind::NameUnboundInScope, std::nullopt, ubd.undef_name};
   }
 };
 

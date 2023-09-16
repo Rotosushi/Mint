@@ -208,14 +208,14 @@ Result<ast::Ptr> Parser::parseFunction(bool visibility) {
 
   auto parseArgument = [&]() -> Result<FormalArgument> {
     if (!peek(Token::Identifier)) {
-      return Error{Error::Kind::ExpectedIdentifier, location(), text()};
+      return Error{Error::Kind::ExpectedIdentifier, source(location()), text()};
     }
 
     auto arg_name = m_env->getIdentifier(text());
     next();
 
     if (!expect(Token::Colon)) {
-      return Error{Error::Kind::ExpectedColon, location(), text()};
+      return Error{Error::Kind::ExpectedColon, source(location()), text()};
     }
 
     auto result = parseType();
@@ -231,7 +231,7 @@ Result<ast::Ptr> Parser::parseFunction(bool visibility) {
     FormalArguments formal_arguments;
 
     if (!expect(Token::BeginParen)) {
-      return Error{Error::Kind::ExpectedBeginParen, location(), text()};
+      return Error{Error::Kind::ExpectedBeginParen, source(location()), text()};
     }
 
     if (!peek(Token::EndParen)) {
@@ -245,7 +245,7 @@ Result<ast::Ptr> Parser::parseFunction(bool visibility) {
     }
 
     if (!expect(Token::EndParen)) {
-      return Error{Error::Kind::ExpectedEndParen, location(), text()};
+      return Error{Error::Kind::ExpectedEndParen, source(location()), text()};
     }
 
     return formal_arguments;

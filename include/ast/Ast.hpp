@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <optional>
 #include <variant>
 
 #include "adt/SourceLocation.hpp"
@@ -34,24 +35,23 @@ struct Ast {
       std::variant<std::monostate, bool, int, Identifier, Lambda, Function, Let,
                    Binop, Unop, Call, Parens, Import, Module>;
 
-  SourceLocation *sl;
-  type::Ptr cached_type;
+  std::optional<SourceLocation *> sl;
+  std::optional<type::Ptr> cached_type;
   Variant variant;
 
   template <class... Args>
   Ast(SourceLocation *sl, Args &&...args) noexcept
-      : sl(sl), cached_type(nullptr), variant(std::forward<Args>(args)...) {}
+      : sl(sl), cached_type(std::nullopt),
+        variant(std::forward<Args>(args)...) {}
 
   template <class... Args>
   Ast(Args &&...args) noexcept
-      : sl(nullptr), cached_type(nullptr),
+      : sl(std::nullopt), cached_type(std::nullopt),
         variant(std::forward<Args>(args)...) {}
 
-  type::Ptr setCachedType(type::Ptr type = nullptr) noexcept {
-    if (type == nullptr) {
-      return cached_type;
-    }
-    return cached_type = type;
+  type::Ptr setCachedType(type::Ptr type) noexcept {
+    cached_type = type;
+    return cached_type.value();
   }
 
   template <class T> [[nodiscard]] bool holds() const noexcept {
