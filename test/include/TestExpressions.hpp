@@ -159,6 +159,7 @@ constexpr inline auto getAllTestCode() noexcept {
       {"fn g(a: Integer) { f(a, a); }\n"
        "fn f(a: Integer, b: Integer) { a + b; }",
        "g(3);", "6"},
+      {"module A {\n public fn f(a: Integer) { a + a; } \n}", "A::f(2);", "4"},
   };
 
   return std::to_array(expressions);

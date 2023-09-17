@@ -155,6 +155,7 @@ struct TypecheckAst {
     for (auto &expression : f.body) {
       auto result = typecheck(expression, env);
       if (result.recoverable()) {
+        env.popScope();
         return recover(result.unknown(), ptr, env.qualifyName(f.name), env);
       } else if (!result) {
         env.popScope();

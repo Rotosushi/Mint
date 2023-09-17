@@ -188,7 +188,7 @@ void UseBeforeDefMap::insert(Identifier ubd_name, Identifier ubd_def_name,
   // #NOTE: we allow multiple definitions to be bound to
   // the same undef name, however we want to prevent the
   // same definition being bound in the table under the
-  // same undef name twice.
+  // same def name twice.
   auto range = lookup(ubd_name);
   if (contains_definition(range, ubd_name, ubd_def_name))
     return;
