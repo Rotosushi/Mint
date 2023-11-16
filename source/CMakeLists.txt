@@ -76,6 +76,7 @@ target_include_directories(mint_common PUBLIC ${MINT_INCLUDE_DIR} ${LLVM_INCLUDE
 target_compile_options(mint_common PUBLIC ${CXX_OPTIONS} ${llvm_cxxflags})
 target_compile_features(mint_common PUBLIC cxx_std_23)
 target_link_options(mint_common PUBLIC 
+  -v
   ${llvm_ldflags} 
   ${llvm_system_libs}
 )

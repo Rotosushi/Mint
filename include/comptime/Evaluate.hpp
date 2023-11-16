@@ -18,7 +18,6 @@
 
 #include "adt/Result.hpp"
 #include "ast/Ast.hpp"
-#include "ir/value/Value.hpp"
 #include "type/Type.hpp"
 
 namespace mint {

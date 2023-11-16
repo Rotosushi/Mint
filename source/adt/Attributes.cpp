@@ -22,7 +22,7 @@ namespace mint {
 }
 
 auto Attributes::isPublic(bool state) noexcept -> bool {
-  return set[Public] = state;
+  return (set[Public] = state);
 }
 
 [[nodiscard]] auto Attributes::isPrivate() const noexcept -> bool {

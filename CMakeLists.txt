@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(Mint LANGUAGES C CXX VERSION 0.0.3 DESCRIPTION "A minimal interpreter")
+project(Mint LANGUAGES C CXX VERSION 0.0.3 DESCRIPTION "A toy programming language")
 
 message(STATUS "c++ standard: ${CMAKE_CXX_STANDARD}")
 
@@ -11,12 +11,11 @@ set(MINT_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 set(MINT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/source")
 set(MINT_RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
 
-set(WARNINGS -Wall -Wdeprecated -Wextra -Wpedantic -Wconversion -Werror)
-#set(CXX_OPTIONS ${WARNINGS})
-set(CXX_OPTIONS ${WARNINGS} -flto=auto -fuse-linker-plugin)
+set(WARNINGS -Wall -Wdeprecated -Wextra -Wpedantic -Wconversion)
+set(CXX_OPTIONS ${WARNINGS})
 
 # find dependencies
-find_package(LLVM 16 REQUIRED CONFIG)
+find_package(LLVM 17.0...18.0 REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION} in ${LLVM_DIR}")
 
@@ -51,6 +50,8 @@ execute_process(
 )
 separate_arguments(llvm_libs)
 
+message(STATUS "LLVM libraries ${llvm_libs}")
+
 
 execute_process(
   COMMAND llvm-config --ldflags 
@@ -65,13 +66,6 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 separate_arguments(llvm_system_libs)
-
-find_package(Boost 
-COMPONENTS unit_test_framework container
-REQUIRED 
-)
-
-message(STATUS "Found Boost ${Boost_VERSION} in ${Boost_INCLUDE_DIRS}")
 
 # create project wide configuration information
 execute_process(
