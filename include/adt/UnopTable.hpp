@@ -29,10 +29,6 @@
 namespace mint {
 class Environment;
 
-// #NOTE: operators only need to access scalar values at comptime.
-// However that might not be the case as the language grows,
-// #TODO: if Builtin Operators need access to any given value
-// and not just scalars, change this.
 using UnopEvalFn = ast::Ptr (*)(ast::Ptr &right);
 using UnopCodegenFn = llvm::Value *(*)(llvm::Value *right, Environment &env);
 

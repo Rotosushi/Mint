@@ -12,7 +12,7 @@ set(MINT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/source")
 set(MINT_RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
 
 set(WARNINGS -Wall -Wdeprecated -Wextra -Wpedantic -Wconversion)
-set(CXX_OPTIONS ${WARNINGS})
+set(CXX_OPTIONS ${WARNINGS} -fPIE)
 
 # find dependencies
 find_package(LLVM 17.0...18.0 REQUIRED CONFIG)
@@ -29,7 +29,7 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 # NOTE: we cannot add -fno-exceptions and use boost test.
 set(llvm_cxxflags 
   -I/usr/local/include 
-  #-fno-exceptions 
+  -fno-exceptions 
   -fno-rtti 
   -D_GNU_SOURCE 
   -D_DEBUG 
@@ -90,5 +90,27 @@ add_subdirectory(source)
 
 # build the mint_test executable
 if (MINT_BUILD_TESTS)
-  add_subdirectory(test)
+  find_package(Catch2 3 REQUIRED)
+
+  set(TEST_DIR ${PROJECT_SOURCE_DIR}/test)
+  set(TEST_INCLUDE_DIR ${TEST_DIR}/include)
+  set(TEST_SOURCE_DIR ${TEST_DIR}/source)
+
+  add_executable(mint_test
+    ${TEST_SOURCE_DIR}/REPL.cpp 
+
+    ${TEST_DIR}/main.cpp
+  )
+  target_include_directories(mint_test PUBLIC
+  ${TEST_INCLUDE_DIR}
+  ${MINT_INCLUDE_DIR}
+  )
+  target_link_libraries(mint_test
+    mint_common
+    Catch2::Catch2
+  )
+
+  include(CTest)
+  include(Catch)
+  catch_discover_tests(mint_test)
 endif()

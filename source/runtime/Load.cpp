@@ -21,9 +21,9 @@ namespace mint {
 auto createLLVMLoad(Environment &env, llvm::Type *type,
                     llvm::Value *source) noexcept -> llvm::Value * {
   // #NOTE: llvm immediate value's cannot be loaded.
-  // as load expects a pointer type, as far as I can tell,
+  // as load expects a pointer type. And as far as I can tell
   // llvm::Argument, and llvm::Constant are the only
-  // immediate values.
+  // immediate values produced by the compiler as of now.
   if ((llvm::dyn_cast<llvm::Argument>(source) != nullptr) ||
       (llvm::dyn_cast<llvm::Constant>(source) != nullptr)) {
     return source;

@@ -7,12 +7,14 @@
 .vscode/
 .scratch/
 
+
 # User-specific files
 *.rsuser
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
+include/boost
 
 source/scan/Scanner.cpp
 

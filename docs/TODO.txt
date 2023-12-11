@@ -1,12 +1,5 @@
 The immediate to do list (in no particular order)
 
-#TODO: move ir::detail::{Scalar, Parameter} out of the 
-  detail namespace, as they are used more extensively 
-  and outside of the ir itself.
-  #NOTE:
-  Scalar has been moved to ir/value as this makes sense.
-  however, where does Parameter live? 
-
 
 #TODO: add free function support, allow them
 to be coerced into lambda's for the purposes of

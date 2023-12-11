@@ -54,8 +54,7 @@
   well how do we not tie this parameter struct to either
   the repl or the compilation process?
 */
-#define BOOST_TEST_DYN_LINK
-#include "boost/test/unit_test.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include <sstream>
 
@@ -145,44 +144,40 @@ std::string_view extractFinalLine(std::string_view view) noexcept {
           static_cast<std::size_t>(std::distance(cursor.base(), end.base()))};
 }
 
-void testExpressionInREPL(TestCode &expression) {
-  std::stringstream input;
-  if (!expression.setup.empty())
-    input << expression.setup << "\n";
-  input << expression.test_code << "\n";
-  // input.put('\0');
-  [[maybe_unused]] auto inview = input.view();
-  std::stringstream output;
-  std::stringstream error_output;
-  std::stringstream log_output;
-
-  auto failed = mint::repl(&input, &output, &error_output, &log_output);
-  BOOST_REQUIRE(failed == EXIT_SUCCESS);
-
-  auto outview = output.view();
-  auto line = extractFinalLine(outview);
-  auto result = extractResult(line);
-
-  auto success = result == expression.expected_result;
-  BOOST_CHECK(success);
-  if (!success) {
-    std::cerr << "TestCase {\n";
-
-    if (expression.setup.size() > 0) {
-      std::cerr << "Setup: " << expression.setup << "\n";
-    }
-
-    std::cerr << "Test Expression: " << expression.test_code
-              << "\n Expected Result: " << expression.expected_result
-              << "\n Actual Result: " << result
-              << "\n}\nError: " << error_output.view() << "\n";
-  }
-}
-
-BOOST_AUTO_TEST_CASE(mint_repl) {
+TEST_CASE("Test REPL", "[integration]") {
   auto test_expressions = getAllTestCode();
 
   for (auto &expression : test_expressions) {
-    testExpressionInREPL(expression);
+    std::stringstream input;
+    if (!expression.setup.empty())
+      input << expression.setup << "\n";
+    input << expression.test_code << "\n";
+    // input.put('\0');
+    [[maybe_unused]] auto inview = input.view();
+    std::stringstream output;
+    std::stringstream error_output;
+    std::stringstream log_output;
+
+    auto failed = mint::repl(&input, &output, &error_output, &log_output);
+    REQUIRE(failed == EXIT_SUCCESS);
+
+    auto outview = output.view();
+    auto line = extractFinalLine(outview);
+    auto result = extractResult(line);
+
+    auto success = result == expression.expected_result;
+    CHECK(success);
+    if (!success) {
+      std::cerr << "TestCase {\n";
+
+      if (expression.setup.size() > 0) {
+        std::cerr << "Setup: " << expression.setup << "\n";
+      }
+
+      std::cerr << "Test Expression: " << expression.test_code
+                << "\n Expected Result: " << expression.expected_result
+                << "\n Actual Result: " << result
+                << "\n}\nError: " << error_output.view() << "\n";
+    }
   }
 }

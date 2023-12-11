@@ -96,7 +96,7 @@ struct TypecheckAst {
 
   // A lambdas type is the type of it's arguments and the
   // type of it's return value. the optional type annotation
-  // must match the retun type if present
+  // must match the return type if present
   Result<type::Ptr> operator()(ast::Lambda &l) noexcept {
     env.pushScope();
     type::Function::Arguments arg_types;
@@ -198,6 +198,12 @@ struct TypecheckAst {
       return Error{Error::Kind::NameAlreadyBoundInScope, ptr->sl, l.name};
     }
 
+    // If the expression fails to typecheck due to
+    // a name not having a definition, then we can
+    // delay failing to typecheck this let expression
+    // by using the UBD machinery. Only definitions
+    // can be delayed using the UBD machinery.
+    // (currently, let and functions are the only definitions)
     auto result = typecheck(l.affix, env);
     if (result.recoverable()) {
       return recover(result.unknown(), ptr, env.qualifyName(l.name), env);
@@ -219,7 +225,9 @@ struct TypecheckAst {
         !bound) {
       return bound.error();
     }
-
+    // since we just declared the type of a name, we can
+    // attempt to resolve the types of any names which
+    // depend on this name.
     if (auto failed = env.resolveTypeOfUseBeforeDef(env.qualifyName(l.name))) {
       return failed.value();
     }

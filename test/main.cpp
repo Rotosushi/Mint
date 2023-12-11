@@ -14,35 +14,10 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-
-/*
-  https://www.boost.org/doc/libs/1_82_0/libs/test/doc/html/boost_test/adv_scenarios/single_header_customizations/entry_point.html
-*/
-#define BOOST_TEST_MODULE mint
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_NO_MAIN
-#include "boost/test/unit_test.hpp"
+#include <catch2/catch_session.hpp>
 
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/TargetSelect.h"
-
-/*
-#NOTE:
-there is an unfavorable interaction with boost when compiling with
--fno-exceptions for whatever reason, and this function needs to be
-defined in that case, along with the macro.
-however I am fine having exceptions enabled within mint.
-they were turned off only because of using
-llvm-config --cxxflags to generate compilation flags for llvm compatibility.
-however, these don't seem to be strictly necessary when linking against
-llvm statically. (which makes sense)
-
-#define BOOST_NO_EXCEPTIONS
-#include "boost/throw_exception.hpp"
-void boost::throw_exception([[maybe_unused]] std::exception const &e) {
-  std::terminate();
-}
-*/
 
 int main(int argc, char *argv[]) {
   llvm::InitLLVM llvm{argc, argv};
@@ -51,5 +26,7 @@ int main(int argc, char *argv[]) {
   llvm::InitializeNativeTargetAsmPrinter();
   llvm::InitializeNativeTargetDisassembler();
 
-  return boost::unit_test::unit_test_main(&init_unit_test, argc, argv);
+  Catch::Session session;
+
+  return session.run(argc, argv);
 }

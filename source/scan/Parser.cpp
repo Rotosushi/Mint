@@ -253,7 +253,7 @@ Result<ast::Ptr> Parser::parseFunction(bool visibility) {
 
   auto arguments_result = parseArgumentList();
   if (!arguments_result) {
-    return recover(std::move(arguments_result.error()));
+    return recover(arguments_result.error());
   }
   auto &arguments = arguments_result.value();
 

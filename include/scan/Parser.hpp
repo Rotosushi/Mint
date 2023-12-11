@@ -96,9 +96,11 @@ class Parser {
 public:
 private:
   Environment *m_env;
-  // #TODO: do we want to hold all of the data from all of the files processed 
-  // in memory forever? or do we want to add a path to the source location 
+  // #TODO: do we want to hold all of the data from all of the files processed
+  // in memory forever? or do we want to add a path to the source location
   // and reopen and resource the bad line at the point it is needed?
+  // currently all input is buffered for the lifetime of the environment
+  // holding the parser.
   SourceBufferList m_sources;
   Lexer m_lexer;
   Token m_current_token;

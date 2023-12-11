@@ -18,7 +18,7 @@
 
 namespace mint {
 namespace type {
-class Type;
+struct Type;
 using Ptr = Type *;
 } // namespace type
 } // namespace mint

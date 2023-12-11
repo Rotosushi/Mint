@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-find_package(Boost 
-COMPONENTS unit_test_framework container
-REQUIRED 
-)
-
-message(STATUS "Found Boost ${Boost_VERSION} in ${Boost_INCLUDE_DIRS}")
+find_package(Catch2 3 REQUIRED)
 
 set(TEST_DIR ${PROJECT_SOURCE_DIR}/test)
 set(TEST_INCLUDE_DIR ${TEST_DIR}/include)
@@ -22,5 +17,9 @@ target_include_directories(mint_test PUBLIC
 )
 target_link_libraries(mint_test
   mint_common
-  ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+  Catch2::Catch2
 )
+
+include(CTest)
+include(Catch)
+catch_discover_tests(mint_test)

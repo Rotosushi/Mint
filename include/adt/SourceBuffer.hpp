@@ -29,10 +29,7 @@ public:
   using iterator = std::string::iterator;
 
 private:
-  // dependencies
   InputStream m_in;
-
-  // details
   mutable std::list<SourceLocation> m_locations;
   Location m_current_location;
   std::string m_buffer;

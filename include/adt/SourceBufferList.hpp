@@ -30,7 +30,7 @@ public:
   // and we want SourceBuffers to be alive after they are not
   // active, such that SourceLocation can maintain a string_view
   // into it's corresponding SourceBuffer. so we maintain a linked
-  // list to manage the lifetimes, and we simply keep a stack of
+  // list to manage the lifetimes, and we keep a stack of
   // pointers into the list.
 
   using List = std::list<SourceBuffer>;

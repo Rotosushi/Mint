@@ -3,6 +3,8 @@ features necessary for self hosting the compiler:
 booleans 
 integers 
 floats 
+characters 
+strings (utf-8)
 
 functions 
 conditionals 
@@ -14,6 +16,7 @@ generic types
 
 
 implementation details needed for self hosting the compiler:
+malloc
 vectors
 strings 
 linked lists 

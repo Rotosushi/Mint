@@ -190,7 +190,7 @@ public:
   // #TODO: if there is no scope name, and this is not global scope
   // walk up the scope tree until we find a scope name. That name is
   // the name of the local named scope. (anonymous scopes are not
-  // 'real' scopes, in the sense that they can be named. I think.)
+  // 'real' scopes, in the sense that they can be named. for now.)
   [[nodiscard]] auto name() const noexcept -> Identifier;
   [[nodiscard]] auto qualifiedName() const noexcept -> Identifier;
 
