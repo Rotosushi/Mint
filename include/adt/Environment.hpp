@@ -92,7 +92,9 @@ public:
   std::optional<fs::path> const &sourceFile() noexcept;
   void sourceFile(fs::path file) noexcept;
 
-  int emitLLVMIR(fs::path const &path) noexcept;
+  llvm::TargetMachine &targetMachine() noexcept {
+    return *m_llvm_target_machine;
+  }
 
   //**** Parser interface ****//
   auto endOfMirInput() const noexcept -> bool;
@@ -201,6 +203,11 @@ public:
 
   //**** LLVM Module Interface ****//
   auto getLLVMModule() noexcept -> llvm::Module &;
+
+  void printModule(llvm::raw_ostream &OS,
+                   llvm::AssemblyAnnotationWriter *AAW = nullptr,
+                   bool ShouldPreserveUseListOrder = false,
+                   bool IsForDebug = false) noexcept;
 
   auto getOrInsertGlobal(std::string_view name, llvm::Type *type) noexcept
       -> llvm::GlobalVariable *;

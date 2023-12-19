@@ -23,5 +23,6 @@
 #define MINT_GIT_REVISION "@Mint_GIT_REVISION@"
 #define MINT_RESOURCES_DIR "@MINT_RESOURCES_DIR@"
 #cmakedefine01 MINT_DEBUG
+#cmakedefine01 MINT_HOST_OS_LINUX
 // NOLINTEND
 // clang-format on

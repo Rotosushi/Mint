@@ -45,6 +45,7 @@ add_library(mint_common STATIC
   ${MINT_SOURCE_DIR}/comptime/Typecheck.cpp 
   ${MINT_SOURCE_DIR}/comptime/Evaluate.cpp 
   ${MINT_SOURCE_DIR}/comptime/Codegen.cpp 
+  ${MINT_SOURCE_DIR}/comptime/Link.cpp
 
   ${MINT_SOURCE_DIR}/runtime/Allocate.cpp 
   ${MINT_SOURCE_DIR}/runtime/ForwardDeclare.cpp 

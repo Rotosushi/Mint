@@ -1,16 +1,23 @@
 The immediate to do list (in no particular order)
 
+#TODO: add fuzz testing. specifically the parser, the REPL,
+and output executables. Though I admit I am struggling to 
+think of a way 
 
 #TODO: add free function support, allow them
 to be coerced into lambda's for the purposes of
-passing as arguments. and allow the user to specify 
-a main subroutine, in order to generate executables.
-  #TODO: typecheck, evaluate, codegen, forwardDeclare, print, clone ir:Function
+passing as arguments. 
 
+#TODO: allow the user to specify a main subroutine.
+
+#TODO: create native libraries and executables.
+
+#TODO: parallelize compilation.
+
+#TODO: replace tree style interpretation with something faster
+(bytecode interpretation, or JIT?)
 
 #TODO: add a compound body syntax to lambdas,
-  and properly handle lookup and ubd between 
-  lambda's and functions. 
-  (namely, enforce the non-capturing aspect of lambdas.)
+  and enforce the non-capturing aspect of lambdas.
 
 #TODO: add algebraic data types. Sum and Product.

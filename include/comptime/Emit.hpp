@@ -22,5 +22,7 @@ namespace fs = std::filesystem;
 namespace mint {
 class Environment;
 
-int emit(fs::path const &path, Environment &env) noexcept;
+int emitLLVMIR(fs::path const &path, Environment &env) noexcept;
+int emitX86Assembly(fs::path const &path, Environment &env) noexcept;
+int emitELF(fs::path const &path, Environment &env) noexcept;
 } // namespace mint

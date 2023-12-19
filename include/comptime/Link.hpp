@@ -16,10 +16,17 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <filesystem>
+#include <ostream>
+#include <string>
 #include <vector>
 
 namespace fs = std::filesystem;
 
 namespace mint {
-[[nodiscard]] int compile(std::vector<fs::path> const &filenames);
+/*
+ * Links together the given object files into an executable
+ */
+[[nodiscard]] int link(std::ostream &errout,
+                       std::vector<fs::path> const &object_filenames,
+                       std::string const &output_filename);
 } // namespace mint

@@ -16,7 +16,6 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #include "adt/Environment.hpp"
 #include "utility/CommandLineOptions.hpp"
-#include "utility/VerifyLLVM.hpp"
 
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -134,25 +133,6 @@ std::optional<fs::path> const &Environment::sourceFile() noexcept {
 
 void Environment::sourceFile(fs::path file) noexcept {
   m_file = std::move(file);
-}
-
-int Environment::emitLLVMIR(fs::path const &path) noexcept {
-  // #NOTE: verify returns true on failure,
-  // intended for use within an early return if statement.
-  MINT_ASSERT(!verify(*m_llvm_module, *m_error_output));
-
-  auto filename = path;
-  filename.replace_extension("ll");
-  std::error_code errc;
-  llvm::raw_fd_ostream outfile(filename.c_str(), errc);
-  if (errc) {
-    *m_error_output << "Could not open file: " << filename << " -- " << errc
-                    << "\n";
-    return EXIT_FAILURE;
-  }
-
-  m_llvm_module->print(outfile, nullptr);
-  return EXIT_SUCCESS;
 }
 
 //**** Parser interface ****//
@@ -385,6 +365,13 @@ auto Environment::internString(std::string_view string) noexcept
 //**** LLVM Module Interface ****//
 auto Environment::getLLVMModule() noexcept -> llvm::Module & {
   return *m_llvm_module;
+}
+
+void Environment::printModule(llvm::raw_ostream &OS,
+                              llvm::AssemblyAnnotationWriter *AAW,
+                              bool ShouldPreserveUseListOrder,
+                              bool IsForDebug) noexcept {
+  m_llvm_module->print(OS, AAW, ShouldPreserveUseListOrder, IsForDebug);
 }
 
 auto Environment::getOrInsertGlobal(std::string_view name,

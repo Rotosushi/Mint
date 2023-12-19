@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.20)
 
+message(STATUS "cmake system name: ${CMAKE_HOST_SYSTEM_NAME}")
+
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+  set(MINT_HOST_OS_LINUX 1)
+else ()
+  set(MINT_HOST_OS_LINUX 0)
+  message(FATAL_ERROR "unsupported host OS")
+endif()
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 

@@ -15,6 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
 #include "utility/Config.hpp"
 
 #include "llvm/Support/CommandLine.h"
@@ -27,9 +31,31 @@ namespace mint {
 inline cl::list<std::string> input_files(cl::Positional,
                                          cl::desc("<input file>"));
 
+inline cl::opt<std::string> output_file("o",
+                                        cl::desc("specify the output filename"),
+                                        cl::value_desc("<output file>"));
+
 inline cl::list<std::string>
     include_paths("I", cl::desc("add an include path to the search space"),
                   cl::value_desc("path"));
+
+enum class EmittedFiletype {
+  NativeOBJ,
+  NativeASM,
+  LLVM_IR,
+
+  // NativeStaticLibrary,
+  // NativeDynamicLibrary,
+};
+
+inline cl::opt<EmittedFiletype> emittedFiletype(
+    "emit", cl::desc("select the kind of file to emit"),
+    cl::values(clEnumValN(EmittedFiletype::LLVM_IR, "llvm-ir",
+                          "emit in llvm's intermediate representation"),
+               clEnumValN(EmittedFiletype::NativeASM, "native-asm",
+                          "emit in native asm"),
+               clEnumValN(EmittedFiletype::NativeOBJ, "native-obj",
+                          "emit a native object file")));
 
 inline void printVersion(llvm::raw_ostream &out) noexcept {
   out << "mint version: " << MINT_VERSION_MAJOR << "." << MINT_VERSION_MINOR

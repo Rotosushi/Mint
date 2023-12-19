@@ -21,8 +21,18 @@ How is main handled?
 It is my inclination to specify that main is a function call main 
 which is declared once and only once at global scope.
 
-additionally it is my inclination to specify that a program compiled 
-without a main is implicitly a library, and with a main is implicilty 
-an executable.
-but this misses the additional choice of shared vs. static library.
-so probably isn't better than assuming executable unless specified otherwise.
+mint assumes that when given an input file, it's goal is to create 
+an exectuable. unless told to create a static or shared library.
+
+the next question to ask is how do we produce an exectuable?
+
+well, for a single file it looks like:
+
+input_file -> compile -> object_file -> link -> exectuable 
+
+for multiple files it looks nearly identical
+
+input_files -> for each {compile} -> object_files -> link {all} -> executable
+
+the only difference is that each input file is turned into an object file,
+then all of these object files are given to the linker

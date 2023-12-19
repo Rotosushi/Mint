@@ -14,18 +14,23 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#include "comptime/Compile.hpp"
+#include <iostream>
+
 #include "adt/Environment.hpp"
 #include "comptime/Codegen.hpp"
+#include "comptime/Compile.hpp"
 #include "comptime/Emit.hpp"
 #include "comptime/Evaluate.hpp"
 #include "comptime/Parse.hpp"
 #include "comptime/Typecheck.hpp"
 
+#include "utility/CommandLineOptions.hpp"
+#include "utility/VerifyLLVM.hpp"
+
 namespace mint {
 [[nodiscard]] int compile(fs::path file);
 
-[[nodiscard]] int compile(std::vector<std::string> const &filenames) {
+[[nodiscard]] int compile(std::vector<fs::path> const &filenames) {
   // #TODO: spawn a thread for each file
   // #TODO: link all intermediate files together based on
   // given cli flags.
@@ -34,6 +39,7 @@ namespace mint {
       return EXIT_FAILURE;
     }
   }
+
   return EXIT_SUCCESS;
 }
 
@@ -56,8 +62,22 @@ namespace mint {
     return EXIT_FAILURE;
   }
 
-  if (emit(file, env) == EXIT_FAILURE) {
-    return EXIT_FAILURE;
+  // #NOTE: verify returns true on failure,
+  // intended for use within an early return if statement.
+  MINT_ASSERT(!verify(env.getLLVMModule(), env.errorStream()));
+
+  if (emittedFiletype == EmittedFiletype::NativeOBJ) {
+    if (emitELF(file, env) == EXIT_FAILURE) {
+      return EXIT_FAILURE;
+    }
+  } else if (emittedFiletype == EmittedFiletype::NativeASM) {
+    if (emitX86Assembly(file, env) == EXIT_FAILURE) {
+      return EXIT_FAILURE;
+    }
+  } else {
+    if (emitLLVMIR(file, env) == EXIT_FAILURE) {
+      return EXIT_FAILURE;
+    }
   }
 
   return EXIT_SUCCESS;

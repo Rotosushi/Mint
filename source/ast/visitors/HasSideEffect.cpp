@@ -17,6 +17,13 @@
 #include "ast/visitors/HasSideEffect.hpp"
 
 namespace mint::ast {
+/*
+  Returns true when the given ast has a side effect on the
+  visible state of the program.
+
+  #NOTE: currently; defining a name, defining a module, and
+  importing a file are the only side effects handled.
+*/
 struct HasSideEffect {
   ast::Ptr &ptr;
 

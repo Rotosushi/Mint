@@ -16,6 +16,7 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "comptime/Compile.hpp"
+#include "comptime/Link.hpp"
 #include "comptime/Repl.hpp"
 #include "utility/CommandLineOptions.hpp"
 
@@ -35,5 +36,32 @@ auto main(int argc, char **argv) -> int {
   if (mint::input_files.empty())
     return mint::repl();
 
-  return mint::compile(mint::input_files);
+  std::vector<fs::path> input_paths;
+  for (auto &path : mint::input_files) {
+    input_paths.emplace_back(std::move(path));
+  }
+
+  if (mint::compile(input_paths) == EXIT_FAILURE) {
+    return EXIT_FAILURE;
+  }
+
+  if (mint::output_file.empty()) {
+    mint::output_file = (fs::current_path() /= "a.out").string();
+  }
+
+  if (mint::emittedFiletype == mint::EmittedFiletype::NativeOBJ) {
+    std::vector<fs::path> object_filenames;
+    for (const auto &filename : input_paths) {
+      fs::path object_filename = filename;
+      object_filename.replace_extension(".o");
+      object_filenames.emplace_back(std::move(object_filename));
+    }
+
+    if (mint::link(std::cerr, object_filenames, mint::output_file) ==
+        EXIT_FAILURE) {
+      return EXIT_FAILURE;
+    }
+  }
+
+  return EXIT_SUCCESS;
 }
