@@ -19,7 +19,9 @@
 #include "comptime/Typecheck.hpp"
 #include "runtime/Allocate.hpp"
 #include "runtime/ForwardDeclare.hpp"
+#include "runtime/InlineAsm.hpp"
 #include "runtime/Load.hpp"
+#include "runtime/sys/Exit.hpp"
 #include "utility/VerifyLLVM.hpp"
 
 namespace mint {
@@ -205,7 +207,14 @@ struct CodegenAst {
       result_value = result.value();
     }
 
-    env.createLLVMReturn(result_value);
+    if (f.name == env.getIdentifier("main")) {
+      sysExit(env, result_value);
+      // #NOTE: the ret instruction is unreachable,
+      // and necessary for llvm's static analysis.
+      env.createLLVMReturn();
+    } else {
+      env.createLLVMReturn(result_value);
+    }
 
     env.exchangeInsertionPoint(temp_ip);
     env.popScope();
@@ -371,7 +380,7 @@ struct CodegenAst {
 
     auto llvm_function_type =
         llvm::cast<llvm::FunctionType>(type::toLLVM(function_type, env));
-    return env.createLLVMCall(llvm_function_type, callee, actual_arguments);
+    return env.createLLVMCall({llvm_function_type, callee}, actual_arguments);
   }
 
   // codegen whatever is inside the parens

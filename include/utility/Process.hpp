@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <string>
+#include <utility>
 #include <vector>
 
+#include "utility/Abort.hpp"
 #include "utility/Config.hpp"
 
 #if defined(MINT_HOST_OS_LINUX)
@@ -30,22 +31,25 @@ inline int process(const char *pathname, std::vector<const char *> &arguments) {
 
   if (pid < 0) {
     perror("a call to fork() failed");
+    abort("a call to fork() failed");
   } else if (pid == 0) {
     // child process
     execvp(pathname, const_cast<char *const *>(arguments.data()));
     // #NOTE: unreachable on successful call to execvp
     perror("a call to execvp(...) failed");
+    abort("a call to execvp(...) failed");
   } else {
     // parent process
     int status;
     if (waitpid(pid, &status, 0) == -1) {
       perror("a call to waitpid(...) failed.");
-      return EXIT_FAILURE;
+      abort("a call to waitpid(...) failed.");
     }
 
     // #TODO: I think I prefer the following,
     // except that EXIT_FAILURE expands to 1
-    // not -1.
+    // not -1. so we cannot distingush between
+    // a error program, and
     // if (WEXITED(status))
     //   return WEXITSTATUS(status);
     // else

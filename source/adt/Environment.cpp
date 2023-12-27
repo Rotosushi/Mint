@@ -356,9 +356,7 @@ auto Environment::exchangeInsertionPoint(InsertionPoint point) noexcept
   return result;
 }
 
-//**** String Set Interface ****//
-auto Environment::internString(std::string_view string) noexcept
-    -> std::string_view {
+auto Environment::internString(std::string_view string) -> std::string_view {
   return m_string_set.emplace(string);
 }
 
@@ -394,6 +392,10 @@ auto Environment::getOrInsertFunction(std::string_view name,
 
 //**** LLVM IRBuilder interface ****//
 // types
+auto Environment::getLLVMVoidType() noexcept -> llvm::Type * {
+  return m_llvm_ir_builder->getVoidTy();
+}
+
 auto Environment::getLLVMNilType() noexcept -> llvm::IntegerType * {
   return m_llvm_ir_builder->getInt1Ty();
 }
@@ -404,6 +406,10 @@ auto Environment::getLLVMBooleanType() noexcept -> llvm::IntegerType * {
 
 auto Environment::getLLVMIntegerType() noexcept -> llvm::IntegerType * {
   return m_llvm_ir_builder->getInt32Ty();
+}
+
+auto Environment::getLLVMSizeType() noexcept -> llvm::IntegerType * {
+  return m_llvm_ir_builder->getInt64Ty();
 }
 
 auto Environment::getLLVMFunctionType(
@@ -427,7 +433,8 @@ auto Environment::getLLVMBoolean(bool value) noexcept -> llvm::ConstantInt * {
   return m_llvm_ir_builder->getInt1(value);
 }
 
-auto Environment::getLLVMInteger(int value) noexcept -> llvm::ConstantInt * {
+auto Environment::getLLVMInteger(unsigned value) noexcept
+    -> llvm::ConstantInt * {
   return m_llvm_ir_builder->getInt32(value);
 }
 
@@ -561,13 +568,12 @@ auto Environment::createLLVMCall(llvm::Function *callee,
   return m_llvm_ir_builder->CreateCall(callee, arguments, name, fp_math_tag);
 }
 
-auto Environment::createLLVMCall(llvm::FunctionType *type, llvm::Value *value,
+auto Environment::createLLVMCall(llvm::FunctionCallee callee,
                                  llvm::ArrayRef<llvm::Value *> arguments,
                                  llvm::Twine const &name,
                                  llvm::MDNode *fp_math_tag) noexcept
     -> llvm::CallInst * {
-  return m_llvm_ir_builder->CreateCall(type, value, arguments, name,
-                                       fp_math_tag);
+  return m_llvm_ir_builder->CreateCall(callee, arguments, name, fp_math_tag);
 }
 
 auto Environment::createLLVMReturn(llvm::Value *value) noexcept
@@ -576,6 +582,34 @@ auto Environment::createLLVMReturn(llvm::Value *value) noexcept
     return m_llvm_ir_builder->CreateRetVoid();
   else
     return m_llvm_ir_builder->CreateRet(value);
+}
+
+auto Environment::createLLVMTrunc(llvm::Value *value,
+                                  llvm::Type *destination_type,
+                                  const llvm::Twine &name) noexcept
+    -> llvm::Value * {
+  return m_llvm_ir_builder->CreateTrunc(value, destination_type, name);
+}
+
+auto Environment::createLLVMZExt(llvm::Value *value,
+                                 llvm::Type *destination_type,
+                                 const llvm::Twine &name) noexcept
+    -> llvm::Value * {
+  return m_llvm_ir_builder->CreateZExt(value, destination_type, name);
+}
+
+auto Environment::createLLVMSExt(llvm::Value *value,
+                                 llvm::Type *destination_type,
+                                 const llvm::Twine &name) noexcept
+    -> llvm::Value * {
+  return m_llvm_ir_builder->CreateSExt(value, destination_type, name);
+}
+
+auto Environment::createLLVMBitcast(llvm::Value *value,
+                                    llvm::Type *destination_type,
+                                    const llvm::Twine &name) noexcept
+    -> llvm::Value * {
+  return m_llvm_ir_builder->CreateBitCast(value, destination_type, name);
 }
 
 } // namespace mint

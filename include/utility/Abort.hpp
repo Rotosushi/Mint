@@ -22,6 +22,13 @@
 
 namespace mint {
 [[noreturn]] inline void abort(
+    std::source_location location = std::source_location::current()) noexcept {
+  log(std::cerr, "abort", location);
+  MINT_ASSERT(false && "abort");
+  std::abort();
+}
+
+[[noreturn]] inline void abort(
     std::string_view message,
     std::source_location location = std::source_location::current()) noexcept {
   log(std::cerr, message, location);

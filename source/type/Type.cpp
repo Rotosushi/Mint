@@ -115,12 +115,15 @@ struct TypePrintVisitor {
 
     auto size = function.arguments.size();
     auto index = 0U;
-    for (auto type : function.arguments) {
-      out << type;
+    if (size == 0) {
+      out << "Nil";
+    } else
+      for (auto type : function.arguments) {
+        out << type;
 
-      if (index++ < (size - 1))
-        out << ", ";
-    }
+        if (index++ < (size - 1))
+          out << ", ";
+      }
 
     out << " -> " << function.result_type;
   }
@@ -161,8 +164,14 @@ struct TypeToLLVMVisitor {
       arguments.emplace_back(toLLVM(type, env));
     }
 
-    return env.getLLVMFunctionType(toLLVM(function.result_type, env),
-                                   std::move(arguments));
+    // #NOTE:
+    // Nil is equivalent to void as a function return type.
+    if (function.result_type == env.getNilType()) {
+      return env.getLLVMFunctionType(env.getLLVMVoidType(),
+                                     std::move(arguments));
+    } else
+      return env.getLLVMFunctionType(toLLVM(function.result_type, env),
+                                     std::move(arguments));
   }
 
   llvm::Type *operator()([[maybe_unused]] Lambda &lambda) noexcept {

@@ -6,7 +6,8 @@
 # User-specific folders
 .vscode/
 .scratch/
-
+resources/*.o
+resources/*.s
 
 # User-specific files
 *.rsuser

@@ -91,6 +91,12 @@ auto Error::KindToView(Error::Kind kind) noexcept -> std::string_view {
 
   case Error::Kind::ResultTypeMismatch:
     return "Result Type annotation doesn't match computed type";
+  case Error::Kind::MainReturnTypeMismatch:
+    return "main function must return an Integer Type";
+  case Error::Kind::MainAnnotatedTypeMismatch:
+    return "main function must return an Integer Type";
+  case Error::Kind::MainArgumentTypesMismatch:
+    return "main function cannot accept arguments";
 
   case Error::Kind::CannotCallType:
     return "Cannot Call object";

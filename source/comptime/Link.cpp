@@ -77,9 +77,9 @@ so, as a starting point, this function will:
                            std::ios_base::out | std::ios_base::trunc};
   output_file.close();
 
+  // #TODO: support more than ld, and don't have the selction hardcoded.
   std::vector<const char *> ld_args = {
-      "ld",   "-m", "elf_x86_64",           "--entry",
-      "main", "-o", output_filename.c_str()};
+      "ld", "-m", "elf_x86_64", "-e", "main", "-o", output_filename.c_str()};
   for (auto const &object_filename : object_filenames) {
     ld_args.push_back(object_filename.c_str());
   }

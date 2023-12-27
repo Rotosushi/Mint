@@ -43,7 +43,7 @@ enum class EmittedFiletype {
   NativeOBJ,
   NativeASM,
   LLVM_IR,
-
+  // MintIR?
   // NativeStaticLibrary,
   // NativeDynamicLibrary,
 };
@@ -52,9 +52,9 @@ inline cl::opt<EmittedFiletype> emittedFiletype(
     "emit", cl::desc("select the kind of file to emit"),
     cl::values(clEnumValN(EmittedFiletype::LLVM_IR, "llvm-ir",
                           "emit in llvm's intermediate representation"),
-               clEnumValN(EmittedFiletype::NativeASM, "native-asm",
+               clEnumValN(EmittedFiletype::NativeASM, "asm",
                           "emit in native asm"),
-               clEnumValN(EmittedFiletype::NativeOBJ, "native-obj",
+               clEnumValN(EmittedFiletype::NativeOBJ, "obj",
                           "emit a native object file")));
 
 inline void printVersion(llvm::raw_ostream &out) noexcept {

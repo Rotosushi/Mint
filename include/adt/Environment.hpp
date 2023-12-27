@@ -198,8 +198,8 @@ public:
   auto exchangeInsertionPoint(InsertionPoint point = InsertionPoint{}) noexcept
       -> InsertionPoint;
 
-  //**** LLVM String Set Interface ****//
-  auto internString(std::string_view string) noexcept -> std::string_view;
+  //**** LLVM StringSet Interface ****//
+  auto internString(std::string_view string) -> std::string_view;
 
   //**** LLVM Module Interface ****//
   auto getLLVMModule() noexcept -> llvm::Module &;
@@ -218,9 +218,11 @@ public:
 
   //**** LLVM IRBuilder interface ****//
   // types
+  auto getLLVMVoidType() noexcept -> llvm::Type *;
   auto getLLVMNilType() noexcept -> llvm::IntegerType *;
   auto getLLVMBooleanType() noexcept -> llvm::IntegerType *;
   auto getLLVMIntegerType() noexcept -> llvm::IntegerType *;
+  auto getLLVMSizeType() noexcept -> llvm::IntegerType *;
 
   auto getLLVMFunctionType(llvm::Type *result_type,
                            llvm::ArrayRef<llvm::Type *> argument_types) noexcept
@@ -231,7 +233,7 @@ public:
   // values
   auto getLLVMNil() noexcept -> llvm::ConstantInt *;
   auto getLLVMBoolean(bool value) noexcept -> llvm::ConstantInt *;
-  auto getLLVMInteger(int value) noexcept -> llvm::ConstantInt *;
+  auto getLLVMInteger(unsigned value) noexcept -> llvm::ConstantInt *;
 
   // instructions
   auto createLLVMNeg(llvm::Value *right, llvm::Twine const &name = "neg",
@@ -313,17 +315,34 @@ public:
   // function related instructions
   auto createLLVMCall(llvm::Function *callee,
                       llvm::ArrayRef<llvm::Value *> arguments,
-                      llvm::Twine const &name = "call",
+                      llvm::Twine const &name = "",
                       llvm::MDNode *fp_math_tag = nullptr) noexcept
       -> llvm::CallInst *;
 
-  auto createLLVMCall(llvm::FunctionType *type, llvm::Value *value,
+  auto createLLVMCall(llvm::FunctionCallee callee,
                       llvm::ArrayRef<llvm::Value *> arguments,
-                      llvm::Twine const &name = "call",
+                      llvm::Twine const &name = "",
                       llvm::MDNode *fp_math_tag = nullptr) noexcept
       -> llvm::CallInst *;
 
   auto createLLVMReturn(llvm::Value *value = nullptr) noexcept
       -> llvm::ReturnInst *;
+
+  // casting related instructions
+  auto createLLVMTrunc(llvm::Value *value, llvm::Type *destination_type,
+                       const llvm::Twine &name = "trunc") noexcept
+      -> llvm::Value *;
+
+  auto createLLVMZExt(llvm::Value *value, llvm::Type *destination_type,
+                      const llvm::Twine &name = "zext") noexcept
+      -> llvm::Value *;
+
+  auto createLLVMSExt(llvm::Value *value, llvm::Type *destination_type,
+                      const llvm::Twine &name = "sext") noexcept
+      -> llvm::Value *;
+
+  auto createLLVMBitcast(llvm::Value *value, llvm::Type *destination_type,
+                         const llvm::Twine &name = "bitcast") noexcept
+      -> llvm::Value *;
 };
 } // namespace mint

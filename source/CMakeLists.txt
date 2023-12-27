@@ -47,8 +47,10 @@ add_library(mint_common STATIC
   ${MINT_SOURCE_DIR}/comptime/Codegen.cpp 
   ${MINT_SOURCE_DIR}/comptime/Link.cpp
 
+  ${MINT_SOURCE_DIR}/runtime/sys/Exit.cpp
   ${MINT_SOURCE_DIR}/runtime/Allocate.cpp 
   ${MINT_SOURCE_DIR}/runtime/ForwardDeclare.cpp 
+  ${MINT_SOURCE_DIR}/runtime/InlineAsm.cpp 
   ${MINT_SOURCE_DIR}/runtime/Load.cpp 
   ${MINT_SOURCE_DIR}/runtime/Store.cpp 
 

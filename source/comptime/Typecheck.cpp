@@ -137,44 +137,79 @@ struct TypecheckAst {
     if (auto found = env.lookupLocalBinding(f.name)) {
       return Error{Error::Kind::NameAlreadyBoundInScope, ptr->sl, f.name};
     }
+    type::Ptr result_type = env.getNilType();
+    type::Function::Arguments arg_types;
 
     env.pushScope();
-    type::Function::Arguments arg_types;
-    arg_types.reserve(f.arguments.size());
-    for (auto &arg : f.arguments) {
-      arg_types.emplace_back(arg.type);
-      env.declareName(arg);
-    }
-
-    // #TODO: add an explicit return statement
-    // #NOTE: the final term in the body is assumed
-    // to be the result type.
-    // #NOTE: if there are zero expressions in the body,
-    // it is as if the body only contains nil.
-    type::Ptr result_type = env.getNilType();
-    for (auto &expression : f.body) {
-      auto result = typecheck(expression, env);
-      if (result.recoverable()) {
-        env.popScope();
-        return recover(result.unknown(), ptr, env.qualifyName(f.name), env);
-      } else if (!result) {
-        env.popScope();
-        return result;
+    if (f.name == env.getIdentifier("main")) {
+      if (!f.arguments.empty()) {
+        return Error{Error::Kind::MainArgumentTypesMismatch, ptr->sl, ""};
       }
 
-      result_type = result.value();
+      for (auto &expression : f.body) {
+        auto result = typecheck(expression, env);
+        if (result.recoverable()) {
+          env.popScope();
+          return recover(result.unknown(), ptr, env.qualifyName(f.name), env);
+        } else if (!result) {
+          env.popScope();
+          return result;
+        }
+
+        result_type = result.value();
+      }
+
+      if (!type::equals(result_type, env.getIntegerType())) {
+        std::stringstream msg;
+        msg << "Actual Type [" << result_type << "]";
+        return Error{Error::Kind::MainReturnTypeMismatch, ptr->sl, msg.view()};
+      }
+
+      if (f.annotation &&
+          !type::equals(f.annotation.value(), env.getIntegerType())) {
+        std::stringstream msg;
+        msg << "Annotated Type [" << f.annotation.value() << "]";
+        return Error{Error::Kind::MainAnnotatedTypeMismatch, ptr->sl,
+                     msg.view()};
+      }
+
+      result_type = env.getNilType();
+    } else {
+      arg_types.reserve(f.arguments.size());
+      for (auto &arg : f.arguments) {
+        arg_types.emplace_back(arg.type);
+        env.declareName(arg);
+      }
+
+      // #TODO: add an explicit return statement
+      // #NOTE: the final term in the body is assumed
+      // to be the result type.
+      // #NOTE: if there are zero expressions in the body,
+      // it is as if the body only contains the nil constant.
+      for (auto &expression : f.body) {
+        auto result = typecheck(expression, env);
+        if (result.recoverable()) {
+          env.popScope();
+          return recover(result.unknown(), ptr, env.qualifyName(f.name), env);
+        } else if (!result) {
+          env.popScope();
+          return result;
+        }
+
+        result_type = result.value();
+      }
+
+      if (f.annotation) {
+        auto type = f.annotation.value();
+        if (!type::equals(type, result_type)) {
+          std::stringstream msg;
+          msg << "Annotated Type [" << type << "], ";
+          msg << "Actual Type [" << result_type << "]";
+          return Error{Error::Kind::AnnotatedTypeMismatch, ptr->sl, msg.view()};
+        }
+      }
     }
     env.popScope();
-
-    if (f.annotation) {
-      auto type = f.annotation.value();
-      if (!type::equals(type, result_type)) {
-        std::stringstream msg;
-        msg << "Annotated Type [" << type << "], ";
-        msg << "Actual Type [" << result_type << "]";
-        return Error{Error::Kind::AnnotatedTypeMismatch, ptr->sl, msg.view()};
-      }
-    }
 
     auto function_type = env.getFunctionType(result_type, std::move(arg_types));
 

@@ -95,6 +95,9 @@ public:
 
     // Function Errors
     ResultTypeMismatch,
+    MainReturnTypeMismatch,
+    MainAnnotatedTypeMismatch,
+    MainArgumentTypesMismatch,
 
     // Call errors
     CannotCallType,
