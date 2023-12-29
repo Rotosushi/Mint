@@ -33,9 +33,37 @@ create an executable or library. so we can assume some things.
 
 what we cannot assume is that we have the full list of dependent
 files just given the list of source files as supplied by the
-caller of mint itself. we are fine assuming that a call to link
+caller of mint itself. (importing the standard library must happen
+implicitly, for instance. This can be extended to the point
+where the user only needs to ask to compile the main file, and
+this will by definition, compile and link all source files
+which main depends upon.)
+we are fine assuming that a call to link
 supplies all of the needed object files, we just need to have a
 step which generates a full listing at some point.
+it seems obvious to say, well, just add a function call at the
+point where a file is imported which logs the imported source
+file, then the list gets built as the program is compiled.
+This however comes with some complications, firstly if we are
+compiling multiple source files on multiple threads, how do we
+synchronize this list of source files between threads, and how
+is this data returned to the thread which calls link?
+since we are following the model of one Environment per thread,
+and the list of source files which has been imported is presumably
+stored per environment.
+we need to worry about symbols being defined correctly when
+they are used in multiple translation units.
+i think this is solved by the fact that we parse the imported
+file itself when we import into a new TU
+
+not trying to define a symbol twice accross all translation units.
+I think this is solved by the fact that we only forward declare any
+symbol which is imported.
+
+and supplying each produced object file to the link step.
+This is the tricky bit, I think we need a set of filenames
+which are visible and modifyable from each thread which has
+a translation unit.
 
 as a first step, given a single file which is enough to produce
 an exectuable, then we are fine with a more basic form of the

@@ -18,7 +18,7 @@ message(STATUS "c++ standard: ${CMAKE_CXX_STANDARD}")
 
 set(MINT_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 set(MINT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/source")
-set(MINT_RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
+set(MINT_RESOURCES_DIR "${PROJECT_SOURCE_DIR}/test/resources")
 
 set(WARNINGS -Wall -Wdeprecated -Wextra -Wpedantic -Wconversion)
 set(CXX_OPTIONS ${WARNINGS} -fPIE)

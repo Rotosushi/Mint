@@ -14,15 +14,28 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-// NOLINTBEGIN
-// clang-format off
-#define MINT_VERSION_MAJOR 0
-#define MINT_VERSION_MINOR 0
-#define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "e8406d324ac39c36aa3bd361fecedd2c312d126a"
-#define MINT_RESOURCES_DIR "/home/cade/projects/Mint/test/resources"
-#define MINT_DEBUG 1
-#define MINT_HOST_OS_LINUX 1
-// NOLINTEND
-// clang-format on
+#include <catch2/catch_test_macros.hpp>
+
+#include <array>
+#include <sstream>
+#include <string_view>
+
+#include "adt/Environment.hpp"
+#include "utility/Config.hpp"
+#include "utility/Process.hpp"
+
+struct CompiledCodeTestFile {
+  std::string_view filename;
+  uint8_t expected_result;
+
+  constexpr CompiledCodeTestFile(std::string_view filename,
+                                 uint8_t expected_result) noexcept
+      : filename(filename), expected_result(expected_result) {}
+};
+
+constexpr inline auto getCompiledCodeTestCode() noexcept {
+  CompiledCodeTestFile expressions[] = {
+      {"fn main() { 42; }", 42U},
+  };
+  return std::to_array(expressions);
+}
