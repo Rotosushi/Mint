@@ -20,8 +20,9 @@
 #define MINT_VERSION_MAJOR 0
 #define MINT_VERSION_MINOR 0
 #define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "e8406d324ac39c36aa3bd361fecedd2c312d126a"
+#define MINT_GIT_REVISION "354023a3bd44e1aa50e5cbc8919cf430495c78f6"
 #define MINT_RESOURCES_DIR "/home/cade/projects/Mint/test/resources"
+#define MINT_BUILD_DIR "/home/cade/projects/Mint/build"
 #define MINT_DEBUG 1
 #define MINT_HOST_OS_LINUX 1
 // NOLINTEND

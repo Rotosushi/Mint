@@ -19,6 +19,9 @@ message(STATUS "c++ standard: ${CMAKE_CXX_STANDARD}")
 set(MINT_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 set(MINT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/source")
 set(MINT_RESOURCES_DIR "${PROJECT_SOURCE_DIR}/test/resources")
+set(MINT_BUILD_DIR "${PROJECT_BINARY_DIR}")
+
+message(STATUS "build directory: ${MINT_BUILD_DIR}")
 
 set(WARNINGS -Wall -Wdeprecated -Wextra -Wpedantic -Wconversion)
 set(CXX_OPTIONS ${WARNINGS} -fPIE)
@@ -106,6 +109,7 @@ if (MINT_BUILD_TESTS)
   set(TEST_SOURCE_DIR ${TEST_DIR}/source)
 
   add_executable(mint_test
+    ${TEST_SOURCE_DIR}/CompiledCode.cpp
     ${TEST_SOURCE_DIR}/REPL.cpp 
 
     ${TEST_DIR}/main.cpp

@@ -27,6 +27,10 @@
 #include <unistd.h>
 namespace mint {
 inline int process(const char *pathname, std::vector<const char *> &arguments) {
+  if (arguments.back() != nullptr) {
+    arguments.emplace_back(nullptr);
+  }
+
   pid_t pid = fork();
 
   if (pid < 0) {
@@ -40,21 +44,17 @@ inline int process(const char *pathname, std::vector<const char *> &arguments) {
     abort("a call to execvp(...) failed");
   } else {
     // parent process
-    int status;
-    if (waitpid(pid, &status, 0) == -1) {
+    siginfo_t status;
+    if (waitid(P_PID, (id_t)pid, &status, WEXITED | WSTOPPED) == -1) {
       perror("a call to waitpid(...) failed.");
       abort("a call to waitpid(...) failed.");
     }
 
-    // #TODO: I think I prefer the following,
-    // except that EXIT_FAILURE expands to 1
-    // not -1. so we cannot distingush between
-    // a error program, and
-    // if (WEXITED(status))
-    //   return WEXITSTATUS(status);
-    // else
-    //   return EXIT_FAILURE;
-    return WEXITSTATUS(status);
+    if (status.si_code == CLD_EXITED) {
+      return status.si_status;
+    } else {
+      abort("process possibly killed by signal.");
+    }
   }
 }
 } // namespace mint

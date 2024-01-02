@@ -287,7 +287,7 @@ std::string_view extractFinalLine(std::string_view view) noexcept {
           static_cast<std::size_t>(std::distance(cursor.base(), end.base()))};
 }
 
-TEST_CASE("Test REPL", "[integration]") {
+TEST_CASE("Test Repl", "[integration]") {
   auto test_expressions = getReplTestCode();
 
   for (auto &expression : test_expressions) {

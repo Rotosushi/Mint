@@ -114,6 +114,15 @@ so, as a starting point, this function will:
   ld_args.push_back((const char *)nullptr);
 
   int result = process("ld", ld_args);
+
+  for (auto const &object_file : object_filenames) {
+    std::error_code errc;
+    if (fs::remove(object_file, errc) == false) {
+      std::cerr << "Unable to delete object file [" << object_file << "]"
+                << " error [" << errc << "]\n";
+    }
+  }
+
   return result;
 }
 } // namespace mint

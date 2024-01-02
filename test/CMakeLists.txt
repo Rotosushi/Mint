@@ -7,8 +7,7 @@ set(TEST_INCLUDE_DIR ${TEST_DIR}/include)
 set(TEST_SOURCE_DIR ${TEST_DIR}/source)
 
 add_executable(mint_test
-  ${TEST_SOURCE_DIR}/CompiledCode.cpp
-
+${TEST_SOURCE_DIR}/CompiledCode.cpp
   ${TEST_SOURCE_DIR}/REPL.cpp 
 
   main.cpp
