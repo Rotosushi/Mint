@@ -24,6 +24,8 @@
 #define MINT_RESOURCES_DIR "@MINT_RESOURCES_DIR@"
 #define MINT_BUILD_DIR "@MINT_BUILD_DIR@"
 #cmakedefine01 MINT_DEBUG
-#cmakedefine01 MINT_HOST_OS_LINUX
+#cmakedefine MINT_HOST_OS_LINUX
+#cmakedefine MINT_HOST_OS_WINDOWS
+#cmakedefine MINT_HOST_OS_APPLE
 // NOLINTEND
 // clang-format on

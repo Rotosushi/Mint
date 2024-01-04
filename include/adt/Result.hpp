@@ -33,6 +33,10 @@ template <class T> class Result {
       // "is this result recovered"
       // however its also simple to ask "is the error recovered"
       // it just might not make sense to have a recovered error.
+      // what it changes is that we need two if statements to
+      // get the Recovered out of the Error, and only one to
+      // get it out of the Result itself. Thus the code inspecting
+      // Results is simpler everywhere.
       std::variant<T, Recoverable, Recovered, Error>;
 
   Variant data;

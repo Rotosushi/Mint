@@ -1,0 +1,43 @@
+// Copyright (C) 2024 Cade Weinberg
+// 
+// This file is part of Mint.
+// 
+// Mint is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Mint is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+
+could the assembly be represented by integers which are bitmasked 
+to mutate and read/write the parts of the instruction?
+
+this would work for many common instructions, but how would 
+the stack, pointers, functions, globals, etc be represented?
+
+I assume that we can represent them as data structures in memory 
+up until the point where we are writing out the assembly, where 
+they are represented in the same way that they are already represented.
+
+the only reason we need to encode the instructions themselves would be 
+if we wanted to do something with them other than emit the assembly to 
+a file.
+
+I think this could work, optimizations would be another story, 
+we would want methods to easily rearrange instructions and 
+segments of instructions in order to carry out the optimizations.
+which is also feasible.
+
+llvm allows optimizations to be written in an object oriented manner,
+which is something I am used to. 
+what I am talking about doing is distinctly not that, I guess it would 
+be procedural?
+
+I am talking about a representation which is closer to a binary format.
+at least for the instructions. 

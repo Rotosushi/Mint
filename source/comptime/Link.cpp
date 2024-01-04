@@ -78,15 +78,6 @@ so, as a starting point, this function will:
 [[nodiscard]] int link(std::ostream &errout,
                        std::vector<fs::path> const &object_filenames,
                        std::string const &output_filename) {
-  // auto remove_object_file = [&object_filenames]() {
-  //   for (auto const &object_filename : object_filenames) {
-  //     std::error_code errc;
-  //     if (!fs::remove(object_filename, errc)) {
-  //       abort(errc);
-  //     }
-  //   }
-  // };
-
   if (object_filenames.empty()) {
     errout << "No object files given to link. No work to be done.\n";
     return EXIT_SUCCESS;
@@ -111,7 +102,6 @@ so, as a starting point, this function will:
   for (auto const &object_filename : object_filenames) {
     ld_args.push_back(object_filename.c_str());
   }
-  ld_args.push_back((const char *)nullptr);
 
   int result = process("ld", ld_args);
 

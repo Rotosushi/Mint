@@ -33,9 +33,9 @@ auto main(int argc, char **argv) -> int {
   llvm::cl::SetVersionPrinter(mint::printVersion);
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
-  if (mint::input_files.empty())
+  if (mint::input_files.empty()) {
     return mint::repl();
-
+  }
   std::vector<fs::path> input_paths;
   for (auto &path : mint::input_files) {
     input_paths.emplace_back(std::move(path));

@@ -1,0 +1,71 @@
+
+public let a = A::b;
+
+module A {
+  public let a = e;
+  public let b = 1;
+  public let c = d;
+}
+
+public let d = 2;
+
+module A {
+  public let e = 3;
+  public let f = B::g;
+}
+
+public let g = 3;
+
+module B {
+  public let g = 4;
+}
+
+module A {
+  public let h = A::B::i;
+  module B {
+    public let i = 5;
+  }
+  public let j = A::B::k;
+}
+
+module A {
+  module B {
+    public let k = 6;
+    public let l = m;
+    public let n = B::o;
+  }
+  public let m = 7;
+}
+
+module B {
+  public let o = 8;
+}
+
+module A {
+  public let p = ::q;
+}
+
+public let q = 9;
+
+module A {
+  public let r = ::A::s;
+  public let s = 10;
+  public let t = ::B::u;
+}
+
+module B {
+  public let u = 11;
+  public let v = ::B::C::w;
+  module C {
+    public let w = 12;
+    public let x = ::B::z;
+    public let y = ::B::C::a;
+  }
+  public let z = 13;
+}
+
+module B {
+  module C {
+    public let a = 14;
+  }
+}

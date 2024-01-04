@@ -20,10 +20,12 @@
 #define MINT_VERSION_MAJOR 0
 #define MINT_VERSION_MINOR 0
 #define MINT_VERSION_PATCH 3
-#define MINT_GIT_REVISION "354023a3bd44e1aa50e5cbc8919cf430495c78f6"
+#define MINT_GIT_REVISION "58b3746896fdc1ce1ace407781fff7da18f1f541"
 #define MINT_RESOURCES_DIR "/home/cade/projects/Mint/test/resources"
 #define MINT_BUILD_DIR "/home/cade/projects/Mint/build"
 #define MINT_DEBUG 1
-#define MINT_HOST_OS_LINUX 1
+#define MINT_HOST_OS_LINUX
+/* #undef MINT_HOST_OS_WINDOWS */
+/* #undef MINT_HOST_OS_APPLE */
 // NOLINTEND
 // clang-format on

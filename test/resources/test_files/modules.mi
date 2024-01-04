@@ -1,0 +1,9 @@
+module A {
+  public let a = 42;
+  public let b = 7;
+  public let c = a / b;
+}
+
+fn main() {
+  c;
+}

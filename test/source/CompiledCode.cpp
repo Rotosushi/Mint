@@ -38,7 +38,9 @@ struct CompiledCodeTestFile {
 
 constexpr inline auto getCompiledCodeTestFiles() noexcept {
   CompiledCodeTestFile expressions[] = {
-      {"main.mi", 12},
+      {"exit_code.mi", 42},      {"arithmetic.mi", 3},
+      {"local_variables.mi", 4}, {"global_variables.mi", 24},
+      {"modules.mi", 6},
   };
   return std::to_array(expressions);
 }
@@ -47,7 +49,7 @@ inline bool testFile(CompiledCodeTestFile &x) {
   static const char *mint_path = MINT_BUILD_DIR "/source/mint";
 
   bool success = true;
-  fs::path filepath{MINT_RESOURCES_DIR};
+  fs::path filepath{MINT_RESOURCES_DIR "/test_files"};
   filepath /= x.filename;
   MINT_ASSERT(fs::exists(filepath));
 
@@ -76,8 +78,7 @@ inline bool testFile(CompiledCodeTestFile &x) {
 
   if (result != x.expected_result) {
     std::cerr << "file [" << filepath << "] failed.\nExpected ["
-              << (unsigned)x.expected_result << "], Actual ["
-              << (unsigned)result << "]\n";
+              << x.expected_result << "], Actual [" << result << "]\n";
     success = false;
   }
 
