@@ -14,18 +14,18 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
+#include "runtime/Load.hpp"
 #include "adt/Environment.hpp"
-#include "runtime/Allocate.hpp"
 
 namespace mint {
 auto createLLVMLoad(Environment &env, llvm::Type *type,
                     llvm::Value *source) noexcept -> llvm::Value * {
   // #NOTE: llvm immediate value's cannot be loaded.
   // as load expects a pointer type. And as far as I can tell
-  // llvm::Argument, and llvm::Constant are the only
+  // llvm::Argument, and llvm::ConstantData are the only
   // immediate values produced by the compiler as of now.
   if ((llvm::dyn_cast<llvm::Argument>(source) != nullptr) ||
-      (llvm::dyn_cast<llvm::Constant>(source) != nullptr)) {
+      (llvm::dyn_cast<llvm::ConstantData>(source) != nullptr)) {
     return source;
   }
 

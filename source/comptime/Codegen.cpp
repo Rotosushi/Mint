@@ -236,9 +236,29 @@ struct CodegenAst {
   // else codegen the bound expression down to a value.
   // create a llvm variable bound to said value.
   Result<llvm::Value *> operator()(ast::Let &l) noexcept {
-    auto found = env.lookupLocalBinding(l.name);
-    MINT_ASSERT(found);
-    auto binding = found.value();
+    auto affix_type_result = typecheck(l.affix, env);
+    MINT_ASSERT(affix_type_result);
+    auto type = affix_type_result.value();
+
+    auto binding = [&]() -> Bindings::Binding {
+      // #NOTE:
+      // if the let expression has already been bound
+      // in scope, return that binding. Otherwise
+      // (!assumption!) we are in the case where we are
+      // codegening a let expr in a function body,
+      // meaning it has already been typechecked,
+      // and all we need to do is create the binding
+      // within the temporary local scope of the
+      // function.
+      auto found = env.lookupLocalBinding(l.name);
+      if (found) {
+        return found.value();
+      }
+
+      auto bound = env.declareName(l.name, l.attributes, type);
+      MINT_ASSERT(bound);
+      return bound.value();
+    }();
 
     if (binding.hasRuntimeValue()) {
       return Error{Error::Kind::NameAlreadyBoundInScope, ptr->sl,
@@ -257,9 +277,6 @@ struct CodegenAst {
     }
     auto value = result.value();
 
-    auto affix_type_result = typecheck(l.affix, env);
-    MINT_ASSERT(affix_type_result);
-    auto type = affix_type_result.value();
     auto llvm_type = type::toLLVM(type, env);
     auto qualified_name = env.qualifyName(l.name);
     auto llvm_name = qualified_name.convertForLLVM();

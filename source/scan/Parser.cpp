@@ -373,6 +373,7 @@ Result<ast::Ptr> Parser::parseBinop(ast::Ptr left, BinopPrecedence p) {
   };
 
   while (predictsBinop()) {
+    lhs_loc = location();
     op = m_current_token;
 
     next();
@@ -383,12 +384,12 @@ Result<ast::Ptr> Parser::parseBinop(ast::Ptr left, BinopPrecedence p) {
     }
 
     while (predictsHigherPrecedenceOrRightAssociativeBinop()) {
-      auto temp = parseBinop(std::move(result.value()), new_prec());
+      auto temp = parseBinop(std::move(right.value()), new_prec());
       if (!temp) {
         return temp;
       }
 
-      result = temp;
+      right = temp;
     }
 
     auto rhs_loc = location();

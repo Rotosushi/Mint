@@ -25,6 +25,7 @@
 
 auto main(int argc, char **argv) -> int {
   llvm::InitLLVM llvm{argc, argv};
+  llvm::EnablePrettyStackTrace();
   llvm::InitializeNativeTarget();
   llvm::InitializeNativeTargetAsmParser();
   llvm::InitializeNativeTargetAsmPrinter();

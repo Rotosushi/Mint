@@ -5,5 +5,5 @@ module A {
 }
 
 fn main() {
-  c;
+  A::c;
 }
