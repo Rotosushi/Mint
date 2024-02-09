@@ -94,42 +94,6 @@ struct TypecheckAst {
     return ptr->setCachedType(result.value().type());
   }
 
-  // A lambdas type is the type of it's arguments and the
-  // type of it's return value. the optional type annotation
-  // must match the return type if present
-  Result<type::Ptr> operator()(ast::Lambda &l) noexcept {
-    env.pushScope();
-    type::Function::Arguments arg_types;
-    arg_types.reserve(l.arguments.size());
-    for (auto &arg : l.arguments) {
-      arg_types.emplace_back(arg.type);
-      env.declareName(arg);
-    }
-
-    // #TODO: support composite lambda bodies
-    auto result = typecheck(l.body.front(), env);
-    if (!result) {
-      env.popScope();
-      return result;
-    }
-    env.popScope();
-
-    if (l.annotation) {
-      auto type = l.annotation.value();
-      if (!type::equals(type, result.value())) {
-        std::stringstream msg;
-        msg << "Annotated Type [" << type << "], ";
-        msg << "Actual Type [" << result.value() << "]";
-        return Error{Error::Kind::AnnotatedTypeMismatch, ptr->sl, msg.view()};
-      }
-    }
-
-    auto function_type =
-        env.getFunctionType(result.value(), std::move(arg_types));
-    auto lambda_type = env.getLambdaType(function_type);
-    return ptr->setCachedType(lambda_type);
-  }
-
   // A functions type is the type of it's arguments and the type
   // of it's return value. The optional type annotation must
   // match the return type if present.

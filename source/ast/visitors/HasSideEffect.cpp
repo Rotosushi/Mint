@@ -37,7 +37,6 @@ struct HasSideEffect {
   bool operator()([[maybe_unused]] bool &b) noexcept { return false; }
   bool operator()([[maybe_unused]] int &i) noexcept { return false; }
   bool operator()([[maybe_unused]] Identifier &i) noexcept { return false; }
-  bool operator()([[maybe_unused]] Lambda &l) noexcept { return false; }
   bool operator()([[maybe_unused]] Function &f) noexcept { return true; }
   bool operator()([[maybe_unused]] Let &l) noexcept { return true; }
   bool operator()([[maybe_unused]] Binop b) noexcept { return false; }

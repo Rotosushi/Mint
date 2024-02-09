@@ -1,1 +1,31 @@
 
+we need to create a set of all files which must be linked together.
+this information comes from two main places.
+1) the file(s) given on the command line
+2) the files imported by TranslationUnits
+we have the files from 1 available at the time we construct this class.
+however the files from 2 are tricky to coalesce.
+this is because we only know what is being imported during compilation.
+thus, each TranslationUnit currently active must have access to the active
+instance of this class. for one this means we need to synchronize access.
+for two this means we need to ensure we are only maintaining a unique list
+of files. and for three, we need to create and activate new
+TranslationUnits for each unique file which is a part of the final
+executable.
+using a SyncQueue to buffer all of the imported files from each active TU
+solve syncronous access from multiple TUs.
+pulling out names from the queue and storing them into a list only if
+they are not already present should keep them unique.
+we just need to ensure that we don't compile the same file twice,
+and to compile each file placed into the set.
+this can be accomplished if we keep some metadata along with each file
+which says what state of Translation it is in, Untranslated, InProgress,
+or Done. Then if we keep translating until each unique file has been
+translated (making sure to check for new imported files when finishing
+translation of a file) we will Compile each file. and since it's a unique
+list we won't compile twice. we just need an algorithm which starts TUs,
+checks for new files to translate and keeps going until each unique file
+is done translating.
+
+Okay, so how do we distribute the work or compiling each file in the 
+set of unique files?

@@ -34,15 +34,21 @@ auto main(int argc, char **argv) -> int {
   llvm::cl::SetVersionPrinter(mint::printVersion);
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
+  mint::UniqueFiles unique_files;
+
   if (mint::input_files.empty()) {
-    return mint::repl();
+    return mint::repl(unique_files);
   }
   std::vector<fs::path> input_paths;
   for (auto &path : mint::input_files) {
     input_paths.emplace_back(std::move(path));
   }
 
-  if (mint::compile(input_paths) == EXIT_FAILURE) {
+  for (auto &path : input_paths) {
+    unique_files.add(path);
+  }
+
+  if (mint::compile(unique_files) == EXIT_FAILURE) {
     return EXIT_FAILURE;
   }
 
@@ -52,8 +58,8 @@ auto main(int argc, char **argv) -> int {
 
   if (mint::emittedFiletype == mint::EmittedFiletype::NativeOBJ) {
     std::vector<fs::path> object_filenames;
-    for (const auto &filename : input_paths) {
-      fs::path object_filename = filename;
+    for (const auto &filename : unique_files) {
+      fs::path object_filename = filename.path();
       object_filename.replace_extension(".o");
       object_filenames.emplace_back(std::move(object_filename));
     }

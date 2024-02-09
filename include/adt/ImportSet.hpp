@@ -60,6 +60,7 @@ public:
   }
 };
 
+// Represents the files that a particular TranslationUnit has imported.
 class ImportSet {
   std::vector<ImportedTranslationUnit> m_set;
 

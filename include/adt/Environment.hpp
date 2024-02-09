@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include <functional>
 #include <iostream>
 
 #include "llvm/ADT/StringSet.h"
@@ -32,6 +33,7 @@
 #include "adt/Scope.hpp"
 #include "adt/TranslationUnit.hpp"
 #include "adt/TypeInterner.hpp"
+#include "adt/UniqueFiles.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
 #include "scan/Parser.hpp"
@@ -40,6 +42,9 @@ namespace mint {
 // Allocates the data-structures necessary for the
 // compilation process.
 class Environment {
+  // #TODO: protect the iostreams here from multithreaded
+  // access, such that multiple threads attempting to display
+  // error messages are not interleaved.
   std::istream *m_input;
   std::ostream *m_output;
   std::ostream *m_error_output;
@@ -48,6 +53,12 @@ class Environment {
   std::optional<fs::path> m_file;
   std::shared_ptr<Scope> m_global_scope;
   std::shared_ptr<Scope> m_local_scope;
+  // #NOTE: there is data duplication between the ImportSet
+  // and the UniqueFiles set. However duplication occurs between
+  // the ImportSet on a particular thread, and the main thread
+  // which holds the UniqueFiles set. so factoring the data
+  // together seems tricky.
+  std::reference_wrapper<UniqueFiles> m_unique_files;
 
   TranslationUnit m_translation_unit;
   DirectorySearcher m_directory_searcher;
@@ -57,8 +68,6 @@ class Environment {
   BinopTable m_binop_table;
   UnopTable m_unop_table;
   UseBeforeDefMap m_use_before_def_map;
-
-  // Parser m_parser;
   Parser m_parser;
 
   std::unique_ptr<llvm::LLVMContext> m_llvm_context;
@@ -66,8 +75,8 @@ class Environment {
   std::unique_ptr<llvm::IRBuilder<>> m_llvm_ir_builder;
   llvm::TargetMachine *m_llvm_target_machine;
 
-  Environment(std::istream *in, std::ostream *out, std::ostream *errout,
-              std::ostream *log,
+  Environment(UniqueFiles &unique_files, std::istream *in, std::ostream *out,
+              std::ostream *errout, std::ostream *log,
               std::unique_ptr<llvm::LLVMContext> llvm_context,
               std::unique_ptr<llvm::Module> llvm_module,
               std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder,
@@ -77,11 +86,10 @@ public:
   /**** Environment Methods ****/
   [[nodiscard]] static auto nativeCPUFeatures() noexcept -> std::string;
   //   #NOTE: does the work of initializing the llvm data structures
-  [[nodiscard]] static auto create(std::istream *in = &std::cin,
-                                   std::ostream *out = &std::cout,
-                                   std::ostream *errout = &std::cerr,
-                                   std::ostream *log = &std::clog) noexcept
-      -> Environment;
+  [[nodiscard]] static auto
+  create(UniqueFiles &unique_files, std::istream *in = &std::cin,
+         std::ostream *out = &std::cout, std::ostream *errout = &std::cerr,
+         std::ostream *log = &std::clog) noexcept -> Environment;
 
   //**** Environment member interfaces ****//
   std::istream &inputStream() noexcept;
@@ -94,6 +102,14 @@ public:
 
   llvm::TargetMachine &targetMachine() noexcept {
     return *m_llvm_target_machine;
+  }
+
+  // #NOTE:
+  // addUniqueFile is a thread synchronization point due to
+  // adding a file to the UniqueFiles set shared between all
+  // active threads.
+  void addUniqueFile(fs::path file) noexcept {
+    m_unique_files.get().add(std::move(file));
   }
 
   //**** Parser interface ****//
@@ -125,6 +141,8 @@ public:
   auto alreadyImported(fs::path const &filename) noexcept -> bool;
   auto findImport(fs::path const &filename) noexcept
       -> ImportedTranslationUnit *;
+  // #NOTE: addImport is a synchronization point between this
+  // thread and all other threads. Due to calling addUniqueFile
   auto addImport(fs::path &&filename,
                  TranslationUnit::Expressions &&expressions) noexcept
       -> ImportedTranslationUnit &;

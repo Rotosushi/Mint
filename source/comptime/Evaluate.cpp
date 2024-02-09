@@ -50,10 +50,6 @@ struct EvaluateAst {
     return binding.comptimeValueOrAssert();
   }
 
-  Result<ast::Ptr> operator()([[maybe_unused]] ast::Lambda &l) noexcept {
-    return ptr;
-  }
-
   Result<ast::Ptr> operator()(ast::Function &f) noexcept {
     auto found = env.lookupLocalBinding(f.name);
     if (!found) {
@@ -184,11 +180,7 @@ struct EvaluateAst {
     auto &callee = callee_result.value();
 
     auto [args, body] = [&]() {
-      if (callee->holds<ast::Lambda>()) {
-        auto &lambda = callee->get<ast::Lambda>();
-        return std::make_pair(std::ref(lambda.arguments),
-                              std::ref(lambda.body));
-      } else if (callee->holds<ast::Function>()) {
+      if (callee->holds<ast::Function>()) {
         auto &function = callee->get<ast::Function>();
         return std::make_pair(std::ref(function.arguments),
                               std::ref(function.body));

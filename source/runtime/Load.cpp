@@ -24,8 +24,11 @@ auto createLLVMLoad(Environment &env, llvm::Type *type,
   // as load expects a pointer type. And as far as I can tell
   // llvm::Argument, and llvm::ConstantData are the only
   // immediate values produced by the compiler as of now.
-  if ((llvm::dyn_cast<llvm::Argument>(source) != nullptr) ||
-      (llvm::dyn_cast<llvm::ConstantData>(source) != nullptr)) {
+  // and we need to emit a load to access the value of a
+  // global variable.
+  if ((llvm::isa<llvm::Argument>(source)) ||
+      (llvm::isa<llvm::Constant>(source) &&
+       !llvm::isa<llvm::GlobalVariable>(source))) {
     return source;
   }
 

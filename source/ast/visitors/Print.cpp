@@ -35,26 +35,6 @@ struct PrintAst {
 
   void operator()(Identifier &i) noexcept { out << i; }
 
-  void operator()(Lambda &l) noexcept {
-    out << "\\";
-
-    auto index = 0U;
-    auto size = l.arguments.size();
-    for (auto &arg : l.arguments) {
-      out << arg.name << ": " << arg.type;
-
-      if (index++ < (size - 1)) {
-        out << ", ";
-      }
-    }
-
-    if (l.annotation) {
-      out << " -> " << l.annotation.value();
-    }
-
-    out << " => " << l.body.front();
-  }
-
   void operator()(Function &f) noexcept {
     if (f.attributes.isPublic()) {
       out << "public ";

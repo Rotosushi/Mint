@@ -15,11 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <filesystem>
-#include <vector>
-
-namespace fs = std::filesystem;
+#include "adt/UniqueFiles.hpp"
 
 namespace mint {
-[[nodiscard]] int compile(std::vector<fs::path> const &filenames);
+[[nodiscard]] int compile(UniqueFiles &files);
 } // namespace mint

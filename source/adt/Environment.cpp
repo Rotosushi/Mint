@@ -26,14 +26,16 @@
 #include "llvm/Support/raw_ostream.h"
 
 namespace mint {
-Environment::Environment(std::istream *in, std::ostream *out,
-                         std::ostream *errout, std::ostream *log,
+Environment::Environment(UniqueFiles &unique_files, std::istream *in,
+                         std::ostream *out, std::ostream *errout,
+                         std::ostream *log,
                          std::unique_ptr<llvm::LLVMContext> llvm_context,
                          std::unique_ptr<llvm::Module> llvm_module,
                          std::unique_ptr<llvm::IRBuilder<>> llvm_ir_builder,
                          llvm::TargetMachine *llvm_target_machine) noexcept
     : m_input(in), m_output(out), m_error_output(errout), m_log_output(log),
-      m_parser(*this), m_llvm_context(std::move(llvm_context)),
+      m_unique_files(unique_files), m_parser(*this),
+      m_llvm_context(std::move(llvm_context)),
       m_llvm_module(std::move(llvm_module)),
       m_llvm_ir_builder(std::move(llvm_ir_builder)),
       m_llvm_target_machine(llvm_target_machine) {
@@ -84,11 +86,14 @@ Environment::Environment(std::istream *in, std::ostream *out,
   return features;
 }
 
-[[nodiscard]] auto Environment::create(std::istream *in, std::ostream *out,
+[[nodiscard]] auto Environment::create(UniqueFiles &unique_files,
+                                       std::istream *in, std::ostream *out,
                                        std::ostream *errout,
                                        std::ostream *log) noexcept
     -> Environment {
   auto context = std::make_unique<llvm::LLVMContext>();
+  // #TODO: the TargetTriple is a customization point that
+  // should be exposed to the user.
   auto target_triple = llvm::sys::getProcessTriple();
 
   std::string error_message;
@@ -98,6 +103,8 @@ Environment::Environment(std::istream *in, std::ostream *out,
     abort(error_message);
   }
 
+  // #TODO: TargetOptions, Reloc::Model, and CodeModel are all
+  // customization points which should be exposed to the user.
   auto target_machine = target->createTargetMachine(
       target_triple, llvm::sys::getHostCPUName(), nativeCPUFeatures(),
       llvm::TargetOptions{}, llvm::Reloc::Model::PIC_,
@@ -109,7 +116,8 @@ Environment::Environment(std::istream *in, std::ostream *out,
   llvm_module->setDataLayout(data_layout);
   llvm_module->setTargetTriple(target_triple);
 
-  return Environment{in,
+  return Environment{unique_files,
+                     in,
                      out,
                      errout,
                      log,
@@ -253,7 +261,12 @@ auto Environment::findImport(fs::path const &filename) noexcept
 auto Environment::addImport(fs::path &&filename,
                             TranslationUnit::Expressions &&expressions) noexcept
     -> ImportedTranslationUnit & {
-  return m_imported_files.insert(std::move(filename), std::move(expressions));
+  auto &itu =
+      m_imported_files.insert(std::move(filename), std::move(expressions));
+
+  addUniqueFile(itu.file());
+
+  return itu;
 }
 
 //**** Use Before Def Interface ****//

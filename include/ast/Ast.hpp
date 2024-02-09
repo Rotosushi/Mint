@@ -27,13 +27,12 @@
 #include "ast/expression/Unop.hpp"
 #include "ast/statement/Import.hpp"
 #include "ast/statement/Module.hpp"
-#include "ast/value/Lambda.hpp"
+//#include "ast/value/Lambda.hpp"
 
 namespace mint::ast {
 struct Ast {
-  using Variant =
-      std::variant<std::monostate, bool, int, Identifier, Lambda, Function, Let,
-                   Binop, Unop, Call, Parens, Import, Module>;
+  using Variant = std::variant<std::monostate, bool, int, Identifier, Function,
+                               Let, Binop, Unop, Call, Parens, Import, Module>;
 
   std::optional<SourceLocation *> sl;
   std::optional<type::Ptr> cached_type;

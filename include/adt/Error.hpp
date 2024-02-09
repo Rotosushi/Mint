@@ -34,6 +34,8 @@
 // itself.
 // this has the major benefiet of reducing the amount of copying
 // of errors during parsing, typechecking, evaluation, and codegen.
+// and the minor benefiet of allowing parsing typechecking evaluation
+// and codegen to produce multiple errors before returning.
 // #TODO: add a ErrorList (or similar) data structure to the
 // environment. to hold errors as they are generated.
 

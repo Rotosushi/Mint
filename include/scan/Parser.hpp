@@ -71,7 +71,6 @@ basic = literal
       | identifier
       | unop basic
       | "(" affix ")"
-      | "\" formal-arguments? ("->" type)? "=>" affix
 
 literal = "nil"
         | "true"
@@ -100,7 +99,9 @@ private:
   // in memory forever? or do we want to add a path to the source location
   // and reopen and resource the bad line at the point it is needed?
   // currently all input is buffered for the lifetime of the environment
-  // holding the parser.
+  // holding the parser. even though all identifiers are Interned, and the
+  // only time we need to re-scan a source file is when extracting a line of
+  // source to display an error message. I think this should be changed.
   SourceBufferList m_sources;
   Lexer m_lexer;
   Token m_current_token;
@@ -196,7 +197,6 @@ private:
   Result<ast::Ptr> parseVariable();
   Result<ast::Ptr> parseUnop();
   Result<ast::Ptr> parseParens();
-  Result<ast::Ptr> parseLambda();
 
   Result<type::Ptr> parseType();
   Result<type::Ptr> parseNilType();

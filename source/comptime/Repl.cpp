@@ -21,9 +21,10 @@
 #include "comptime/Typecheck.hpp"
 
 namespace mint {
-[[nodiscard]] int repl(std::istream *in, std::ostream *out,
-                       std::ostream *errout, std::ostream *log) {
-  auto env = Environment::create(in, out, errout, log);
+[[nodiscard]] int repl(UniqueFiles &unique_files, std::istream *in,
+                       std::ostream *out, std::ostream *errout,
+                       std::ostream *log) {
+  auto env = Environment::create(unique_files, in, out, errout, log);
 
   while (true) {
     env.outputStream() << "# ";

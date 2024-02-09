@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Cade Weinberg
+// Copyright (C) 2024 Cade Weinberg
 //
 // This file is part of Mint.
 //
@@ -15,23 +15,36 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include <string_view>
+#include <filesystem>
+#include <list>
+#include <mutex>
 
-#include "scan/Location.hpp"
-#include "utility/Assert.hpp"
+namespace fs = std::filesystem;
+
+#include "adt/UniqueFile.hpp"
 
 namespace mint {
-class SourceLocation {
+// Represents the set of files which must be linked together to
+// produce the final executable (or eventually library)
+class UniqueFiles {
 private:
-  Location m_location;
-  // #TODO: replace with a pointer to a fs::path
-  std::string_view m_view;
+  std::mutex m_files_mutex;
+  std::list<UniqueFile> m_unique_files;
 
 public:
-  SourceLocation(Location location, std::string_view view) noexcept
-      : m_location(location), m_view(view) {}
+  void add(fs::path path) {
+    std::unique_lock<std::mutex> lock(m_files_mutex);
 
-  Location const &location() const noexcept { return m_location; }
-  std::string_view const &view() const noexcept { return m_view; }
+    for (UniqueFile &file : m_unique_files) {
+      if (file.path() == path) {
+        return;
+      }
+    }
+
+    m_unique_files.emplace_back(std::move(path));
+  }
+
+  auto begin() { return m_unique_files.begin(); }
+  auto end() { return m_unique_files.end(); }
 };
 } // namespace mint

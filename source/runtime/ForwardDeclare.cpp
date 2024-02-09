@@ -43,7 +43,6 @@ struct ForwardDeclareAst {
   void operator()([[maybe_unused]] bool &b) noexcept {}
   void operator()([[maybe_unused]] int &i) noexcept {}
   void operator()([[maybe_unused]] Identifier &i) noexcept {}
-  void operator()([[maybe_unused]] ast::Lambda &l) noexcept {}
 
   void operator()(ast::Function &f) noexcept {
     auto found = env.lookupLocalBinding(f.name);

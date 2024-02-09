@@ -291,6 +291,7 @@ TEST_CASE("Test Repl", "[integration]") {
   auto test_expressions = getReplTestCode();
 
   for (auto &expression : test_expressions) {
+    mint::UniqueFiles unique_files;
     std::stringstream input;
     if (!expression.setup.empty())
       input << expression.setup << "\n";
@@ -301,7 +302,8 @@ TEST_CASE("Test Repl", "[integration]") {
     std::stringstream error_output;
     std::stringstream log_output;
 
-    auto failed = mint::repl(&input, &output, &error_output, &log_output);
+    auto failed =
+        mint::repl(unique_files, &input, &output, &error_output, &log_output);
     REQUIRE(failed == EXIT_SUCCESS);
 
     auto outview = output.view();

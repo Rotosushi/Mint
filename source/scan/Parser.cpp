@@ -378,7 +378,7 @@ Result<ast::Ptr> Parser::parseBinop(ast::Ptr left, BinopPrecedence p) {
 
     next();
 
-    auto right = parseBasic();
+    auto right = parseCall();
     if (!right) {
       return right;
     }
@@ -426,9 +426,6 @@ Result<ast::Ptr> Parser::parseBasic() {
 
   case Token::BeginParen:
     return parseParens();
-
-  case Token::BackSlash:
-    return parseLambda();
 
   default:
     return recover(Error::Kind::ExpectedBasic);
@@ -502,72 +499,6 @@ Result<ast::Ptr> Parser::parseParens() {
   auto rhs_loc = location();
   Location parens_loc{lhs_loc, rhs_loc};
   return ast::create<ast::Parens>(source(parens_loc), std::move(affix));
-}
-
-Result<ast::Ptr> Parser::parseLambda() {
-  auto lhs_loc = location();
-  if (!expect(Token::BackSlash)) {
-    return recover(Error::Kind::ExpectedBackSlash);
-  }
-
-  auto parseArgument = [&]() -> Result<FormalArgument> {
-    if (!peek(Token::Identifier)) {
-      return recover(Error::Kind::ExpectedIdentifier);
-    }
-
-    auto name = m_env->getIdentifier(text());
-    next();
-
-    if (!expect(Token::Colon)) {
-      return recover(Error::Kind::ExpectedColon);
-    }
-
-    auto annotation = parseType();
-    if (!annotation) {
-      return annotation.error();
-    }
-    return {name, Attributes{}, annotation.value()};
-  };
-
-  FormalArguments arguments;
-  if (peek(Token::Identifier)) {
-    do {
-      auto result = parseArgument();
-      if (!result) {
-        return result.error();
-      }
-
-      arguments.emplace_back(result.value());
-    } while (expect(Token::Comma));
-  }
-
-  std::optional<type::Ptr> annotation;
-  if (expect(Token::RightArrow)) {
-    auto result = parseType();
-    if (!result) {
-      return result.error();
-    }
-
-    annotation = result.value();
-  }
-
-  if (!expect(Token::EqualsRightArrow)) {
-    return recover(Error::Kind::ExpectedEqualsRightArrow);
-  }
-
-  // #TODO add support for multiple expressions surrounded by {}
-  ast::Function::Body body;
-  auto result = parseAffix();
-  if (!result) {
-    return result;
-  }
-  body.emplace_back(std::move(result.value()));
-
-  auto rhs_loc = location();
-  Location lambda_loc{lhs_loc, rhs_loc};
-  return ast::create<ast::Lambda>(source(lambda_loc), Attributes{},
-                                  std::move(arguments), annotation,
-                                  std::move(body));
 }
 
 Result<type::Ptr> Parser::parseType() {

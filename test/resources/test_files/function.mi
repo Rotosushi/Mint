@@ -1,0 +1,7 @@
+fn add(a: Integer, b: Integer) -> Integer {
+  a + b;
+}
+
+fn main() {
+  add(10, 5) / add(2, 3);
+}
