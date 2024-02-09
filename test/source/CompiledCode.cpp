@@ -41,6 +41,7 @@ constexpr inline auto getCompiledCodeTestFiles() noexcept {
       {"exit_code.mi", 42},      {"arithmetic.mi", 3},
       {"local_variables.mi", 4}, {"global_variables.mi", 24},
       {"modules.mi", 6},         {"function.mi", 3},
+      {"import.mi", 42},
   };
   return std::to_array(expressions);
 }
@@ -49,15 +50,17 @@ inline bool testFile(CompiledCodeTestFile &x) {
   static const char *mint_path = MINT_BUILD_DIR "/source/mint";
 
   bool success = true;
-  fs::path filepath{MINT_RESOURCES_DIR "/test_files"};
-  filepath /= x.filename;
+  fs::path include_path{MINT_RESOURCES_DIR "/test_files"};
+  MINT_ASSERT(fs::exists(include_path));
+  fs::path filepath = include_path / x.filename;
   MINT_ASSERT(fs::exists(filepath));
-
   fs::path compiled_code_path{filepath};
   compiled_code_path.replace_extension();
 
   std::vector<const char *> mint_arguments{
       mint_path,
+      "-I",
+      include_path.c_str(),
       "-o",
       compiled_code_path.c_str(),
       filepath.c_str(),

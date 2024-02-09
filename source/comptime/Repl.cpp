@@ -21,7 +21,7 @@
 #include "comptime/Typecheck.hpp"
 
 namespace mint {
-[[nodiscard]] int repl(UniqueFiles &unique_files, std::istream *in,
+[[nodiscard]] int repl(SourceFiles &unique_files, std::istream *in,
                        std::ostream *out, std::ostream *errout,
                        std::ostream *log) {
   auto env = Environment::create(unique_files, in, out, errout, log);

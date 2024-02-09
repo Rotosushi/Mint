@@ -20,7 +20,7 @@
 
 namespace fs = std::filesystem;
 
-class UniqueFile {
+class SourceFile {
 public:
   enum State {
     Unprocessed,
@@ -35,7 +35,7 @@ private:
   std::mutex m_state_mutex;
 
 public:
-  UniqueFile(fs::path path) : m_path(std::move(path)), m_state(Unprocessed) {}
+  SourceFile(fs::path path) : m_path(std::move(path)), m_state(Unprocessed) {}
 
   fs::path const &path() const noexcept { return m_path; }
 

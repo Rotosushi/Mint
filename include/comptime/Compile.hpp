@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
-#include "adt/UniqueFiles.hpp"
+#include "adt/SourceFiles.hpp"
 
 namespace mint {
-[[nodiscard]] int compile(UniqueFiles &files);
+[[nodiscard]] int compile(SourceFiles &files);
 } // namespace mint

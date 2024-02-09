@@ -31,9 +31,9 @@
 #include "adt/ImportSet.hpp"
 #include "adt/InsertionPoint.hpp"
 #include "adt/Scope.hpp"
+#include "adt/SourceFiles.hpp"
 #include "adt/TranslationUnit.hpp"
 #include "adt/TypeInterner.hpp"
-#include "adt/UniqueFiles.hpp"
 #include "adt/UnopTable.hpp"
 #include "adt/UseBeforeDefMap.hpp"
 #include "scan/Parser.hpp"
@@ -54,11 +54,11 @@ class Environment {
   std::shared_ptr<Scope> m_global_scope;
   std::shared_ptr<Scope> m_local_scope;
   // #NOTE: there is data duplication between the ImportSet
-  // and the UniqueFiles set. However duplication occurs between
+  // and the SourceFiles set. However duplication occurs between
   // the ImportSet on a particular thread, and the main thread
-  // which holds the UniqueFiles set. so factoring the data
+  // which holds the SourceFiles set. so factoring the data
   // together seems tricky.
-  std::reference_wrapper<UniqueFiles> m_unique_files;
+  std::reference_wrapper<SourceFiles> m_unique_files;
 
   TranslationUnit m_translation_unit;
   DirectorySearcher m_directory_searcher;
@@ -75,7 +75,7 @@ class Environment {
   std::unique_ptr<llvm::IRBuilder<>> m_llvm_ir_builder;
   llvm::TargetMachine *m_llvm_target_machine;
 
-  Environment(UniqueFiles &unique_files, std::istream *in, std::ostream *out,
+  Environment(SourceFiles &unique_files, std::istream *in, std::ostream *out,
               std::ostream *errout, std::ostream *log,
               std::unique_ptr<llvm::LLVMContext> llvm_context,
               std::unique_ptr<llvm::Module> llvm_module,
@@ -87,7 +87,7 @@ public:
   [[nodiscard]] static auto nativeCPUFeatures() noexcept -> std::string;
   //   #NOTE: does the work of initializing the llvm data structures
   [[nodiscard]] static auto
-  create(UniqueFiles &unique_files, std::istream *in = &std::cin,
+  create(SourceFiles &unique_files, std::istream *in = &std::cin,
          std::ostream *out = &std::cout, std::ostream *errout = &std::cerr,
          std::ostream *log = &std::clog) noexcept -> Environment;
 
@@ -106,7 +106,7 @@ public:
 
   // #NOTE:
   // addUniqueFile is a thread synchronization point due to
-  // adding a file to the UniqueFiles set shared between all
+  // adding a file to the SourceFiles set shared between all
   // active threads.
   void addUniqueFile(fs::path file) noexcept {
     m_unique_files.get().add(std::move(file));

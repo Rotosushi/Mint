@@ -17,10 +17,10 @@
 #pragma once
 #include <iostream>
 
-#include "adt/UniqueFiles.hpp"
+#include "adt/SourceFiles.hpp"
 
 namespace mint {
-[[nodiscard]] int repl(UniqueFiles &unique_files, std::istream *in = &std::cin,
+[[nodiscard]] int repl(SourceFiles &unique_files, std::istream *in = &std::cin,
                        std::ostream *out = &std::cout,
                        std::ostream *errout = &std::cerr,
                        std::ostream *log = &std::clog);

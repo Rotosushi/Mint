@@ -21,21 +21,21 @@
 
 namespace fs = std::filesystem;
 
-#include "adt/UniqueFile.hpp"
+#include "adt/SourceFile.hpp"
 
 namespace mint {
 // Represents the set of files which must be linked together to
 // produce the final executable (or eventually library)
-class UniqueFiles {
+class SourceFiles {
 private:
   std::mutex m_files_mutex;
-  std::list<UniqueFile> m_unique_files;
+  std::list<SourceFile> m_unique_files;
 
 public:
   void add(fs::path path) {
     std::unique_lock<std::mutex> lock(m_files_mutex);
 
-    for (UniqueFile &file : m_unique_files) {
+    for (SourceFile &file : m_unique_files) {
       if (file.path() == path) {
         return;
       }

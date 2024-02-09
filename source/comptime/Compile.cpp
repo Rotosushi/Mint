@@ -30,9 +30,9 @@
 #include "utility/VerifyLLVM.hpp"
 
 namespace mint {
-void compile(UniqueFile &file, UniqueFiles &files);
+void compile(SourceFile &file, SourceFiles &files);
 
-[[nodiscard]] int compile(UniqueFiles &filenames) {
+[[nodiscard]] int compile(SourceFiles &filenames) {
   // #TODO: spawn a thread for each file
   // #TODO: link all intermediate files together based on
   // given cli flags.
@@ -78,28 +78,28 @@ void compile(UniqueFile &file, UniqueFiles &files);
   }
 }
 
-void compile(UniqueFile &file, UniqueFiles &files) {
+void compile(SourceFile &file, SourceFiles &files) {
   auto env = Environment::create(files);
 
-  file.state(UniqueFile::InProgress);
+  file.state(SourceFile::InProgress);
 
   if (parse(file.path(), env) == EXIT_FAILURE) {
-    file.state(UniqueFile::Failed);
+    file.state(SourceFile::Failed);
     return;
   }
 
   if (typecheck(env) == EXIT_FAILURE) {
-    file.state(UniqueFile::Failed);
+    file.state(SourceFile::Failed);
     return;
   }
 
   if (evaluate(env) == EXIT_FAILURE) {
-    file.state(UniqueFile::Failed);
+    file.state(SourceFile::Failed);
     return;
   }
 
   if (codegen(env) == EXIT_FAILURE) {
-    file.state(UniqueFile::Failed);
+    file.state(SourceFile::Failed);
     return;
   }
 
@@ -111,22 +111,22 @@ void compile(UniqueFile &file, UniqueFiles &files) {
 
   if (emittedFiletype == EmittedFiletype::NativeOBJ) {
     if (emitELF(file.path(), env) == EXIT_FAILURE) {
-      file.state(UniqueFile::Failed);
+      file.state(SourceFile::Failed);
       return;
     }
   } else if (emittedFiletype == EmittedFiletype::NativeASM) {
     if (emitX86Assembly(file.path(), env) == EXIT_FAILURE) {
-      file.state(UniqueFile::Failed);
+      file.state(SourceFile::Failed);
       return;
     }
   } else {
     if (emitLLVMIR(file.path(), env) == EXIT_FAILURE) {
-      file.state(UniqueFile::Failed);
+      file.state(SourceFile::Failed);
       return;
     }
   }
 
-  file.state(UniqueFile::Done);
+  file.state(SourceFile::Done);
   return;
 }
 } // namespace mint

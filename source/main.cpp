@@ -34,7 +34,7 @@ auto main(int argc, char **argv) -> int {
   llvm::cl::SetVersionPrinter(mint::printVersion);
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
-  mint::UniqueFiles unique_files;
+  mint::SourceFiles unique_files;
 
   if (mint::input_files.empty()) {
     return mint::repl(unique_files);

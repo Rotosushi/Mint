@@ -291,7 +291,7 @@ TEST_CASE("Test Repl", "[integration]") {
   auto test_expressions = getReplTestCode();
 
   for (auto &expression : test_expressions) {
-    mint::UniqueFiles unique_files;
+    mint::SourceFiles unique_files;
     std::stringstream input;
     if (!expression.setup.empty())
       input << expression.setup << "\n";

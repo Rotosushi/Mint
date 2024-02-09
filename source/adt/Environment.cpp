@@ -26,7 +26,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 namespace mint {
-Environment::Environment(UniqueFiles &unique_files, std::istream *in,
+Environment::Environment(SourceFiles &unique_files, std::istream *in,
                          std::ostream *out, std::ostream *errout,
                          std::ostream *log,
                          std::unique_ptr<llvm::LLVMContext> llvm_context,
@@ -86,7 +86,7 @@ Environment::Environment(UniqueFiles &unique_files, std::istream *in,
   return features;
 }
 
-[[nodiscard]] auto Environment::create(UniqueFiles &unique_files,
+[[nodiscard]] auto Environment::create(SourceFiles &unique_files,
                                        std::istream *in, std::ostream *out,
                                        std::ostream *errout,
                                        std::ostream *log) noexcept
