@@ -41,7 +41,7 @@ constexpr inline auto getCompiledCodeTestFiles() noexcept {
       {"exit_code.mi", 42},      {"arithmetic.mi", 3},
       {"local_variables.mi", 4}, {"global_variables.mi", 24},
       {"modules.mi", 6},         {"function.mi", 3},
-      {"import.mi", 42},
+      {"import.mi", 42}, //{"import_multiple.mi", 6},
   };
   return std::to_array(expressions);
 }

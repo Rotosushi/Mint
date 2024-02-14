@@ -349,25 +349,26 @@ struct TypecheckAst {
   }
 
   Result<type::Ptr> operator()(ast::Import &i) noexcept {
-    fs::path path = i.file;
+    fs::path given_path = i.file;
+
+    auto found = env.fileResolve(given_path);
+    if (!found) {
+      return Error{Error::Kind::FileNotFound, ptr->sl, i.file};
+    }
+    auto &path = found.value();
 
     if (env.alreadyImported(path)) {
       return env.getNilType();
     }
 
-    if (!env.fileExists(path)) {
-      return Error{Error::Kind::FileNotFound, ptr->sl, i.file};
-    }
-
-    if (importSourceFile(path, env) == EXIT_FAILURE) {
+    auto result = importSourceFile(path, env);
+    if (!result) {
       return Error{Error::Kind::ImportFailed, ptr->sl, i.file};
     }
-
-    auto *itu = env.findImport(path);
-    MINT_ASSERT(itu != nullptr);
+    auto &itu = result.value().get();
 
     std::vector<TranslationUnit::Expressions::iterator> recovered_expressions;
-    auto &local_expressions = itu->expressions();
+    auto &local_expressions = itu.expressions();
     auto cursor = local_expressions.begin();
     auto end = local_expressions.end();
     while (cursor != end) {

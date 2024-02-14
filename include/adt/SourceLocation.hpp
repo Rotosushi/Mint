@@ -24,7 +24,7 @@ namespace mint {
 class SourceLocation {
 private:
   Location m_location;
-  // #TODO: replace with a pointer to a fs::path
+  // #TODO: replace with a pointer to a fs::path or SourceFile
   std::string_view m_view;
 
 public:

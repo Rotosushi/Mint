@@ -148,7 +148,7 @@ auto Environment::endOfMirInput() const noexcept -> bool {
   return m_parser.endOfInput();
 }
 
-void Environment::pushActiveSourceFile(std::fstream &&fin) {
+void Environment::pushActiveSourceFile(std::fstream fin) {
   m_parser.pushSourceFile(std::move(fin));
 }
 
@@ -228,8 +228,13 @@ auto Environment::fileExists(fs::path const &file) noexcept -> bool {
 }
 
 auto Environment::fileSearch(fs::path const &file) noexcept
-    -> std::optional<std::fstream> {
+    -> std::optional<std::pair<std::fstream, fs::path>> {
   return m_directory_searcher.search(file);
+}
+
+auto Environment::fileResolve(fs::path const &file) noexcept
+    -> std::optional<fs::path> {
+  return m_directory_searcher.resolve(file);
 }
 
 //**** Identifier Set Interface ****//

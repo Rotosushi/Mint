@@ -20,7 +20,6 @@
 #include "type/Type.hpp"
 
 namespace mint {
-// #TODO: we have no reason to intern types, so lets stop doing that.
 class TypeInterner {
   template <class T> class Composite {
     std::forward_list<type::Type> set;

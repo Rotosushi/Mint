@@ -20,7 +20,6 @@
 #include "ast/Ast.hpp"
 
 namespace mint {
-// #TODO: this might not be the best name
 struct TranslationUnit {
   using Expressions = std::list<ast::Ptr>;
 
@@ -31,5 +30,5 @@ struct TranslationUnit {
       : expressions(std::move(expressions)) {}
 
   void append(ast::Ptr p) { expressions.emplace_back(std::move(p)); };
-}; 
-}// namespace mint
+};
+} // namespace mint

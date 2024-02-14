@@ -22,15 +22,17 @@
 #include "comptime/Typecheck.hpp"
 
 namespace mint {
-// #TODO: maybe not the best name
-int importSourceFile(fs::path path, Environment &env) noexcept {
-  if (env.alreadyImported(path)) {
-    return EXIT_SUCCESS;
-  }
-
+std::optional<std::reference_wrapper<ImportedTranslationUnit>>
+importSourceFile(fs::path path, Environment &env) noexcept {
   auto found = env.fileSearch(path);
   MINT_ASSERT(found);
-  auto &file = found.value();
+  auto &pair = found.value();
+  auto &file = pair.first;
+  auto &found_path = pair.second;
+
+  if (env.alreadyImported(found_path)) {
+    return *env.findImport(found_path);
+  }
 
   env.pushActiveSourceFile(std::move(file));
   TranslationUnit::Expressions expressions;
@@ -44,7 +46,7 @@ int importSourceFile(fs::path path, Environment &env) noexcept {
       }
 
       env.errorStream() << error << "\n";
-      return EXIT_FAILURE;
+      return std::nullopt;
     }
 
     if (ast::hasSideEffect(result.value())) {
@@ -53,7 +55,6 @@ int importSourceFile(fs::path path, Environment &env) noexcept {
   }
 
   env.popActiveSourceFile();
-  env.addImport(std::move(path), std::move(expressions));
-  return EXIT_SUCCESS;
+  return env.addImport(std::move(found_path), std::move(expressions));
 }
 } // namespace mint

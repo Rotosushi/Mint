@@ -340,7 +340,10 @@ struct CodegenAst {
 
   // forward declare all imported statements in the current TU
   Result<llvm::Value *> operator()(ast::Import &i) noexcept {
-    fs::path path = i.file;
+    auto found = env.fileResolve(i.file);
+    MINT_ASSERT(found);
+    auto &path = found.value();
+
     auto *itu = env.findImport(path);
     MINT_ASSERT(itu != nullptr);
 

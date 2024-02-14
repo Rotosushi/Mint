@@ -31,15 +31,33 @@ auto DirectorySearcher::existsWithinDirectory(fs::path const &directory,
   return result;
 };
 
+auto DirectorySearcher::resolveWithinDirectory(fs::path const &directory,
+                                               fs::path const &file) noexcept
+    -> std::optional<fs::path> {
+  auto path = directory;
+  path /= file;
+
+  std::error_code ec;
+  auto result = fs::exists(path, ec);
+  if (ec != std::error_code{}) {
+    abort(ec);
+  }
+  if (result) {
+    return path;
+  }
+
+  return std::nullopt;
+}
+
 auto DirectorySearcher::searchWithinDirectory(fs::path const &directory,
                                               fs::path const &file) noexcept
-    -> std::optional<std::fstream> {
+    -> std::optional<std::pair<std::fstream, fs::path>> {
   auto path = directory;
   path /= file;
 
   std::fstream file_stream{path, std::ios_base::in};
   if (file_stream.is_open()) {
-    return file_stream;
+    return std::pair(std::move(file_stream), path);
   }
 
   return std::nullopt;
@@ -57,8 +75,19 @@ auto DirectorySearcher::exists(fs::path const &file) noexcept -> bool {
   return false;
 }
 
+auto DirectorySearcher::resolve(fs::path const &file) noexcept
+    -> std::optional<fs::path> {
+  for (auto &directory : m_known_paths) {
+    auto found = resolveWithinDirectory(directory, file);
+    if (found) {
+      return found;
+    }
+  }
+  return std::nullopt;
+}
+
 auto DirectorySearcher::search(fs::path const &file) noexcept
-    -> std::optional<std::fstream> {
+    -> std::optional<std::pair<std::fstream, fs::path>> {
   for (auto &directory : m_known_paths) {
     auto found = searchWithinDirectory(directory, file);
     if (found) {

@@ -116,7 +116,7 @@ public:
   auto endOfMirInput() const noexcept -> bool;
   Result<ast::Ptr> parse();
 
-  void pushActiveSourceFile(std::fstream &&fin);
+  void pushActiveSourceFile(std::fstream fin);
   void popActiveSourceFile();
 
   //**** TranslationUnit interface ****//
@@ -131,7 +131,9 @@ public:
   void appendDirectories(std::vector<std::string> const &paths) noexcept;
   void appendDirectory(fs::path const &file) noexcept;
   auto fileExists(fs::path const &file) noexcept -> bool;
-  auto fileSearch(fs::path const &file) noexcept -> std::optional<std::fstream>;
+  auto fileSearch(fs::path const &file) noexcept
+      -> std::optional<std::pair<std::fstream, fs::path>>;
+  auto fileResolve(fs::path const &file) noexcept -> std::optional<fs::path>;
 
   //**** Identifier Set Interface ****//
   auto getIdentifier(std::string_view name) noexcept -> Identifier;

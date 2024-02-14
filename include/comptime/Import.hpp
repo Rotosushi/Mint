@@ -16,11 +16,16 @@
 // along with Mint.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <filesystem>
+#include <functional>
+#include <optional>
 
 namespace fs = std::filesystem;
+
+#include "adt/ImportSet.hpp"
 
 namespace mint {
 class Environment;
 
-int importSourceFile(fs::path path, Environment &env) noexcept;
+std::optional<std::reference_wrapper<ImportedTranslationUnit>>
+importSourceFile(fs::path path, Environment &env) noexcept;
 } // namespace mint

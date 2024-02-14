@@ -164,11 +164,7 @@ public:
   // so there is no way of statically constructing one.
   [[nodiscard]] static auto createGlobalScope(Identifier name)
       -> std::shared_ptr<Scope>;
-  [[nodiscard]] static auto createModuleScope(Identifier name,
-                                              Scope *prev_scope)
-      -> std::shared_ptr<Scope>;
-  [[nodiscard]] static auto createLocalScope(Scope *prev_scope)
-      -> std::shared_ptr<Scope>;
+  // #NOTE: an empty name means this scope is an anonymous local scope
   [[nodiscard]] static auto createScope(std::optional<Identifier> name,
                                         Scope *prev_scope)
       -> std::shared_ptr<Scope>;
@@ -182,15 +178,12 @@ public:
   // #NOTE: this walks up the scope tree until it finds a
   // scope with a name, then returns a shared_ptr to that
   // scope.
-  [[nodiscard]] auto nearestNamedScope() noexcept -> std::shared_ptr<Scope>;
+  [[nodiscard]] auto nearestNamedScope() const noexcept
+      -> std::shared_ptr<Scope>;
   [[nodiscard]] auto bindingsEmpty() const noexcept -> bool;
   [[nodiscard]] auto scopesEmpty() const noexcept -> bool;
   [[nodiscard]] auto hasName() const noexcept -> bool;
 
-  // #TODO: if there is no scope name, and this is not global scope
-  // walk up the scope tree until we find a scope name. That name is
-  // the name of the local named scope. (anonymous scopes are not
-  // 'real' scopes, in the sense that they can be named. for now.)
   [[nodiscard]] auto name() const noexcept -> Identifier;
   [[nodiscard]] auto qualifiedName() const noexcept -> Identifier;
 

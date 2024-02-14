@@ -96,12 +96,12 @@ public:
 private:
   Environment *m_env;
   // #TODO: do we want to hold all of the data from all of the files processed
-  // in memory forever? or do we want to add a path to the source location
-  // and reopen and resource the bad line at the point it is needed?
-  // currently all input is buffered for the lifetime of the environment
-  // holding the parser. even though all identifiers are Interned, and the
-  // only time we need to re-scan a source file is when extracting a line of
-  // source to display an error message. I think this should be changed.
+  // in memory forever?
+  // The only reason this is done currently is because SourceLocations
+  // store a std::string_view into the SourceBuffer at the location
+  // they point to. if we instead store a path (or ref to a path)
+  // of the source file and reopen and resource the bad line at the
+  // point it is needed, we no longer have to Buffer all source.
   SourceBufferList m_sources;
   Lexer m_lexer;
   Token m_current_token;
@@ -110,7 +110,7 @@ private:
 public:
   Parser(Environment &env) noexcept;
 
-  void pushSourceFile(std::fstream &&fin) {
+  void pushSourceFile(std::fstream fin) {
     m_lexer.exchangeSource(m_sources.push(std::move(fin)));
   }
 

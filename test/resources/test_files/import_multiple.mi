@@ -1,0 +1,6 @@
+import "include/depA.mi";
+import "include/depB.mi";
+
+fn main() {
+  f() + g();
+}

@@ -1,4 +1,4 @@
-import "dependency.mi";
+import "include/dependency.mi";
 
 fn main() {
   f();

@@ -24,7 +24,8 @@ int parse(fs::path path, Environment &env) noexcept {
   if (!found) {
     return EXIT_FAILURE;
   }
-  auto &file = found.value();
+  auto &pair = found.value();
+  auto &file = pair.first;
   env.pushActiveSourceFile(std::move(file));
 
   while (true) {

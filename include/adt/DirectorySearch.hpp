@@ -28,11 +28,16 @@ namespace mint {
 class DirectorySearcher {
   std::vector<fs::path> m_known_paths;
 
-  auto existsWithinDirectory(fs::path const &directory, fs::path const &file) noexcept
-      -> bool;
+  auto existsWithinDirectory(fs::path const &directory,
+                             fs::path const &file) noexcept -> bool;
 
-  auto searchWithinDirectory(fs::path const &directory, fs::path const &file) noexcept
-      -> std::optional<std::fstream>;
+  auto resolveWithinDirectory(fs::path const &directory,
+                              fs::path const &file) noexcept
+      -> std::optional<fs::path>;
+
+  auto searchWithinDirectory(fs::path const &directory,
+                             fs::path const &file) noexcept
+      -> std::optional<std::pair<std::fstream, fs::path>>;
 
 public:
   DirectorySearcher() noexcept {
@@ -44,6 +49,9 @@ public:
 
   auto exists(fs::path const &file) noexcept -> bool;
 
-  auto search(fs::path const &file) noexcept -> std::optional<std::fstream>;
+  auto resolve(fs::path const &file) noexcept -> std::optional<fs::path>;
+
+  auto search(fs::path const &file) noexcept
+      -> std::optional<std::pair<std::fstream, fs::path>>;
 };
 } // namespace mint

@@ -240,10 +240,11 @@ std::shared_ptr<Scope> Scope::popScope() noexcept {
   return m_prev_scope->shared_from_this();
 }
 
-[[nodiscard]] auto Scope::nearestNamedScope() noexcept
+[[nodiscard]] auto Scope::nearestNamedScope() const noexcept
     -> std::shared_ptr<Scope> {
   if (m_name.has_value() || isGlobal()) {
-    return shared_from_this();
+    auto ptr = shared_from_this();
+    return std::const_pointer_cast<Scope>(ptr);
   }
 
   return m_prev_scope->nearestNamedScope();
@@ -262,8 +263,11 @@ std::shared_ptr<Scope> Scope::popScope() noexcept {
 }
 
 [[nodiscard]] auto Scope::name() const noexcept -> Identifier {
-  MINT_ASSERT(hasName());
-  return m_name.value();
+  if (m_name.has_value()) {
+    return m_name.value();
+  }
+
+  return nearestNamedScope()->name();
 }
 
 // return the qualified name of this scope

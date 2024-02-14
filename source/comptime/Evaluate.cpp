@@ -237,7 +237,11 @@ struct EvaluateAst {
   }
 
   Result<ast::Ptr> operator()(ast::Import &i) noexcept {
-    auto *itu = env.findImport(i.file);
+    auto found = env.fileResolve(i.file);
+    MINT_ASSERT(found);
+    auto &path = found.value();
+
+    auto *itu = env.findImport(path);
     MINT_ASSERT(itu != nullptr);
 
     auto &context = itu->context();
